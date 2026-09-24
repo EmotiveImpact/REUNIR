@@ -1,0 +1,45 @@
+name: REUNIR Alpha 02 preview assets
+on:
+  push:
+    paths: ['.github/workflows/alpha2-assets.yml']
+permissions:
+  contents: read
+jobs:
+  assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Collect illustrative stock photographs
+        shell: python
+        run: |
+          import pathlib, urllib.request, json, hashlib
+          root = pathlib.Path('assets'); root.mkdir()
+          photos = {
+            'alex': 'photo-1500648767791-00dcc994a43e',
+            'amina': 'photo-1534528741775-53994a69daeb',
+            'jordan': 'photo-1506794778202-cad84cf45f1d',
+            'maya': 'photo-1531123897727-8f129e1688ce',
+            'idris': 'photo-1531384441138-2736e62e0919',
+            'sofia': 'photo-1517841905240-472988babdf9',
+            'theo': 'photo-1527980965255-d3b416303d12',
+            'nia': 'photo-1524504388940-b1c1722653e1',
+            'afterhours': 'photo-1519501025264-65ba15a82390',
+            'story': 'photo-1492691527719-9d1e07e534b4',
+            'together': 'photo-1522071820081-009f0129c71c'
+          }
+          manifest = []
+          for name, photo in photos.items():
+            portrait = name not in ('afterhours','story','together')
+            query = '?w=160&h=160&fit=crop&crop=faces&q=80' if portrait else '?w=1100&h=650&fit=crop&q=82'
+            url = 'https://images.unsplash.com/' + photo + query
+            with urllib.request.urlopen(url, timeout=35) as response:
+              data = response.read()
+              assert response.headers.get('Content-Type','').startswith('image/'), name
+            (root / (name + '.jpg')).write_bytes(data)
+            manifest.append({'file': name + '.jpg','source':url,'licence':'https://unsplash.com/license','sha256':hashlib.sha256(data).hexdigest(),'purpose':'Illustrative stock photo for fictional preview; not an actual member or endorsement.'})
+          (root / 'sources.json').write_text(json.dumps(manifest, indent=2))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reunir-alpha2-assets
+          path: assets/
+          retention-days: 3
