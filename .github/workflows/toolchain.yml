@@ -1,0 +1,29 @@
+name: REUNIR toolchain
+on:
+  push:
+    branches: [build/reunir-alpha-1]
+    paths: [.github/workflows/toolchain.yml]
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Resolve application toolchain
+        run: |
+          mkdir -p toolchain
+          cd toolchain
+          npm init -y
+          npm install --save-exact react@19 react-dom@19 vite@7 typescript@5 hono @hono/node-server zod drizzle-orm better-auth @better-auth/drizzle-adapter pg @electric-sql/pglite @google-cloud/storage @tanstack/react-query react-router-dom lucide-react tsx @types/node@22 @types/react@19 @types/react-dom@19 @types/pg @playwright/test @axe-core/playwright
+          npm ls --depth=0 > versions.txt
+          tar czf ../reunir-toolchain.tar.gz node_modules package.json package-lock.json versions.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reunir-toolchain
+          path: reunir-toolchain.tar.gz
+          retention-days: 3
