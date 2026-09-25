@@ -1,0 +1,66 @@
+name: REUNIR verified source import
+on:
+  push:
+    branches: ['build/alpha06-source-import']
+    paths: ['.github/workflows/source-transfer.yml']
+permissions:
+  contents: write
+jobs:
+  import:
+    if: github.repository == 'EmotiveImpact/REUNIR'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Retrieve exact source snapshot
+        env:
+          SOURCE_URL: 'https://sdmntpreastus.oaiusercontent.com/files/00000000-2df4-81f9-9f8d-d3924880dc64/raw?se=2026-09-25T16%3A20%3A53Z&sp=r&sv=2026-02-06&sr=b&scid=68de4ed4-f625-5473-b784-685ca878d4c8&skoid=697a5987-0cd9-4222-b5b8-500b90fa271b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-25T07%3A12%3A32Z&ske=2026-09-26T07%3A12%3A32Z&sks=b&skv=2026-02-06&sig=vH/vqk8kV4EfWScPeaQ5TrDmXb1S%2BJRQFOvIIS1aWGU%3D'
+        run: |
+          python3 - <<'PY'
+          import hashlib, os, pathlib, urllib.request
+          url=os.environ['SOURCE_URL']
+          print('::add-mask::'+url)
+          with urllib.request.urlopen(url, timeout=30) as r:
+              data=r.read(600000)
+          assert len(data)==541265, 'Unexpected source size'
+          assert hashlib.sha256(data).hexdigest()=='ec090c8c60db5767d7acd26355da69e78425eb1515be8d850e6433b090a4a12a', 'Source hash mismatch'
+          pathlib.Path('/tmp/reunir-source.bundle').write_bytes(data)
+          PY
+      - name: Verify and import the complete application without changing main
+        run: |
+          set -euo pipefail
+          git config user.name 'REUNIR Build'
+          git config user.email 'reunir-build@users.noreply.github.com'
+          git clone /tmp/reunir-source.bundle /tmp/reunir-saved
+          test "$(git -C /tmp/reunir-saved rev-parse HEAD)" = 'a09cd7db8f71462328b68a3c49b52dae4299dd97'
+          (cd /tmp/reunir-saved && python3 scripts/publish_source.py)
+          git fetch /tmp/reunir-source.bundle refs/heads/build/creator-authoring-recovery:refs/remotes/recovered/source
+          git merge --allow-unrelated-histories --no-commit --no-ff -s ours refs/remotes/recovered/source
+          python3 - <<'PY'
+          import hashlib, json, pathlib, shutil, subprocess
+          source=pathlib.Path('/tmp/reunir-saved')
+          entries=json.loads((source/'SOURCE_MANIFEST.json').read_text())['files']
+          assert len(entries)==203
+          paths=subprocess.check_output(['git','-C',str(source),'ls-files','-z']).decode().split('\0')
+          for name in filter(None,paths):
+              rel=pathlib.PurePosixPath(name)
+              assert not rel.is_absolute() and '..' not in rel.parts
+              src=source/name; dst=pathlib.Path(name)
+              assert src.is_file() and not src.is_symlink()
+              if dst.exists() and dst.read_bytes()!=src.read_bytes():
+                  assert name=='README.md' and dst.read_text().strip()=='# REUNIR', 'Concurrent content conflict: '+name
+              dst.parent.mkdir(parents=True,exist_ok=True)
+              shutil.copy2(src,dst)
+          for entry in entries:
+              assert hashlib.sha256(pathlib.Path(entry['path']).read_bytes()).hexdigest()==entry['sha256'], entry['path']
+          pathlib.Path('.github/workflows/source-transfer.yml').unlink()
+          print('Verified all 203 manifest files and copied 204 tracked source files.')
+          PY
+          git add -A
+          git commit -m 'build: publish complete verified Alpha 06 source and recovery ancestry'
+          git push origin HEAD:refs/heads/build/alpha06-source-import
+          test "$(git rev-parse HEAD)" = "$(git ls-remote origin refs/heads/build/alpha06-source-import | cut -f1)"
+          printf 'Verified complete source commit: ' >> "$GITHUB_STEP_SUMMARY"
+          git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
