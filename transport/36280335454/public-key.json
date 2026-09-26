@@ -1,0 +1,9 @@
+{
+  "runId": "36280335454",
+  "ticket": "63648864200b29773695d0f8136a0377",
+  "algorithm": "RSA-OAEP-SHA256",
+  "publicKey": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAszs12Kq0kPSyExmgAjgB\nukG0UrfpeMunvxh7ywhw1VLO6EcTAE/oOiXCE4RbHnR/vRihsCvlF1oFxC7I9TLT\neGpu+2hW39Djij6zz6CPDbKasr8iXPR+d8bR+OBGhvizk6seXtBZlYfqXkYG7oy2\nAuHCw4oMYyzdiZ/LhwB2nhSvaEBhn3tzXc8CGK0BVy31AYZqNCIWOgkzjLualxYT\nsOQ+PMBEe4LArkIRXW0sQdcy1DZltqapyagGenasxZVzfSO/q2845oovS/deRD6k\nLujhQfsZs7cR9tfwKJsiVZv9WNNIBksWrAZqvbCwCWFij7yUldrXOt/RybtpHGJJ\nrwIDAQAB\n-----END PUBLIC KEY-----\n",
+  "sourceCommit": "a09cd7db8f71462328b68a3c49b52dae4299dd97",
+  "archiveSha256": "7a2b7709e5a8fb73f24d59c131ffdbc7989a88a2c1b86bf312dc22b247c4cf3c",
+  "expiresInSeconds": 660
+}
