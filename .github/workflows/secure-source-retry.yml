@@ -25,8 +25,9 @@ jobs:
               source=base64.b64decode(json.load(response)['content']).decode()
           script=source.split("          python3 - <<'PY'\n",1)[1].rsplit('          PY',1)[0]
           script=textwrap.dedent(script)
-          script=script.replace("'transport/","'transport/"+os.environ['RUN_ID']+'/')
+          script=script.replace('transport/','transport/'+os.environ['RUN_ID']+'/')
           script=script.replace('except Exception:\n', 'except Exception as failure:\n')
+          script=script.replace("        assert len(data)==329476", "        print('Downloaded bytes: '+str(len(data))+'; digest: '+hashlib.sha256(data).hexdigest(),flush=True)\n        assert len(data)==329476")
           script=script.replace("    raise SystemExit(1)","    print('Redacted failure class: '+type(failure).__name__+'; HTTP status: '+str(getattr(failure,'code','none')),flush=True)\n    raise SystemExit(1)")
           exec(compile(script,'pinned-source-importer','exec'))
           PY
