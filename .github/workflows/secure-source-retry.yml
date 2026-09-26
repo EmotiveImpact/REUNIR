@@ -1,0 +1,32 @@
+name: REUNIR source import retry
+on:
+  push:
+    branches: ['transfer/alpha06-secure-20260927']
+    paths: ['.github/workflows/secure-source-retry.yml']
+permissions:
+  contents: write
+jobs:
+  import-source:
+    if: github.repository == 'EmotiveImpact/REUNIR'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUN_ID: ${{ github.run_id }}
+    steps:
+      - name: Execute pinned importer with per-run encrypted capability
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64,json,os,textwrap,urllib.request
+          url='https://api.github.com/repos/EmotiveImpact/REUNIR/contents/.github/workflows/secure-source-transfer.yml?ref=80d4db0bf24592d391dee35eb5ba3adf75120516'
+          req=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+          with urllib.request.urlopen(req,timeout=30) as response:
+              source=base64.b64decode(json.load(response)['content']).decode()
+          script=source.split("          python3 - <<'PY'\n",1)[1].rsplit('          PY',1)[0]
+          script=textwrap.dedent(script)
+          script=script.replace("'transport/","'transport/"+os.environ['RUN_ID']+'/')
+          script=script.replace('except Exception:\n', 'except Exception as failure:\n')
+          script=script.replace("    raise SystemExit(1)","    print('Redacted failure class: '+type(failure).__name__+'; HTTP status: '+str(getattr(failure,'code','none')),flush=True)\n    raise SystemExit(1)")
+          exec(compile(script,'pinned-source-importer','exec'))
+          PY
