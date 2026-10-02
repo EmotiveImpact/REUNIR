@@ -174,3 +174,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px soli
 input,progress{accent-color:var(--accent)}
 .cover-label,.post-visual .cover-label{opacity:1;font-size:9px}
 .cover-foot{opacity:1}
+/* Custom covers use the default translucent shapes, which cross the text on narrow covers. White lettering, with small text on the cover's own ground, keeps AA contrast. */
+.art-custom{color:#ffffff}
+.art-custom>.cover-label,.art-custom>.cover-foot>span{background:#5d5d5d;border-radius:2px;box-shadow:0 0 0 3px #5d5d5d}
+.art-custom>.cover-label{align-self:flex-start}
