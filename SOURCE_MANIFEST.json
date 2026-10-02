@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 07 approved v4 application integration",
   "version": "0.7.0-alpha.1",
   "sourceBaseline": "76b31ab787029126e6462f747f7127a224212899",
-  "generatedAt": "2026-10-02T04:29:00.796469+00:00",
+  "generatedAt": "2026-10-02T04:33:50.328936+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "7bb8bcbdde48566c501c4450170424686dcb5efc45a0cb695b6b1fcc4192d489",
-      "bytes": 6040
+      "sha256": "7708423ffc3d6f00906f7a97a479a0296e3070db222c1e1b6c1e0f82792befab",
+      "bytes": 6351
     },
     {
       "path": "platform/.dockerignore",
@@ -351,8 +351,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "0f1d6ca9827be212f39712e812c66e5959ce55c110862fa22e64ead6d5f2f4b5",
-      "bytes": 8636
+      "sha256": "8e8a87ffb71070fc81fd29ef9793619ccefe8e5f2ed635f5e0ee5c511bc8ac85",
+      "bytes": 9282
     },
     {
       "path": "platform/docs/CREATOR_AUTHORING.md",
@@ -396,8 +396,8 @@
     },
     {
       "path": "platform/docs/ROADMAP.md",
-      "sha256": "ba1668d7d16539993c5a120e59b7e6dcc088b430a3808b865ab347a3d9e7fb49",
-      "bytes": 4773
+      "sha256": "0b2780222b7a961295b395603b2696e69bd23c6a1417d06fab3787112a4aa664",
+      "bytes": 4935
     },
     {
       "path": "platform/docs/SECURITY.md",

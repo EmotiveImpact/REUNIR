@@ -14,14 +14,14 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 04 | Pilot console, runtime privilege guards, fenced retries and release tooling | Observations are not production certification |
 | Alpha 05 | Project workboards, assignments, task discussion and existing proof review | No task file uploads or realtime collaboration |
 | Alpha 06 | Private lesson drafts, explicit publishing, revision history, restore-as-draft and ordering | Plain text/resource links; no rich blocks/private attachments |
-| Alpha 07 | Approved v4 shell/Home in the actual React application, shadcn Button/Avatar/Menu, photo fixtures and responsive navigation | Not a full replacement of every form with shadcn; not a GitHub merge |
+| Alpha 07 | Approved v4 shell/Home in the actual React application, shadcn Button/Avatar/Menu, photo fixtures and responsive navigation | Not a full replacement of every form with shadcn; hosted pilot remains separate |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 
 ## Immediate release work: make the pilot operable
 
 1. **Source publication completed:** PR #1 contains the full Alpha 07 tree, verified against recovered checkpoint `76b31ab` and fetched back without differences. Preserve historical transport/dependency branches without merging them into the app. Never force-push or overwrite parallel work.
-2. Run actual application and PostgreSQL CI on the published source. Dependency-resolution CI alone does not verify the app.
+2. **Application and PostgreSQL CI completed:** run 36964804738 passed all application, HTTP, demo-browser, connected-browser and PostgreSQL checks on commit `75b3f2b`. PR #1 tracks the final source integration. Dependency-resolution CI is no longer the only remote evidence.
 3. Connect the intended dedicated Neon staging database, run the seven existing migrations and restricted-runtime grants. Do not reuse another application's database or put migration credentials on the web server.
 4. Connect a live-mode Vercel staging build, verified transactional sender and scheduled mail worker. Provision the real owner, use approved Code Black content and receive actual invitation/recovery messages.
 5. Complete hosted-browser two-person/two-tenant privacy tests, backups and restore rehearsal, monitoring and support/moderation responsibility. Only then invite a small consented Code Black pilot.
