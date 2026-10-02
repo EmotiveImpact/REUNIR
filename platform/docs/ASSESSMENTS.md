@@ -45,7 +45,7 @@ Migration `0010_assessments.sql` is additive; migrations 0001 to 0009 are byte-i
 
 ## Demonstration mode
 
-The fictional Code Black demo has two checks: "Cut it down to the useful part" (three automatically scored questions, pass mark 75%, three attempts, answers shown after passing or using every attempt) and "Test before you celebrate" (one choice question and one written response, no pass mark, unlimited attempts, answers never revealed). Sofia Chen's fictional attempt on the second waits in the review queue. Studio North has no checks. Demo state stays in the browser.
+The fictional Code Black demo has two checks: "Cut it down to the useful part" (three automatically scored questions, pass mark 75%, three attempts, answers shown after passing or using every attempt) and "Test before you celebrate" (one choice question and one written response, no pass mark, unlimited attempts, answers never revealed). Sofia Chen's fictional attempt on the second waits in the review queue. Studio North has no checks. Demo state stays in the browser. Because the demo runs the whole fictional community in the browser, its storage holds the answer keys too: the demo shows the learner experience, not answer secrecy. Withholding keys is a server guarantee, verified by the HTTP, database and connected-browser tests.
 
 ## Verification
 
