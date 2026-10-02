@@ -9,7 +9,7 @@ let db: Database, repo: WorkspaceRepository;
 const member = DEMO_USER, admin = DEMO_ADMIN;
 before(async () => { db = await openDatabase('pglite:memory'); await migrate(db); repo = new WorkspaceRepository(db); await repo.seed(createSeed()); await repo.seed(createSeed('studio-north')); });
 after(async () => { await db?.close(); });
-test('schema migration applies once and verifies checksum', async () => { await migrate(db); const r = await db.query('SELECT * FROM schema_migrations'); assert.equal(r.rows.length, 8); });
+test('schema migration applies once and verifies checksum', async () => { await migrate(db); const r = await db.query('SELECT * FROM schema_migrations'); assert.equal(r.rows.length, 9); });
 test('existing domain collections remain real SQL tables', async () => { const s = await repo.snapshot('code-black', member); assert.equal(s.members.length, 8); assert.equal(s.tracks.length, 4); assert.equal(s.outbox.length, 0); });
 test('tenant snapshots exclude private space and its posts', async () => { const s = await repo.snapshot('code-black', member); assert(!s.spaces.some(x => x.id === 'space_studio')); assert(!s.posts.some(x => x.spaceId === 'space_studio')); });
 test('membership discovery is user scoped', async () => { assert.equal((await repo.memberships(member)).length, 2); assert.equal((await repo.memberships('unknown')).length, 0); });

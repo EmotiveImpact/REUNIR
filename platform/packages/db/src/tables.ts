@@ -3,6 +3,8 @@ export type CollectionKey = Exclude<keyof Workspace, 'organisation' | 'revision'
 export interface TableSpec {
     key: CollectionKey;
     table: string;
+    /** Fixed SQL row filter for a collection that shares its table with records outside the workspace. */
+    where?: string;
     fields: {
         property: string;
         column: string;
@@ -1705,3 +1707,12 @@ tables.push({"key": "taskNotes", "table": "task_notes", "fields": [{"property": 
 
 // Nullable structured content preserves all legacy plaintext rows.
 for (const key of ['lessons','lessonDrafts','lessonRevisions']) tables.find(t=>t.key===key)!.fields.push({property:'richBody',column:'rich_body',type:'jsonb'});
+
+// Alpha 09: lesson files reuse the existing upload intents. Member-private uploads stay outside workspace reads.
+for (const key of ['lessons','lessonDrafts','lessonRevisions']) tables.find(t=>t.key===key)!.fields.push({property:'resources',column:'resources',type:'jsonb'});
+tables.push({key:'uploads',table:'upload_intents',where:"purpose='lesson_resource'",fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'userId',column:'user_id',type:'text'},{property:'purpose',column:'purpose',type:'text'},{property:'trackId',column:'track_id',type:'text'},
+    {property:'originalName',column:'original_name',type:'text'},{property:'contentType',column:'content_type',type:'text'},{property:'sizeBytes',column:'size_bytes',type:'integer'},
+    {property:'status',column:'status',type:'text'},{property:'objectKey',column:'object_key',type:'text'},{property:'completedAt',column:'completed_at',type:'timestamptz'},
+    {property:'generation',column:'generation',type:'text'}]});

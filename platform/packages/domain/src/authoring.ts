@@ -1,10 +1,14 @@
 import { lessonDocumentText } from '../../contracts/src/lesson-document';
 import { DomainError, type Command, type Workspace, type TenantContext, type Member, type Lesson, type LessonDraft, type LessonContent } from '../../contracts/src/index';
 import { actorFor, isAdmin, canSeeSpace } from './access';
+import { assertResourcesAvailable, normaliseResources, resolveResources } from './resources';
+import type { LessonResource } from '../../contracts/src/lesson-resources';
 
+/** Content as edited and published. Resources are always an ordered array here, never NULL. */
+export type EditableLessonContent = LessonContent & { resources: LessonResource[] };
 /** Whitelist learner-facing content. Internal draft state never crosses the publication boundary. */
-export function lessonContent(value: LessonContent): LessonContent {
-    return {title:value.title, summary:value.summary, body:value.richBody?lessonDocumentText(value.richBody):value.body, minutes:value.minutes, resourceUrl:value.resourceUrl, richBody:value.richBody?structuredClone(value.richBody):null};
+export function lessonContent(value: LessonContent): EditableLessonContent {
+    return {title:value.title, summary:value.summary, body:value.richBody?lessonDocumentText(value.richBody):value.body, minutes:value.minutes, resourceUrl:value.resourceUrl, richBody:value.richBody?structuredClone(value.richBody):null, resources:normaliseResources(value.resources)};
 }
 export function filterAuthoring(state: Workspace, actor: Member): Workspace {
     const tracks=new Set(state.tracks.map(t=>t.id));
@@ -58,7 +62,9 @@ export function applyAuthoring(s: Workspace, ctx: TenantContext, cmd: Command, n
     if(draft.archived)throw new DomainError('DRAFT_ARCHIVED','Restore this draft before changing or publishing it.',409);
     if(cmd.type==='lesson.draft.save'){
         if(draft.richBody && cmd.richBody===undefined)throw new DomainError('RICH_CONTENT_REQUIRED','Reload the updated editor before saving this formatted lesson.',409);
-        const content=lessonContent(cmd);
+        // An editor that predates lesson files must not silently drop them by omission.
+        if(draft.resources?.length && cmd.resources===undefined)throw new DomainError('RESOURCES_REQUIRED','Reload the updated editor before saving this lesson’s files.',409);
+        const content=lessonContent({...cmd,resources:resolveResources(s,ctx,draft.trackId,cmd.resources??[])});
         if(JSON.stringify(content)===JSON.stringify(lessonContent(draft)))return result(draft.id,'The draft is already saved.',false);
         Object.assign(draft,content,{version:draft.version+1,updatedAt:now,updatedBy:ctx.userId});
         return result(draft.id,'Draft saved privately. No live content changed.');
@@ -71,6 +77,7 @@ export function applyAuthoring(s: Workspace, ctx: TenantContext, cmd: Command, n
     if(cmd.type==='lesson.draft.publish'){
         if(!draft.title.trim()||!draft.summary.trim()||!draft.body.trim())throw new DomainError('INCOMPLETE_LESSON','Add a title, summary and lesson body before publishing.');
         if(draft.publishedVersion===draft.version)return result(draft.id,'This saved version is already published.',false);
+        assertResourcesAvailable(s,ctx,draft.trackId,draft.resources);
         let lesson=draft.lessonId?s.lessons.find(l=>l.id===draft.lessonId&&l.organizationId===ctx.organizationId&&l.trackId===draft.trackId):undefined;
         if(draft.lessonId&&!lesson)return missing();
         if(!lesson){lesson={...base(),...lessonContent(draft),trackId:draft.trackId,position:Math.max(0,...s.lessons.filter(l=>l.trackId===draft.trackId&&l.organizationId===ctx.organizationId).map(l=>l.position))+1,published:true};s.lessons.push(lesson);draft.lessonId=lesson.id;}

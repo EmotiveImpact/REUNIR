@@ -12,7 +12,9 @@ import { ZodError, z } from 'zod';
 import { createHash, timingSafeEqual, randomUUID } from 'node:crypto';
 import { DomainError } from '../../../packages/contracts/src/index';
 import { WorkspaceRepository } from '../../../packages/db/src/repository';
-import { objectKey, uploadSchema, type PrivateStorage } from './storage';
+import { objectKey, resourceObjectKey, uploadSchema, type PrivateStorage } from './storage';
+import { clientUpload, type StoredObservation } from '../../../packages/domain/src/resources';
+import { SIGNATURE_BYTES, fileSignatureMatches, resourceUploadRequest, type ResourceContext } from '../../../packages/contracts/src/lesson-resources';
 export interface SessionIdentity {
     id: string;
     name: string;
@@ -52,7 +54,12 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     });
     app.get('/api/health', async (c) => { await repository.db.query('SELECT 1'); return c.json({ status: 'ok', version: RELEASE_VERSION, mode: 'live', database: repository.db.kind, storage: storage ? 'configured' : 'not-configured' }); });
     app.get('/api/health/live', c=>c.json({status:'ok',version:RELEASE_VERSION}));
-    app.get('/api/account/capabilities', c=>c.json({invitations:!!invitations,passwordRecovery:!!mail?.transport}));
+    app.get('/api/account/capabilities', c=>c.json({invitations:!!invitations,passwordRecovery:!!mail?.transport,resourceUploads:!!storage}));
+    // Best effort after commit: an orphaned object is private and unreferenced, never served.
+    const removeQuietly = async (requestId: string, keys: string[]) => { for (const key of keys) {
+        try { await storage?.remove(key); }
+        catch { console.error(JSON.stringify({ event: 'storage.remove.failed', requestId })); }
+    } };
     app.get('/api/internal/mail',async c=>{
         const provided=c.req.header('authorization')||'';
         const expected=cronSecret ? 'Bearer '+cronSecret : '';
@@ -122,8 +129,16 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     app.post('/api/organisations/:slug/uploads', async (c) => {
         if (!storage)
             throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
-        const input = uploadSchema.parse(await c.req.json());
-        const slug = c.req.param('slug'), who = c.get('identity');
+        const body = await c.req.json(), slug = c.req.param('slug'), who = c.get('identity');
+        if (body && typeof body === 'object' && (body as { purpose?: unknown }).purpose === 'lesson_resource') {
+            const input = resourceUploadRequest.parse(body);
+            // The domain checks authoring rights and records the intent before any storage capability exists.
+            const { upload, expired } = await repository.beginResourceUpload(slug, who.id, input, (organizationId, id) => resourceObjectKey(organizationId, input.trackId, input.contentType, id), c.get('requestId'));
+            await removeQuietly(c.get('requestId'), expired.map(x => x.objectKey));
+            const policy = await storage.upload(upload.objectKey, upload.contentType, upload.sizeBytes);
+            return c.json({ id: upload.id, ...policy, method: 'POST', expiresIn: 300 }, 201);
+        }
+        const input = uploadSchema.parse(body);
         const snapshot = await repository.snapshot(slug, who.id);
         const id = randomUUID();
         const key = objectKey(snapshot.organisation.id, who.id, input.contentType, id);
@@ -137,7 +152,28 @@ export function createApp({ repository, operations, origin, resolveSession, auth
             throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
         const slug = c.req.param('slug'), who = c.get('identity').id, id = c.req.param('id');
         const intent = await repository.uploadIntent(slug, who, id);
-        const meta = await storage.metadata(String(intent.object_key));
+        const key = String(intent.object_key);
+        if (intent.purpose === 'lesson_resource') {
+            let observed: StoredObservation = { sizeBytes: 0, contentType: '', generation: null, signatureMatches: false };
+            if (intent.status === 'pending') {
+                const meta = await storage.metadata(key);
+                if (!meta)
+                    throw new DomainError('UPLOAD_MISSING', 'The file has not reached private storage. Try uploading it again.', 409);
+                const matches = meta.size === Number(intent.size_bytes) && meta.contentType === intent.content_type && !!meta.generation;
+                // Read only the first bytes, pinned to the generation that was just measured.
+                const head = matches ? await storage.head(key, SIGNATURE_BYTES, meta.generation!) : new Uint8Array();
+                observed = { sizeBytes: meta.size, contentType: meta.contentType, generation: meta.generation ?? null, signatureMatches: matches && fileSignatureMatches(String(intent.content_type), head) };
+            }
+            const result = await repository.completeResourceUpload(slug, who, id, observed, c.get('requestId'));
+            if (result.outcome === 'rejected') {
+                await removeQuietly(c.get('requestId'), [key]);
+                throw new DomainError('FILE_MISMATCH', 'This file does not match its declared type and size. Nothing was attached.');
+            }
+            return c.json({ id, status: 'ready', upload: clientUpload(result.upload) });
+        }
+        const meta = await storage.metadata(key);
+        if (!meta)
+            throw new DomainError('UPLOAD_MISSING', 'The file has not reached private storage. Try uploading it again.', 409);
         if (meta.size !== Number(intent.size_bytes) || meta.contentType !== intent.content_type) {
             await repository.markUpload(slug, who, id, 'rejected');
             throw new DomainError('FILE_MISMATCH', 'The uploaded file does not match the permitted type and size.');
@@ -145,14 +181,31 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         await repository.markUpload(slug, who, id, 'ready');
         return c.json({ id, status: 'ready' });
     });
+    app.post('/api/organisations/:slug/uploads/:id/discard', async (c) => {
+        const result = await repository.discardResourceUpload(c.req.param('slug'), c.get('identity').id, id.parse(c.req.param('id')), c.get('requestId'));
+        await removeQuietly(c.get('requestId'), [result.objectKey]);
+        return c.json({ id: result.id, status: 'discarded' });
+    });
     app.get('/api/organisations/:slug/uploads/:id/download', async (c) => {
         if (!storage)
             throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
         const intent = await repository.uploadIntent(c.req.param('slug'), c.get('identity').id, c.req.param('id'));
+        // Lesson files are released only through the lesson, draft or revision that lists them.
+        if (intent.purpose !== 'member')
+            throw new DomainError('NOT_FOUND', 'File not found.', 404);
         if (intent.status !== 'ready')
             throw new DomainError('FILE_NOT_READY', 'This file is not ready to download.', 409);
         return c.json({ url: await storage.download(String(intent.object_key)), expiresIn: 120 });
     });
+    const resourceDownload = async (slug: string, userId: string, context: ResourceContext, recordId: string, resourceId: string) => {
+        if (!storage)
+            throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
+        const target = await repository.resourceDownload(slug, userId, { context, recordId: id.parse(recordId), resourceId: id.parse(resourceId) });
+        const url = await storage.download(target.objectKey, { filename: target.filename, contentType: target.contentType, generation: target.generation });
+        return { url, expiresIn: 120, filename: target.filename };
+    };
+    for (const [segment, context] of [['lessons', 'lesson'], ['lesson-drafts', 'draft'], ['lesson-revisions', 'revision']] as const)
+        app.get(`/api/organisations/:slug/${segment}/:recordId/resources/:resourceId/download`, async (c) => c.json(await resourceDownload(c.req.param('slug'), c.get('identity').id, context, c.req.param('recordId'), c.req.param('resourceId'))));
     app.notFound(c => c.json({ error: { code: 'NOT_FOUND', message: 'Endpoint not found.' } }, 404));
     app.onError((err, c) => {
         if (err instanceof DomainError)
