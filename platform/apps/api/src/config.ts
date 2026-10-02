@@ -1,0 +1,45 @@
+import type { PilotCheck } from '../../../packages/contracts/src/operations';
+export type Environment = Readonly<Record<string, string | undefined>>;
+const filled = (v: string | undefined): boolean => !!v?.trim();
+const safeSecret = (value: string | undefined): boolean => !!value && value.length >= 32 && !/^(test|change.?me|example|replace.?me)/i.test(value);
+/** Pure inspection: never returns environment values, URLs, credentials or email addresses. */
+export function inspectConfiguration(env: Environment): PilotCheck[] {
+    const checks: PilotCheck[] = [];
+    const production = env.NODE_ENV === 'production';
+    let canonical = false, https = false;
+    try {
+        const u = new URL(env.APP_ORIGIN || '');
+        canonical = ['http:', 'https:'].includes(u.protocol) && !u.username && !u.password && !u.search && !u.hash && u.pathname === '/';
+        https = u.protocol === 'https:';
+    } catch { /* Report a redacted error. */ }
+    checks.push({key:'origin', title:'Application origin',state:canonical && (!production || https) ? 'pass' : 'blocked',detail:canonical && (!production || https) ? 'One canonical application origin is configured.' : 'Set a canonical APP_ORIGIN. Production requires HTTPS, without a path, query or credentials.'});
+    checks.push({key:'auth-secret',title:'Session secret',state:safeSecret(env.BETTER_AUTH_SECRET) ? 'pass' : 'blocked',detail:safeSecret(env.BETTER_AUTH_SECRET) ? 'A non-placeholder session secret is present. Entropy is not inferred from length.' : 'Generate an independent random BETTER_AUTH_SECRET of at least 32 characters.'});
+    let databaseValid = false;
+    try {
+        const value=env.DATABASE_URL || '';
+        databaseValid = value.startsWith('pglite:') ? !production : ['postgres:','postgresql:'].includes(new URL(value).protocol);
+    } catch { /* Invalid connection configuration stays private. */ }
+    checks.push({key:'database-config',title:'Database configuration',state:databaseValid ? 'pass' : 'blocked',detail:databaseValid ? 'A supported database connection is configured. Access is checked separately.' : 'Configure PostgreSQL. Embedded development databases are forbidden in production.'});
+    checks.push({key:'client-mode',title:'Live-mode declaration',state:env.VITE_DATA_MODE === 'live' ? 'pass' : 'blocked',detail:env.VITE_DATA_MODE === 'live' ? 'This runtime declares live mode. The deployed frontend must also be built and browser-tested in live mode.' : 'The frontend is in demonstration mode or has not declared its data mode.',action:'Set VITE_DATA_MODE=live at build time for a connected pilot, then rebuild.'});
+    const dangerous = ['MIGRATION_DATABASE_URL','BOOTSTRAP_PASSWORD','DB_RUNTIME_PASSWORD'].filter(k=>filled(env[k]));
+    checks.push({key:'privileged-config',title:'Administrative credentials separated',state:production && dangerous.length ? 'blocked' : 'pass',detail:production && dangerous.length ? 'Administrative provisioning credentials are present on the application runtime. Remove them.' : 'No production migration or bootstrap credentials were detected in this runtime.'});
+    const exposed = Object.entries(env).some(([k,v])=>k.startsWith('VITE_') && filled(v) && /SECRET|PASSWORD|TOKEN|PRIVATE|CREDENTIAL|DATABASE|API_KEY/i.test(k));
+    checks.push({key:'client-secrets',title:'Client environment boundary',state:exposed ? 'blocked' : 'pass',detail:exposed ? 'A secret-like VITE_ environment variable would be exposed to the browser. Remove it before building.' : 'No secret-like client-prefixed environment names were detected. Source and bundle scans remain required.'});
+    checks.push({key:'fictional-seed',title:'Production content safety',state:production && env.ALLOW_FICTIONAL_SEED === 'yes' ? 'blocked' : 'pass',detail:production && env.ALLOW_FICTIONAL_SEED === 'yes' ? 'Fictional seeding is enabled in production configuration.' : 'Production fictional-data seeding is not enabled.'});
+    const email=filled(env.RESEND_API_KEY) && filled(env.EMAIL_FROM);
+    checks.push({key:'email-config',title:'Transactional email',state:email ? 'pass' : 'blocked',detail:email ? 'A provider and sender are configured. Sender verification and inbox delivery are not yet proven.' : 'Invitation and recovery delivery need both RESEND_API_KEY and EMAIL_FROM.'});
+    const independent = safeSecret(env.EMAIL_ENCRYPTION_KEY) && env.EMAIL_ENCRYPTION_KEY !== env.BETTER_AUTH_SECRET;
+    checks.push({key:'email-encryption',title:'Independent mail encryption key',state:independent ? 'pass' : 'blocked',detail:independent ? 'A separate encryption key is configured for pending email.' : 'Use a stable random EMAIL_ENCRYPTION_KEY, different from the session secret.'});
+    const cron=safeSecret(env.CRON_SECRET);
+    checks.push({key:'worker-auth',title:'Worker authentication',state:cron ? 'pass' : 'blocked',detail:cron ? 'The worker has an authentication secret. A schedule has not been inferred.' : 'Configure a random CRON_SECRET before scheduling the worker.'});
+    checks.push({key:'storage',title:'Attachments',state:filled(env.GCS_BUCKET) ? 'unverified' : 'warning',detail:filled(env.GCS_BUCKET) ? 'A bucket name is configured, but IAM and attachment delivery require separate verification.' : 'No attachment bucket is configured. Text and link-based pilot features still work.'});
+    return checks;
+}
+/** Reject unsafe runtime configurations, while allowing a server without optional email/storage. */
+export function validateRuntimeConfiguration(env: Environment): void {
+    const fatal = new Set(['origin','auth-secret','database-config','client-secrets','privileged-config','fictional-seed']);
+    if (env.NODE_ENV === 'production' && (env.RESEND_API_KEY || env.EMAIL_FROM)) fatal.add('email-encryption');
+    if(env.CRON_SECRET)fatal.add('worker-auth');
+    const blocked = inspectConfiguration(env).filter(c=>fatal.has(c.key) && c.state==='blocked');
+    if(blocked.length)throw new Error('Unsafe REUNIR runtime configuration: '+blocked.map(c=>c.key).join(', ')+'. Run npm run pilot:check for redacted guidance.');
+}

@@ -1,0 +1,14 @@
+import {chromium} from '@playwright/test';
+import {readFile,writeFile} from 'node:fs/promises';
+const b=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
+const c=await b.newContext({viewport:{width:1466,height:1080}});const p=await c.newPage();
+p.on('pageerror',e=>console.log('ERROR',e.message));
+await p.setContent(await readFile('.preview/REUNIR-preview.html','utf8'),{waitUntil:'load'});await p.waitForTimeout(1100);
+console.log('h1',await p.locator('h1').allTextContents());
+await p.screenshot({path:'evidence/alpha07/desktop.png',fullPage:true});
+await p.getByRole('button',{name:'Account menu',exact:true}).click();
+await p.screenshot({path:'evidence/alpha07/account-menu.png',fullPage:false});
+await p.keyboard.press('Escape');await p.setViewportSize({width:390,height:844});
+await p.screenshot({path:'evidence/alpha07/mobile.png',fullPage:true});
+console.log('overflow', await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth));
+await b.close();

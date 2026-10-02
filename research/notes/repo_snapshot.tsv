@@ -1,0 +1,7 @@
+repo	default_branch	reported_size_kb	stars	forks	last_pushed_seen	licence_working_classification	primary_research_value
+msrbuilds/roost	main	4080	8	8	2026-04-06	README says MIT; verify	product breadth, showcase, leaderboard, DMs, events
+devscalelabs/opencircle	main	5122	109	12	2026-04-13	AGPL-3.0	social-learning seam, channels/posts, worker notifications
+classroomio/classroomio	main	331704	1696	389	2026-09-23	AGPL-3.0 root LICENSE; package metadata conflict	multi-tenant orgs, cohorts, webhooks, workers, AI accounting
+learnhouse/learnhouse	dev	58117	2291	549	2026-09-20	AGPL-3.0 + enterprise licensing	modern editor, communities, moderation, Yjs boards, certificates
+frappe/lms	develop	109624	3253	1513	2026-09-23	AGPL-3.0	batches/live learning, badges, jobs, certificate workflows
+humhub/humhub	master	158464	6744	1680	2026-09-24	AGPL or proprietary dual licence	spaces, modular extensions, permissions, community kernel
