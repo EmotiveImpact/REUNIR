@@ -5,6 +5,8 @@ export interface TableSpec {
     table: string;
     /** Fixed SQL row filter for a collection that shares its table with records outside the workspace. */
     where?: string;
+    /** When set, existing rows are append-only except for these properties, which a targeted UPDATE changes. */
+    mutable?: string[];
     fields: {
         property: string;
         column: string;
@@ -1716,3 +1718,13 @@ tables.push({key:'uploads',table:'upload_intents',where:"purpose='lesson_resourc
     {property:'originalName',column:'original_name',type:'text'},{property:'contentType',column:'content_type',type:'text'},{property:'sizeBytes',column:'size_bytes',type:'integer'},
     {property:'status',column:'status',type:'text'},{property:'objectKey',column:'object_key',type:'text'},{property:'completedAt',column:'completed_at',type:'timestamptz'},
     {property:'generation',column:'generation',type:'text'}]});
+
+// Alpha 10: knowledge checks live in lesson content; attempts are immutable apart from review fields.
+for (const key of ['lessons','lessonDrafts','lessonRevisions']) tables.find(t=>t.key===key)!.fields.push({property:'quiz',column:'quiz',type:'jsonb'});
+tables.push({key:'quizAttempts',table:'quiz_attempts',mutable:['results','score','passed','status','feedback','reviewerId','reviewedAt','version'],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'lessonId',column:'lesson_id',type:'text'},{property:'trackId',column:'track_id',type:'text'},{property:'userId',column:'user_id',type:'text'},
+    {property:'attemptNumber',column:'attempt_number',type:'integer'},{property:'quiz',column:'quiz',type:'jsonb'},{property:'answers',column:'answers',type:'jsonb'},
+    {property:'results',column:'results',type:'jsonb'},{property:'score',column:'score',type:'integer'},{property:'maxScore',column:'max_score',type:'integer'},
+    {property:'status',column:'status',type:'text'},{property:'passed',column:'passed',type:'boolean'},{property:'feedback',column:'feedback',type:'text'},
+    {property:'reviewerId',column:'reviewer_id',type:'text'},{property:'reviewedAt',column:'reviewed_at',type:'timestamptz'},{property:'version',column:'version',type:'integer'}]});

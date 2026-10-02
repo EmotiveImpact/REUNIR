@@ -10,9 +10,20 @@ const limitPerTable = 5000;
 function context(organizationId: string, userId: string, requestId: string = randomUUID()): TenantContext { return { organizationId, userId, requestId }; }
 export async function setContext(sql: SQL, organizationId: string, userId: string) { await sql.query("SELECT set_config('app.organization_id',$1,true),set_config('app.user_id',$2,true)", [organizationId, userId]); }
 function decode(row: Record<string, unknown>, spec: TableSpec) { return Object.fromEntries(spec.fields.map(f => [f.property, row[f.column] instanceof Date ? (row[f.column] as Date).toISOString() : row[f.column]])); }
-async function putRow(sql: SQL, spec: TableSpec, row: Record<string, unknown>) {
+async function putRow(sql: SQL, spec: TableSpec, row: Record<string, unknown>, existing = false) {
     const columns = spec.fields.map(f => f.column);
     const params = spec.fields.map(f => f.type === 'jsonb' && row[f.property] != null ? JSON.stringify(row[f.property]) : row[f.property] ?? null);
+    if (spec.mutable) {
+        // Append-only evidence: inserts are plain, and later writes may only touch the declared review columns.
+        if (!existing) {
+            await sql.query(`INSERT INTO ${spec.table} (${columns.join(',')}) VALUES (${params.map((_, i) => '$' + (i + 1)).join(',')})`, params);
+            return;
+        }
+        const fields = spec.fields.filter(f => spec.mutable!.includes(f.property));
+        const values = fields.map(f => f.type === 'jsonb' && row[f.property] != null ? JSON.stringify(row[f.property]) : row[f.property] ?? null);
+        await sql.query(`UPDATE ${spec.table} SET ${fields.map((f, i) => `${f.column}=$${i + 3}`).join(',')} WHERE organization_id=$1 AND id=$2`, [row.organizationId, row.id, ...values]);
+        return;
+    }
     const updates = columns.filter(c => !['id', 'organization_id'].includes(c)).map(c => `${c}=EXCLUDED.${c}`).join(',');
     if(spec.table==='lesson_revisions') {
         await sql.query(`INSERT INTO ${spec.table} (${columns.join(',')}) VALUES (${params.map((_, i) => '$' + (i + 1)).join(',')})`,params);
@@ -44,7 +55,7 @@ async function saveChanges(sql: SQL, before: Workspace, after: Workspace) {
         const old = new Map(before[spec.key].map(r => [r.id, JSON.stringify(r)]));
         for (const row of after[spec.key])
             if (JSON.stringify(row) !== old.get(row.id))
-                await putRow(sql, spec, row as unknown as Record<string, unknown>);
+                await putRow(sql, spec, row as unknown as Record<string, unknown>, old.has(row.id));
     }
     await sql.query('UPDATE organisations SET name=$2,tagline=$3,accent=$4,revision=$5 WHERE id=$1', [after.organisation.id, after.organisation.name, after.organisation.tagline, after.organisation.accent, after.revision]);
 }

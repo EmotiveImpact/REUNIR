@@ -26,7 +26,7 @@ test('bookmarks are private and toggle', () => { const r = run({ type: 'post.boo
 test('reports deduplicate', () => { const c = { type: 'post.report', postId: 'post_common', reason: 'Needs a review' }; const r = run(c); assert.equal(run(c, r.workspace).workspace.reports.length, 1); });
 test('ordinary members cannot moderate', () => assert.throws(() => run({ type: 'post.moderate', postId: 'post_common', hidden: true })));
 test('moderation hides content and adds audit', () => { const s = run({ type: 'post.moderate', postId: 'post_common', hidden: true }, createSeed(), ctx('member_maya')).workspace; assert(!visibleWorkspace(s, ctx()).posts.some(x => x.id === 'post_common')); assert.equal(s.audit.at(-1)?.action, 'post.hidden'); });
-test('enrolment is idempotent', () => assert.equal(run({ type: 'track.enrol', trackId: 'track_product' }).workspace.enrolments.length, 1));
+test('enrolment is idempotent', () => assert.equal(run({ type: 'track.enrol', trackId: 'track_product' }).workspace.enrolments.filter(e => e.userId === DEMO_USER).length, 1));
 test('must enrol before completing', () => assert.throws(() => run({ type: 'lesson.complete', trackId: 'track_story', lessonId: 'lesson_1' })));
 test('lesson must belong to the requested track', () => assert.throws(() => run({ type: 'lesson.complete', trackId: 'track_product', lessonId: 'lesson_1' })));
 test('completion and points award once', () => { const c = { type: 'lesson.complete', trackId: 'track_product', lessonId: 'lesson_5' }; let s = run(c).workspace; s = run(c, s).workspace; assert.equal(s.completions.filter(x => x.lessonId === 'lesson_5').length, 1); assert.equal(reputationTotals(s, DEMO_USER).learning, 40); assert.equal(progress(s, DEMO_USER, 'track_product').percent, 67); });
