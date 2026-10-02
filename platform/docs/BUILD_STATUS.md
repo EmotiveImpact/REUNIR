@@ -59,7 +59,12 @@ The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `h
 
 ## Publication receipt
 
-Pending: recorded after the push and CI run.
+Pushed to `claude/stoic-euler-lx2zk7` and opened as [EmotiveImpact/REUNIR#4](https://github.com/EmotiveImpact/REUNIR/pull/4). After each push the remote ref was fetched back and matched the local commit and tree.
+
+- First head `51dd503bccd18935a8935c692da0a8a4b5d919cc` (tree `df74f75c3b7f8d77c1c4af462092921f671b2c78`) passed both jobs in [run 37066181651](https://github.com/EmotiveImpact/REUNIR/actions/runs/37066181651) (push) and [run 37066222452](https://github.com/EmotiveImpact/REUNIR/actions/runs/37066222452) (pull request).
+- The automated Codex review then found the review-policy gap described under corrections. The fix, `ea40ab917433382f3a40b48c57a7fcbe3e26e986` (tree `001f2a3e74a01b7a09115099edd71a648a7e0604`), passed both jobs in [run 37067079371](https://github.com/EmotiveImpact/REUNIR/actions/runs/37067079371) (push) and [run 37067083907](https://github.com/EmotiveImpact/REUNIR/actions/runs/37067083907) (pull request). The application job ran the research checker, typecheck, all application tests, 17 HTTP checks, both builds, every demo-browser suite including knowledge checks, every connected-browser suite including knowledge checks, and the Python helpers; the PostgreSQL 17 job ran the 9 restricted-role checks. The review thread was answered and resolved.
+
+This receipt commit changes only documentation and source hashes; the merge into main is recorded in the pull request and in the next status update.
 
 ## Next actions
 

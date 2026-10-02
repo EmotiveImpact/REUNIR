@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 10 knowledge checks",
   "version": "0.10.0-alpha.1",
   "sourceBaseline": "788e5d70df7083a07c6a254b315e7aa97965fd5a",
-  "generatedAt": "2026-10-02T21:28:47.619733+00:00",
+  "generatedAt": "2026-10-02T21:36:15.618696+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -421,8 +421,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "a69adf6df075ef49abbda45c9bd9e169dc1e57857092cb70b59ab23a07e0cb0c",
-      "bytes": 24529
+      "sha256": "80f83f97075659a0ef7f062d8ab685149d083d8abf6b970568bdabaf8c2178cc",
+      "bytes": 25923
     },
     {
       "path": "platform/docs/CREATOR_AUTHORING.md",
