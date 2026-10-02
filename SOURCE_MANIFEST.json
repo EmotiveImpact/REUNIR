@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 08 rich lesson authoring",
   "version": "0.8.0-alpha.1",
   "sourceBaseline": "6238d7b92b4a2e5d994daf07874b3097b364eb34",
-  "generatedAt": "2026-10-02T05:27:54.437088+00:00",
+  "generatedAt": "2026-10-02T05:32:56.203285+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "bd2b61d405148897306f41b95ec6d3827525da6792a6e5e1a2502d04ac1e8345",
-      "bytes": 7827
+      "sha256": "5f85817082fed63bc0286735e0b2eaceef2623b19b81abbbcc23300a6f1be838",
+      "bytes": 7897
     },
     {
       "path": "platform/.dockerignore",
@@ -366,8 +366,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "9f5ae6ec801e58be481383e0fb806793b9ed9771b72ccc4f9558bf3801b52792",
-      "bytes": 10787
+      "sha256": "e52677f5b437b4d44f7c444cce57817101691f99b48ca7d5d755a41426141867",
+      "bytes": 10769
     },
     {
       "path": "platform/docs/CREATOR_AUTHORING.md",
@@ -416,8 +416,8 @@
     },
     {
       "path": "platform/docs/ROADMAP.md",
-      "sha256": "11525857bcf65f300822d0511cf3fe15977bd5008e7cd0c8d8fa7bb2a9df697f",
-      "bytes": 5254
+      "sha256": "07bb596e062a9e208cf294190a695db6c4f2a7bae988cfc12044694bad6fa6b1",
+      "bytes": 5361
     },
     {
       "path": "platform/docs/SECURITY.md",

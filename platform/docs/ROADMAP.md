@@ -20,7 +20,7 @@ UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exp
 
 ## Deployment deferred by the user
 
-The user will clone, deploy and run hosted tests later. Continue product development without treating deployment as a prerequisite or claiming it is complete. Alpha 08 adds rich lesson editing, safe external media and compatible revisions; see RICH_LESSONS.md.
+The user will clone, deploy and run hosted tests later. Continue product development without treating deployment as a prerequisite or claiming it is complete. Alpha 08 adds rich lesson editing, safe external media and compatible revisions; see RICH_LESSONS.md. Full application/browser/HTTP/PostgreSQL CI passed in run 36969054997. PR #2 tracks publication and merge.
 
 ## Release work when deployment resumes: make the pilot operable
 

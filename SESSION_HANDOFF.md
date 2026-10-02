@@ -1,12 +1,14 @@
 # Current continuation: Creator Studio 2 rich lessons
 
-2 October 2026. The user will clone, deploy and perform hosted tests later. Do not resume Neon/Vercel setup unless requested. Continue the existing app.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, RICH_LESSONS.md and ROADMAP.md. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL app.
 
-Baseline main: `6238d7b92b4a2e5d994daf07874b3097b364eb34`, merged PR #1. Current work: `feat/creator-rich-lessons`. Read platform/docs/RICH_LESSONS.md, BUILD_STATUS.md and ROADMAP.md. UI_DESIGN_DIRECTION.md remains authoritative. Rich editing/media is integrated into the actual Creator Studio, learner view and immutable revision system, not a separate mock.
+## Verified delivery
 
-Run all eight migrations before the new server. No database, deployment or real email has been created in this continuation. Local application tests: 383 passed, TypeScript/build passed. Published in PR #2; fetched source tree verified. PostgreSQL, HTTP and existing authoring/community/project CI passed on bdcaa89. The new rich browser test found adjacent media replacement, now corrected with insertion after the selection. On aa3e547 the rich functional browser journey passed through publication; the accessibility harness needed an explicit browser context, now fixed. Full CI must pass on the final head before merging. Chromium download failed locally and socket tests remain restricted.
+Published source commit: `24eeebfdc14aefed457bdd513f378b65d6fd9be8` on `feat/creator-rich-lessons`, PR #2. The remote tree was fetched and compared with the local source. GitHub [run 36969054997](https://github.com/EmotiveImpact/REUNIR/actions/runs/36969054997) passed both application and PostgreSQL jobs.
 
-Next product work: private resources with lesson access inheritance, then assessments. Preserve existing private goals/messages, contribution review and tenant isolation.
+383 application/database/API/rendering tests; 204 demo-browser checks (including 11 new rich lesson checks); 12 connected-browser checks; 17 HTTP checks; 32 helper checks; TypeScript and both builds passed. PostgreSQL CI exercised restricted-role rich publication/restoration and tenant isolation. Desktop/mobile screenshots were reviewed. The adjacent-media insertion issue and the browser-context harness issue are fixed.
+
+This receipt changes documentation and source hashes only. Merge status is tracked in [PR #2](https://github.com/EmotiveImpact/REUNIR/pull/2); clone main after merge, or the feature branch before merge. No cloud database, Vercel deployment, mail sender or scheduler has been provisioned. The user will deploy and run hosted tests later. Apply migration 0008 before running this version against PostgreSQL. Next product slice: private resources with lesson/space access inheritance, then assessments.
 
 ---
 ## Historical Alpha 07 handover
