@@ -10,7 +10,19 @@ Three actual shadcn registry-source adaptations are included: Button, Avatar and
 
 The previous community, learning, mission proof, purposes/paths/private goals, project workboards/contribution review, outcomes/outputs, messaging, access management and Creator Studio routes remain. The seven SQL migrations are byte-identical to the Alpha 06 baseline. The shared release label changes, but API/domain authorisation and data semantics are unchanged. No new backend service is introduced.
 
-## Completed verification
+## Publication follow-up: 2 October 2026
+
+The full application was published in [PR #1](https://github.com/EmotiveImpact/REUNIR/pull/1), branch `integration/alpha07-source-2026-10-02`, at `5e88b30675832fcedfb0a26491484851d951dd59`. Its complete Git tree `5b9d79453d07c75f5d71e0374889d945a3ee1eb8` exactly matches recovered checkpoint `76b31ab787029126e6462f747f7127a224212899`. All 240 tracked files are present, including nine binary image assets. A Git fetch followed by a tree diff and 239-file manifest verification passed. No newer application or open PR was found among the earlier remote branches.
+
+Fresh local verification: 369 application tests, 32 Python helper checks, TypeScript and production build passed. The tests used `node --import tsx --test --test-concurrency=1 tests/*.test.ts` because this workspace disallows the optional tsx CLI IPC socket. The test files and assertions were unchanged. HTTP/browser/PostgreSQL checks run in GitHub Actions because local sockets are denied and the Playwright browser download failed.
+
+The first full remote run [36964413876](https://github.com/EmotiveImpact/REUNIR/actions/runs/36964413876) passed all 369 application tests, 17 HTTP checks, both builds, all 193 demo-browser checks and the six real PostgreSQL checks. Connected browser verification passed four checks before an exact accessible-name lookup failed on the new-password field. Its helper text was being included in the field's name. The follow-up gives the field an explicit label and links the password guidance as its accessible description, retaining both the visible design and the exact-name test. Both signup and reset now also assert the description. No authentication rules or migrations were changed.
+
+The current [PR #1 checks](https://github.com/EmotiveImpact/REUNIR/pull/1/checks) are authoritative for the follow-up commit. Both application and PostgreSQL jobs must pass before merge; the initial failed run is retained as evidence, not counted as a complete pass.
+
+No deployment, real sender or scheduler has been configured in this publication work. Connected pilot gates remain separate from the repository integration.
+
+## Completed verification in the saved Alpha 07 release
 
 | Check | Result |
 | --- | --- |
@@ -39,13 +51,13 @@ Avatar accessibility semantics were corrected by labelling the image role instea
 
 One parallel operational browser run reported a browser target crash at its mobile accessibility scan. Its partial checks are not counted. The complete operational suite was rerun alone and passed all 17; the interrupted log is retained separately.
 
-## Verification boundaries and blockers
+## Verification boundaries and historical blockers in the saved release
 
 The demo-browser tests run the actual compiled React against fictional local state. HTTP tests run the real Node/Hono/Better Auth path with local PGlite and captured mail. They are not Neon pooling/concurrency, production email receipt, public hosting or backup/restore proof.
 
 The connected-browser test was attempted and was blocked at navigation to the loopback HTTP server with ERR_BLOCKED_BY_ADMINISTRATOR, before its first check. The policy was not disabled or bypassed. That attempt is recorded separately, not included in 193 or 17. A disposable real-PostgreSQL CI job exists, but it has not run in this pass.
 
-The existing combined dependency-resolution workflow completed on GitHub Actions; no remote application CI result is claimed. The full application source still has not been published or merged into the remote repository in this pass. The normal Git connection failed DNS resolution for github.com. Individual connector text writes exist; there was no complete-source upload. Main remains the previously observed README-only commit. No new transfer or status-only branch was created during this integration.
+At the saved-release checkpoint, only dependency-resolution workflows had run remotely and source publication was blocked by DNS. The publication follow-up above supersedes that source-delivery blocker and records current remote verification; the older test evidence remains provenance for the recovered build.
 
 No live Neon database, Vercel deployment, Google bucket, production sender or scheduler was changed. The package is a source/preview release, not a hosted pilot.
 
@@ -55,4 +67,4 @@ Read RELEASE_METADATA.json alongside the source ZIP/bundle for the final commit,
 
 The split deployment build remains under the default large-chunk threshold (largest JS chunk approximately 347 kB before gzip). The intentionally single-file offline preview retains a size advisory, and existing dependency annotation warnings remain. Neither build is a performance benchmark or dependency security audit.
 
-Immediate next gate: publish the actual source, run application/PostgreSQL CI, then operate the intended invitation-only Code Black staging pilot with verified accounts, email, privacy and restore. Next product work: richer lesson authoring/private resources, scalable paginated reads, notification preferences and account/trust operations. Commercial billing and the longer-term contribution/mentorship/AI vision remain in ROADMAP.md, not falsely marked complete.
+Immediate next gate: complete integration of the now-published source through application/PostgreSQL CI, then operate the intended invitation-only Code Black staging pilot with verified accounts, email, privacy and restore. Next product work: richer lesson authoring/private resources, scalable paginated reads, notification preferences and account/trust operations. Commercial billing and the longer-term contribution/mentorship/AI vision remain in ROADMAP.md, not falsely marked complete.

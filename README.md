@@ -1,34 +1,33 @@
 # REUNIR
 
-**Alpha 07: the approved v4 interface integrated into the existing application.**
+**Purposeful communities: people, purpose, progress, projects and proof.**
 
-Start with SESSION_HANDOFF.md, platform/docs/BUILD_STATUS.md and platform/docs/ROADMAP.md. The complete source is here, including previous purpose, community, learning, work, messaging and creator functionality. This is not the old standalone HTML reference.
+Alpha 07 includes the approved v4 interface in the actual React application, alongside community discussions, learning, private goals, projects, reviewed contributions, messaging and Creator Studio. Code Black is the first community; REUNIR is the reusable platform.
 
-From `platform/`: `npm ci`, then `npm run dev`. Demo mode needs no credentials and uses fictional local data. Connected mode must follow platform/docs/SETUP.md and RELEASE_GATES.md. Do not enter real private data into the demo.
+The complete source was published in [PR #1](https://github.com/EmotiveImpact/REUNIR/pull/1). Publication commit `5e88b30675832fcedfb0a26491484851d951dd59` is byte-identical to recovered Alpha 07 checkpoint `76b31ab787029126e6462f747f7127a224212899`, with Git tree `5b9d79453d07c75f5d71e0374889d945a3ee1eb8`. The earlier transfer/dependency branches are historical material, not the application.
 
-A local release or preview is not GitHub publication or a deployment. See the delivery receipt and BUILD_STATUS.md for precise verified boundaries.
+Read [SESSION_HANDOFF.md](SESSION_HANDOFF.md), [BUILD_STATUS.md](platform/docs/BUILD_STATUS.md) and [ROADMAP.md](platform/docs/ROADMAP.md) for current verification and remaining work. Read [AGENTS.md](AGENTS.md) before making changes. The full product direction is in [PRODUCT_DOCTRINE.md](platform/docs/PRODUCT_DOCTRINE.md).
 
-## Earlier project overview · Creator-authoring recovery
+## Run locally
 
-**Where people come together to become something, build something or achieve something.**
+Use Node 22.12 or later:
 
-People + Purpose + Progress + Projects + Proof. Application `0.6.0-alpha.1`, extending the verified Alpha 05 source rather than restarting the product.
+```sh
+cd platform
+npm ci
+npm run dev
+```
 
-Start with **SESSION_HANDOFF.md**. It distinguishes recovered source, new work, local Git, the remote recovery note and the still-unfinished full-source publication. The complete application lives under `platform/`, and research provenance under `research/`.
+Demo mode needs no credentials and uses fictional browser-local data. Do not enter real private information. Connected mode requires the documented database and authentication configuration; it never substitutes fictional data on failure. Follow [SETUP.md](platform/docs/SETUP.md) and [RELEASE_GATES.md](platform/docs/RELEASE_GATES.md).
 
-This slice adds a private Creator studio: lesson drafts, save and preview, deliberate publishing, captured/published revision history, restore-as-draft, archive/restore and version-checked lesson ordering. The existing social, purpose, project, proof, messaging and pilot functions remain. No rich editor, new runtime package or imported donor application file is claimed.
+## Design and architecture
 
-In the accompanying standalone preview, choose Preview as admin, Paths & learning, Course library, a track, then Creator studio. The demonstration is fictional and browser-local. Do not put confidential information into it. Live mode uses the existing API and never substitutes fictional data silently.
+React/Vite, Hono, Better Auth and PostgreSQL remain the chosen stack. The approved design uses actual shadcn/Radix components, consistent Lucide icons, two-level navigation, one top-right account menu and natural portraits within neutral interface chrome. Preserve [UI_DESIGN_DIRECTION.md](platform/docs/UI_DESIGN_DIRECTION.md).
 
-Verified in the recovery build: 369 application tests, 158 demonstration-browser checks, 17 local HTTP checks and 21 helper tests; TypeScript and builds passed. See `platform/docs/BUILD_STATUS.md` for exact scope. Earlier migrations 0001–0006 are unchanged; migration 0007 extends authoring.
+The seven migrations preserve the community, purpose/progress, messaging, operational, project-work and creator-authoring models. Tenant isolation, private goals/messages, draft publication and reviewed evidence remain product invariants.
 
-Full GitHub source publication, remote application CI, Neon/Vercel integration, real email and hosted-browser/restore acceptance remain unverified. A remote recovery note is not the app. A source archive and full-history Git bundle provide a recoverable handover.
+## Verification and release
 
-From this root, `python3 scripts/publish_source.py` verifies the source manifest offline. In an authorised network-capable Git environment, `--prepare` stages a non-destructive reviewed import; `--push` publishes a new integration branch and verifies its remote commit. It never force-pushes or merges main.
+From `platform/`, run `npm run check`, `npm run test:http`, `npm run bundle:preview` and the browser suites listed in the handover. GitHub Actions also runs the real PostgreSQL and connected-browser gates. From this root, `python3 scripts/publish_source.py` verifies the source manifest, while `python3 -m unittest discover -s scripts -p 'test_*.py'` checks publication, research and design helpers.
 
-Read `platform/README.md` for development commands, `platform/docs/PRD.md` for scope and `platform/docs/CREATOR_AUTHORING.md` for this change. Read AGENTS.md before continuing the build.
-
-
-### Current interface continuation
-
-Black, white and neutral grey are the current interface direction; see `platform/docs/UI_DESIGN_DIRECTION.md`. Read `SESSION_HANDOFF.md` before continuing. The original full Alpha 06 baseline is preserved in Git history; this local patch is not a claim of GitHub publication or deployment.
+Source publication is distinct from operating a live pilot. Neon/Vercel staging, actual email receipt, hosted privacy checks and backup/restore remain separate release work. Creator Studio currently supports plain text/resources with private drafts and immutable revisions; rich blocks, private attachments and assessments remain on the roadmap.

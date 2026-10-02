@@ -1,8 +1,8 @@
 {
   "release": "REUNIR Alpha 07 approved v4 application integration",
   "version": "0.7.0-alpha.1",
-  "sourceBaseline": "e834a1742e9b7f8c741ff362ba5a2584b3cdabf8",
-  "generatedAt": "2026-10-02T03:54:09.567413+00:00",
+  "sourceBaseline": "76b31ab787029126e6462f747f7127a224212899",
+  "generatedAt": "2026-10-02T04:29:00.796469+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -26,8 +26,8 @@
     },
     {
       "path": "README.md",
-      "sha256": "3ba882cf5bac7dc43b19f4a4fc3349c6361f4a9e92989c6db40abe73a3f04166",
-      "bytes": 3356
+      "sha256": "97611727f4236e864f44d2fb6446325ac1909fedbf04603e896914d56cec9b1e",
+      "bytes": 2874
     },
     {
       "path": "RECOVERY_STATUS.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "71f0698185210fcc92a290af88c89a5724c234ca3df2958b9d667c3c00ee6806",
-      "bytes": 5355
+      "sha256": "7bb8bcbdde48566c501c4450170424686dcb5efc45a0cb695b6b1fcc4192d489",
+      "bytes": 6040
     },
     {
       "path": "platform/.dockerignore",
@@ -256,8 +256,8 @@
     },
     {
       "path": "platform/apps/web/src/pages/access.tsx",
-      "sha256": "819914f374cce7e6f9e7ea310593fb5e92ca4578b8f23988ee31503740c293a0",
-      "bytes": 12863
+      "sha256": "ded0c7e975cee275904b1351de02a928a7a07ad7c31a27c1539f3d79a8ad5778",
+      "bytes": 13038
     },
     {
       "path": "platform/apps/web/src/pages/authoring.tsx",
@@ -351,8 +351,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "e42ce47a2004c26caa8f01d98e4164cfcd3c5adbc43d26a4f7f02218cd7e51af",
-      "bytes": 6586
+      "sha256": "0f1d6ca9827be212f39712e812c66e5959ce55c110862fa22e64ead6d5f2f4b5",
+      "bytes": 8636
     },
     {
       "path": "platform/docs/CREATOR_AUTHORING.md",
@@ -396,8 +396,8 @@
     },
     {
       "path": "platform/docs/ROADMAP.md",
-      "sha256": "5e418da3375fb06a0cc17ea30c7726f91e89f62a8294859c28b0e24b28bc6749",
-      "bytes": 4791
+      "sha256": "ba1668d7d16539993c5a120e59b7e6dcc088b430a3808b865ab347a3d9e7fb49",
+      "bytes": 4773
     },
     {
       "path": "platform/docs/SECURITY.md",
@@ -946,8 +946,8 @@
     },
     {
       "path": "platform/scripts/pilot-connected-check.ts",
-      "sha256": "395f0ecd5cf4515238a610c9eb2909bd4648d5e25fde7e3bcc69c428bf843de5",
-      "bytes": 10376
+      "sha256": "dbe15a768514f86c8cbddf5f7e34aa05cc550f400359e5103256625f0fd48426",
+      "bytes": 10614
     },
     {
       "path": "platform/scripts/pilot-http-check.ts",

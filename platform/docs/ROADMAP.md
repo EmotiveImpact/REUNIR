@@ -20,7 +20,7 @@ UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exp
 
 ## Immediate release work: make the pilot operable
 
-1. Publish the complete source to a normal GitHub source branch. Verify the remote files, not its name or a status note. Inspect newer branches and open PRs first. The user requested merging appropriate finished application work, not incomplete transport branches. Never force-push or overwrite parallel work.
+1. **Source publication completed:** PR #1 contains the full Alpha 07 tree, verified against recovered checkpoint `76b31ab` and fetched back without differences. Preserve historical transport/dependency branches without merging them into the app. Never force-push or overwrite parallel work.
 2. Run actual application and PostgreSQL CI on the published source. Dependency-resolution CI alone does not verify the app.
 3. Connect the intended dedicated Neon staging database, run the seven existing migrations and restricted-runtime grants. Do not reuse another application's database or put migration credentials on the web server.
 4. Connect a live-mode Vercel staging build, verified transactional sender and scheduled mail worker. Provision the real owner, use approved Code Black content and receive actual invitation/recovery messages.
