@@ -5,7 +5,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, LESSON_RESOURCES.md, ROADMAP.md a
 ## Where the source is
 
 - Base: main `016c16e51212f9a71aff3f9b18b311d209194d9d` (Alpha 08 rich lessons merged through PR #2). No newer remote work existed when this session started. The 12 other remote branches are either already merged (`feat/creator-rich-lessons`, `integration/alpha07-source-2026-10-02`) or historical transport and dependency material; none was merged or changed.
-- This slice: branch `claude/stoic-euler-lx2zk7`. The publication receipt in BUILD_STATUS.md records the pushed commit, the pull request, the CI run and whether it was merged.
+- This slice: branch `claude/stoic-euler-lx2zk7`, [PR EmotiveImpact/REUNIR#3](https://github.com/EmotiveImpact/REUNIR/pull/3). Tested commit `16f3071d645f6bae54fd5c42716e562ccd72e186` passed GitHub Actions runs 37060579827 and 37060617081 (application and PostgreSQL 17). The receipt commit after it changes documentation and hashes only. Check the pull request for the merge commit, then continue from main.
 
 ## What is done
 

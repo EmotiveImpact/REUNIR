@@ -8,7 +8,7 @@
 | --- | --- |
 | Implemented | Yes, on `claude/stoic-euler-lx2zk7`, built from main `016c16e` |
 | Verified locally | Yes, every suite below, in this cloud workspace |
-| Verified remotely (GitHub Actions) | Recorded in the publication receipt below |
+| Verified remotely (GitHub Actions) | Yes: runs 37060579827 (push) and 37060617081 (pull request) passed on `16f3071` |
 | Deployed | No. No bucket, Neon database, Vercel project, sender or scheduler was created |
 | Operated with real members | No |
 
@@ -59,7 +59,9 @@ The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `h
 
 ## Publication receipt
 
-Filled in after the push. See SESSION_HANDOFF.md for the latest verified remote state.
+Pushed to `claude/stoic-euler-lx2zk7` at `16f3071d645f6bae54fd5c42716e562ccd72e186` (tree `7e33b8a84e25092123a89c2857cb14ef86670919`). The remote ref was fetched back and matched the local commit and tree exactly. Pull request: [EmotiveImpact/REUNIR#3](https://github.com/EmotiveImpact/REUNIR/pull/3).
+
+GitHub Actions passed every job on that commit: [run 37060579827](https://github.com/EmotiveImpact/REUNIR/actions/runs/37060579827) (push) and [run 37060617081](https://github.com/EmotiveImpact/REUNIR/actions/runs/37060617081) (pull request), each with the application job (typecheck, all application tests, 17 HTTP checks, both builds, 223 demo-browser checks, 21 connected-browser checks, 32 helper tests, research checker) and the PostgreSQL 17 job (8 checks, including the restricted-role resource check). This receipt commit changes only documentation and source hashes; the merge into main is recorded in the pull request and in the next status update.
 
 ## Next actions
 

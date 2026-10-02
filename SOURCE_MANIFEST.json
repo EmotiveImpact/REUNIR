@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 09 private lesson resources",
   "version": "0.9.0-alpha.1",
   "sourceBaseline": "016c16e51212f9a71aff3f9b18b311d209194d9d",
-  "generatedAt": "2026-10-02T20:23:08.983628+00:00",
+  "generatedAt": "2026-10-02T20:32:01.995835+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "b0a5be8f6ef43a3cecd1911924f972e4c5609c2fc8bcd0f7fee5e7038cc52063",
-      "bytes": 11147
+      "sha256": "f9296378f2be49a8e6a5e0aebecd9a61b21add3426f0610223a066ab57d5c4ed",
+      "bytes": 11380
     },
     {
       "path": "platform/.dockerignore",
@@ -391,8 +391,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "0e79c6f3f950e34d74bb8134b104b83ab545eceecf600512ed15af4786d99059",
-      "bytes": 16895
+      "sha256": "0601ef7e2486f499a6d0d6940a02f0f5d651e6e69d92e57497401e6ac638fa8e",
+      "bytes": 17808
     },
     {
       "path": "platform/docs/CREATOR_AUTHORING.md",
