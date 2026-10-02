@@ -1,0 +1,64 @@
+name: Verify native REUNIR source
+on:
+  push:
+    branches: ['integration/source-ingest-20261002']
+    paths: ['native-source-index.json']
+permissions:
+  contents: write
+jobs:
+  verify-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify and unpack source already uploaded to this repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64,hashlib,io,json,pathlib,subprocess,tarfile
+          repo='EmotiveImpact/REUNIR'
+          def api(path,body=None):
+              cmd=['gh','api','repos/'+repo+path]
+              if body is not None:
+                  cmd+=['--method','POST','--input','-']
+              return json.loads(subprocess.check_output(cmd,input=None if body is None else json.dumps(body).encode()))
+          index=json.loads(pathlib.Path('native-source-index.json').read_text())
+          blocks=[]
+          for p in index['parts']:
+              item=api('/git/blobs/'+p['sha'])
+              block=base64.b64decode(item['content'])
+              assert len(block)==p['size']
+              assert hashlib.sha1(b'blob '+str(len(block)).encode()+b'\0'+block).hexdigest()==p['sha']
+              blocks.append(block)
+          data=b''.join(blocks)
+          assert len(data)==index['archiveBytes'] and hashlib.sha256(data).hexdigest()==index['archiveSha256']
+          files={}; modes={}
+          with tarfile.open(fileobj=io.BytesIO(data),mode='r:xz') as archive:
+              for item in archive:
+                  path=pathlib.PurePosixPath(item.name)
+                  assert item.isfile() and not path.is_absolute() and '..' not in path.parts and item.name not in files
+                  assert not set(path.parts)&{'.git','node_modules','.local'} and item.mode in (0o644,0o755)
+                  files[item.name]=archive.extractfile(item).read()
+                  modes[item.name]='100755' if item.mode==0o755 else '100644'
+          manifest=json.loads(files['SOURCE_MANIFEST.json'])
+          assert len(manifest['files'])==203 and len(files)==204
+          assert set(files)=={p['path'] for p in manifest['files']}|{'SOURCE_MANIFEST.json'}
+          for p in manifest['files']:
+              assert hashlib.sha256(files[p['path']]).hexdigest()==p['sha256'] and len(files[p['path']])==p['bytes']
+          entries=[]
+          for path,body in files.items():
+              entry={'path':path,'mode':modes[path],'type':'blob'}
+              try: entry['content']=body.decode('utf-8')
+              except UnicodeDecodeError: entry['sha']=api('/git/blobs',{'encoding':'base64','content':base64.b64encode(body).decode()})['sha']
+              entries.append(entry)
+          result=api('/git/trees',{'tree':entries})
+          assert result['sha']==index['sourceTree']
+          pathlib.Path('source-receipt.json').write_text(json.dumps({'verified':True,'tree':result['sha'],'sourceCommit':index['sourceCommit'],'files':204,'archiveSha256':index['archiveSha256']}))
+          print('Verified all 204 native source files. Tree:',result['sha'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-source-verification
+          path: source-receipt.json
+          retention-days: 7
