@@ -4,7 +4,7 @@
 
 Baseline main: `6238d7b92b4a2e5d994daf07874b3097b364eb34`, merged PR #1. Current work: `feat/creator-rich-lessons`. Read platform/docs/RICH_LESSONS.md, BUILD_STATUS.md and ROADMAP.md. UI_DESIGN_DIRECTION.md remains authoritative. Rich editing/media is integrated into the actual Creator Studio, learner view and immutable revision system, not a separate mock.
 
-Run all eight migrations before the new server. No database, deployment or real email has been created in this continuation. Local application tests: 383 passed, TypeScript/build passed. Browser and actual PostgreSQL verification must complete on CI; Chromium download failed locally and socket tests remain restricted. Verify the remote branch/PR before claiming publication.
+Run all eight migrations before the new server. No database, deployment or real email has been created in this continuation. Local application tests: 383 passed, TypeScript/build passed. Published in PR #2; fetched source tree verified. PostgreSQL, HTTP and existing authoring/community/project CI passed on bdcaa89. The new rich browser test found adjacent media replacement, now corrected with insertion after the selection. Full CI must pass on the final head before merging. Chromium download failed locally and socket tests remain restricted.
 
 Next product work: private resources with lesson access inheritance, then assessments. Preserve existing private goals/messages, contribution review and tenant isolation.
 

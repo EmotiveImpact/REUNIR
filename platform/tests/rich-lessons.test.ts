@@ -23,7 +23,7 @@ const open=()=>run(createSeed(),{type:'lesson.draft.create',trackId:'track_produ
 const save=(s:Workspace,richBody:LessonDocument|null=doc)=>run(s,{type:'lesson.draft.save',draftId:draft(s).id,expectedVersion:draft(s).version,...lessonContent(draft(s)),body:'Untrusted alternate body',richBody});
 const publish=(s:Workspace)=>run(s,{type:'lesson.draft.publish',draftId:draft(s).id,expectedVersion:draft(s).version});
 
-test('supported structured content and plaintext conversion preserve literal text',()=>{assert(isLessonDocument(doc));assert(isLessonDocument(plainLessonDocument('<script>alert(1)</script>')));assert.equal(lessonDocumentText(plainLessonDocument('One\n\nTwo')),'One\n\nTwo');assert(isLessonDocument(plainLessonDocument('')));});
+test('supported structured content and plaintext conversion preserve literal text',()=>{assert(isLessonDocument(doc));assert(isLessonDocument({type:'doc',content:[{type:'bulletList',content:[{type:'listItem',content:[{type:'paragraph'},...doc.content]}]}]}));assert(isLessonDocument(plainLessonDocument('<script>alert(1)</script>')));assert.equal(lessonDocumentText(plainLessonDocument('One\n\nTwo')),'One\n\nTwo');assert(isLessonDocument(plainLessonDocument('')));});
 test('untrusted rich content cannot smuggle arbitrary elements, attributes or URLs',()=>{
     for(const node of [
         {type:'iframe',attrs:{src:'https://evil.test'}},

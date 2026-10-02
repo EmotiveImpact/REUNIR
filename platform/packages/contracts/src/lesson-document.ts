@@ -42,7 +42,7 @@ export function isLessonDocument(value: unknown): value is LessonDocument {
         const {node:n,parent,depth} = queue.pop()!;
         if (++count > 600 || depth > 8 || !record(n) || typeof n.type !== 'string' || !keys(n,['type','attrs','content','text','marks'])) return false;
         const type = n.type;
-        const allowed = ['paragraph','heading'].includes(parent) ? inline : parent === 'codeBlock' ? ['text'] : ['bulletList','orderedList'].includes(parent) ? ['listItem'] : parent === 'listItem' ? ['paragraph','bulletList','orderedList'] : block;
+        const allowed = ['paragraph','heading'].includes(parent) ? inline : parent === 'codeBlock' ? ['text'] : ['bulletList','orderedList'].includes(parent) ? ['listItem'] : block;
         if (!allowed.includes(type)) return false;
         const attrs = n.attrs === undefined ? {} : n.attrs;
         if (!record(attrs)) return false;

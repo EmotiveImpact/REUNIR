@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 08 rich lesson authoring",
   "version": "0.8.0-alpha.1",
   "sourceBaseline": "6238d7b92b4a2e5d994daf07874b3097b364eb34",
-  "generatedAt": "2026-10-02T05:18:41.420514+00:00",
+  "generatedAt": "2026-10-02T05:23:33.057811+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "b657963692fbd527983a96594ff302ad934a7c57d9259248471d5bd1909b7a92",
-      "bytes": 7508
+      "sha256": "184d8ea5e612329be236a151503a17a4d64acd7eddaecdf44b0ec69977a93fbf",
+      "bytes": 7679
     },
     {
       "path": "platform/.dockerignore",
@@ -66,8 +66,8 @@
     },
     {
       "path": "platform/THIRD_PARTY_NOTICES.md",
-      "sha256": "d5619fb0025811e0c8cb6c5d5751e385430bf875ae68e617d51b8a24535f0be1",
-      "bytes": 6002
+      "sha256": "c3c86d73913334cc6302fad5df6c4d5bc7b2efc82ddbc05af114d14d77b953c5",
+      "bytes": 6048
     },
     {
       "path": "platform/api/index.ts",
@@ -201,8 +201,8 @@
     },
     {
       "path": "platform/apps/web/src/components/lesson-editor.tsx",
-      "sha256": "909624219cf123d7999de561c5b7aebc4771603cc7fccb9ff9487c75938d222c",
-      "bytes": 7309
+      "sha256": "342c67610e1c217b921c06fdea5ae007d62ab432f2eefa831bf548d474461c22",
+      "bytes": 7453
     },
     {
       "path": "platform/apps/web/src/components/ui.tsx",
@@ -366,8 +366,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "c7f9f32830a514ee811f7a65af4eabdb4b5c37dee9750fd7efd0aaee93f0681b",
-      "bytes": 10301
+      "sha256": "c42a15c79886e56a78bf3f8e1aa638355632a16ba6b04f35c78f7261a6266798",
+      "bytes": 10580
     },
     {
       "path": "platform/docs/CREATOR_AUTHORING.md",
@@ -750,6 +750,11 @@
       "bytes": 4032
     },
     {
+      "path": "platform/legal/rich-editor-dependencies.txt",
+      "sha256": "49812865d4bf9f4d2aac968db4e4c604c4d1ae27590775b00d6758154482f813",
+      "bytes": 11489
+    },
+    {
       "path": "platform/legal/shadcn-MIT.txt",
       "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f",
       "bytes": 1063
@@ -781,8 +786,8 @@
     },
     {
       "path": "platform/packages/contracts/src/lesson-document.ts",
-      "sha256": "82c724268f2860724d1b4ce68fca75fddb4abac2a26252a374b739c0920d359a",
-      "bytes": 7004
+      "sha256": "dd6832d84d64d9d29eafae9ec2b64122b96e06776070e9616e0954c3de6a426c",
+      "bytes": 6937
     },
     {
       "path": "platform/packages/contracts/src/messaging.ts",
@@ -1006,8 +1011,8 @@
     },
     {
       "path": "platform/scripts/rich-lessons-browser-check.ts",
-      "sha256": "5945bf324106fbbb0844760da77a416cfd40a523c0eed2d7a3b3bb34c2bbfb6d",
-      "bytes": 7773
+      "sha256": "feaec5d4c1652e35cda8f976b8e8e62ae2b3aadd2ed72fc414959150474bcfcc",
+      "bytes": 7861
     },
     {
       "path": "platform/scripts/ui-test-helpers.ts",
@@ -1091,8 +1096,8 @@
     },
     {
       "path": "platform/tests/rich-lessons.test.ts",
-      "sha256": "d26deb3b2d30e47747e6437595c9f60f77491fe5f9c23430d1c89edd23908fff",
-      "bytes": 7627
+      "sha256": "91cb41715da9745c9f28bd710d58c77e79477217449dad5cb13572b0623996ba",
+      "bytes": 7768
     },
     {
       "path": "platform/tsconfig.base.json",

@@ -73,4 +73,4 @@ Source directory: `apps/v4/registry/new-york-v4/ui/`. The upstream `cn` import i
 
 ## Alpha 08 rich lesson editing
 
-`@tiptap/core`, `@tiptap/pm`, `@tiptap/react`, and `@tiptap/starter-kit` are pinned to 3.31.4. Tiptap is MIT licensed; the installed licence is retained in `legal/tiptap-MIT.txt`. Transitive ProseMirror packages retain their MIT licences in the installed distribution. The source and lockfile preserve package integrity hashes. No Tiptap cloud service, commercial extension or donor LMS application is required. Our editor integration, bounded schema and React renderer are local application code.
+`@tiptap/core`, `@tiptap/pm`, `@tiptap/react`, and `@tiptap/starter-kit` are pinned to 3.31.4. Tiptap is MIT licensed; the installed licence is retained in `legal/tiptap-MIT.txt`. Complete licence notices for all 47 newly added packages, including ProseMirror, are retained in `legal/rich-editor-dependencies.txt`. The source and lockfile preserve package integrity hashes. No Tiptap cloud service, commercial extension or donor LMS application is required. Our editor integration, bounded schema and React renderer are local application code.

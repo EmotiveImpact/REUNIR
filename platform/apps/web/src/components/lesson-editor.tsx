@@ -45,7 +45,8 @@ export function LessonEditor({body,richBody,disabled,onChange}:{body:string;rich
             if(!label.trim()){setError(insert==='image'?'Describe the image for people who cannot see it.':'Give the video a descriptive title.');return;}
             const src=insert==='video'?lessonVideoUrl(url):url;
             if(!src){setError('Use a YouTube or Vimeo video link.');return;}
-            editor.chain().focus().insertContent({type:insert!,attrs:insert==='image'?{src,alt:label.trim()}:{src,title:label.trim()}}).run();
+            // Append after the current selection instead of replacing a selected media block.
+            editor.chain().focus().insertContentAt(editor.state.selection.to,[{type:insert!,attrs:insert==='image'?{src,alt:label.trim()}:{src,title:label.trim()}},{type:'paragraph'}]).run();
         }
         setInsert(null);setError('');
     };
