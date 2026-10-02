@@ -12,7 +12,7 @@ import { ZodError, z } from 'zod';
 import { createHash, timingSafeEqual, randomUUID } from 'node:crypto';
 import { DomainError } from '../../../packages/contracts/src/index';
 import { WorkspaceRepository } from '../../../packages/db/src/repository';
-import { objectKey, resourceObjectKey, uploadSchema, type PrivateStorage } from './storage';
+import { isMissingObject, objectKey, resourceObjectKey, uploadSchema, type PrivateStorage } from './storage';
 import { clientUpload, type StoredObservation } from '../../../packages/domain/src/resources';
 import { SIGNATURE_BYTES, fileSignatureMatches, resourceUploadRequest, type ResourceContext } from '../../../packages/contracts/src/lesson-resources';
 export interface SessionIdentity {
@@ -161,7 +161,15 @@ export function createApp({ repository, operations, origin, resolveSession, auth
                     throw new DomainError('UPLOAD_MISSING', 'The file has not reached private storage. Try uploading it again.', 409);
                 const matches = meta.size === Number(intent.size_bytes) && meta.contentType === intent.content_type && !!meta.generation;
                 // Read only the first bytes, pinned to the generation that was just measured.
-                const head = matches ? await storage.head(key, SIGNATURE_BYTES, meta.generation!) : new Uint8Array();
+                let head: Uint8Array = new Uint8Array();
+                if (matches) {
+                    try { head = await storage.head(key, SIGNATURE_BYTES, meta.generation!); }
+                    catch (error) {
+                        if (isMissingObject(error))
+                            throw new DomainError('UPLOAD_CHANGED', 'The file changed while it was being checked. Upload it again.', 409);
+                        throw error;
+                    }
+                }
                 observed = { sizeBytes: meta.size, contentType: meta.contentType, generation: meta.generation ?? null, signatureMatches: matches && fileSignatureMatches(String(intent.content_type), head) };
             }
             const result = await repository.completeResourceUpload(slug, who, id, observed, c.get('requestId'));

@@ -42,9 +42,13 @@ export function assertResourcesAvailable(s: Workspace, ctx: TenantContext, track
     resolveResources(s, ctx, trackId, normaliseResources(resources));
 }
 
-function authorTrack(s: Workspace, ctx: TenantContext, trackId: string | null): { actor: Member; track: Track } {
+function requireAuthor(s: Workspace, ctx: TenantContext): Member {
     const actor = actorFor(s, ctx);
     if (!isAdmin(actor)) throw new DomainError('AUTHOR_REQUIRED', 'Only a community owner or administrator can manage lesson files.', 403);
+    return actor;
+}
+function authorTrack(s: Workspace, ctx: TenantContext, trackId: string | null): { actor: Member; track: Track } {
+    const actor = requireAuthor(s, ctx);
     const track = s.tracks.find(t => t.id === trackId && t.organizationId === ctx.organizationId);
     if (!track || !canSeeSpace(s, actor, track.spaceId)) gone('That learning material is not available.');
     return { actor, track: track! };
@@ -75,6 +79,7 @@ export function beginResourceUpload(input: Workspace, ctx: TenantContext, raw: R
 /** What storage reported for the object. The signature check reads bytes pinned to this generation. */
 export interface StoredObservation { sizeBytes: number; contentType: string; generation: string | null; signatureMatches: boolean }
 export function completeResourceUpload(input: Workspace, ctx: TenantContext, uploadId: string, observed: StoredObservation, now: string, makeId: () => string = newId) {
+    requireAuthor(input, ctx);
     const found = input.uploads.find(u => u.id === uploadId && lessonFile(u, ctx.organizationId) && u.userId === ctx.userId) ?? gone('That upload is not available.');
     authorTrack(input, ctx, found.trackId);
     if (found.status === 'ready') return { workspace: input, upload: found, outcome: 'unchanged' as const };
@@ -90,6 +95,7 @@ export function completeResourceUpload(input: Workspace, ctx: TenantContext, upl
 
 /** Only files that no lesson, draft or revision references can be discarded. History keeps its files. */
 export function discardResourceUpload(input: Workspace, ctx: TenantContext, uploadId: string, now: string, makeId: () => string = newId) {
+    requireAuthor(input, ctx);
     const found = input.uploads.find(u => u.id === uploadId && lessonFile(u, ctx.organizationId)) ?? gone('That upload is not available.');
     authorTrack(input, ctx, found.trackId);
     if (isUploadReferenced(input, ctx.organizationId, found.id)) throw new DomainError('RESOURCE_IN_USE', 'This file is part of a lesson, a draft or its history, so it stays stored.', 409);

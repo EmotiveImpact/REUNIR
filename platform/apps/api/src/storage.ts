@@ -39,7 +39,8 @@ export interface PrivateStorage {
     head(key: string, bytes: number, generation: string): Promise<Uint8Array>;
     remove(key: string): Promise<void>;
 }
-const missing = (error: unknown) => !!error && typeof error === 'object' && 'code' in error && Number((error as { code: unknown }).code) === 404;
+/** Cloud Storage reports a missing object, or a generation that no longer exists, as code 404. */
+export const isMissingObject = (error: unknown) => !!error && typeof error === 'object' && 'code' in error && Number((error as { code: unknown }).code) === 404;
 /** `client` exists for offline signing tests; production uses application default or supplied credentials. */
 export function googleStorage(bucket: string, credentialJSON?: string, client?: Storage): PrivateStorage {
     if (!bucket)
@@ -55,7 +56,7 @@ export function googleStorage(bucket: string, credentialJSON?: string, client?: 
                 return { size: Number(m.size), contentType: m.contentType || '', ...(m.generation != null ? { generation: String(m.generation) } : {}) };
             }
             catch (error) {
-                if (missing(error))
+                if (isMissingObject(error))
                     return null;
                 throw error;
             }

@@ -45,5 +45,21 @@ try{
         assert.deepEqual(r.workspace.lessons.find(l=>l.id==='lesson_4')!.richBody,richBody);
         await assert.rejects(()=>runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',DEMO_ADMIN);await tx.query('UPDATE lesson_revisions SET rich_body=NULL');}));
     });
+    await check('lesson files verify, publish and stay tenant-private through a restricted PostgreSQL connection',async()=>{
+        const repo=new WorkspaceRepository(runtime!),pdf=new TextEncoder().encode('%PDF-1.4\n% fictional PostgreSQL lesson file\n');
+        const {upload}=await repo.beginResourceUpload('code-black',DEMO_ADMIN,{purpose:'lesson_resource',trackId:'track_product',name:'Postgres guide.pdf',contentType:'application/pdf',sizeBytes:pdf.length},(org,id)=>`organisations/${org}/lesson-resources/track_product/${id}.pdf`,'resources-postgres');
+        assert.equal((await repo.completeResourceUpload('code-black',DEMO_ADMIN,upload.id,{sizeBytes:pdf.length,contentType:'application/pdf',generation:'1712345678901234',signatureMatches:true},'resources-postgres')).outcome,'ready');
+        const exec=(cmd:unknown)=>repo.execute('code-black',DEMO_ADMIN,cmd,randomUUID(),'resources-postgres');
+        let r=await exec({type:'lesson.draft.create',trackId:'track_product',lessonId:'lesson_4'}),d=r.workspace.lessonDrafts[0];
+        r=await exec({type:'lesson.draft.save',draftId:d.id,expectedVersion:d.version,...lessonContent(d),resources:[...lessonContent(d).resources,{id:'resource_pg',fileId:upload.id,name:'Postgres guide'}]});d=r.workspace.lessonDrafts[0];
+        const files=(org:string,user:string)=>runtime!.transaction(async tx=>{await setContext(tx,org,user);return (await tx.query<{id:string}>("SELECT id FROM upload_intents WHERE purpose='lesson_resource'")).rows.map(x=>x.id);});
+        assert(!(await files('org_code_black',DEMO_USER)).includes(upload.id));assert((await files('org_code_black',DEMO_ADMIN)).includes(upload.id));
+        await assert.rejects(()=>repo.resourceDownload('code-black',DEMO_USER,{context:'lesson',recordId:'lesson_4',resourceId:'resource_pg'}),{code:'NOT_FOUND'});
+        await exec({type:'lesson.draft.publish',draftId:d.id,expectedVersion:d.version});
+        assert((await files('org_code_black',DEMO_USER)).includes(upload.id));assert.deepEqual(await files('org_studio_north',DEMO_ADMIN),[]);
+        assert.equal((await repo.resourceDownload('code-black',DEMO_USER,{context:'lesson',recordId:'lesson_4',resourceId:'resource_pg'})).filename,'Postgres guide.pdf');
+        await assert.rejects(()=>repo.resourceDownload('studio-north',DEMO_USER,{context:'lesson',recordId:'lesson_4',resourceId:'resource_pg'}),{code:'NOT_FOUND'});
+        await assert.rejects(()=>runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',DEMO_ADMIN);await tx.query("UPDATE lesson_revisions SET resources='[]'::jsonb");}));
+    });
     await mkdir('evidence/alpha04',{recursive:true});await writeFile('evidence/alpha04/postgres-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Disposable local PostgreSQL service, not Neon.',results},null,2));
 }finally{await runtime?.close();await admin.close();}
