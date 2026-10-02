@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 import { switchPreviewRole } from './ui-test-helpers';
 const root=resolve(import.meta.dirname,'..'),dir=root+'/evidence/rich-lessons';await mkdir(dir,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||undefined,headless:true,args:['--no-sandbox']});
-const page=await browser.newPage({viewport:{width:1512,height:1000}});page.setDefaultTimeout(10000);
+const context=await browser.newContext({viewport:{width:1512,height:1000}});const page=await context.newPage();page.setDefaultTimeout(10000);
 const results:{name:string;passed:boolean}[]=[],errors:string[]=[],mediaRequests:string[]=[];
 page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
 await page.route(/(?:youtube|vimeo|images\.example\.com)/,route=>{mediaRequests.push(route.request().url());return route.abort();});

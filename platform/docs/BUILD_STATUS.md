@@ -6,7 +6,7 @@ Implemented: Tiptap rich editor using existing shadcn controls; bounded JSON val
 
 Local verification: 383 application/database/API/rendering tests passed; TypeScript, production build and standalone preview passed. The tsx CLI IPC listener is blocked, so tests used the equivalent Node loader command. Chromium download failed with a truncated archive; browser/HTTP/actual PostgreSQL gates are pending remote CI for this source.
 
-Publication: PR #2, remote source fetched and tree-verified. CI on bdcaa89 passed PostgreSQL, application, HTTP, builds and existing community/project/authoring browser suites. The new rich browser test caught adjacent media replacement; the follow-up fix inserts after the selection and adds an explicit retention assertion. Full CI rerun pending. Merge: pending. Deployment: explicitly deferred by user; no Neon/Vercel/email/scheduler provisioned.
+Publication: PR #2, remote source fetched and tree-verified. CI on bdcaa89 passed PostgreSQL, application, HTTP, builds and existing community/project/authoring browser suites. The new rich browser test caught adjacent media replacement; the follow-up fix inserts after the selection and adds an explicit retention assertion. On aa3e547, rich formatting/media/private publication checks passed; the accessibility harness required an explicit browser context and has been corrected. Final CI status is recorded in the PR and the current SESSION_HANDOFF.md. Merge: pending. Deployment: explicitly deferred by user; no Neon/Vercel/email/scheduler provisioned.
 
 ---
 ## Historical Alpha 07 evidence

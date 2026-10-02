@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 08 rich lesson authoring",
   "version": "0.8.0-alpha.1",
   "sourceBaseline": "6238d7b92b4a2e5d994daf07874b3097b364eb34",
-  "generatedAt": "2026-10-02T05:23:33.057811+00:00",
+  "generatedAt": "2026-10-02T05:27:54.437088+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "184d8ea5e612329be236a151503a17a4d64acd7eddaecdf44b0ec69977a93fbf",
-      "bytes": 7679
+      "sha256": "bd2b61d405148897306f41b95ec6d3827525da6792a6e5e1a2502d04ac1e8345",
+      "bytes": 7827
     },
     {
       "path": "platform/.dockerignore",
@@ -366,8 +366,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "c42a15c79886e56a78bf3f8e1aa638355632a16ba6b04f35c78f7261a6266798",
-      "bytes": 10580
+      "sha256": "9f5ae6ec801e58be481383e0fb806793b9ed9771b72ccc4f9558bf3801b52792",
+      "bytes": 10787
     },
     {
       "path": "platform/docs/CREATOR_AUTHORING.md",
@@ -1011,8 +1011,8 @@
     },
     {
       "path": "platform/scripts/rich-lessons-browser-check.ts",
-      "sha256": "feaec5d4c1652e35cda8f976b8e8e62ae2b3aadd2ed72fc414959150474bcfcc",
-      "bytes": 7861
+      "sha256": "ad5455573180c0ecd7c15e79da6c51a0bed0709d6b5e6882097e8206470bd1b7",
+      "bytes": 7902
     },
     {
       "path": "platform/scripts/ui-test-helpers.ts",
