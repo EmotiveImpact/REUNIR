@@ -96,9 +96,11 @@ Cookie-authenticated POSTs require the exact application `Origin` and JSON conte
 
 Real Google credentials, CORS, IAM, billing, malware scanning, orphaned-object cleanup and member attachments for posts or missions remain staging/public-launch work.
 
+**Knowledge checks (Alpha 10).** No new environment variables or services. Apply migration 0010 with the administrative connection and rerun `npm run db:grant-runtime`, which revokes UPDATE and DELETE on `quiz_attempts` from the runtime role and grants UPDATE only on the review columns. Commands use the existing `/api/organisations/:slug/commands` route. See ASSESSMENTS.md.
+
 ## 7. Database maintenance
 
-Migrations do not run automatically on cold starts. All ordered migration files have stored checksums and share an advisory lock. Migrations 0001 and 0002 are unchanged. Alpha 03 adds 0003_pilot_access.sql and 0004_private_messaging.sql. Future changes require a new reviewed migration. There is no destructive reset script or automatic production seed.
+Migrations do not run automatically on cold starts. All ordered migration files have stored checksums and share an advisory lock. Migrations 0001 and 0002 are unchanged. Alpha 03 adds 0003_pilot_access.sql and 0004_private_messaging.sql; later alphas add 0005 to 0010, each additive. Future changes require a new reviewed migration. There is no destructive reset script or automatic production seed.
 
 The first repository implementation serialises mutation operations within one community. It is deliberately bounded to 5,000 rows per domain collection and 20,000 rows per complete workspace snapshot. At the boundary it fails explicitly. Before a larger rollout, replace broad reads with domain-specific pagination, and add outbox delivery/retry and retention policies. Do not present this alpha as a benchmarked high-scale SaaS.
 
