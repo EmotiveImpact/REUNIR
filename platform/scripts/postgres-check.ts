@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { plainLessonDocument } from '../packages/contracts/src/lesson-document';
 import { lessonContent } from '../packages/domain/src/authoring';
+import { quizFingerprint } from '../packages/contracts/src/assessments';
 /** Opt-in integration test against a disposable local PostgreSQL CI service, never Neon/customer data. */
 import {strict as assert} from 'node:assert';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -60,6 +61,22 @@ try{
         assert.equal((await repo.resourceDownload('code-black',DEMO_USER,{context:'lesson',recordId:'lesson_4',resourceId:'resource_pg'})).filename,'Postgres guide.pdf');
         await assert.rejects(()=>repo.resourceDownload('studio-north',DEMO_USER,{context:'lesson',recordId:'lesson_4',resourceId:'resource_pg'}),{code:'NOT_FOUND'});
         await assert.rejects(()=>runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',DEMO_ADMIN);await tx.query("UPDATE lesson_revisions SET resources='[]'::jsonb");}));
+    });
+    await check('knowledge checks score, review and stay evidence through a restricted PostgreSQL connection',async()=>{
+        const repo=new WorkspaceRepository(runtime!);
+        const exec=(cmd:unknown,user=DEMO_USER)=>repo.execute('code-black',user,cmd,randomUUID(),'assessments-postgres');
+        const rows=(org:string,user:string,sql:string)=>runtime!.transaction(async tx=>{await setContext(tx,org,user);return (await tx.query<Record<string,unknown>>(sql)).rows;});
+        const seen=(await repo.snapshot('code-black',DEMO_USER)).lessons.find(l=>l.id==='lesson_5')!.quiz!;
+        assert(!JSON.stringify(seen).includes('acceptedAnswers'),'members receive no answer keys');
+        const r=await exec({type:'quiz.attempt.submit',lessonId:'lesson_5',fingerprint:quizFingerprint(seen),answers:[{questionId:'q5_feedback',optionIds:['a']},{questionId:'q5_essentials',optionIds:['a','b']},{questionId:'q5_outcome',text:'Useful'}]});
+        const mine=r.workspace.quizAttempts.find(a=>a.userId===DEMO_USER)!;assert.deepEqual([mine.status,mine.score,mine.passed],['scored',4,true]);
+        await exec({type:'quiz.attempt.review',attemptId:'attempt_sofia',expectedVersion:1,marks:[{questionId:'q6_change',points:2}],feedback:'Observed and specific.'},DEMO_ADMIN);
+        assert.deepEqual((await rows('org_code_black','member_sofia','SELECT status,score,reviewer_id FROM quiz_attempts')),[{status:'reviewed',score:3,reviewer_id:DEMO_ADMIN}]);
+        assert.deepEqual((await rows('org_code_black',DEMO_USER,'SELECT user_id FROM quiz_attempts')).map(x=>x.user_id),[DEMO_USER]);
+        assert.equal((await rows('org_studio_north',DEMO_ADMIN,'SELECT id FROM quiz_attempts')).length,0);
+        await assert.rejects(()=>rows('org_code_black',DEMO_ADMIN,"UPDATE quiz_attempts SET answers='[]'::jsonb"),/permission denied/);
+        await assert.rejects(()=>rows('org_code_black',DEMO_ADMIN,'DELETE FROM quiz_attempts'),/permission denied/);
+        assert.equal((await rows('org_code_black',DEMO_USER,"UPDATE quiz_attempts SET feedback='Forged' WHERE id='attempt_sofia' RETURNING id")).length,0);
     });
     await mkdir('evidence/alpha04',{recursive:true});await writeFile('evidence/alpha04/postgres-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Disposable local PostgreSQL service, not Neon.',results},null,2));
 }finally{await runtime?.close();await admin.close();}

@@ -27,7 +27,7 @@ const option = z.object({ id: key, text: plain(150, 'options').pipe(z.string().m
 const question = z.object({
     id: key, kind: z.enum(['single', 'multiple', 'short', 'written']),
     prompt: plain(300, 'questions').pipe(z.string().min(1, 'Write each question before saving.')),
-    points: z.number().int().min(1).max(10),
+    points: z.number().int().min(1, 'Give each question 1 to 10 points.').max(10, 'Give each question 1 to 10 points.'),
     options: z.array(option).max(MAX_QUIZ_OPTIONS, `Use up to ${MAX_QUIZ_OPTIONS} options.`),
     acceptedAnswers: z.array(plain(MAX_SHORT_ANSWER, 'accepted answers').pipe(z.string().min(1, 'Fill in or remove each empty accepted answer.'))).max(10, 'Use up to 10 accepted answers.'),
     explanation: plain(300, 'explanations').default(''),
@@ -39,7 +39,8 @@ const question = z.object({
         if (q.kind === 'single' && correct !== 1) issue('Mark exactly one correct option for a single-choice question.');
         if (q.kind === 'multiple' && correct < 1) issue('Mark at least one correct option.');
         if (new Set(q.options.map(o => o.id)).size !== q.options.length) issue('Each option needs its own identifier.');
-        if (new Set(q.options.map(o => normaliseAnswer(o.text))).size !== q.options.length) issue('Each option needs different text.');
+        const texts = q.options.map(o => normaliseAnswer(o.text)).filter(Boolean);
+        if (new Set(texts).size !== texts.length) issue('Each option needs different text.');
         if (q.acceptedAnswers.length) issue('Choice questions do not take typed answers.');
     }
     else {
@@ -50,8 +51,8 @@ const question = z.object({
 });
 export const lessonQuizSchema = z.object({
     questions: z.array(question).min(1, 'Add at least one question, or remove the knowledge check.').max(MAX_QUIZ_QUESTIONS, `Use up to ${MAX_QUIZ_QUESTIONS} questions.`),
-    passPercentage: z.number().int().min(1).max(100).nullable(),
-    maxAttempts: z.number().int().min(1).max(MAX_QUIZ_ATTEMPTS).nullable(),
+    passPercentage: z.number().int('Use a whole-number pass mark.').min(1, 'Set a pass mark from 1% to 100%, or leave it empty.').max(100, 'Set a pass mark from 1% to 100%, or leave it empty.').nullable(),
+    maxAttempts: z.number().int().min(1).max(MAX_QUIZ_ATTEMPTS, `Allow up to ${MAX_QUIZ_ATTEMPTS} attempts, or unlimited.`).nullable(),
     revealAnswers: z.boolean(),
 }).strict().superRefine((quiz, ctx) => {
     if (new Set(quiz.questions.map(q => q.id)).size !== quiz.questions.length) ctx.addIssue({ code: 'custom', message: 'Each question needs its own identifier.' });

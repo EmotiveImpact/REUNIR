@@ -52,7 +52,7 @@ export function applyAssessment(s: Workspace, ctx: TenantContext, cmd: Command, 
         const mine = s.quizAttempts.filter(a => a.organizationId === org && a.lessonId === lesson.id && a.userId === ctx.userId);
         if (mine.some(a => a.status === 'awaiting_review')) throw new DomainError('AWAITING_REVIEW', 'Your last attempt is waiting for feedback. You can try again once it has been reviewed.', 409);
         if (mine.length >= (quiz.maxAttempts ?? MAX_ATTEMPT_RECORDS)) throw new DomainError('NO_ATTEMPTS_LEFT', 'You have used every attempt for this knowledge check.', 409);
-        const stale = (): never => { throw new DomainError('STALE_QUIZ', 'This knowledge check has changed. Reload the lesson to answer the latest version.', 409); };
+        const stale = (): never => { throw new DomainError('STALE_QUIZ', 'This knowledge check changed after you opened it. Check the latest version and submit again.', 409); };
         if (cmd.fingerprint !== quizFingerprint(quiz) || cmd.answers.length !== quiz.questions.length) stale();
         const answers: QuizAnswer[] = quiz.questions.map(q => {
             const given = cmd.answers.find(a => a.questionId === q.id) ?? stale();
