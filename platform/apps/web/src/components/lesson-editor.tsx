@@ -21,7 +21,7 @@ export function LessonEditor({body,richBody,disabled,onChange}:{body:string;rich
         onUpdate:({editor})=>{const doc=editor.getJSON() as LessonDocument;callback.current(doc,lessonDocumentText(doc));},
         shouldRerenderOnTransaction:true,
     });
-    useEffect(()=>{editor?.setEditable(!disabled);},[editor,disabled]);
+    useEffect(()=>{editor?.setEditable(!disabled,false);},[editor,disabled]);
     useEffect(()=>{if(!editor)return;const doc=richBody??plainLessonDocument(body);if(JSON.stringify(editor.getJSON())!==JSON.stringify(doc))editor.commands.setContent(doc,{emitUpdate:false});},[editor,richBody,body]);
     if(!editor)return <p>Opening lesson editor…</p>;
     const tools=[

@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 08 rich lesson authoring",
   "version": "0.8.0-alpha.1",
   "sourceBaseline": "6238d7b92b4a2e5d994daf07874b3097b364eb34",
-  "generatedAt": "2026-10-02T05:16:32.315361+00:00",
+  "generatedAt": "2026-10-02T05:18:41.420514+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -201,8 +201,8 @@
     },
     {
       "path": "platform/apps/web/src/components/lesson-editor.tsx",
-      "sha256": "db48af0f7e5556da77a3c14275791394de2a956239f583598ca00b3faa52346b",
-      "bytes": 7303
+      "sha256": "909624219cf123d7999de561c5b7aebc4771603cc7fccb9ff9487c75938d222c",
+      "bytes": 7309
     },
     {
       "path": "platform/apps/web/src/components/ui.tsx",
