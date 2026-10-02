@@ -100,6 +100,7 @@ test('a member inserts only an unreviewed attempt of their own while active', as
     await fails(as(DEMO_USER, ORG, tx => insert(tx, { id: 'forged_other', user: 'member_sofia' })), /row-level security/);
     await fails(as(DEMO_USER, ORG, tx => insert(tx, { id: 'forged_review', user: DEMO_USER, status: 'reviewed', reviewer: DEMO_ADMIN, feedback: 'Self-awarded' })), /row-level security/);
     await fails(as(DEMO_USER, NORTH, tx => insert(tx, { id: 'forged_tenant', user: DEMO_USER })), /row-level security/);
+    await fails(as(DEMO_USER, ORG, tx => tx.query("INSERT INTO quiz_attempts (id,organization_id,created_at,lesson_id,track_id,user_id,attempt_number,quiz,answers,results,score,max_score,status,passed,feedback,reviewer_id,reviewed_at,version) VALUES ('forged_version','org_code_black',now(),'lesson_6','track_product',$1,8,'{}','[]','[]',0,4,'awaiting_review',NULL,'',NULL,NULL,2)", [DEMO_USER])), /row-level security/);
     await db.query("UPDATE members SET status='suspended' WHERE organization_id=$1 AND user_id=$2", [ORG, DEMO_USER]);
     try { await fails(as(DEMO_USER, ORG, tx => insert(tx, { id: 'forged_inactive', user: DEMO_USER })), /row-level security/); }
     finally { await db.query("UPDATE members SET status='active' WHERE organization_id=$1 AND user_id=$2", [ORG, DEMO_USER]); }
@@ -113,6 +114,8 @@ test('only an active owner or administrator who is not the learner can write a r
     assert.equal(await as('member_maya', ORG, tx => review(tx, 'member_maya')), 0, 'a moderator’s update matches no rows'); await unchanged();
     assert.equal(await as(DEMO_ADMIN, NORTH, tx => review(tx)), 0, 'another community’s administrator matches no rows'); await unchanged();
     await fails(as(DEMO_ADMIN, ORG, tx => review(tx, 'member_maya')), /row-level security/);
+    await fails(as(DEMO_ADMIN, ORG, tx => tx.query("UPDATE quiz_attempts SET status='reviewed',feedback='Skipped ahead',reviewer_id=$1,reviewed_at=now(),version=5 WHERE id='attempt_sofia'", [DEMO_ADMIN])), /row-level security/);
+    await fails(as(DEMO_ADMIN, ORG, tx => tx.query("UPDATE quiz_attempts SET score=4,version=2 WHERE id='attempt_sofia'")), /row-level security/);
     await unchanged();
     await db.query("UPDATE members SET status='suspended' WHERE organization_id=$1 AND user_id=$2", [ORG, DEMO_ADMIN]);
     try { assert.equal(await as(DEMO_ADMIN, ORG, tx => review(tx)), 0, 'a suspended administrator matches no rows'); }
@@ -141,6 +144,10 @@ test('an administrator reviews through the repository; their own attempt stays o
     assert.equal(sofia.quizAttempts[0].feedback, 'Specific and observed. Say how you would test the change.');
     assert(sofia.notifications.some(n => n.title === 'Feedback on your knowledge check' && n.href === '/learn/track_product/lesson_6'));
     await assert.rejects(exec({ type: 'quiz.attempt.review', attemptId: 'attempt_sofia', expectedVersion: 1, marks: [{ questionId: 'q6_change', points: 3 }], feedback: 'Again' }, DEMO_ADMIN), (e: { code?: string }) => e.code === 'STALE_ATTEMPT');
+    // The row policy allows exactly one review: SQL that bypasses the domain matches no reviewed row.
+    for (const set of ["feedback='Rewritten',reviewer_id=$1,reviewed_at=now(),version=3", "score=0,results='[]',reviewer_id=$1,version=2", "status='awaiting_review',reviewer_id=NULL,reviewed_at=NULL,feedback='',version=1"])
+        assert.equal((await as(DEMO_ADMIN, ORG, tx => tx.query(`UPDATE quiz_attempts SET ${set} WHERE id='attempt_sofia' RETURNING id`, set.includes('$1') ? [DEMO_ADMIN] : []))).rows.length, 0, set);
+    assert.deepEqual((await db.query("SELECT score,feedback,version FROM quiz_attempts WHERE id='attempt_sofia'")).rows, [{ score: 3, feedback: 'Specific and observed. Say how you would test the change.', version: 2 }]);
     await exec({ type: 'track.enrol', trackId: 'track_product' }, DEMO_ADMIN);
     const own = (await submit('lesson_6', written, DEMO_ADMIN)).workspace.quizAttempts.find(a => a.userId === DEMO_ADMIN)!;
     await assert.rejects(exec({ type: 'quiz.attempt.review', attemptId: own.id, expectedVersion: 1, marks: [{ questionId: 'q6_change', points: 3 }], feedback: 'Mine' }, DEMO_ADMIN), (e: { code?: string }) => e.code === 'SELF_REVIEW');

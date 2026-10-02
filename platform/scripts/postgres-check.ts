@@ -77,6 +77,7 @@ try{
         await assert.rejects(()=>rows('org_code_black',DEMO_ADMIN,"UPDATE quiz_attempts SET answers='[]'::jsonb"),/permission denied/);
         await assert.rejects(()=>rows('org_code_black',DEMO_ADMIN,'DELETE FROM quiz_attempts'),/permission denied/);
         assert.equal((await rows('org_code_black',DEMO_USER,"UPDATE quiz_attempts SET feedback='Forged' WHERE id='attempt_sofia' RETURNING id")).length,0);
+        assert.equal((await rows('org_code_black',DEMO_ADMIN,"UPDATE quiz_attempts SET feedback='Rewritten',score=0,version=2 WHERE id='attempt_sofia' RETURNING id")).length,0,'a finished review cannot be rewritten');
     });
     await mkdir('evidence/alpha04',{recursive:true});await writeFile('evidence/alpha04/postgres-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Disposable local PostgreSQL service, not Neon.',results},null,2));
 }finally{await runtime?.close();await admin.close();}

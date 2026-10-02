@@ -46,6 +46,7 @@ Tests changed rather than added: the old-schema fixture skips the new collection
 - Global form styles stretched radio buttons and checkboxes to full width, hiding the option text fields in the studio editor. Choice inputs now keep their natural size.
 - A blank choice question reported "Each option needs different text" alongside "Give every option some text". Duplicate checks now consider only filled-in options.
 - Database assertions written with `rowCount` were vacuous because the SQL wrapper does not expose it. They now use `RETURNING` counts, and a rolled-back positive control proves the same statement succeeds for an active owner.
+- The automated Codex review on PR #4 found that the `attempt_review` row policy still matched attempts that were already reviewed, so SQL bypassing the domain could rewrite a finished review. Migration 0010 (not yet merged or applied anywhere outside test databases) now requires an unreviewed row before the update and a reviewed row at version 2 after, and inserts must start at version 1. New database and PostgreSQL assertions failed before the change and pass after it.
 
 ## Not verified, and why
 

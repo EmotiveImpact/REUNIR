@@ -12,7 +12,7 @@ Creators want to check understanding after a lesson and give feedback. Learners 
 - Score on the server only. Strip correct flags, accepted answers and explanations from every lesson sent to anyone but owners and administrators. Reveal them on a learner's own attempts only under the author's rule.
 - Refuse answers to a changed check by comparing a fingerprint of the learner-visible quiz, rather than scoring answers against questions the learner never saw.
 - Record each attempt in `quiz_attempts` with the quiz it answered. Treat attempts as evidence: no deletion by the application role, and only review columns can change, enforced by column grants, row policies, constraints and the domain.
-- One review per attempt, by an active owner or administrator who is not the learner, with every written answer marked and feedback written.
+- One review per attempt, by an active owner or administrator who is not the learner, with every written answer marked and feedback written. The row policy enforces the single transition too: an unreviewed attempt at version 1 becomes a reviewed attempt at version 2, and a reviewed attempt matches no update.
 - Keep scores private and separate: no reputation points, no automatic completion, no visibility to other members, no certificates.
 
 ## Alternatives considered

@@ -34,16 +34,19 @@ CREATE POLICY attempt_read ON quiz_attempts FOR SELECT USING (
  user_id=nullif(current_setting('app.user_id',true),'')
  OR EXISTS(SELECT 1 FROM members m WHERE m.organization_id=quiz_attempts.organization_id AND m.user_id=nullif(current_setting('app.user_id',true),'') AND m.status='active' AND m.role IN ('owner','admin')))
 );
--- An active member submits only their own, unreviewed attempt.
+-- An active member submits only their own, unreviewed attempt, which always starts at version 1.
 CREATE POLICY attempt_submit ON quiz_attempts FOR INSERT WITH CHECK (
  organization_id=nullif(current_setting('app.organization_id',true),'') AND user_id=nullif(current_setting('app.user_id',true),'')
- AND reviewer_id IS NULL AND status<>'reviewed'
+ AND reviewer_id IS NULL AND status<>'reviewed' AND version=1
  AND EXISTS(SELECT 1 FROM members m WHERE m.organization_id=quiz_attempts.organization_id AND m.user_id=quiz_attempts.user_id AND m.status='active')
 );
--- Only an active owner or admin who is not the learner can review, and the review is attributed to them.
+-- Only an active owner or admin who is not the learner can review, exactly once: the row must be unreviewed before,
+-- and reviewed at version 2 and attributed to them after. A finished review matches no row, so it cannot be rewritten.
 CREATE POLICY attempt_review ON quiz_attempts FOR UPDATE USING (
  organization_id=nullif(current_setting('app.organization_id',true),'') AND user_id<>nullif(current_setting('app.user_id',true),'')
+ AND status<>'reviewed'
  AND EXISTS(SELECT 1 FROM members m WHERE m.organization_id=quiz_attempts.organization_id AND m.user_id=nullif(current_setting('app.user_id',true),'') AND m.status='active' AND m.role IN ('owner','admin'))
 ) WITH CHECK (
- organization_id=nullif(current_setting('app.organization_id',true),'') AND reviewer_id=nullif(current_setting('app.user_id',true),'') AND user_id<>reviewer_id
+ organization_id=nullif(current_setting('app.organization_id',true),'') AND status='reviewed' AND version=2
+ AND reviewer_id=nullif(current_setting('app.user_id',true),'') AND user_id<>reviewer_id
 );

@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 10 knowledge checks",
   "version": "0.10.0-alpha.1",
   "sourceBaseline": "788e5d70df7083a07c6a254b315e7aa97965fd5a",
-  "generatedAt": "2026-10-02T21:19:43.880274+00:00",
+  "generatedAt": "2026-10-02T21:28:47.619733+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -416,13 +416,13 @@
     },
     {
       "path": "platform/docs/ASSESSMENTS.md",
-      "sha256": "4f26c0cf6b836e7daac46d6d10c0ed0108fd9c54ba3b845fef16e7f20dbde137",
-      "bytes": 9168
+      "sha256": "13d17f4193e001a9d77f0b129ffdb2ec73ab80b8b79b6ff09de31a7bd4f0cb77",
+      "bytes": 9336
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "cce918e5428169b540949ab84a2ae83e66b4a3eb1661021e3411acc5ceb1bde4",
-      "bytes": 24053
+      "sha256": "a69adf6df075ef49abbda45c9bd9e169dc1e57857092cb70b59ab23a07e0cb0c",
+      "bytes": 24529
     },
     {
       "path": "platform/docs/CREATOR_AUTHORING.md",
@@ -481,8 +481,8 @@
     },
     {
       "path": "platform/docs/SECURITY.md",
-      "sha256": "60a77883d8ef9ea372db55d9a27029ce23f2c46e242168b7ac9a52c19da5bd38",
-      "bytes": 8878
+      "sha256": "a19e7939b757406d8718a3e7dba6267c88cdbd6e187555e42a8d597d7ff8a060",
+      "bytes": 8967
     },
     {
       "path": "platform/docs/SETUP.md",
@@ -526,8 +526,8 @@
     },
     {
       "path": "platform/docs/decisions/010-knowledge-checks.md",
-      "sha256": "6561d22e60657601bd54593faf73d7a8fbeb91b8e90940e6c986474e23aaa9d3",
-      "bytes": 3506
+      "sha256": "9b431635c6f0604d957584d034d6db22521ee4dd7bc8949dcfcbdc244a07a2be",
+      "bytes": 3675
     },
     {
       "path": "platform/docs/history/ALPHA_05_BUILD_STATUS.md",
@@ -926,8 +926,8 @@
     },
     {
       "path": "platform/packages/db/migrations/0010_assessments.sql",
-      "sha256": "aa2987e469379f1486e0516c04852bf65bc3ccf6b612a03523b8a0afb57b813e",
-      "bytes": 4043
+      "sha256": "d3976873dc30e57b67ef07090ec3561ed9c3a8e8cc2a927fcf715f1f1ba9cfae",
+      "bytes": 4283
     },
     {
       "path": "platform/packages/db/package.json",
@@ -1111,8 +1111,8 @@
     },
     {
       "path": "platform/scripts/postgres-check.ts",
-      "sha256": "dab2dfb3263d52c81409d73925e22abbcfc8623fbc748eeeba0bd37f9f269697",
-      "bytes": 10582
+      "sha256": "fd3c6ecc1477b7923f15253ddf0a7d77ade47c3b365e3dbbdf05eaae19a8e6a6",
+      "bytes": 10800
     },
     {
       "path": "platform/scripts/project-work-browser-check.ts",
@@ -1156,8 +1156,8 @@
     },
     {
       "path": "platform/tests/assessments-database.test.ts",
-      "sha256": "751ff8dd4f09d26f4af5db3c3e7f08c620526cc3fab42b866cf6784c2485544f",
-      "bytes": 16295
+      "sha256": "f78b697bc5e1619e3c9fdf26a4794d3a6b4d81f8e53028f63acbcb26e8174559",
+      "bytes": 17840
     },
     {
       "path": "platform/tests/assessments-http.test.ts",
@@ -1376,8 +1376,8 @@
     },
     {
       "path": "research/notes/15_ASSESSMENTS.md",
-      "sha256": "7483d3dab5a55c933d97215853f766a2b5beb158b2bb64318a8858881b0eda06",
-      "bytes": 5781
+      "sha256": "f97c9166d4471ad8390116967a8cfc6b16ee40ad3758f11fb59340b843595ffb",
+      "bytes": 5787
     },
     {
       "path": "research/notes/repo_snapshot.tsv",

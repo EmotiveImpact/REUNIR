@@ -32,7 +32,7 @@ Version 0.10.0-alpha.1. Built on merged Alpha 09 private lesson resources (`788e
 | Suspended or removed member | No | No | No | No | No |
 | Another community, anonymous visitor | No | No | No | No | No |
 
-PostgreSQL enforces the boundary in depth. `quiz_attempts` has forced row-level security: members read their own rows; active owners and administrators read their community's; inserts must be the caller's own, unreviewed and by an active member; updates are allowed only to an active owner or administrator who is not the learner and must record that person as the reviewer. The runtime role has no DELETE on the table and may UPDATE only `results`, `score`, `passed`, `status`, `feedback`, `reviewer_id`, `reviewed_at` and `version`.
+PostgreSQL enforces the boundary in depth. `quiz_attempts` has forced row-level security: members read their own rows; active owners and administrators read their community's; inserts must be the caller's own, unreviewed, at version 1 and by an active member; updates are allowed only to an active owner or administrator who is not the learner, only on an unreviewed attempt, and must leave it reviewed at version 2 with that person recorded as the reviewer, so a finished review cannot be rewritten even by SQL that bypasses the application. The runtime role has no DELETE on the table and may UPDATE only `results`, `score`, `passed`, `status`, `feedback`, `reviewer_id`, `reviewed_at` and `version`.
 
 ## Model, API and migration
 
