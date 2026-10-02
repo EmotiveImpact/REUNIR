@@ -1,6 +1,6 @@
 # Creator Studio 2: rich lesson authoring
 
-Version 0.8.0-alpha.1. Built on merged Alpha 07, retaining UI_DESIGN_DIRECTION.md.
+Version 0.8.0-alpha.1 (current release 0.9.0-alpha.1). Built on merged Alpha 07, retaining UI_DESIGN_DIRECTION.md.
 
 Owners/admins can format private lesson drafts using paragraphs, H2/H3 headings, bold/italic, lists, quotes, code and dividers, add HTTPS links to selected text, and insert public HTTPS images with descriptions or YouTube/Vimeo videos with titles. The same content appears in private preview and the learner view after explicit publication. Undo/redo uses the editor history. Existing saved-version checks, unsaved-navigation protection, archive, revision restoration and completion records remain.
 
@@ -18,4 +18,4 @@ Tests: `npm test`, `npm run test:browser:authoring`, `npm run test:browser:rich-
 
 ## Remaining Creator Studio work
 
-Private resource uploads with lesson/space access inheritance; upload completion/revocation lifecycle; assessments and assignments; instructor-specific authoring permissions. No collaboration server, autosave or assessment engine is included in this increment.
+Private lesson resources with lesson/space access inheritance are implemented in Alpha 09; see LESSON_RESOURCES.md. Remaining: assessments and assignments, and instructor-specific authoring permissions. No collaboration server, autosave or assessment engine is included.

@@ -4,6 +4,7 @@ export { isAdmin, isModerator, actorFor, canSeeSpace } from './access';
 import { applyProjectWork, filterProjectWork } from './project-work';
 import { applyAuthoring, filterAuthoring } from './authoring';
 import { normalisePurposeState, filterPurposeWorkspace, applyPurposeCommand } from './purpose';
+import { visibleUploads } from './resources';
 export function visibleWorkspace(state: Workspace, ctx: TenantContext): Workspace {
     const actor = actorFor(state, ctx);
     const s = normalisePurposeState(structuredClone(state));
@@ -40,6 +41,7 @@ export function visibleWorkspace(state: Workspace, ctx: TenantContext): Workspac
     s.reputation = s.reputation.map(r => { const [kind, target] = r.sourceId.split(':'); const hidden = kind === 'lesson' ? !visibleLessons.has(target) : kind === 'mission' ? !missions.has(target) : false; return hidden ? { ...r, sourceId: r.id, description: 'Recognised community activity' } : r; });
     // Do not expose suspended members as active directory entries. Retain authors already visible.
     s.members = s.members.filter(x => x.status === 'active' || isAdmin(actor));
+    s.uploads = visibleUploads(s, actor);
     return filterAuthoring(filterProjectWork(filterPurposeWorkspace(s, ctx, actor), actor), actor);
 }
 export function progress(state: Workspace, userId: string, trackId: string) {

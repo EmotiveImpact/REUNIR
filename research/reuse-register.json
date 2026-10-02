@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "release": "0.8.0-alpha.1",
+  "release": "0.9.0-alpha.1",
   "reviewedOn": "2026-10-02",
   "scope": "Targeted source/document review, not a fresh whole-repository audit, full runtime comparison or a legal opinion. Previously captured commit snapshots were deliberately re-read; no claim that all are current HEAD.",
   "donorApplicationFilesImported": 0,
@@ -126,6 +126,110 @@
       "lesson": "Headless structured editing with a deliberately restricted extension set; persist validated JSON independently of the editor UI.",
       "url": "https://github.com/ueberdosis/tiptap/blob/v3.31.4/packages/starter-kit/src/starter-kit.ts",
       "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "learnhouse-media-serve",
+      "project": "LearnHouse",
+      "repository": "learnhouse/learnhouse",
+      "revision": "5e28b0723176b34ba8777b9980db352268aa8234",
+      "file": "apps/api/src/services/media/media_serve.py",
+      "blob": "893a77e25bb2abf64dedb99b0d71ce24ded3e964",
+      "reviewedRange": "complete file, 242 lines",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "Decide the delivered content type from server-controlled state, always send an RFC 5987 filename, default to attachment, add nosniff and private no-store caching.",
+      "url": "https://github.com/learnhouse/learnhouse/blob/5e28b0723176b34ba8777b9980db352268aa8234/apps/api/src/services/media/media_serve.py",
+      "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "learnhouse-file-validation",
+      "project": "LearnHouse",
+      "repository": "learnhouse/learnhouse",
+      "revision": "5e28b0723176b34ba8777b9980db352268aa8234",
+      "file": "apps/api/src/security/file_validation.py",
+      "blob": "3a3dd9ecc675f0142f2dfb233acf3503d478d821",
+      "reviewedRange": "lines 1\u2013140",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "Validate uploads by magic bytes over a bounded prefix instead of trusting the declared type.",
+      "url": "https://github.com/learnhouse/learnhouse/blob/5e28b0723176b34ba8777b9980db352268aa8234/apps/api/src/security/file_validation.py",
+      "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "frappe-lesson-file-access",
+      "project": "Frappe Learning",
+      "repository": "frappe/lms",
+      "revision": "071266699d3ed984eeff7f3e3658d259fd946a97",
+      "file": "lms/lms/permissions.py",
+      "blob": "ba2025104ffb8e6606fb69e4718a6ee6620d47f3",
+      "reviewedRange": "lines 416\u2013426 and 585\u2013620",
+      "licence": "AGPL-3.0; behavioural reference only",
+      "lesson": "One rule decides who may read a lesson's files, and a missing owning lesson fails closed.",
+      "url": "https://github.com/frappe/lms/blob/071266699d3ed984eeff7f3e3658d259fd946a97/lms/lms/permissions.py",
+      "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "frappe-attachable-files",
+      "project": "Frappe Learning",
+      "repository": "frappe/lms",
+      "revision": "071266699d3ed984eeff7f3e3658d259fd946a97",
+      "file": "lms/lms/utils.py",
+      "blob": "b6a70306243323dd1032a3d61eb756899c373d57",
+      "reviewedRange": "lines 502\u2013566 and 1067\u20131100",
+      "licence": "AGPL-3.0; behavioural reference only",
+      "lesson": "A private file binds to one parent; an unattached file can only be attached by its uploader; lock the parent before checking attachment state.",
+      "url": "https://github.com/frappe/lms/blob/071266699d3ed984eeff7f3e3658d259fd946a97/lms/lms/utils.py",
+      "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "frappe-lesson-references",
+      "project": "Frappe Learning",
+      "repository": "frappe/lms",
+      "revision": "071266699d3ed984eeff7f3e3658d259fd946a97",
+      "file": "lms/lms/doctype/course_lesson/course_lesson.py",
+      "blob": "0615cb79de5bb9eeccebcba981bd6db733654643",
+      "reviewedRange": "lines 185\u2013345",
+      "licence": "AGPL-3.0; behavioural reference only",
+      "lesson": "URL-based file references let an author name someone else's file and force complex vouching rules; binding by server-held identifiers avoids that class of problem.",
+      "url": "https://github.com/frappe/lms/blob/071266699d3ed984eeff7f3e3658d259fd946a97/lms/lms/doctype/course_lesson/course_lesson.py",
+      "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "classroomio-presign-auth",
+      "project": "ClassroomIO",
+      "repository": "classroomio/classroomio",
+      "revision": "72791608774f6fb65fbc33ddbb1d52d8a2a11045",
+      "file": "apps/api/src/middlewares/presign-auth.ts",
+      "blob": "f40f2fa40ecfdb2299b7607dd3fb1c0e2fbc2be1",
+      "reviewedRange": "complete file, 73 lines",
+      "licence": "Root AGPL-3.0; root package metadata says MIT; conflict unresolved, reference only",
+      "lesson": "Counter-example: download presigning trusts client-supplied keys and organisation membership, and lets unclaimed legacy keys through. REUNIR resolves resource IDs on the server and checks lesson access.",
+      "url": "https://github.com/classroomio/classroomio/blob/72791608774f6fb65fbc33ddbb1d52d8a2a11045/apps/api/src/middlewares/presign-auth.ts",
+      "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "classroomio-presign-routes",
+      "project": "ClassroomIO",
+      "repository": "classroomio/classroomio",
+      "revision": "72791608774f6fb65fbc33ddbb1d52d8a2a11045",
+      "file": "apps/api/src/routes/course/presign.ts",
+      "blob": "95ad69aafb3c089d1a24a4290995dca4d02a22af",
+      "reviewedRange": "lines 1\u201375 and 160\u2013240",
+      "licence": "Root AGPL-3.0; root package metadata says MIT; conflict unresolved, reference only",
+      "lesson": "A presigned PUT cannot bind the object size, so a client-reported size is advisory. REUNIR keeps signed POST policies with an exact content-length range.",
+      "url": "https://github.com/classroomio/classroomio/blob/72791608774f6fb65fbc33ddbb1d52d8a2a11045/apps/api/src/routes/course/presign.ts",
+      "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "classroomio-attachment-list",
+      "project": "ClassroomIO",
+      "repository": "classroomio/classroomio",
+      "revision": "72791608774f6fb65fbc33ddbb1d52d8a2a11045",
+      "file": "packages/ui/src/custom/attachment-list/attachment-list.svelte",
+      "blob": "5c396fa5f7a74562b93854f355014d4fd86b3c62",
+      "reviewedRange": "lines 1\u201380",
+      "licence": "Root AGPL-3.0; root package metadata says MIT; conflict unresolved, reference only",
+      "lesson": "An ordered file list with separate view and edit modes, reorder and delete. Adapted as accessible up/down controls in the React studio, not copied.",
+      "url": "https://github.com/classroomio/classroomio/blob/72791608774f6fb65fbc33ddbb1d52d8a2a11045/packages/ui/src/custom/attachment-list/attachment-list.svelte",
+      "reviewedOn": "2026-10-02"
     }
   ],
   "decisions": [
@@ -213,7 +317,7 @@
         "classroomio-layers",
         "frappe-submissions"
       ],
-      "decision": "Next product research slice: draft/publish authoring, structured lesson content, assessments and reusable resources. Inspect actual authoring files and library licences before choosing an editor. Do not transplant whole LMS applications.",
+      "decision": "Draft/publish authoring (Alpha 06), structured lesson content (Alpha 08) and private lesson resources (Alpha 09) are implemented. Assessments remain queued: inspect actual quiz, attempt and grading files and licences before choosing an approach. Do not transplant whole LMS applications.",
       "implementation": [],
       "tests": []
     },
@@ -311,8 +415,42 @@
         "platform/tests/rich-lessons-database.test.ts",
         "platform/scripts/rich-lessons-browser-check.ts"
       ]
+    },
+    {
+      "id": "lesson-resources",
+      "status": "implemented",
+      "mode": "behaviour_reference",
+      "sources": [
+        "learnhouse-media-serve",
+        "learnhouse-file-validation",
+        "frappe-lesson-file-access",
+        "frappe-attachable-files",
+        "frappe-lesson-references",
+        "classroomio-presign-auth",
+        "classroomio-presign-routes",
+        "classroomio-attachment-list"
+      ],
+      "decision": "Extend the existing upload-intent API, Google Cloud Storage adapter and draft/publish/revision model. Bind lesson files to track-scoped upload records by ID, verify the stored file signature, pin the verified object generation, and decide every download through one rule mirroring lesson, space, role and tenant visibility, with restrictive RLS in depth. No donor source copied; the AGPL projects are behavioural references only.",
+      "implementation": [
+        "platform/packages/contracts/src/lesson-resources.ts",
+        "platform/packages/domain/src/resources.ts",
+        "platform/packages/db/migrations/0009_lesson_resources.sql",
+        "platform/apps/api/src/storage.ts",
+        "platform/apps/api/src/app.ts",
+        "platform/apps/web/src/components/lesson-resources.tsx",
+        "platform/apps/web/src/components/resource-list.tsx",
+        "platform/apps/web/src/lib/resources.ts"
+      ],
+      "tests": [
+        "platform/tests/resources.test.ts",
+        "platform/tests/resources-database.test.ts",
+        "platform/tests/resources-http.test.ts",
+        "platform/scripts/resources-browser-check.ts",
+        "platform/scripts/resources-connected-check.ts",
+        "platform/scripts/postgres-check.ts"
+      ]
     }
   ],
-  "libraryReuse": "Alpha 08 adds pinned MIT Tiptap 3.31.4 packages, preserving the existing stack and shadcn components. No donor LMS application source imported.",
+  "libraryReuse": "Alpha 09 adds no runtime dependency: lesson files extend the existing @google-cloud/storage 8.2.0 adapter, Hono routes and shadcn Button. Alpha 08 added pinned MIT Tiptap 3.31.4 packages. No donor LMS application source imported.",
   "uiComponentSourceFilesAdapted": 3
 }

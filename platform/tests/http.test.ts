@@ -73,7 +73,7 @@ test('an authenticated user cannot cross to another tenant', async () => { const
 let uploadApp: ReturnType<typeof createApp>, uploadId = '', expectedBytes = 200;
 let mintedKey = '';
 test('private upload policy is minted only beneath the authorised tenant/user', async () => {
-    uploadApp = createApp({ repository: repo, origin, resolveSession: async () => identity, storage: { upload: async (key, type, size) => { mintedKey = key; assert.equal(size, 200); assert.equal(type, 'application/pdf'); return { url: 'https://storage.example.test/upload', fields: { key, 'Content-Type': type } }; }, download: async () => 'https://storage.example.test/download', metadata: async () => ({ size: expectedBytes, contentType: 'application/pdf' }) } });
+    uploadApp = createApp({ repository: repo, origin, resolveSession: async () => identity, storage: { upload: async (key, type, size) => { mintedKey = key; assert.equal(size, 200); assert.equal(type, 'application/pdf'); return { url: 'https://storage.example.test/upload', fields: { key, 'Content-Type': type } }; }, download: async () => 'https://storage.example.test/download', metadata: async () => ({ size: expectedBytes, contentType: 'application/pdf' }), head: async () => new Uint8Array(), remove: async () => {} } });
     const r = await uploadApp.request(base + '/uploads', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ name: 'proof.pdf', contentType: 'application/pdf', sizeBytes: 200 }) });
     assert.equal(r.status, 201);
     const j = await r.json();

@@ -19,7 +19,7 @@ test('0008 upgrade preserves every pre-existing lesson field and completion',asy
         const lessons=(await old.query('SELECT * FROM lessons ORDER BY id')).rows,completions=(await old.query('SELECT * FROM completions ORDER BY id')).rows;
         await migrate(old);await migrate(old);
         const after=(await old.query('SELECT * FROM lessons ORDER BY id')).rows;
-        assert.deepEqual(after.map(({rich_body,...row})=>row),lessons);assert(after.every(row=>row.rich_body===null));assert.deepEqual((await old.query('SELECT * FROM completions ORDER BY id')).rows,completions);
+        assert.deepEqual(after.map(({rich_body,resources,...row})=>row),lessons);assert(after.every(row=>row.rich_body===null&&row.resources===null));assert.deepEqual((await old.query('SELECT * FROM completions ORDER BY id')).rows,completions);
     }finally{await old.close();}
 });
 test('restricted role saves, publishes and restores rich revisions with tenant isolation',async()=>{

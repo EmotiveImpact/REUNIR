@@ -1,5 +1,6 @@
 import { seedPurpose } from './purpose-seed';
-import type { Workspace, Member, Space, Track, Lesson, Mission, Project, CommunityEvent } from '../../contracts/src/index';
+import { DEMO_WORKSHEET_FILE, demoWorksheetPdf } from './demo-files';
+import type { Workspace, Member, Space, Track, Lesson, Mission, Project, CommunityEvent, Upload } from '../../contracts/src/index';
 export const DEMO_USER = 'member_alex';
 export const DEMO_ADMIN = 'member_amina';
 export function createSeed(slug = 'code-black'): Workspace {
@@ -51,6 +52,10 @@ export function createSeed(slug = 'code-black'): Workspace {
     ];
     const counts: Record<string, number> = {};
     const lessons: Lesson[] = lessonDefs.map(([trackId, title, summary, body, minutes], i) => ({ ...base('lesson_' + (i + 1)), trackId, title, summary, body, minutes, position: (counts[trackId] = (counts[trackId] || 0) + 1), resourceUrl: '', published: true }));
+    // One fictional lesson file. Its bytes are generated in the browser demo; no stored object exists elsewhere.
+    const worksheetBytes = demoWorksheetPdf().length;
+    const uploads: Upload[] = isCode ? [{ ...base(DEMO_WORKSHEET_FILE), userId: DEMO_ADMIN, purpose: 'lesson_resource', trackId: 'track_product', originalName: 'problem-interview-worksheet.pdf', contentType: 'application/pdf', sizeBytes: worksheetBytes, status: 'ready', objectKey: `fixtures/${org}/problem-interview-worksheet.pdf`, completedAt: '2026-09-24T08:00:00.000Z', generation: '1' }] : [];
+    if (isCode) lessons.find(l => l.id === 'lesson_4')!.resources = [{ id: 'resource_problem_worksheet', fileId: DEMO_WORKSHEET_FILE, name: 'Problem interview worksheet', description: 'Five questions that keep what you heard separate from what you assume.', contentType: 'application/pdf', sizeBytes: worksheetBytes }];
     const missions: Mission[] = [
         { ...base('mission_film'), spaceId: 'space_feedback', trackId: 'track_story', title: 'Make someone feel something in 30 seconds.', brief: 'Create a 30-second film built around one emotion. A phone is enough. Tell us who it is for, the feeling you chose and the choice that made the biggest difference.', criteria: ['A finished film of 30 seconds or less', 'A clear emotional intention', 'A short reflection on one creative choice'], category: 'Storytelling', points: 120, dueAt: '2026-10-02T18:00:00.000Z', difficulty: 'Open to everyone' },
         { ...base('mission_prototype'), spaceId: 'space_build', trackId: 'track_product', title: 'Put your first version in somebody’s hands.', brief: 'Build the smallest useful version of an idea. Let one person with the problem try it, then show us what changed because of their feedback.', criteria: ['A working prototype or walkthrough', 'Feedback from one real person', 'One documented improvement'], category: 'Product building', points: 180, dueAt: '2026-10-09T18:00:00.000Z', difficulty: 'Stretch yourself' },
@@ -76,7 +81,7 @@ export function createSeed(slug = 'code-black'): Workspace {
         { ...base('post_resource', '2026-09-23T14:00:00.000Z'), spaceId: 'space_learn', authorId: 'member_sofia', kind: 'resource', title: 'A question I keep coming back to.', body: '“What is the smallest useful version of this?”\n\nIt helped me cut a 12-page project proposal down to one honest page. Sharing in case somebody else needs permission to make it simpler today.', pinned: false, hidden: false, cover: '' },
         { ...base('post_private', '2026-09-24T07:00:00.000Z'), spaceId: 'space_studio', authorId: 'member_amina', kind: 'update', title: 'Team notes for the open studio', body: 'Private team-only planning note. Confirm the session structure before publishing the next event.', pinned: false, hidden: false, cover: '' },
     ];
-    return seedPurpose({ lessonDrafts: [], lessonRevisions: [], projectTasks: [], taskNotes: [], purposes: [], paths: [], milestones: [], pathEnrolments: [], contributions: [], outcomes: [], communityOutputs: [], memberGoals: [], organisation: { id: org, slug, name: isCode ? 'Code Black' : 'Studio North', tagline: isCode ? 'Good people. Remarkable things.' : 'A small space for thoughtful work.', accent: isCode ? 'violet' : 'mint', createdAt: '2026-09-01T09:00:00.000Z' }, revision: 0, members, spaces, spaceMembers: [{ ...base('sm_admin'), spaceId: 'space_studio', userId: DEMO_ADMIN }], posts, comments: [
+    return seedPurpose({ uploads, lessonDrafts: [], lessonRevisions: [], projectTasks: [], taskNotes: [], purposes: [], paths: [], milestones: [], pathEnrolments: [], contributions: [], outcomes: [], communityOutputs: [], memberGoals: [], organisation: { id: org, slug, name: isCode ? 'Code Black' : 'Studio North', tagline: isCode ? 'Good people. Remarkable things.' : 'A small space for thoughtful work.', accent: isCode ? 'violet' : 'mint', createdAt: '2026-09-01T09:00:00.000Z' }, revision: 0, members, spaces, spaceMembers: [{ ...base('sm_admin'), spaceId: 'space_studio', userId: DEMO_ADMIN }], posts, comments: [
             { ...base('comment_1'), postId: 'post_common', authorId: 'member_jordan', body: 'Love the intention. I would want to see one piece of their work and what sort of collaboration they are open to.' },
             { ...base('comment_2'), postId: 'post_common', authorId: 'member_alex', body: 'Happy to take a look at the first-run experience. The problem is very familiar.' },
             { ...base('comment_3'), postId: 'post_maya', authorId: 'member_theo', body: 'Try building the sound first, then choosing the images. It can completely change the rhythm.' },

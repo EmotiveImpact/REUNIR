@@ -1,4 +1,40 @@
-# Current continuation: Creator Studio 2 rich lessons
+# Current continuation: Alpha 09 private lesson resources
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, LESSON_RESOURCES.md, ROADMAP.md and research/notes/14_LESSON_RESOURCES.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+## Where the source is
+
+- Base: main `016c16e51212f9a71aff3f9b18b311d209194d9d` (Alpha 08 rich lessons merged through PR #2). No newer remote work existed when this session started. The 12 other remote branches are either already merged (`feat/creator-rich-lessons`, `integration/alpha07-source-2026-10-02`) or historical transport and dependency material; none was merged or changed.
+- This slice: branch `claude/stoic-euler-lx2zk7`, [PR EmotiveImpact/REUNIR#3](https://github.com/EmotiveImpact/REUNIR/pull/3). Tested commit `16f3071d645f6bae54fd5c42716e562ccd72e186` passed GitHub Actions runs 37060579827 and 37060617081 (application and PostgreSQL 17). The receipt commit after it changes documentation and hashes only. Check the pull request for the merge commit, then continue from main.
+
+## What is done
+
+Private lesson resources are implemented and verified locally (see BUILD_STATUS.md for exact counts): ordered, named, described, replaceable and removable files that follow draft, preview, publication, capture and restore; verified uploads through the existing upload-intent API and Google Cloud Storage adapter; one download rule mirroring lesson, space, role and tenant access; restrictive RLS in depth; demo mode with browser-local bytes. Migration 0009 is additive, and 0001–0008 are unchanged.
+
+## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+As admin (account menu, Preview as admin), open Paths & learning, From idea to first version, Creator studio, Choose one real problem, then Lesson files. As member, open the same lesson and download the sample worksheet. For PostgreSQL: apply migration 0009 with `npm run db:migrate`, then `npm run db:grant-runtime`.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script including `resources` and `resources-connected`, and `npm run test:postgres` against a disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+## Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history immutable, tenant isolation and role checks current, private goals and messages private. Downloads and attempts must not become engagement scores, reputation or credentials. Community review is not accreditation.
+
+## Next
+
+1. Assessments: quizzes, learner attempts, scoring and instructor feedback. Research Frappe Learning quizzes, ClassroomIO exercises and LearnHouse assignments at pinned commits first; extend the existing draft/publication/revision model and review conventions; additive migration 0010.
+2. Queued follow-up: contrast of decorative cover text on newly created tracks (outside the resources slice).
+3. Deployment remains deferred by the user: bucket, Neon, Vercel, sender and scheduler are all unprovisioned.
+
+---
+## Historical Alpha 08 handover: Creator Studio 2 rich lessons
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, RICH_LESSONS.md and ROADMAP.md. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL app.
 

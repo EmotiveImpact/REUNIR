@@ -90,7 +90,11 @@ HTTP flow:
 3. POST `{}` to `/api/organisations/:slug/uploads/:id/complete`.
 4. Authorised GET to `/api/organisations/:slug/uploads/:id/download` returns a short-lived URL.
 
-Cookie-authenticated POSTs require the exact application `Origin` and JSON content type. Never proxy file bytes through the 64 KiB JSON API. Current files are private to their uploader; attaching them to posts or missions with inherited space permissions is future work. Real Google credentials, CORS, IAM, billing, malware scanning, generation pinning, lifecycle cleanup and the member upload interface remain staging/public-launch work.
+Cookie-authenticated POSTs require the exact application `Origin` and JSON content type. Never proxy file bytes through the 64 KiB JSON API. Member uploads through this flow are private to their uploader.
+
+**Lesson files (Alpha 09).** Creator Studio uses the same endpoints with `{purpose:'lesson_resource',trackId,name,contentType,sizeBytes}`. Only active owners/admins can start them; PDF, DOCX, PPTX, XLSX, JPEG, PNG and WebP up to 10 MiB are accepted. Completion verifies the file signature and pins the object generation. Learners download through `/api/organisations/:slug/lessons/:lessonId/resources/:resourceId/download`; drafts and revisions have owner/admin-only equivalents. `/api/account/capabilities` reports `resourceUploads`. Apply migration 0009 and rerun `npm run db:grant-runtime` before starting this version. Bucket CORS needs the exact application origin with `POST`; signed downloads are navigations and need no CORS. Do not configure a lifecycle rule that deletes `lesson-resources/` objects, because revision history references them. See LESSON_RESOURCES.md.
+
+Real Google credentials, CORS, IAM, billing, malware scanning, orphaned-object cleanup and member attachments for posts or missions remain staging/public-launch work.
 
 ## 7. Database maintenance
 

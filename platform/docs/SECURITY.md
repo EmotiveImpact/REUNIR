@@ -6,7 +6,7 @@ Verified cookie sessions through Better Auth; strict command schemas; server-aut
 
 Database tests run SQL in PGlite, including explicit restricted-role RLS tests. PGlite is an embedded Postgres runtime, not the customer's Neon instance. Its concurrency scheduling does not establish high-load Neon performance. Staging tests against a real pooled Postgres connection remain required.
 
-The storage boundary is tested using an explicitly fake provider. The Google SDK compiles, but no real bucket upload or IAM configuration was verified. Only owner-private files are supported at API level; there is no shipped attachment UI, malware scanning or content-based MIME detection. PDFs/images are served as downloads, not trusted executable page content.
+The storage boundary is tested with explicit stand-in providers and the real Google SDK's offline signing; no real bucket upload, IAM or CORS configuration has been verified. Alpha 09 exposes private lesson files to members (LESSON_RESOURCES.md): uploads are track-scoped and author-only, completion checks size, type and the file signature from the first stored bytes, and the verified object generation is pinned for every later read. Downloads are two-minute signed URLs with attachment disposition, gated by current lesson, space, role and tenant access, with a restrictive RLS policy as defence in depth. Member-private uploads keep their owner-only API. There is still no malware scanning or deep Office-file inspection, and nothing is rendered inline.
 
 ## Before a public or paid launch
 
@@ -15,7 +15,7 @@ The storage boundary is tested using an explicitly fake provider. The Google SDK
 - Run independent authorisation/security review, live Neon tenant-isolation tests and a real restore rehearsal. Add monitoring and incident procedures.
 - Implement retention/export/deletion flows, policy notices and documented handling of reports. Do not claim regulatory compliance from a technical prototype.
 - Add bounded/paginated read endpoints, worker delivery with retries, outbox/receipt/rate-table retention and appropriate indexes before scale.
-- Connect real storage with private IAM/CORS, lifecycle limits, generation-bound objects and content scanning before exposing attachments to members.
+- Connect real storage with private IAM and exact-origin CORS, verify signed uploads and downloads against the real bucket, add malware/content scanning and an orphaned-object sweep, and define an operator procedure for removing published files that contain personal data. Generation pinning and signature checks are implemented; they are not a substitute for scanning.
 - Review the complete transitive dependency/SBOM and known vulnerabilities; CI must enforce these gates. Build success is not a vulnerability audit.
 - Verify Vercel function routing, cookie security, preview isolation, bundle size, operational cost caps and production environment settings.
 

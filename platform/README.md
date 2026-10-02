@@ -1,3 +1,14 @@
+# REUNIR platform
+
+Current release: 0.9.0-alpha.1, private lesson resources. Start with the repository root README, SESSION_HANDOFF.md and docs/BUILD_STATUS.md; docs/LESSON_RESOURCES.md describes the newest feature. The Alpha 05 notes below are kept as history.
+
+```sh
+npm ci
+npm run dev                      # fictional demo, no credentials (VITE_DATA_MODE=demo)
+npm run typecheck && npm test
+npm run test:browser:resources   # set CHROMIUM_PATH if Playwright's browser is not installed
+```
+
 # REUNIR platform · Alpha 05
 
 New in this release: project workspaces at /projects/:id/work. Assignment, criteria, notes and reviewed task proof extend the existing domain. See docs/BUILD_STATUS.md and docs/decisions/005-project-workspaces.md for exact behaviour and limits. No new runtime dependency.

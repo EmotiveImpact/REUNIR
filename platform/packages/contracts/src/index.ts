@@ -1,4 +1,5 @@
 import { lessonDocumentSchema, type LessonDocument } from './lesson-document';
+import { lessonResourcesInput, type LessonResource } from './lesson-resources';
 import { z } from 'zod';
 export type Id = string;
 export type Role = 'owner' | 'admin' | 'moderator' | 'member';
@@ -94,6 +95,8 @@ export interface Track extends TenantRecord {
 }
 export interface Lesson extends TenantRecord {
     richBody?: LessonDocument | null;
+    /** Ordered private files. NULL on lessons published before resources existed. */
+    resources?: LessonResource[] | null;
     trackId: Id;
     title: string;
     summary: string;
@@ -105,6 +108,7 @@ export interface Lesson extends TenantRecord {
 }
 export interface LessonContent {
     title: string; summary: string; body: string; minutes: number; resourceUrl: string; richBody?: LessonDocument | null;
+    resources?: LessonResource[] | null;
 }
 /** Private to active community owners and administrators. Never learner content. */
 export interface LessonDraft extends TenantRecord, LessonContent {
@@ -115,6 +119,13 @@ export interface LessonDraft extends TenantRecord, LessonContent {
 export interface LessonRevision extends TenantRecord, LessonContent {
     trackId: Id; lessonId: Id; draftId: Id; sequence: number;
     kind: 'captured' | 'published'; actorId: Id;
+}
+/** The existing upload intent. Lesson files are scoped to one track; storage keys never leave the server. */
+export interface Upload extends TenantRecord {
+    userId: Id; purpose: 'member' | 'lesson_resource'; trackId: Id | null;
+    originalName: string; contentType: string; sizeBytes: number;
+    status: 'pending' | 'ready' | 'rejected';
+    objectKey: string; completedAt: string | null; generation: string | null;
 }
 export interface Enrolment extends TenantRecord {
     trackId: Id;
@@ -260,6 +271,7 @@ export interface MemberGoal extends TenantRecord {
     visibility: 'private' | 'members'; status: 'active' | 'paused' | 'completed'; completedAt: string | null;
 }
 export interface Workspace {
+    uploads: Upload[];
     lessonDrafts: LessonDraft[];
     lessonRevisions: LessonRevision[];
     projectTasks: ProjectTask[];
@@ -322,7 +334,8 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({type:z.literal('lesson.draft.create'),trackId:id,lessonId:optionalSpace.default(null)}).strict(),
     z.object({type:z.literal('lesson.draft.save'),draftId:id,expectedVersion,
         title:z.string().trim().max(120),summary:z.string().trim().max(240),body:z.string().trim().max(20000),
-        minutes:z.number().int().min(1).max(240),resourceUrl:link.default(''),richBody:lessonDocumentSchema.nullable().optional()}).strict(),
+        minutes:z.number().int().min(1).max(240),resourceUrl:link.default(''),richBody:lessonDocumentSchema.nullable().optional(),
+        resources:lessonResourcesInput.optional()}).strict(),
     z.object({type:z.literal('lesson.draft.publish'),draftId:id,expectedVersion}).strict(),
     z.object({type:z.literal('lesson.draft.archive'),draftId:id,expectedVersion,archived:z.boolean()}).strict(),
     z.object({type:z.literal('lesson.draft.restore'),draftId:id,expectedVersion,revisionId:id}).strict(),

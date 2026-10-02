@@ -3,6 +3,7 @@ import { applyCommand, visibleWorkspace } from '../../../../packages/domain/src/
 import { createSeed, DEMO_USER } from '../../../../packages/domain/src/seed';
 import { newId } from '../../../../packages/contracts/src/index';
 import type { Workspace, CommandInput, MutationResult } from '../../../../packages/contracts/src/index';
+import { clearDemoFiles } from './demo-files';
 export type DataMode = 'demo' | 'live';
 export const mode: DataMode = import.meta.env.VITE_DATA_MODE === 'live' ? 'live' : 'demo';
 const prefix = 'reunir.alpha1.v1.';
@@ -40,8 +41,19 @@ export function demoState(slug: string): Workspace {
     catch { /* Storage can be unavailable in a private browser. Continue in memory. */ }
     return memory[slug] = createSeed(slug);
 }
+/** Store fictional demo state. Returns a note when the browser keeps it only for this session. */
+export function commitDemo(slug: string, workspace: Workspace): string {
+    memory[slug] = workspace;
+    try {
+        localStorage.setItem(prefix + slug, JSON.stringify(workspace));
+        return '';
+    }
+    catch {
+        return ' Browser storage is unavailable; this change lasts for this session.';
+    }
+}
 export function snapshot(slug: string, userId: string): Workspace { return visibleWorkspace(demoState(slug), { organizationId: demoState(slug).organisation.id, userId, requestId: newId() }); }
-export function resetDemo() { memory = {}; window.dispatchEvent(new Event('reunir:reset-demo'));  for (const slug of ['code-black', 'studio-north'])
+export function resetDemo() { memory = {}; void clearDemoFiles(); window.dispatchEvent(new Event('reunir:reset-demo'));  for (const slug of ['code-black', 'studio-north'])
     try {
         localStorage.removeItem(prefix + slug);
         localStorage.removeItem('reunir.chat.v1.' + slug);
@@ -53,14 +65,7 @@ export async function sendCommand(slug: string, userId: string, command: Command
         return api(`/api/organisations/${encodeURIComponent(slug)}/commands`, command);
     const s = demoState(slug);
     const r = applyCommand(s, { organizationId: s.organisation.id, userId, requestId: newId() }, command);
-    memory[slug] = r.workspace;
-    let message = r.message;
-    try {
-        localStorage.setItem(prefix + slug, JSON.stringify(r.workspace));
-    }
-    catch {
-        message += ' Browser storage is unavailable; this change lasts for this session.';
-    }
+    const message = r.message + commitDemo(slug, r.workspace);
     return { ...r, message, workspace: snapshot(slug, userId) };
 }
 export async function identity(): Promise<Identity | null> { if (mode === 'demo')

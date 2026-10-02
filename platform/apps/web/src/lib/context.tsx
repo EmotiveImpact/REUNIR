@@ -3,7 +3,9 @@ import {useLocation} from 'react-router-dom';
 import {api} from './data';
 import { createContext, useContext, useState, useCallback, lazy, Suspense, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Workspace, Member, CommandInput, MutationResult } from '../../../../packages/contracts/src/index';
+import type { Workspace, Member, CommandInput, MutationResult, Upload } from '../../../../packages/contracts/src/index';
+import type { ResourceRef } from '../../../../packages/contracts/src/lesson-resources';
+import { discardLessonUpload, downloadLessonResource, uploadLessonResource } from './resources';
 import { DEMO_USER } from '../../../../packages/domain/src/seed';
 import { loadWorkspace, sendCommand, displayError, mode, identity, type Identity } from './data';
 interface Ctx {
@@ -15,6 +17,10 @@ interface Ctx {
     setUserId: (s: string) => void;
     busy: boolean;
     command: (c: CommandInput) => Promise<MutationResult | undefined>;
+    /** Private lesson files. Each reports its own outcome and leaves the global busy state alone. */
+    uploadResource: (trackId: string, file: File) => Promise<Upload | undefined>;
+    discardUpload: (uploadId: string) => Promise<boolean>;
+    downloadResource: (ref: ResourceRef) => Promise<boolean>;
     toast: (s: string) => void;
     reload: () => void;
     mode: typeof mode;
@@ -53,6 +59,35 @@ export function WorkspaceProvider({ children }: {
     finally {
         setBusy(false);
     } };
+    const refresh = async (workspace?: Workspace) => { if (workspace) cache.setQueryData(key, workspace); else await query.refetch(); };
+    const uploadResource = async (trackId: string, file: File) => { try {
+        const r = await uploadLessonResource(activeSlug, userId, trackId, file);
+        await refresh(r.workspace);
+        toast(r.message);
+        return r.upload;
+    }
+    catch (e) {
+        toast(displayError(e));
+        return undefined;
+    } };
+    const discardUpload = async (uploadId: string) => { try {
+        const r = await discardLessonUpload(activeSlug, userId, uploadId);
+        await refresh(r.workspace);
+        toast(r.message);
+        return true;
+    }
+    catch (e) {
+        toast(displayError(e));
+        return false;
+    } };
+    const downloadResource = async (ref: ResourceRef) => { try {
+        toast(`Downloading ${await downloadLessonResource(activeSlug, userId, ref)}.`);
+        return true;
+    }
+    catch (e) {
+        toast(displayError(e));
+        return false;
+    } };
     if(mode==='live'&&['/invite','/reset-password'].includes(location.pathname))return <Suspense fallback={<div role="status" className="loading-page">Opening account access…</div>}><AccountAccessPage identity={ident.data} onDone={()=>{cache.removeQueries({queryKey:['workspace']});ident.refetch();}}/></Suspense>;
     if (ident.isPending)
         return <div className="loading-page"><div className="loading-mark">R</div><p>Finding your people…</p></div>;
@@ -67,7 +102,7 @@ export function WorkspaceProvider({ children }: {
     if (query.error || !query.data)
         return <div className="loading-page"><h1>Let’s reconnect.</h1><p>{displayError(query.error)}</p><button onClick={() => query.refetch()}>Try again</button><small>No demo data has been substituted.</small></div>;
     const me = query.data.members.find(m => m.userId === userId)!;
-    return <Context.Provider value={{ data: query.data, me, slug: activeSlug, setSlug, userId, setUserId: (id) => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); setDemoUser(id); }, busy, command, toast, reload: () => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); query.refetch(); }, mode, identity: ident.data }}>{children}<div className={`toast ${notice ? 'visible' : ''}`} role="status" aria-live="polite">{notice}</div></Context.Provider>;
+    return <Context.Provider value={{ data: query.data, me, slug: activeSlug, setSlug, userId, setUserId: (id) => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); setDemoUser(id); }, busy, command, uploadResource, discardUpload, downloadResource, toast, reload: () => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); query.refetch(); }, mode, identity: ident.data }}>{children}<div className={`toast ${notice ? 'visible' : ''}`} role="status" aria-live="polite">{notice}</div></Context.Provider>;
 }
 function Login({ onDone }: {
     onDone: () => void;

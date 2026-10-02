@@ -1,6 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { applyCommand, visibleWorkspace, actorFor } from '../../domain/src/engine';
 import { DomainError, commandSchema, type Workspace, type TenantContext, type MutationResult } from '../../contracts/src/index';
+import type { ResourceRef, ResourceUploadRequest } from '../../contracts/src/lesson-resources';
+import { beginResourceUpload, completeResourceUpload, discardResourceUpload, resolveResourceDownload, type StoredObservation } from '../../domain/src/resources';
 import { tables, type TableSpec, type CollectionKey } from './tables';
 import type { Database, SQL } from './connection';
 const slugPattern = /^[a-z0-9][a-z0-9-]{0,99}$/;
@@ -22,7 +24,7 @@ async function readAll(sql: SQL, organisation: Record<string, unknown>): Promise
     const state = { organisation: { id: organisation.id, slug: organisation.slug, name: organisation.name, tagline: organisation.tagline, accent: organisation.accent, createdAt: organisation.created_at instanceof Date ? organisation.created_at.toISOString() : organisation.created_at }, revision: organisation.revision } as Workspace;
     let total = 0;
     for (const spec of tables) {
-        const rows = await sql.query(`SELECT ${spec.fields.map(f => f.column).join(',')} FROM ${spec.table} WHERE organization_id=$1 ORDER BY created_at,id LIMIT $2`, [organisation.id, limitPerTable + 1]);
+        const rows = await sql.query(`SELECT ${spec.fields.map(f => f.column).join(',')} FROM ${spec.table} WHERE organization_id=$1${spec.where ? ' AND ' + spec.where : ''} ORDER BY created_at,id LIMIT $2`, [organisation.id, limitPerTable + 1]);
         total += rows.rows.length;
         if (rows.rows.length > limitPerTable || total > 20000)
             throw new DomainError('WORKSPACE_LIMIT', 'This community needs the paginated workspace release before it can grow further.', 503);
@@ -150,6 +152,37 @@ export class WorkspaceRepository {
     }
     async uploadIntent(slug: string, userId: string, id: string) { return this.within(slug, userId, false, async (sql, org) => { const rows = await sql.query('SELECT * FROM upload_intents WHERE organization_id=$1 AND user_id=$2 AND id=$3', [org.id, userId, id]); if (!rows.rows[0])
         throw new DomainError('NOT_FOUND', 'File not found.', 404); return rows.rows[0]; }); }
-    async markUpload(slug: string, userId: string, id: string, status: 'ready' | 'rejected') { return this.within(slug, userId, true, async (sql, org) => { const rows = await sql.query('UPDATE upload_intents SET status=$4 WHERE organization_id=$1 AND user_id=$2 AND id=$3 RETURNING id', [org.id, userId, id, status]); if (!rows.rows[0])
+    async markUpload(slug: string, userId: string, id: string, status: 'ready' | 'rejected') { return this.within(slug, userId, true, async (sql, org) => { const rows = await sql.query("UPDATE upload_intents SET status=$4 WHERE organization_id=$1 AND user_id=$2 AND id=$3 AND purpose='member' RETURNING id", [org.id, userId, id, status]); if (!rows.rows[0])
         throw new DomainError('NOT_FOUND', 'File not found.', 404); }); }
+    /** Lesson files. Domain rules run inside the tenant transaction; storage calls happen outside it. */
+    async beginResourceUpload(slug: string, userId: string, request: ResourceUploadRequest, key: (organizationId: string, id: string) => string, requestId: string) {
+        return this.within(slug, userId, true, async (sql, org) => {
+            const before = await readAll(sql, org), orgId = String(org.id), id = randomUUID();
+            const result = beginResourceUpload(before, context(orgId, userId, requestId), request, { id, objectKey: key(orgId, id) }, new Date().toISOString());
+            await saveChanges(sql, before, result.workspace);
+            return { upload: result.upload, expired: result.expired };
+        });
+    }
+    async completeResourceUpload(slug: string, userId: string, id: string, observed: StoredObservation, requestId: string) {
+        return this.within(slug, userId, true, async (sql, org) => {
+            const before = await readAll(sql, org);
+            const result = completeResourceUpload(before, context(String(org.id), userId, requestId), id, observed, new Date().toISOString());
+            if (result.outcome !== 'unchanged') await saveChanges(sql, before, result.workspace);
+            return { upload: result.upload, outcome: result.outcome };
+        });
+    }
+    async discardResourceUpload(slug: string, userId: string, id: string, requestId: string) {
+        return this.within(slug, userId, true, async (sql, org) => {
+            const before = await readAll(sql, org);
+            const result = discardResourceUpload(before, context(String(org.id), userId, requestId), id, new Date().toISOString());
+            await saveChanges(sql, before, result.workspace);
+            return { id: result.id, objectKey: result.objectKey };
+        });
+    }
+    async resourceDownload(slug: string, userId: string, ref: ResourceRef) {
+        return this.within(slug, userId, false, async (sql, org) => {
+            const target = resolveResourceDownload(await readAll(sql, org), context(String(org.id), userId), ref);
+            return { objectKey: target.upload.objectKey, generation: target.upload.generation, contentType: target.upload.contentType, filename: target.filename };
+        });
+    }
 }
