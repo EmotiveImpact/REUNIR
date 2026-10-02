@@ -1,3 +1,11 @@
+# 0.8.0-alpha.1: rich lesson authoring
+
+- Add Tiptap formatting, headings, lists, quotes, code, links and labelled image/video blocks.
+- Keep private draft/preview/publish/revision boundaries and legacy lessons.
+- Add bounded structured content, safe React rendering and opt-in external media.
+- Add nullable migration 0008 and rich-content database/browser regressions.
+- Deployment remains deferred by the user.
+
 # Change log
 
 ## 0.7.0-alpha.1, 2 October 2026

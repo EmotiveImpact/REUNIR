@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "release": "0.7.0-alpha.1",
+  "release": "0.8.0-alpha.1",
   "reviewedOn": "2026-10-02",
   "scope": "Targeted source/document review, not a fresh whole-repository audit, full runtime comparison or a legal opinion. Previously captured commit snapshots were deliberately re-read; no claim that all are current HEAD.",
   "donorApplicationFilesImported": 0,
@@ -114,6 +114,17 @@
       "licence": "MIT; complete notice retained",
       "lesson": "Reuse accessible UI composition and primitive behaviour; preserve existing REUNIR data/permissions.",
       "url": "https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/dropdown-menu.tsx",
+      "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "tiptap-starter-kit",
+      "project": "Tiptap",
+      "repository": "ueberdosis/tiptap",
+      "file": "packages/starter-kit/src/starter-kit.ts",
+      "blob": "528a16ad3d2fad44d83c9c5778f4d0e9ecc7115f",
+      "licence": "MIT; installed 3.31.4 licence retained in platform/legal/tiptap-MIT.txt",
+      "lesson": "Headless structured editing with a deliberately restricted extension set; persist validated JSON independently of the editor UI.",
+      "url": "https://github.com/ueberdosis/tiptap/blob/v3.31.4/packages/starter-kit/src/starter-kit.ts",
       "reviewedOn": "2026-10-02"
     }
   ],
@@ -279,8 +290,29 @@
         "platform/scripts/v4-integration-browser-check.ts"
       ],
       "rationale": "Scoped source adaptation with pinned Radix primitives; no separate product/stack fork."
+    },
+    {
+      "id": "rich-lesson-editor",
+      "status": "implemented",
+      "mode": "existing_code_reuse",
+      "sources": [
+        "tiptap-starter-kit",
+        "classroomio-layers"
+      ],
+      "decision": "Use pinned MIT Tiptap packages for editing; retain the existing command, draft, permission and revision model. Strict JSON validation and a separate React renderer bound content types. Media contacts external hosts only after a learner click.",
+      "implementation": [
+        "platform/apps/web/src/components/lesson-editor.tsx",
+        "platform/apps/web/src/components/lesson-content.tsx",
+        "platform/packages/contracts/src/lesson-document.ts",
+        "platform/packages/db/migrations/0008_rich_lessons.sql"
+      ],
+      "tests": [
+        "platform/tests/rich-lessons.test.ts",
+        "platform/tests/rich-lessons-database.test.ts",
+        "platform/scripts/rich-lessons-browser-check.ts"
+      ]
     }
   ],
-  "libraryReuse": "Existing locked React, TanStack Query, Hono, Zod, Better Auth, SQL drivers, Lucide and Playwright dependencies remain. No new runtime dependency in this wave.",
+  "libraryReuse": "Alpha 08 adds pinned MIT Tiptap 3.31.4 packages, preserving the existing stack and shadcn components. No donor LMS application source imported.",
   "uiComponentSourceFilesAdapted": 3
 }

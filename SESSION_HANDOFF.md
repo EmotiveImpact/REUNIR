@@ -1,3 +1,16 @@
+# Current continuation: Creator Studio 2 rich lessons
+
+2 October 2026. The user will clone, deploy and perform hosted tests later. Do not resume Neon/Vercel setup unless requested. Continue the existing app.
+
+Baseline main: `6238d7b92b4a2e5d994daf07874b3097b364eb34`, merged PR #1. Current work: `feat/creator-rich-lessons`. Read platform/docs/RICH_LESSONS.md, BUILD_STATUS.md and ROADMAP.md. UI_DESIGN_DIRECTION.md remains authoritative. Rich editing/media is integrated into the actual Creator Studio, learner view and immutable revision system, not a separate mock.
+
+Run all eight migrations before the new server. No database, deployment or real email has been created in this continuation. Local application tests: 383 passed, TypeScript/build passed. Browser and actual PostgreSQL verification must complete on CI; Chromium download failed locally and socket tests remain restricted. Verify the remote branch/PR before claiming publication.
+
+Next product work: private resources with lesson access inheritance, then assessments. Preserve existing private goals/messages, contribution review and tenant isolation.
+
+---
+## Historical Alpha 07 handover
+
 # START HERE: REUNIR Alpha 07, approved v4 integrated
 
 ## What the user wants

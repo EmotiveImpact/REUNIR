@@ -20,3 +20,4 @@ class ErrorBoundary extends React.Component<{
 createRoot(document.getElementById('root')!).render(<React.StrictMode><ErrorBoundary><QueryClientProvider client={client}><Router><WorkspaceProvider><App /></WorkspaceProvider></Router></QueryClientProvider></ErrorBoundary></React.StrictMode>);
 
 import './v4.css';
+import './lesson-editor.css';

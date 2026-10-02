@@ -10,7 +10,7 @@ export async function setContext(sql: SQL, organizationId: string, userId: strin
 function decode(row: Record<string, unknown>, spec: TableSpec) { return Object.fromEntries(spec.fields.map(f => [f.property, row[f.column] instanceof Date ? (row[f.column] as Date).toISOString() : row[f.column]])); }
 async function putRow(sql: SQL, spec: TableSpec, row: Record<string, unknown>) {
     const columns = spec.fields.map(f => f.column);
-    const params = spec.fields.map(f => f.type === 'jsonb' ? JSON.stringify(row[f.property]) : row[f.property]);
+    const params = spec.fields.map(f => f.type === 'jsonb' && row[f.property] != null ? JSON.stringify(row[f.property]) : row[f.property] ?? null);
     const updates = columns.filter(c => !['id', 'organization_id'].includes(c)).map(c => `${c}=EXCLUDED.${c}`).join(',');
     if(spec.table==='lesson_revisions') {
         await sql.query(`INSERT INTO ${spec.table} (${columns.join(',')}) VALUES (${params.map((_, i) => '$' + (i + 1)).join(',')})`,params);

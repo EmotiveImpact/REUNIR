@@ -1,3 +1,16 @@
+# Alpha 08 rich lessons: implementation checkpoint
+
+2 October 2026. Built from merged main `6238d7b` on `feat/creator-rich-lessons`.
+
+Implemented: Tiptap rich editor using existing shadcn controls; bounded JSON validation; escaped React rendering; opt-in public image/video loading; server-derived text; private preview, explicit publish and rich/plain revision restoration. Additive migration 0008; earlier migration bytes unchanged. Details: RICH_LESSONS.md.
+
+Local verification: 383 application/database/API/rendering tests passed; TypeScript, production build and standalone preview passed. The tsx CLI IPC listener is blocked, so tests used the equivalent Node loader command. Chromium download failed with a truncated archive; browser/HTTP/actual PostgreSQL gates are pending remote CI for this source.
+
+Publication: local implementation checkpoint, remote push/CI pending. Merge: pending. Deployment: explicitly deferred by user; no Neon/Vercel/email/scheduler provisioned.
+
+---
+## Historical Alpha 07 evidence
+
 # REUNIR Alpha 07: approved v4 integrated into the application
 
 2 October 2026. Application 0.7.0-alpha.1, PRD 0.8. Local engineering release. The user-approved design is implemented in the existing React application, not just the reference HTML.
