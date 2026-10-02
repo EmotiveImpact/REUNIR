@@ -1,0 +1,168 @@
+import type { PilotOperations } from './operations';
+import { RELEASE_VERSION } from '../../../packages/contracts/src/operations';
+import { InvitationService, invitationEmail } from './invitations';
+import { MessagingRepository } from '../../../packages/db/src/messaging';
+import { startConversation, sendMessage, reportMessage } from '../../../packages/contracts/src/messaging';
+import { id } from '../../../packages/contracts/src/index';
+import type { MailQueue } from './mail';
+import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
+import { secureHeaders } from 'hono/secure-headers';
+import { ZodError, z } from 'zod';
+import { createHash, timingSafeEqual, randomUUID } from 'node:crypto';
+import { DomainError } from '../../../packages/contracts/src/index';
+import { WorkspaceRepository } from '../../../packages/db/src/repository';
+import { objectKey, uploadSchema, type PrivateStorage } from './storage';
+export interface SessionIdentity {
+    id: string;
+    name: string;
+}
+interface Dependencies {
+    repository: WorkspaceRepository;
+    operations?: PilotOperations;
+    origin: string;
+    resolveSession: (headers: Headers) => Promise<SessionIdentity | null>;
+    authHandler?: (request: Request) => Promise<Response>;
+    storage?: PrivateStorage;
+    invitations?: InvitationService;
+    mail?: MailQueue;
+    cronSecret?: string;
+    registerInvited?: (name:string,email:string,password:string)=>Promise<{id:string}>;
+}
+export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, invitations, mail, cronSecret, registerInvited }: Dependencies) {
+    const messaging=new MessagingRepository(repository);
+    const canonical = new URL(origin).origin;
+    const app = new Hono<{
+        Variables: {
+            identity: SessionIdentity;
+            requestId: string;
+        };
+    }>();
+    app.use('*', secureHeaders({ crossOriginResourcePolicy: 'same-origin', referrerPolicy: 'no-referrer', xFrameOptions: 'DENY' }));
+    app.use('*', async (c, next) => { c.set('requestId', randomUUID()); c.header('Cache-Control', 'no-store'); c.header('X-Request-ID', c.get('requestId')); await next(); });
+    app.use('*', bodyLimit({ maxSize: 64 * 1024, onError: c => c.json({ error: { code: 'BODY_TOO_LARGE', message: 'Request exceeds 64 KB.' } }, 413) }));
+    app.use('/api/*', async (c, next) => {
+        if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(c.req.method)) {
+            if (c.req.header('origin') !== canonical)
+                return c.json({ error: { code: 'ORIGIN_REJECTED', message: 'This action must originate from the application.' } }, 403);
+            if (!c.req.header('content-type')?.toLowerCase().startsWith('application/json'))
+                return c.json({ error: { code: 'CONTENT_TYPE', message: 'Send application/json.' } }, 415);
+        }
+        await next();
+    });
+    app.get('/api/health', async (c) => { await repository.db.query('SELECT 1'); return c.json({ status: 'ok', version: RELEASE_VERSION, mode: 'live', database: repository.db.kind, storage: storage ? 'configured' : 'not-configured' }); });
+    app.get('/api/health/live', c=>c.json({status:'ok',version:RELEASE_VERSION}));
+    app.get('/api/account/capabilities', c=>c.json({invitations:!!invitations,passwordRecovery:!!mail?.transport}));
+    app.get('/api/internal/mail',async c=>{
+        const provided=c.req.header('authorization')||'';
+        const expected=cronSecret ? 'Bearer '+cronSecret : '';
+        if(!expected||!timingSafeEqual(createHash('sha256').update(provided).digest(),createHash('sha256').update(expected).digest()))return c.json({error:{code:'FORBIDDEN',message:'Not authorised.'}},403);
+        return c.json(mail ? await mail.drain(2) : {configured:false,sent:0,failed:0});
+    });
+    app.use('/api/auth/request-password-reset',async(c,next)=>{if(!mail?.transport)return c.json({error:{code:'EMAIL_UNAVAILABLE',message:'Password recovery is not configured. Contact the community owner.'}},503);await next();});
+    app.use('/api/invitations/*',async(c,next)=>{
+        if(!invitations)return c.json({error:{code:'INVITATIONS_UNAVAILABLE',message:'Invitations are not configured.'}},503);
+        // Global bounded gate plus per-peer gate. Deploy behind a trusted reverse proxy.
+        const peer=createHash('sha256').update(c.req.header('x-real-ip')||'local').digest('hex');
+        if(!await repository.consumeRateLimit('invite-global',200)||!await repository.consumeRateLimit('invite-peer:'+peer,30))return c.json({error:{code:'RATE_LIMITED',message:'Try again shortly.'}},429);
+        await next();
+    });
+    const inviteToken=z.object({token:z.string().regex(/^[A-Za-z0-9_-]{43}$/)}).strict();
+    app.post('/api/invitations/inspect',async c=>c.json(await invitations!.inspect(inviteToken.parse(await c.req.json()).token)));
+    app.post('/api/invitations/accept',async c=>{
+        const who=await resolveSession(c.req.raw.headers);if(!who)throw new DomainError('UNAUTHENTICATED','Sign in to accept this invitation.',401);
+        return c.json(await invitations!.accept(inviteToken.parse(await c.req.json()).token,who.id));
+    });
+    app.post('/api/invitations/register',async c=>{
+        if(!registerInvited)throw new DomainError('REGISTRATION_UNAVAILABLE','Account creation is not configured.',503);
+        const body=z.object({token:inviteToken.shape.token,name:z.string().trim().min(2).max(80),password:z.string().min(12).max(128)}).strict().parse(await c.req.json());
+        const email=await invitations!.registrationEmail(body.token);
+        let user:{id:string};
+        try {user=await registerInvited(body.name,email,body.password);} catch {throw new DomainError('ACCOUNT_ACCESS','Unable to create this account. Already registered? Sign in, or use password recovery.',409);}
+        // Registration uses the auth provider. A revoke race can leave a non-member account, never access.
+        return c.json(await invitations!.accept(body.token,user.id),201);
+    });
+    app.on(['GET', 'POST'], '/api/auth/*', c => authHandler ? authHandler(c.req.raw) : c.json({ error: { code: 'AUTH_UNAVAILABLE', message: 'Authentication is not configured.' } }, 503));
+    app.get('/api/session', async (c) => { const who = await resolveSession(c.req.raw.headers); return c.json(who ? { ...who, memberships: await repository.memberships(who.id) } : null); });
+    app.use('/api/organisations/*', async (c, next) => {
+        const identity = await resolveSession(c.req.raw.headers);
+        if (!identity)
+            return c.json({ error: { code: 'UNAUTHENTICATED', message: 'Please sign in.' } }, 401);
+        c.set('identity', identity);
+        if (!await repository.consumeRateLimit('member:' + identity.id, c.req.method === 'GET' ? 240 : 100))
+            return c.json({ error: { code: 'RATE_LIMITED', message: 'Take a moment before trying again.' } }, 429, { 'Retry-After': '60' });
+        await next();
+    });
+    app.get('/api/organisations/:slug/pilot-status',async c=>{if(!operations)throw new DomainError('UNAVAILABLE','Pilot operations are not configured.',503);return c.json(await operations.snapshot(c.req.param('slug'),c.get('identity').id));});
+    app.get('/api/organisations/:slug/invitations',async c=>{if(!invitations)throw new DomainError('UNAVAILABLE','Invitations not configured.',503);return c.json(await invitations.list(c.req.param('slug'),c.get('identity').id));});
+    app.post('/api/organisations/:slug/invitations',async c=>{
+        if(!invitations)throw new DomainError('UNAVAILABLE','Invitations not configured.',503);
+        if(!await repository.consumeRateLimit('invite-admin:'+c.get('identity').id,10))throw new DomainError('RATE_LIMITED','Please wait before sending more invitations.',429);
+        const {email}=z.object({email:invitationEmail}).strict().parse(await c.req.json());return c.json(await invitations.create(c.req.param('slug'),c.get('identity').id,email),201);
+    });
+    app.post('/api/organisations/:slug/invitations/:inviteId/revoke',async c=>{if(!invitations)throw new DomainError('UNAVAILABLE','Invitations not configured.',503);return c.json(await invitations.revoke(c.req.param('slug'),c.get('identity').id,id.parse(c.req.param('inviteId'))));});
+    app.get('/api/organisations/:slug/conversations',async c=>c.json(await messaging.list(c.req.param('slug'),c.get('identity').id,c.req.query('before'))));
+    app.post('/api/organisations/:slug/conversations',async c=>{const b=startConversation.parse(await c.req.json());return c.json(await messaging.start(c.req.param('slug'),c.get('identity').id,b.userId),201);});
+    app.get('/api/organisations/:slug/conversations/:threadId',async c=>c.json(await messaging.detail(c.req.param('slug'),c.get('identity').id,c.req.param('threadId'))));
+    app.get('/api/organisations/:slug/conversations/:threadId/messages',async c=>c.json(await messaging.messages(c.req.param('slug'),c.get('identity').id,c.req.param('threadId'),c.req.query('before'))));
+    app.post('/api/organisations/:slug/conversations/:threadId/messages',async c=>{const b=sendMessage.parse(await c.req.json());if(!c.req.header('idempotency-key'))throw new DomainError('KEY_REQUIRED','An Idempotency-Key header is required.');return c.json(await messaging.send(c.req.param('slug'),c.get('identity').id,c.req.param('threadId'),b.body,c.req.header('idempotency-key')!),201);});
+    app.post('/api/organisations/:slug/conversations/:threadId/read',async c=>{const b=z.object({messageId:id}).strict().parse(await c.req.json());return c.json(await messaging.read(c.req.param('slug'),c.get('identity').id,c.req.param('threadId'),b.messageId));});
+    app.post('/api/organisations/:slug/conversations/:threadId/messages/:messageId/report',async c=>{const b=reportMessage.parse(await c.req.json());return c.json(await messaging.report(c.req.param('slug'),c.get('identity').id,c.req.param('threadId'),c.req.param('messageId'),b.reason));});
+    app.post('/api/organisations/:slug/member-blocks',async c=>{const b=z.object({userId:id,blocked:z.boolean()}).strict().parse(await c.req.json());return c.json(await messaging.block(c.req.param('slug'),c.get('identity').id,b.userId,b.blocked));});
+    app.get('/api/organisations/:slug/message-reports',async c=>c.json(await messaging.reports(c.req.param('slug'),c.get('identity').id)));
+    app.post('/api/organisations/:slug/message-reports/:reportId/resolve',async c=>c.json(await messaging.resolve(c.req.param('slug'),c.get('identity').id,id.parse(c.req.param('reportId')))));
+    app.get('/api/organisations/:slug/workspace', async (c) => c.json(await repository.snapshot(c.req.param('slug'), c.get('identity').id)));
+    app.post('/api/organisations/:slug/commands', async (c) => {
+        const key = c.req.header('idempotency-key');
+        if (!key)
+            throw new DomainError('KEY_REQUIRED', 'An Idempotency-Key header is required.');
+        const input = await c.req.json();
+        return c.json(await repository.execute(c.req.param('slug'), c.get('identity').id, input, key, c.get('requestId')));
+    });
+    app.post('/api/organisations/:slug/uploads', async (c) => {
+        if (!storage)
+            throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
+        const input = uploadSchema.parse(await c.req.json());
+        const slug = c.req.param('slug'), who = c.get('identity');
+        const snapshot = await repository.snapshot(slug, who.id);
+        const id = randomUUID();
+        const key = objectKey(snapshot.organisation.id, who.id, input.contentType, id);
+        // Persist authorised intent before minting a short-lived capability. User input never selects a bucket or tenant prefix.
+        await repository.createUploadIntent(slug, who.id, { id, objectKey: key, contentType: input.contentType, sizeBytes: input.sizeBytes, originalName: input.name });
+        const policy = await storage.upload(key, input.contentType, input.sizeBytes);
+        return c.json({ id, ...policy, method: 'POST', expiresIn: 300 }, 201);
+    });
+    app.post('/api/organisations/:slug/uploads/:id/complete', async (c) => {
+        if (!storage)
+            throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
+        const slug = c.req.param('slug'), who = c.get('identity').id, id = c.req.param('id');
+        const intent = await repository.uploadIntent(slug, who, id);
+        const meta = await storage.metadata(String(intent.object_key));
+        if (meta.size !== Number(intent.size_bytes) || meta.contentType !== intent.content_type) {
+            await repository.markUpload(slug, who, id, 'rejected');
+            throw new DomainError('FILE_MISMATCH', 'The uploaded file does not match the permitted type and size.');
+        }
+        await repository.markUpload(slug, who, id, 'ready');
+        return c.json({ id, status: 'ready' });
+    });
+    app.get('/api/organisations/:slug/uploads/:id/download', async (c) => {
+        if (!storage)
+            throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
+        const intent = await repository.uploadIntent(c.req.param('slug'), c.get('identity').id, c.req.param('id'));
+        if (intent.status !== 'ready')
+            throw new DomainError('FILE_NOT_READY', 'This file is not ready to download.', 409);
+        return c.json({ url: await storage.download(String(intent.object_key)), expiresIn: 120 });
+    });
+    app.notFound(c => c.json({ error: { code: 'NOT_FOUND', message: 'Endpoint not found.' } }, 404));
+    app.onError((err, c) => {
+        if (err instanceof DomainError)
+            return c.json({ error: { code: err.code, message: err.message, requestId: c.get('requestId') } }, err.status as 400);
+        if (err instanceof ZodError)
+            return c.json({ error: { code: 'VALIDATION', message: err.issues[0]?.message || 'Invalid request.' } }, 400);
+        if (err instanceof SyntaxError)
+            return c.json({ error: { code: 'INVALID_JSON', message: 'Send valid JSON.' } }, 400);
+        console.error(JSON.stringify({ event: 'request.failed', requestId: c.get('requestId'), errorName: err.name }));
+        return c.json({ error: { code: 'INTERNAL', message: 'This action could not be completed. No demo data was substituted.', requestId: c.get('requestId') } }, 500);
+    });
+    return app;
+}

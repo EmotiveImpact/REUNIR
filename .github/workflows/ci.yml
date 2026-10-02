@@ -1,0 +1,84 @@
+name: REUNIR application checks
+on:
+  push:
+    paths: ['platform/**', 'scripts/**', 'research/**', '.github/workflows/ci.yml']
+  pull_request:
+    paths: ['platform/**', 'scripts/**', 'research/**', '.github/workflows/ci.yml']
+permissions:
+  contents: read
+concurrency:
+  group: reunir-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: platform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: platform/package-lock.json
+      - run: npm ci
+      - run: python3 ../scripts/check_research.py
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:http
+      - run: npm run build
+      - run: npm run bundle:preview
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - run: npm run test:browser:operations
+      - run: npm run test:browser:work
+      - run: npm run test:browser:authoring
+      - run: npm run test:browser:monochrome
+      - run: npm run test:browser:v4
+      - run: npm run test:browser:connected
+      - run: python3 -m unittest discover -s ../scripts -p 'test_*.py' -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reunir-application-evidence
+          path: platform/evidence
+          retention-days: 7
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: reunir_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: LOCAL_CI_ADMIN_ONLY_1234567890123456
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d reunir_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    defaults:
+      run:
+        working-directory: platform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: platform/package-lock.json
+      - run: npm ci
+      - run: npm run test:postgres
+        env:
+          NODE_ENV: test
+          POSTGRES_TEST_URL: postgres://postgres:LOCAL_CI_ADMIN_ONLY_1234567890123456@127.0.0.1:5432/reunir_ci
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reunir-postgres-evidence
+          path: platform/evidence/alpha04/postgres-results.json
+          retention-days: 7

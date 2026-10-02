@@ -1,0 +1,1704 @@
+import type { Workspace } from '../../contracts/src/index';
+export type CollectionKey = Exclude<keyof Workspace, 'organisation' | 'revision'>;
+export interface TableSpec {
+    key: CollectionKey;
+    table: string;
+    fields: {
+        property: string;
+        column: string;
+        type: string;
+    }[];
+}
+export const tables: TableSpec[] = [
+    {
+        "key": "members",
+        "table": "members",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "userId",
+                "column": "user_id",
+                "type": "text"
+            },
+            {
+                "property": "name",
+                "column": "name",
+                "type": "text"
+            },
+            {
+                "property": "headline",
+                "column": "headline",
+                "type": "text"
+            },
+            {
+                "property": "bio",
+                "column": "bio",
+                "type": "text"
+            },
+            {
+                "property": "skills",
+                "column": "skills",
+                "type": "jsonb"
+            },
+            {
+                "property": "colour",
+                "column": "colour",
+                "type": "text"
+            },
+            {
+                "property": "avatar",
+                "column": "avatar",
+                "type": "text"
+            },
+            {
+                "property": "role",
+                "column": "role",
+                "type": "text"
+            },
+            {
+                "property": "status",
+                "column": "status",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "spaces",
+        "table": "spaces",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "name",
+                "column": "name",
+                "type": "text"
+            },
+            {
+                "property": "slug",
+                "column": "slug",
+                "type": "text"
+            },
+            {
+                "property": "description",
+                "column": "description",
+                "type": "text"
+            },
+            {
+                "property": "colour",
+                "column": "colour",
+                "type": "text"
+            },
+            {
+                "property": "kind",
+                "column": "kind",
+                "type": "text"
+            },
+            {
+                "property": "visibility",
+                "column": "visibility",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "spaceMembers",
+        "table": "space_members",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "spaceId",
+                "column": "space_id",
+                "type": "text"
+            },
+            {
+                "property": "userId",
+                "column": "user_id",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "posts",
+        "table": "posts",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "spaceId",
+                "column": "space_id",
+                "type": "text"
+            },
+            {
+                "property": "authorId",
+                "column": "author_id",
+                "type": "text"
+            },
+            {
+                "property": "kind",
+                "column": "kind",
+                "type": "text"
+            },
+            {
+                "property": "title",
+                "column": "title",
+                "type": "text"
+            },
+            {
+                "property": "body",
+                "column": "body",
+                "type": "text"
+            },
+            {
+                "property": "pinned",
+                "column": "pinned",
+                "type": "boolean"
+            },
+            {
+                "property": "hidden",
+                "column": "hidden",
+                "type": "boolean"
+            },
+            {
+                "property": "cover",
+                "column": "cover",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "comments",
+        "table": "comments",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "postId",
+                "column": "post_id",
+                "type": "text"
+            },
+            {
+                "property": "authorId",
+                "column": "author_id",
+                "type": "text"
+            },
+            {
+                "property": "body",
+                "column": "body",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "reactions",
+        "table": "reactions",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "postId",
+                "column": "post_id",
+                "type": "text"
+            },
+            {
+                "property": "userId",
+                "column": "user_id",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "bookmarks",
+        "table": "bookmarks",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "postId",
+                "column": "post_id",
+                "type": "text"
+            },
+            {
+                "property": "userId",
+                "column": "user_id",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "tracks",
+        "table": "tracks",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "spaceId",
+                "column": "space_id",
+                "type": "text"
+            },
+            {
+                "property": "title",
+                "column": "title",
+                "type": "text"
+            },
+            {
+                "property": "summary",
+                "column": "summary",
+                "type": "text"
+            },
+            {
+                "property": "description",
+                "column": "description",
+                "type": "text"
+            },
+            {
+                "property": "category",
+                "column": "category",
+                "type": "text"
+            },
+            {
+                "property": "level",
+                "column": "level",
+                "type": "text"
+            },
+            {
+                "property": "colour",
+                "column": "colour",
+                "type": "text"
+            },
+            {
+                "property": "cover",
+                "column": "cover",
+                "type": "text"
+            },
+            {
+                "property": "authorId",
+                "column": "author_id",
+                "type": "text"
+            },
+            {
+                "property": "published",
+                "column": "published",
+                "type": "boolean"
+            }
+        ]
+    },
+    {
+        "key": "lessons",
+        "table": "lessons",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "trackId",
+                "column": "track_id",
+                "type": "text"
+            },
+            {
+                "property": "title",
+                "column": "title",
+                "type": "text"
+            },
+            {
+                "property": "summary",
+                "column": "summary",
+                "type": "text"
+            },
+            {
+                "property": "body",
+                "column": "body",
+                "type": "text"
+            },
+            {
+                "property": "position",
+                "column": "position",
+                "type": "integer"
+            },
+            {
+                "property": "minutes",
+                "column": "minutes",
+                "type": "integer"
+            },
+            {
+                "property": "resourceUrl",
+                "column": "resource_url",
+                "type": "text"
+            },
+            {
+                "property": "published",
+                "column": "published",
+                "type": "boolean"
+            }
+        ]
+    },
+    {
+        "key": "enrolments",
+        "table": "enrolments",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "trackId",
+                "column": "track_id",
+                "type": "text"
+            },
+            {
+                "property": "userId",
+                "column": "user_id",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "completions",
+        "table": "completions",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "trackId",
+                "column": "track_id",
+                "type": "text"
+            },
+            {
+                "property": "lessonId",
+                "column": "lesson_id",
+                "type": "text"
+            },
+            {
+                "property": "userId",
+                "column": "user_id",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "missions",
+        "table": "missions",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "spaceId",
+                "column": "space_id",
+                "type": "text"
+            },
+            {
+                "property": "trackId",
+                "column": "track_id",
+                "type": "text"
+            },
+            {
+                "property": "title",
+                "column": "title",
+                "type": "text"
+            },
+            {
+                "property": "brief",
+                "column": "brief",
+                "type": "text"
+            },
+            {
+                "property": "criteria",
+                "column": "criteria",
+                "type": "jsonb"
+            },
+            {
+                "property": "category",
+                "column": "category",
+                "type": "text"
+            },
+            {
+                "property": "points",
+                "column": "points",
+                "type": "integer"
+            },
+            {
+                "property": "dueAt",
+                "column": "due_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "difficulty",
+                "column": "difficulty",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "submissions",
+        "table": "submissions",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "missionId",
+                "column": "mission_id",
+                "type": "text"
+            },
+            {
+                "property": "authorId",
+                "column": "author_id",
+                "type": "text"
+            },
+            {
+                "property": "body",
+                "column": "body",
+                "type": "text"
+            },
+            {
+                "property": "url",
+                "column": "url",
+                "type": "text"
+            },
+            {
+                "property": "status",
+                "column": "status",
+                "type": "text"
+            },
+            {
+                "property": "feedback",
+                "column": "feedback",
+                "type": "text"
+            },
+            {
+                "property": "reviewerId",
+                "column": "reviewer_id",
+                "type": "text"
+            },
+            {
+                "property": "updatedAt",
+                "column": "updated_at",
+                "type": "timestamptz"
+            }
+        ]
+    },
+    {
+        "key": "projects",
+        "table": "projects",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "spaceId",
+                "column": "space_id",
+                "type": "text"
+            },
+            {
+                "property": "title",
+                "column": "title",
+                "type": "text"
+            },
+            {
+                "property": "tagline",
+                "column": "tagline",
+                "type": "text"
+            },
+            {
+                "property": "summary",
+                "column": "summary",
+                "type": "text"
+            },
+            {
+                "property": "category",
+                "column": "category",
+                "type": "text"
+            },
+            {
+                "property": "skills",
+                "column": "skills",
+                "type": "jsonb"
+            },
+            {
+                "property": "ownerId",
+                "column": "owner_id",
+                "type": "text"
+            },
+            {
+                "property": "status",
+                "column": "status",
+                "type": "text"
+            },
+            {
+                "property": "cover",
+                "column": "cover",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "projectMembers",
+        "table": "project_members",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "projectId",
+                "column": "project_id",
+                "type": "text"
+            },
+            {
+                "property": "userId",
+                "column": "user_id",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "projectUpdates",
+        "table": "project_updates",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "projectId",
+                "column": "project_id",
+                "type": "text"
+            },
+            {
+                "property": "authorId",
+                "column": "author_id",
+                "type": "text"
+            },
+            {
+                "property": "body",
+                "column": "body",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "events",
+        "table": "events",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "spaceId",
+                "column": "space_id",
+                "type": "text"
+            },
+            {
+                "property": "title",
+                "column": "title",
+                "type": "text"
+            },
+            {
+                "property": "summary",
+                "column": "summary",
+                "type": "text"
+            },
+            {
+                "property": "startsAt",
+                "column": "starts_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "duration",
+                "column": "duration",
+                "type": "integer"
+            },
+            {
+                "property": "hostId",
+                "column": "host_id",
+                "type": "text"
+            },
+            {
+                "property": "format",
+                "column": "format",
+                "type": "text"
+            },
+            {
+                "property": "location",
+                "column": "location",
+                "type": "text"
+            },
+            {
+                "property": "meetingUrl",
+                "column": "meeting_url",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "rsvps",
+        "table": "rsvps",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "eventId",
+                "column": "event_id",
+                "type": "text"
+            },
+            {
+                "property": "userId",
+                "column": "user_id",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "notifications",
+        "table": "notifications",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "userId",
+                "column": "user_id",
+                "type": "text"
+            },
+            {
+                "property": "title",
+                "column": "title",
+                "type": "text"
+            },
+            {
+                "property": "body",
+                "column": "body",
+                "type": "text"
+            },
+            {
+                "property": "href",
+                "column": "href",
+                "type": "text"
+            },
+            {
+                "property": "readAt",
+                "column": "read_at",
+                "type": "timestamptz"
+            }
+        ]
+    },
+    {
+        "key": "reports",
+        "table": "reports",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "postId",
+                "column": "post_id",
+                "type": "text"
+            },
+            {
+                "property": "userId",
+                "column": "user_id",
+                "type": "text"
+            },
+            {
+                "property": "reason",
+                "column": "reason",
+                "type": "text"
+            },
+            {
+                "property": "status",
+                "column": "status",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "reputation",
+        "table": "reputation",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "userId",
+                "column": "user_id",
+                "type": "text"
+            },
+            {
+                "property": "dimension",
+                "column": "dimension",
+                "type": "text"
+            },
+            {
+                "property": "points",
+                "column": "points",
+                "type": "integer"
+            },
+            {
+                "property": "sourceId",
+                "column": "source_id",
+                "type": "text"
+            },
+            {
+                "property": "description",
+                "column": "description",
+                "type": "text"
+            }
+        ]
+    },
+    {
+        "key": "audit",
+        "table": "audit",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "actorId",
+                "column": "actor_id",
+                "type": "text"
+            },
+            {
+                "property": "action",
+                "column": "action",
+                "type": "text"
+            },
+            {
+                "property": "objectId",
+                "column": "object_id",
+                "type": "text"
+            },
+            {
+                "property": "metadata",
+                "column": "metadata",
+                "type": "jsonb"
+            }
+        ]
+    },
+    {
+        "key": "outbox",
+        "table": "outbox",
+        "fields": [
+            {
+                "property": "id",
+                "column": "id",
+                "type": "text"
+            },
+            {
+                "property": "organizationId",
+                "column": "organization_id",
+                "type": "text"
+            },
+            {
+                "property": "createdAt",
+                "column": "created_at",
+                "type": "timestamptz"
+            },
+            {
+                "property": "actorId",
+                "column": "actor_id",
+                "type": "text"
+            },
+            {
+                "property": "type",
+                "column": "type",
+                "type": "text"
+            },
+            {
+                "property": "objectId",
+                "column": "object_id",
+                "type": "text"
+            },
+            {
+                "property": "payload",
+                "column": "payload",
+                "type": "jsonb"
+            }
+        ]
+    }
+];
+
+const purposeTables: TableSpec[] = [
+  {
+    "key": "purposes",
+    "table": "purposes",
+    "fields": [
+      {
+        "property": "id",
+        "column": "id",
+        "type": "text"
+      },
+      {
+        "property": "organizationId",
+        "column": "organization_id",
+        "type": "text"
+      },
+      {
+        "property": "createdAt",
+        "column": "created_at",
+        "type": "timestamptz"
+      },
+      {
+        "property": "kind",
+        "column": "kind",
+        "type": "text"
+      },
+      {
+        "property": "title",
+        "column": "title",
+        "type": "text"
+      },
+      {
+        "property": "description",
+        "column": "description",
+        "type": "text"
+      },
+      {
+        "property": "status",
+        "column": "status",
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "key": "paths",
+    "table": "paths",
+    "fields": [
+      {
+        "property": "id",
+        "column": "id",
+        "type": "text"
+      },
+      {
+        "property": "organizationId",
+        "column": "organization_id",
+        "type": "text"
+      },
+      {
+        "property": "createdAt",
+        "column": "created_at",
+        "type": "timestamptz"
+      },
+      {
+        "property": "purposeId",
+        "column": "purpose_id",
+        "type": "text"
+      },
+      {
+        "property": "spaceId",
+        "column": "space_id",
+        "type": "text"
+      },
+      {
+        "property": "title",
+        "column": "title",
+        "type": "text"
+      },
+      {
+        "property": "summary",
+        "column": "summary",
+        "type": "text"
+      },
+      {
+        "property": "status",
+        "column": "status",
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "key": "milestones",
+    "table": "milestones",
+    "fields": [
+      {
+        "property": "id",
+        "column": "id",
+        "type": "text"
+      },
+      {
+        "property": "organizationId",
+        "column": "organization_id",
+        "type": "text"
+      },
+      {
+        "property": "createdAt",
+        "column": "created_at",
+        "type": "timestamptz"
+      },
+      {
+        "property": "pathId",
+        "column": "path_id",
+        "type": "text"
+      },
+      {
+        "property": "title",
+        "column": "title",
+        "type": "text"
+      },
+      {
+        "property": "description",
+        "column": "description",
+        "type": "text"
+      },
+      {
+        "property": "position",
+        "column": "position",
+        "type": "integer"
+      },
+      {
+        "property": "lessonId",
+        "column": "lesson_id",
+        "type": "text"
+      },
+      {
+        "property": "missionId",
+        "column": "mission_id",
+        "type": "text"
+      },
+      {
+        "property": "projectId",
+        "column": "project_id",
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "key": "pathEnrolments",
+    "table": "path_enrolments",
+    "fields": [
+      {
+        "property": "id",
+        "column": "id",
+        "type": "text"
+      },
+      {
+        "property": "organizationId",
+        "column": "organization_id",
+        "type": "text"
+      },
+      {
+        "property": "createdAt",
+        "column": "created_at",
+        "type": "timestamptz"
+      },
+      {
+        "property": "pathId",
+        "column": "path_id",
+        "type": "text"
+      },
+      {
+        "property": "userId",
+        "column": "user_id",
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "key": "contributions",
+    "table": "contributions",
+    "fields": [
+      {
+        "property": "id",
+        "column": "id",
+        "type": "text"
+      },
+      {
+        "property": "organizationId",
+        "column": "organization_id",
+        "type": "text"
+      },
+      {
+        "property": "createdAt",
+        "column": "created_at",
+        "type": "timestamptz"
+      },
+      {
+        "property": "projectId",
+        "column": "project_id",
+        "type": "text"
+      },
+      {
+        "property": "userId",
+        "column": "user_id",
+        "type": "text"
+      },
+      {
+        "property": "title",
+        "column": "title",
+        "type": "text"
+      },
+      {
+        "property": "body",
+        "column": "body",
+        "type": "text"
+      },
+      {
+        "property": "evidenceUrl",
+        "column": "evidence_url",
+        "type": "text"
+      },
+      {
+        "property": "status",
+        "column": "status",
+        "type": "text"
+      },
+      {
+        "property": "reviewerId",
+        "column": "reviewer_id",
+        "type": "text"
+      },
+      {
+        "property": "reviewedAt",
+        "column": "reviewed_at",
+        "type": "timestamptz"
+      },
+      {
+        "property": "feedback",
+        "column": "feedback",
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "key": "outcomes",
+    "table": "outcomes",
+    "fields": [
+      {
+        "property": "id",
+        "column": "id",
+        "type": "text"
+      },
+      {
+        "property": "organizationId",
+        "column": "organization_id",
+        "type": "text"
+      },
+      {
+        "property": "createdAt",
+        "column": "created_at",
+        "type": "timestamptz"
+      },
+      {
+        "property": "purposeId",
+        "column": "purpose_id",
+        "type": "text"
+      },
+      {
+        "property": "projectId",
+        "column": "project_id",
+        "type": "text"
+      },
+      {
+        "property": "submissionId",
+        "column": "submission_id",
+        "type": "text"
+      },
+      {
+        "property": "contributionId",
+        "column": "contribution_id",
+        "type": "text"
+      },
+      {
+        "property": "authorId",
+        "column": "author_id",
+        "type": "text"
+      },
+      {
+        "property": "title",
+        "column": "title",
+        "type": "text"
+      },
+      {
+        "property": "summary",
+        "column": "summary",
+        "type": "text"
+      },
+      {
+        "property": "evidenceUrl",
+        "column": "evidence_url",
+        "type": "text"
+      },
+      {
+        "property": "status",
+        "column": "status",
+        "type": "text"
+      },
+      {
+        "property": "reviewerId",
+        "column": "reviewer_id",
+        "type": "text"
+      },
+      {
+        "property": "reviewedAt",
+        "column": "reviewed_at",
+        "type": "timestamptz"
+      },
+      {
+        "property": "feedback",
+        "column": "feedback",
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "key": "communityOutputs",
+    "table": "community_outputs",
+    "fields": [
+      {
+        "property": "id",
+        "column": "id",
+        "type": "text"
+      },
+      {
+        "property": "organizationId",
+        "column": "organization_id",
+        "type": "text"
+      },
+      {
+        "property": "createdAt",
+        "column": "created_at",
+        "type": "timestamptz"
+      },
+      {
+        "property": "purposeId",
+        "column": "purpose_id",
+        "type": "text"
+      },
+      {
+        "property": "outcomeId",
+        "column": "outcome_id",
+        "type": "text"
+      },
+      {
+        "property": "projectId",
+        "column": "project_id",
+        "type": "text"
+      },
+      {
+        "property": "title",
+        "column": "title",
+        "type": "text"
+      },
+      {
+        "property": "summary",
+        "column": "summary",
+        "type": "text"
+      },
+      {
+        "property": "kind",
+        "column": "kind",
+        "type": "text"
+      },
+      {
+        "property": "evidenceUrl",
+        "column": "evidence_url",
+        "type": "text"
+      },
+      {
+        "property": "publishedBy",
+        "column": "published_by",
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "key": "memberGoals",
+    "table": "member_goals",
+    "fields": [
+      {
+        "property": "id",
+        "column": "id",
+        "type": "text"
+      },
+      {
+        "property": "organizationId",
+        "column": "organization_id",
+        "type": "text"
+      },
+      {
+        "property": "createdAt",
+        "column": "created_at",
+        "type": "timestamptz"
+      },
+      {
+        "property": "userId",
+        "column": "user_id",
+        "type": "text"
+      },
+      {
+        "property": "purposeId",
+        "column": "purpose_id",
+        "type": "text"
+      },
+      {
+        "property": "pathId",
+        "column": "path_id",
+        "type": "text"
+      },
+      {
+        "property": "title",
+        "column": "title",
+        "type": "text"
+      },
+      {
+        "property": "visibility",
+        "column": "visibility",
+        "type": "text"
+      },
+      {
+        "property": "status",
+        "column": "status",
+        "type": "text"
+      },
+      {
+        "property": "completedAt",
+        "column": "completed_at",
+        "type": "timestamptz"
+      }
+    ]
+  },
+{
+  "key": "lessonDrafts",
+  "table": "lesson_drafts",
+  "fields": [
+    {
+      "property": "id",
+      "column": "id",
+      "type": "text"
+    },
+    {
+      "property": "organizationId",
+      "column": "organization_id",
+      "type": "text"
+    },
+    {
+      "property": "createdAt",
+      "column": "created_at",
+      "type": "timestamptz"
+    },
+    {
+      "property": "trackId",
+      "column": "track_id",
+      "type": "text"
+    },
+    {
+      "property": "lessonId",
+      "column": "lesson_id",
+      "type": "text"
+    },
+    {
+      "property": "title",
+      "column": "title",
+      "type": "text"
+    },
+    {
+      "property": "summary",
+      "column": "summary",
+      "type": "text"
+    },
+    {
+      "property": "body",
+      "column": "body",
+      "type": "text"
+    },
+    {
+      "property": "minutes",
+      "column": "minutes",
+      "type": "int4"
+    },
+    {
+      "property": "resourceUrl",
+      "column": "resource_url",
+      "type": "text"
+    },
+    {
+      "property": "version",
+      "column": "version",
+      "type": "int4"
+    },
+    {
+      "property": "publishedVersion",
+      "column": "published_version",
+      "type": "int4"
+    },
+    {
+      "property": "archived",
+      "column": "archived",
+      "type": "bool"
+    },
+    {
+      "property": "createdBy",
+      "column": "created_by",
+      "type": "text"
+    },
+    {
+      "property": "updatedBy",
+      "column": "updated_by",
+      "type": "text"
+    },
+    {
+      "property": "updatedAt",
+      "column": "updated_at",
+      "type": "timestamptz"
+    }
+  ]
+},
+{
+  "key": "lessonRevisions",
+  "table": "lesson_revisions",
+  "fields": [
+    {
+      "property": "id",
+      "column": "id",
+      "type": "text"
+    },
+    {
+      "property": "organizationId",
+      "column": "organization_id",
+      "type": "text"
+    },
+    {
+      "property": "createdAt",
+      "column": "created_at",
+      "type": "timestamptz"
+    },
+    {
+      "property": "trackId",
+      "column": "track_id",
+      "type": "text"
+    },
+    {
+      "property": "lessonId",
+      "column": "lesson_id",
+      "type": "text"
+    },
+    {
+      "property": "draftId",
+      "column": "draft_id",
+      "type": "text"
+    },
+    {
+      "property": "title",
+      "column": "title",
+      "type": "text"
+    },
+    {
+      "property": "summary",
+      "column": "summary",
+      "type": "text"
+    },
+    {
+      "property": "body",
+      "column": "body",
+      "type": "text"
+    },
+    {
+      "property": "minutes",
+      "column": "minutes",
+      "type": "int4"
+    },
+    {
+      "property": "resourceUrl",
+      "column": "resource_url",
+      "type": "text"
+    },
+    {
+      "property": "sequence",
+      "column": "sequence",
+      "type": "int4"
+    },
+    {
+      "property": "kind",
+      "column": "kind",
+      "type": "text"
+    },
+    {
+      "property": "actorId",
+      "column": "actor_id",
+      "type": "text"
+    }
+  ]
+},
+];
+// Purpose must precede project inserts; all other new relationships follow the existing records.
+tables.splice(1, 0, purposeTables[0]);
+tables.find(t => t.key === 'projects')!.fields.push({property:'purposeId',column:'purpose_id',type:'text'});
+tables.push(...purposeTables.slice(1));
+
+tables.find(t => t.key === 'memberGoals')!.fields.push({property:'outcomeId',column:'outcome_id',type:'text'});
+
+// Alpha 05: tasks reference the existing contribution records; notes follow tasks.
+tables.push({"key": "projectTasks", "table": "project_tasks", "fields": [{"property": "id", "column": "id", "type": "text"}, {"property": "organizationId", "column": "organization_id", "type": "text"}, {"property": "createdAt", "column": "created_at", "type": "timestamptz"}, {"property": "projectId", "column": "project_id", "type": "text"}, {"property": "title", "column": "title", "type": "text"}, {"property": "brief", "column": "brief", "type": "text"}, {"property": "criteria", "column": "criteria", "type": "jsonb"}, {"property": "assigneeId", "column": "assignee_id", "type": "text"}, {"property": "dueOn", "column": "due_on", "type": "text"}, {"property": "priority", "column": "priority", "type": "text"}, {"property": "workState", "column": "work_state", "type": "text"}, {"property": "contributionId", "column": "contribution_id", "type": "text"}, {"property": "createdBy", "column": "created_by", "type": "text"}, {"property": "updatedAt", "column": "updated_at", "type": "timestamptz"}, {"property": "version", "column": "version", "type": "integer"}, {"property": "archived", "column": "archived", "type": "boolean"}]});
+tables.push({"key": "taskNotes", "table": "task_notes", "fields": [{"property": "id", "column": "id", "type": "text"}, {"property": "organizationId", "column": "organization_id", "type": "text"}, {"property": "createdAt", "column": "created_at", "type": "timestamptz"}, {"property": "projectId", "column": "project_id", "type": "text"}, {"property": "taskId", "column": "task_id", "type": "text"}, {"property": "authorId", "column": "author_id", "type": "text"}, {"property": "body", "column": "body", "type": "text"}, {"property": "hidden", "column": "hidden", "type": "boolean"}]});

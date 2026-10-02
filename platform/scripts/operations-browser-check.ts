@@ -1,0 +1,40 @@
+import { switchPreviewRole } from './ui-test-helpers';
+import {RELEASE_VERSION} from '../packages/contracts/src/operations';
+import {chromium,expect} from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {resolve} from 'node:path';
+const root=resolve(import.meta.dirname,'..'),dir=root+'/evidence/alpha04';await mkdir(dir,{recursive:true});
+const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||undefined,headless:true,args:['--no-sandbox']});
+const context=await browser.newContext({viewport:{width:1512,height:1050},acceptDownloads:true}),page=await context.newPage();page.setDefaultTimeout(7000);
+const results:{name:string;passed:boolean}[]=[],errors:string[]=[];
+page.on('pageerror',e=>errors.push(e.message));
+const check=async(name:string,fn:()=>Promise<void>)=>{await fn();results.push({name,passed:true});console.log('PASS',name);};
+const openMenu=async()=>{if((page.viewportSize()?.width||1512)<1000&&!await page.locator('.sidebar').evaluate(el=>el.classList.contains('open')))await page.getByRole('button',{name:'Open navigation',exact:true}).click();};
+const nav=async(to:string)=>{await openMenu();await page.locator(`.sidebar a[href="${to}"]`).first().click();};
+const role=async(as:'admin'|'member')=>switchPreviewRole(page,as);
+const overflow=async()=>expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+const shot=(name:string,fullPage=true)=>page.screenshot({path:dir+'/'+name+'.png',fullPage,animations:'disabled'});
+async function a11y(name:string){const a=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();await writeFile(dir+'/a11y-'+name+'.json',JSON.stringify({violations:a.violations,incomplete:a.incomplete},null,2));expect(a.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}))).toEqual([]);}
+try{
+ await page.setContent(await readFile(root+'/.preview/REUNIR-preview.html','utf8'),{waitUntil:'load'});
+ await check('member home stays purpose-led with no operational clutter',async()=>{await expect(page.locator('h1')).toContainText('Build together.');await expect(page.locator('.sidebar a[href="/operations"]')).toHaveCount(0);await shot('home-desktop',false);});
+ await check('owner sees pilot console without changing community navigation',async()=>{await role('admin');await expect(page.locator('.sidebar a[href="/operations"]')).toHaveCount(1);await expect(page.locator('.sidebar a[href="/paths"]')).toHaveCount(1);await nav('/operations');await expect(page.locator('h1')).toHaveText('Ready for your people?');});
+ await check('demo is visibly blocked rather than impersonating a live deployment',async()=>{await expect(page.locator('.pilot-banner')).toContainText('DEMONSTRATION');await expect(page.locator('.pilot-banner h2')).toContainText('Not cleared');await expect(page.locator('[data-check="demo"]')).toContainText('No live database');await overflow();await shot('pilot-console-desktop',false);await shot('pilot-console-full');});
+ await check('delivery counters distinguish unconnected from a successful empty queue',async()=>{await expect(page.locator('.pilot-delivery dd')).toHaveText(['—','—','—']);await expect(page.locator('.pilot-timestamp').first()).toContainText('Not observed');});
+ await check('needs-attention filter keeps only blockers or warnings',async()=>{await page.getByRole('button',{name:'Needs attention',exact:true}).click();await expect(page.locator('.pilot-check')).toHaveCount(1);await expect(page.locator('.pilot-check')).toContainText('This is the demonstration');});
+ await check('unverified filter retains human gates without fake checkboxes',async()=>{await page.getByRole('button',{name:'Not verified',exact:true}).click();await expect(page.locator('[data-check="restore"]')).toBeVisible();await expect(page.locator('[data-check="delivery-receipt"]')).toBeVisible();await expect(page.locator('.pilot-check input')).toHaveCount(0);await expect(page.locator('.pilot-check.state-pass')).toHaveCount(0);});
+ await check('observed filter is explicit about fictional evidence',async()=>{await page.getByRole('button',{name:'Observed',exact:true}).click();await expect(page.locator('.pilot-check')).toHaveCount(2);await expect(page.locator('[data-check="community-purpose"]')).toContainText('fictional community');await expect(page.locator('[data-check="moderation-cover"]')).toContainText('demonstration roles');});
+ await check('refresh cannot turn unverified infrastructure green',async()=>{await page.getByRole('button',{name:'All checks',exact:true}).click();await page.getByRole('button',{name:'Refresh checks'}).click();await expect(page.locator('[data-check="database-config"]')).toContainText('Not verified');await expect(page.locator('[data-check="restore"]')).toContainText('Not verified');});
+ await check('export is structured and contains no account or message payloads',async()=>{const download=page.waitForEvent('download');await page.getByRole('button',{name:'Export report'}).click();const d=await download;await d.saveAs(dir+'/demo-export.json');const raw=await readFile(dir+'/demo-export.json','utf8'),report=JSON.parse(raw);expect(report.source).toBe('demo');expect(report.version).toBe(RELEASE_VERSION);expect(report.overall).toBe('blocked');expect(report.delivery.queued).toBeNull();for(const field of ['DATABASE_URL','token_hash','payload','Welcome, Alex','emailHint','memberGoals'])expect(raw).not.toContain(field);});
+ await check('desktop pilot console passes automated accessibility scan',async()=>{await a11y('pilot-console-desktop');});
+ await check('owner can move from operational cover to actual membership tools',async()=>{await page.getByRole('link',{name:'Manage member access'}).click();await expect(page.getByRole('heading',{name:'Membership & permissions'})).toBeVisible();await nav('/operations');});
+ await check('community switch refreshes the scoped operational view',async()=>{await page.getByRole('button',{name:'Open Studio North demo community'}).click();await nav('/operations');await expect(page.locator('.breadcrumb')).toContainText('Studio North');await expect(page.locator('.pilot-banner')).toContainText('DEMONSTRATION');await page.getByRole('button',{name:'Open Code Black',exact:true}).click();await nav('/operations');});
+ await check('390px pilot console fits the viewport and actions remain usable',async()=>{await page.setViewportSize({width:390,height:844});await nav('/operations');await overflow();await shot('pilot-console-mobile');await shot('pilot-console-mobile-top',false);await page.getByRole('button',{name:'Not verified',exact:true}).click();await expect(page.locator('[data-check="restore"]')).toBeVisible();await page.getByRole('button',{name:'All checks',exact:true}).click();});
+ await check('mobile pilot console passes automated accessibility scan',async()=>{await a11y('pilot-console-mobile');});
+ await check('360px pilot console has no horizontal scroll',async()=>{await page.setViewportSize({width:360,height:800});await overflow();});
+ await check('switching back to a member removes operations navigation',async()=>{await role('member');await expect(page.locator('h1')).toContainText('Build together.');await expect(page.locator('.sidebar a[href="/operations"]')).toHaveCount(0);await overflow();});
+ await check('lazy routes and operational interactions raise no browser exceptions',async()=>{expect(errors).toEqual([]);});
+ await writeFile(dir+'/browser-operations-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Actual bundled React in Chromium. Fictional offline data; server tests recorded separately.',results,errors},null,2));
+ console.log(results.length+' operations browser checks passed');
+}catch(e){await shot('operations-failure').catch(()=>{});await writeFile(dir+'/browser-operations-results.json',JSON.stringify({results,errors,failure:String(e)},null,2));throw e;}finally{await browser.close();}

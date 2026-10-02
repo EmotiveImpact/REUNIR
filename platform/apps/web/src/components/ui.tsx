@@ -1,0 +1,65 @@
+import { Avatar as AvatarRoot, AvatarImage, AvatarFallback } from './ui/avatar';
+import { mode } from '../lib/data';
+import { demoPortraits } from '../lib/portraits';
+import { useEffect, useRef, type ReactNode } from 'react';
+import { UserRound, X, ArrowUpRight, Lock, ArrowLeft, Check, BookOpen } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import type { Member, Track, Project } from '../../../../packages/contracts/src/index';
+export function Mark({size=27}:{size?:number}) {return <span className="brand-mark" style={{width:size,height:size,fontSize:size*.67}} aria-hidden="true">R</span>;}
+export function Avatar({member,size='md'}:{member?:Member;size?:'xs'|'sm'|'md'|'lg'|'xl'}) {
+ const photo=member?.avatar || (mode==='demo'&&member?demoPortraits[member.userId]:undefined);
+ return <AvatarRoot role="img" className={`avatar avatar-${size}`} aria-label={member?.name||'Member'}>
+  {photo&&<AvatarImage src={photo} alt=""/>}<AvatarFallback><UserRound size={size==='xs'?12:18}/></AvatarFallback>
+ </AvatarRoot>;
+}
+export function AvatarStack({ members, limit = 4 }: {
+    members: Member[];
+    limit?: number;
+}) { return <span className="avatar-stack">{members.slice(0, limit).map(m => <Avatar key={m.id} member={m} size="xs"/>)}{members.length > limit && <span className="avatar avatar-xs stack-extra">+{members.length - limit}</span>}</span>; }
+export function Pill({ children, tone = 'neutral' }: {
+    children: ReactNode;
+    tone?: string;
+}) { return <span className={`pill tone-${tone}`}>{children}</span>; }
+export function Empty({ title, body, action }: {
+    title: string;
+    body: string;
+    action?: ReactNode;
+}) { return <div className="empty-state"><div className="empty-icon"><BookOpen size={25}/></div><h3>{title}</h3><p>{body}</p>{action}</div>; }
+export function PageHeading({ eyebrow, title, body, action }: {
+    eyebrow?: string;
+    title: string;
+    body?: string;
+    action?: ReactNode;
+}) { return <header className="page-heading"><div>{eyebrow && <span className="eyebrow">{eyebrow}</span>}<h1>{title}</h1>{body && <p>{body}</p>}</div>{action}</header>; }
+export function Modal({ title, children, onClose, wide = false }: {
+    title: string;
+    children: ReactNode;
+    onClose: () => void;
+    wide?: boolean;
+}) {
+    const ref = useRef<HTMLDialogElement>(null);
+    useEffect(() => { const d = ref.current; const prior = document.activeElement as HTMLElement; d?.showModal(); return () => { d?.close(); prior?.focus?.(); }; }, []);
+    return <dialog ref={ref} className={`modal ${wide ? 'modal-wide' : ''}`} aria-labelledby="modal-title" onCancel={e => { e.preventDefault(); onClose(); }} onClick={e => { if (e.target === e.currentTarget) {
+        const r = e.currentTarget.getBoundingClientRect();
+        if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)
+            onClose();
+    } }}><div className="modal-head"><h2 id="modal-title">{title}</h2><button className="icon-button" aria-label="Close dialogue" onClick={onClose}><X size={20}/></button></div>{children}</dialog>;
+}
+export function Back({ to, label }: {
+    to: string;
+    label: string;
+}) { return <Link to={to} className="back-link"><ArrowLeft size={15}/>{label}</Link>; }
+export function Cover({ type, title, label, small = false }: {
+    type: string;
+    title?: string;
+    label?: string;
+    small?: boolean;
+}) { return <div className={`cover-art art-${type} ${small ? 'cover-small' : ''}`} aria-hidden="true"><div className="cover-grain"/><div className="cover-shape shape-one"/><div className="cover-shape shape-two"/>{!small && <><span className="cover-label">{label || 'REUNIR ORIGINALS'}</span><strong>{title || ({ story: 'MAKE IT\nFELT.', product: 'START\nSOMETHING.', brand: 'A POINT\nOF VIEW.', business: 'MAKE IT\nMATTER.', afterhours: 'AFTER\nHOURS.', common: 'Common\nGround.', still: 'Still /\nMoving', notes: 'Notes from\nthe process.' }[type] || 'What comes\nnext?')}</strong><span className="cover-foot"><Mark size={15}/><span>MADE TO MOVE YOU</span><ArrowUpRight size={17}/></span></>}</div>; }
+export function CheckList({ items }: {
+    items: string[];
+}) { return <ul className="check-list">{items.map(x => <li key={x}><Check size={15}/><span>{x}</span></li>)}</ul>; }
+export const date = (value: string, opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }) => new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', ...opts }).format(new Date(value));
+export const dayParts = (value: string) => ({ day: date(value, { day: '2-digit' }), month: date(value, { month: 'short' }).toUpperCase() });
+export function RelativeTime({ value }: {
+    value: string;
+}) { const mins = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 60000)); return <time dateTime={value}>{mins < 1 ? 'Just now' : mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.floor(mins / 60)}h ago` : date(value)}</time>; }

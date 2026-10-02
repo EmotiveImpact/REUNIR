@@ -1,0 +1,75 @@
+import { normalisePurposeState } from '../../../../packages/domain/src/purpose';
+import { applyCommand, visibleWorkspace } from '../../../../packages/domain/src/engine';
+import { createSeed, DEMO_USER } from '../../../../packages/domain/src/seed';
+import { newId } from '../../../../packages/contracts/src/index';
+import type { Workspace, CommandInput, MutationResult } from '../../../../packages/contracts/src/index';
+export type DataMode = 'demo' | 'live';
+export const mode: DataMode = import.meta.env.VITE_DATA_MODE === 'live' ? 'live' : 'demo';
+const prefix = 'reunir.alpha1.v1.';
+export interface Identity {
+    id: string;
+    name: string;
+    memberships: {
+        slug: string;
+        name: string;
+    }[];
+}
+export async function api<T>(path: string, body?: unknown, requestKey?: string): Promise<T> {
+    const res = await fetch(path, { credentials: 'include', headers: body ? { 'Content-Type': 'application/json', 'Idempotency-Key': requestKey || newId() } : undefined, method: body ? 'POST' : 'GET', body: body ? JSON.stringify(body) : undefined });
+    if (!res.headers.get('content-type')?.includes('application/json'))
+        throw new Error('The REUNIR API is not connected. Live mode never falls back to demo data.');
+    const data = await res.json();
+    if (!res.ok)
+        throw new Error(data.error?.message || data.message || 'Something did not go through. Please try again.');
+    return data;
+}
+let memory: Record<string, Workspace> = {};
+export function demoState(slug: string): Workspace {
+    if (memory[slug])
+        return memory[slug];
+    try {
+        const raw = localStorage.getItem(prefix + slug);
+        if (raw) {
+            const s = JSON.parse(raw);
+            if (s.organisation?.slug === slug && Array.isArray(s.members) && Array.isArray(s.outbox) && Array.isArray(s.lessons)) {
+                memory[slug] = normalisePurposeState(s);
+                return memory[slug];
+            }
+        }
+    }
+    catch { /* Storage can be unavailable in a private browser. Continue in memory. */ }
+    return memory[slug] = createSeed(slug);
+}
+export function snapshot(slug: string, userId: string): Workspace { return visibleWorkspace(demoState(slug), { organizationId: demoState(slug).organisation.id, userId, requestId: newId() }); }
+export function resetDemo() { memory = {}; window.dispatchEvent(new Event('reunir:reset-demo'));  for (const slug of ['code-black', 'studio-north'])
+    try {
+        localStorage.removeItem(prefix + slug);
+        localStorage.removeItem('reunir.chat.v1.' + slug);
+    }
+    catch { /* best effort for restricted storage */ } }
+export async function loadWorkspace(slug: string, userId: string): Promise<Workspace> { return mode === 'demo' ? snapshot(slug, userId) : api(`/api/organisations/${encodeURIComponent(slug)}/workspace`); }
+export async function sendCommand(slug: string, userId: string, command: CommandInput): Promise<MutationResult> {
+    if (mode === 'live')
+        return api(`/api/organisations/${encodeURIComponent(slug)}/commands`, command);
+    const s = demoState(slug);
+    const r = applyCommand(s, { organizationId: s.organisation.id, userId, requestId: newId() }, command);
+    memory[slug] = r.workspace;
+    let message = r.message;
+    try {
+        localStorage.setItem(prefix + slug, JSON.stringify(r.workspace));
+    }
+    catch {
+        message += ' Browser storage is unavailable; this change lasts for this session.';
+    }
+    return { ...r, message, workspace: snapshot(slug, userId) };
+}
+export async function identity(): Promise<Identity | null> { if (mode === 'demo')
+    return { id: DEMO_USER, name: 'Alex Morgan', memberships: [{ slug: 'code-black', name: 'Code Black' }, { slug: 'studio-north', name: 'Studio North' }] }; return api('/api/session'); }
+export function displayError(error: unknown): string { if (error && typeof error === 'object' && 'issues' in error) {
+    const issues = (error as {
+        issues: {
+            message: string;
+        }[];
+    }).issues;
+    return issues[0]?.message || 'Please check the form.';
+} return error instanceof Error ? error.message : 'Something unexpected happened. Try again.'; }

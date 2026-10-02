@@ -1,0 +1,286 @@
+{
+  "version": 1,
+  "release": "0.7.0-alpha.1",
+  "reviewedOn": "2026-10-02",
+  "scope": "Targeted source/document review, not a fresh whole-repository audit, full runtime comparison or a legal opinion. Previously captured commit snapshots were deliberately re-read; no claim that all are current HEAD.",
+  "donorApplicationFilesImported": 0,
+  "sources": [
+    {
+      "id": "humhub-tasks",
+      "project": "HumHub Tasks",
+      "repository": "humhub/tasks",
+      "revision": "0f5e35778649b93053ae5c485717d6cb81b5548a",
+      "file": "models/Task.php",
+      "blob": "8fe349aaf59082bec3dd2d6c93dbfb282d56b983",
+      "reviewedRange": "lines 1\u2013115, plus docs/README.md",
+      "licence": "AGPL family; no direct source import cleared",
+      "lesson": "Separate assigned work from responsible review; explicit work states in a space-owned context.",
+      "url": "https://github.com/humhub/tasks/blob/0f5e35778649b93053ae5c485717d6cb81b5548a/models/Task.php",
+      "reviewedOn": "2026-09-24"
+    },
+    {
+      "id": "frappe-submissions",
+      "project": "Frappe Learning",
+      "repository": "frappe/lms",
+      "revision": "b0841ed23bd7a272eec51416a8d67fe66326a345",
+      "file": "lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.py",
+      "blob": "5f288cf0c3476c142829f6cfb6806d1f13a5beee",
+      "reviewedRange": "lines 1\u2013130",
+      "licence": "AGPL family; reference only",
+      "lesson": "Authenticated ownership, grading authority, validation and review notifications belong to the submission lifecycle.",
+      "url": "https://github.com/frappe/lms/blob/b0841ed23bd7a272eec51416a8d67fe66326a345/lms/lms/doctype/lms_assignment_submission/lms_assignment_submission.py",
+      "reviewedOn": "2026-09-24"
+    },
+    {
+      "id": "classroomio-layers",
+      "project": "ClassroomIO",
+      "repository": "classroomio/classroomio",
+      "revision": "1b986d2d6874383b36078cf2b200c544b27ebfb7",
+      "file": "ARCHITECHTURE.md",
+      "blob": "287d81d3144ac62832bbb2c71bafbcce26e0e10f",
+      "reviewedRange": "lines 1\u201348",
+      "licence": "Root AGPL; package metadata conflict remains unresolved for direct imports",
+      "lesson": "Shared validation with thin transport, domain/service logic and database queries.",
+      "url": "https://github.com/classroomio/classroomio/blob/1b986d2d6874383b36078cf2b200c544b27ebfb7/ARCHITECHTURE.md",
+      "reviewedOn": "2026-09-24"
+    },
+    {
+      "id": "opencircle-context",
+      "project": "OpenCircle",
+      "repository": "devscalelabs/opencircle",
+      "revision": "5a8beada3147c6bd922c44f9cfe5b4a82f1a4056",
+      "file": "docs/www/pages/features/posts.mdx",
+      "blob": "d68983131b8fe9f8209dacfd84736dffb885e93b",
+      "reviewedRange": "complete feature document",
+      "licence": "AGPL family; reference only",
+      "lesson": "Put conversation in its useful context, with a separate aggregated view rather than erasing context.",
+      "url": "https://github.com/devscalelabs/opencircle/blob/5a8beada3147c6bd922c44f9cfe5b4a82f1a4056/docs/www/pages/features/posts.mdx",
+      "reviewedOn": "2026-09-24"
+    },
+    {
+      "id": "learnhouse-discussions",
+      "project": "LearnHouse",
+      "repository": "learnhouse/learnhouse",
+      "revision": "9c5bf91522061553a151176d7392c0cfc3c7b7bf",
+      "file": "apps/api/src/db/communities/discussions.py",
+      "blob": "886bb11d1ac2a164e530a31b52a35327ad130401",
+      "reviewedRange": "lines 1\u201365",
+      "licence": "AGPL core plus separate enterprise areas; reference only",
+      "lesson": "Explicit community, organisation, author and discussion state rather than arbitrary metadata.",
+      "url": "https://github.com/learnhouse/learnhouse/blob/9c5bf91522061553a151176d7392c0cfc3c7b7bf/apps/api/src/db/communities/discussions.py",
+      "reviewedOn": "2026-09-24"
+    },
+    {
+      "id": "roost-product",
+      "project": "Roost",
+      "repository": "msrbuilds/roost",
+      "revision": null,
+      "file": "README.md",
+      "blob": "49fdf2c830c8e5e23f06f3f52fa10a6456b0d78e",
+      "reviewedRange": "complete README fetched from default branch on 24 September 2026; blob pins the reviewed contents",
+      "licence": "README advertises MIT; full applicable licence/notice evidence not cleared",
+      "lesson": "Keep projects/showcase, learning and community in one coherent product. Feature claims are not a production audit.",
+      "url": "https://github.com/msrbuilds/roost/blob/main/README.md",
+      "reviewedOn": "2026-09-24"
+    },
+    {
+      "id": "shadcn-button",
+      "project": "shadcn/ui",
+      "repository": "shadcn-ui/ui",
+      "file": "apps/v4/registry/new-york-v4/ui/button.tsx",
+      "blob": "e3345d985d14c33e3cb9d8c45cf973807326c944",
+      "licence": "MIT; complete notice retained",
+      "lesson": "Reuse accessible UI composition and primitive behaviour; preserve existing REUNIR data/permissions.",
+      "url": "https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/button.tsx",
+      "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "shadcn-avatar",
+      "project": "shadcn/ui",
+      "repository": "shadcn-ui/ui",
+      "file": "apps/v4/registry/new-york-v4/ui/avatar.tsx",
+      "blob": "561f04be186f94896ec31e618fee6818c7fcc6c8",
+      "licence": "MIT; complete notice retained",
+      "lesson": "Reuse accessible UI composition and primitive behaviour; preserve existing REUNIR data/permissions.",
+      "url": "https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/avatar.tsx",
+      "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "shadcn-dropdown-menu",
+      "project": "shadcn/ui",
+      "repository": "shadcn-ui/ui",
+      "file": "apps/v4/registry/new-york-v4/ui/dropdown-menu.tsx",
+      "blob": "1f9742d6783223126a3b91e91b7a230243ddf23d",
+      "licence": "MIT; complete notice retained",
+      "lesson": "Reuse accessible UI composition and primitive behaviour; preserve existing REUNIR data/permissions.",
+      "url": "https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/dropdown-menu.tsx",
+      "reviewedOn": "2026-10-02"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "project-workflow",
+      "status": "implemented",
+      "mode": "behaviour_reference",
+      "sources": [
+        "humhub-tasks"
+      ],
+      "decision": "Add a project-owned workboard, assignment, criteria, due date, archive and version-checked mutations. Do not transplant the PHP module or introduce a second tenancy model.",
+      "implementation": [
+        "platform/packages/domain/src/project-work.ts",
+        "platform/packages/db/migrations/0006_project_work.sql",
+        "platform/apps/web/src/pages/project-work.tsx"
+      ],
+      "tests": [
+        "platform/tests/project-work.test.ts",
+        "platform/tests/project-work-database.test.ts",
+        "platform/scripts/project-work-browser-check.ts"
+      ]
+    },
+    {
+      "id": "proof-reuse",
+      "status": "implemented",
+      "mode": "existing_code_reuse",
+      "sources": [
+        "frappe-submissions",
+        "humhub-tasks"
+      ],
+      "decision": "Task proof calls the existing REUNIR contribution submit/resubmit/review lifecycle and existing EvidenceReview UI. Recognised state is derived, not a second completion or score record.",
+      "implementation": [
+        "platform/packages/domain/src/project-work.ts",
+        "platform/packages/domain/src/purpose.ts",
+        "platform/apps/web/src/pages/purpose.tsx"
+      ],
+      "tests": [
+        "platform/tests/project-work.test.ts",
+        "platform/tests/project-work-database.test.ts"
+      ]
+    },
+    {
+      "id": "task-context",
+      "status": "implemented",
+      "mode": "behaviour_reference",
+      "sources": [
+        "opencircle-context",
+        "learnhouse-discussions"
+      ],
+      "decision": "Team notes and explicit task/contribution relations stay in project context. General search gets authorised task briefs, not private notes or pending proof text.",
+      "implementation": [
+        "platform/packages/contracts/src/index.ts",
+        "platform/packages/domain/src/project-work.ts",
+        "platform/apps/web/src/App.tsx"
+      ],
+      "tests": [
+        "platform/tests/project-work.test.ts",
+        "platform/tests/project-work-database.test.ts"
+      ]
+    },
+    {
+      "id": "bounded-integration",
+      "status": "implemented",
+      "mode": "existing_code_reuse",
+      "sources": [
+        "classroomio-layers"
+      ],
+      "decision": "Extend existing strict command validation, tenant transaction, optimistic version check, idempotency receipt, outbox, notification and relational persistence mechanisms. No new service or database.",
+      "implementation": [
+        "platform/packages/contracts/src/index.ts",
+        "platform/packages/domain/src/engine.ts",
+        "platform/packages/db/src/repository.ts",
+        "platform/packages/db/src/tables.ts"
+      ],
+      "tests": [
+        "platform/tests/project-work-database.test.ts"
+      ]
+    },
+    {
+      "id": "authoring-next",
+      "status": "queued",
+      "mode": "behaviour_reference",
+      "sources": [
+        "learnhouse-discussions",
+        "classroomio-layers",
+        "frappe-submissions"
+      ],
+      "decision": "Next product research slice: draft/publish authoring, structured lesson content, assessments and reusable resources. Inspect actual authoring files and library licences before choosing an editor. Do not transplant whole LMS applications.",
+      "implementation": [],
+      "tests": []
+    },
+    {
+      "id": "roost-import",
+      "status": "hold",
+      "mode": "potential_source_import",
+      "sources": [
+        "roost-product"
+      ],
+      "decision": "Do not copy application files on the strength of the MIT sentence alone. Verify a pinned licence grant, required notices, asset licences and provenance; audit component dependencies and behaviour first.",
+      "implementation": [],
+      "tests": []
+    },
+    {
+      "id": "alpha07-shadcn-button",
+      "sources": [
+        "shadcn-button"
+      ],
+      "mode": "source_import",
+      "status": "implemented",
+      "licenceDecision": "approved",
+      "notices": [
+        "platform/legal/shadcn-MIT.txt",
+        "platform/THIRD_PARTY_NOTICES.md"
+      ],
+      "implementation": [
+        "platform/apps/web/src/components/ui/button.tsx",
+        "platform/apps/web/src/App.tsx"
+      ],
+      "tests": [
+        "platform/scripts/v4-integration-browser-check.ts"
+      ],
+      "rationale": "Scoped source adaptation with pinned Radix primitives; no separate product/stack fork."
+    },
+    {
+      "id": "alpha07-shadcn-avatar",
+      "sources": [
+        "shadcn-avatar"
+      ],
+      "mode": "source_import",
+      "status": "implemented",
+      "licenceDecision": "approved",
+      "notices": [
+        "platform/legal/shadcn-MIT.txt",
+        "platform/THIRD_PARTY_NOTICES.md"
+      ],
+      "implementation": [
+        "platform/apps/web/src/components/ui/avatar.tsx",
+        "platform/apps/web/src/App.tsx"
+      ],
+      "tests": [
+        "platform/scripts/v4-integration-browser-check.ts"
+      ],
+      "rationale": "Scoped source adaptation with pinned Radix primitives; no separate product/stack fork."
+    },
+    {
+      "id": "alpha07-shadcn-dropdown-menu",
+      "sources": [
+        "shadcn-dropdown-menu"
+      ],
+      "mode": "source_import",
+      "status": "implemented",
+      "licenceDecision": "approved",
+      "notices": [
+        "platform/legal/shadcn-MIT.txt",
+        "platform/THIRD_PARTY_NOTICES.md"
+      ],
+      "implementation": [
+        "platform/apps/web/src/components/ui/dropdown-menu.tsx",
+        "platform/apps/web/src/App.tsx"
+      ],
+      "tests": [
+        "platform/scripts/v4-integration-browser-check.ts"
+      ],
+      "rationale": "Scoped source adaptation with pinned Radix primitives; no separate product/stack fork."
+    }
+  ],
+  "libraryReuse": "Existing locked React, TanStack Query, Hono, Zod, Better Auth, SQL drivers, Lucide and Playwright dependencies remain. No new runtime dependency in this wave.",
+  "uiComponentSourceFilesAdapted": 3
+}

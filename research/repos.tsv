@@ -1,0 +1,14 @@
+category	folder	repository	github_size_mb	why
+core	roost	https://github.com/msrbuilds/roost.git	4	Closest all-in-one Skool/Circle-style feature model; community + learning + leaderboard + events + showcase.
+core	opencircle	https://github.com/devscalelabs/opencircle.git	5	Modern social-learning architecture; channels/posts/reactions/realtime + courses.
+core	classroomio	https://github.com/classroomio/classroomio.git	324	Modern LMS reference; courses/cohorts/assignments/certificates/API/AI.
+core	learnhouse	https://github.com/learnhouse/learnhouse.git	57	Excellent editor/content-authoring and modern learning UX.
+core	frappe-learning	https://github.com/frappe/lms.git	107	Mature LMS depth; batches/live learning/quizzes/assignments/admin.
+core	humhub	https://github.com/humhub/humhub.git	155	Modular social-network framework; users/spaces/content/modules.
+optional	discourse	https://github.com/discourse/discourse.git	1144	Battle-tested community engine; trust, chat, moderation, plugins, notifications.
+optional	forem	https://github.com/forem/forem.git	1741	Content/community discovery, profiles, feeds and creator-community patterns.
+optional	flarum-framework	https://github.com/flarum/framework.git	186	Lightweight extensible community/forum architecture; useful extension model.
+optional	buddypress	https://github.com/buddypress/buddypress.git	78	WordPress social/community reference; profiles, groups, activity and messaging.
+optional	moodle	https://github.com/moodle/moodle.git	927	Heavy LMS benchmark only; mature feature coverage and permissions.
+optional	openedx-platform	https://github.com/openedx/openedx-platform.git	2219	Industrial-scale LMS/CMS benchmark only; authoring and delivery architecture.
+optional	humhub-tasks	https://github.com/humhub/tasks.git	unknown	Task workflow, assignment, responsible review and project context; targeted Alpha 05 reference

@@ -1,0 +1,184 @@
+[
+  {
+    "name": "@axe-core/playwright",
+    "version": "4.13.0",
+    "declaredLicence": "MPL-2.0",
+    "includedNotices": [
+      "legal/dependencies/axe-core__playwright-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "@better-auth/drizzle-adapter",
+    "version": "1.7.5",
+    "declaredLicence": "MIT",
+    "includedNotices": [
+      "legal/dependencies/better-auth__drizzle-adapter-LICENSE.md.txt"
+    ]
+  },
+  {
+    "name": "@electric-sql/pglite",
+    "version": "0.5.8",
+    "declaredLicence": "Apache-2.0",
+    "includedNotices": [
+      "legal/dependencies/electric-sql__pglite-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "@google-cloud/storage",
+    "version": "8.2.0",
+    "declaredLicence": "Apache-2.0",
+    "includedNotices": [
+      "legal/dependencies/google-cloud__storage-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "@hono/node-server",
+    "version": "2.1.1",
+    "declaredLicence": "MIT",
+    "includedNotices": [
+      "legal/dependencies/hono__node-server-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "@playwright/test",
+    "version": "1.63.0",
+    "declaredLicence": "Apache-2.0",
+    "includedNotices": [
+      "legal/dependencies/playwright__test-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "@tanstack/react-query",
+    "version": "5.103.2",
+    "declaredLicence": "MIT",
+    "includedNotices": [
+      "legal/dependencies/tanstack__react-query-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "@types/node",
+    "version": "22.20.4",
+    "declaredLicence": "MIT",
+    "includedNotices": [
+      "legal/dependencies/types__node-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "@types/pg",
+    "version": "8.23.1",
+    "declaredLicence": "MIT",
+    "includedNotices": [
+      "legal/dependencies/types__pg-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "@types/react",
+    "version": "19.3.0",
+    "declaredLicence": "MIT",
+    "includedNotices": [
+      "legal/dependencies/types__react-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "@types/react-dom",
+    "version": "19.3.0",
+    "declaredLicence": "MIT",
+    "includedNotices": [
+      "legal/dependencies/types__react-dom-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "better-auth",
+    "version": "1.7.5",
+    "declaredLicence": "MIT",
+    "includedNotices": [
+      "legal/dependencies/better-auth-LICENSE.md.txt"
+    ]
+  },
+  {
+    "name": "drizzle-orm",
+    "version": "0.45.3",
+    "declaredLicence": "Apache-2.0",
+    "includedNotices": []
+  },
+  {
+    "name": "hono",
+    "version": "4.13.9",
+    "declaredLicence": "MIT",
+    "includedNotices": [
+      "legal/dependencies/hono-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "lucide-react",
+    "version": "1.47.0",
+    "declaredLicence": "ISC",
+    "includedNotices": [
+      "legal/dependencies/lucide-react-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "pg",
+    "version": "8.23.0",
+    "declaredLicence": "MIT",
+    "includedNotices": [
+      "legal/dependencies/pg-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "react",
+    "version": "19.3.0",
+    "declaredLicence": "MIT",
+    "includedNotices": [
+      "legal/dependencies/react-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "react-dom",
+    "version": "19.3.0",
+    "declaredLicence": "MIT",
+    "includedNotices": [
+      "legal/dependencies/react-dom-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "react-router-dom",
+    "version": "7.18.4",
+    "declaredLicence": "MIT",
+    "includedNotices": [
+      "legal/dependencies/react-router-dom-LICENSE.md.txt"
+    ]
+  },
+  {
+    "name": "tsx",
+    "version": "4.23.15",
+    "declaredLicence": "MIT",
+    "includedNotices": [
+      "legal/dependencies/tsx-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "typescript",
+    "version": "5.9.3",
+    "declaredLicence": "Apache-2.0",
+    "includedNotices": [
+      "legal/dependencies/typescript-LICENSE.txt.txt"
+    ]
+  },
+  {
+    "name": "vite",
+    "version": "7.3.6",
+    "declaredLicence": "MIT",
+    "includedNotices": [
+      "legal/dependencies/vite-LICENSE.md.txt"
+    ]
+  },
+  {
+    "name": "zod",
+    "version": "4.6.5",
+    "declaredLicence": "MIT",
+    "includedNotices": [
+      "legal/dependencies/zod-LICENSE.txt"
+    ]
+  }
+]

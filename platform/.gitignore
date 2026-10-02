@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.preview/
+.local/
+.env
+.env.*
+!.env.example
+coverage/
+playwright-report/
+test-results/
+.vercel/
+*.log
+
+**/.connected-dist/
+**/.local/
