@@ -1,3 +1,13 @@
+# 0.9.0-alpha.1: private lesson resources
+
+- Attach ordered, named and described files to lesson drafts; replace and remove them; release them only on publication.
+- Revision history keeps each version's files; restoring a revision brings them back into the draft.
+- Extend the existing upload-intent API and Google Cloud Storage adapter: track-scoped keys, signature checks, generation pinning, two-minute attachment downloads.
+- One download rule for lessons, drafts and revisions, with a restrictive RLS policy in depth.
+- Additive migration 0009; migrations 0001–0008 unchanged. No new runtime dependency.
+- The fictional demo keeps file bytes in the browser and includes a generated sample worksheet.
+- Deployment remains deferred by the user; no bucket has been configured.
+
 # 0.8.0-alpha.1: rich lesson authoring
 
 - Add Tiptap formatting, headings, lists, quotes, code, links and labelled image/video blocks.

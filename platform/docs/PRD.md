@@ -1,6 +1,6 @@
 # REUNIR · Product Requirements Document
 
-Version 0.8 · 2 October 2026 · Approved v4 design integration, Alpha 07 (application 0.7.0-alpha.1). Requirements and actual delivery are distinguished below.
+Version 0.9 · 2 October 2026 · Private lesson resources, Alpha 09 (application 0.9.0-alpha.1), on the approved v4 design. Requirements and actual delivery are distinguished below.
 
 ## 1. Product
 
@@ -197,7 +197,7 @@ These references support integration choices, not a claim that cloud configurati
 
 ## Implementation qualification (retained from Alpha 01)
 
-Current data delivery uses bounded workspace snapshots rather than fully paginated endpoints. Alpha 03 implements personal invitations, a durable email outbox, password recovery and focused member-access administration. Real email delivery requires provider configuration and a scheduled worker; lifecycle export/deletion and privileged MFA remain unbuilt. File APIs are owner-private scaffolding, not an exposed member attachment feature. See BUILD_STATUS.md for tested delivery, missing cloud configuration and public-launch gates.
+Current data delivery uses bounded workspace snapshots rather than fully paginated endpoints. Alpha 03 implements personal invitations, a durable email outbox, password recovery and focused member-access administration. Real email delivery requires provider configuration and a scheduled worker; lifecycle export/deletion and privileged MFA remain unbuilt. Member file uploads remain owner-private; Alpha 09 releases only lesson files, through access-gated downloads (see the Alpha 09 section). See BUILD_STATUS.md for tested delivery, missing cloud configuration and public-launch gates.
 
 
 ## 16. Alpha 02 purpose and evidence scope
@@ -354,3 +354,22 @@ The complete source remains in a verified local Git history and Library recovery
 UI_DESIGN_DIRECTION.md is authoritative for the approved v4 direction. The far-left community rail, navigation-only contextual sidebar, single top-right account menu, portrait avatars, clean neutral controls and editorial Home are implemented in the React application. Three actual shadcn source components are used over Radix; the rest of the existing application is retained, not recreated as a disconnected mock.
 
 PurposeHome reads existing authorised workspace data. Progress is calculated from lesson/proof evidence, not copied from an image. Admin controls remain permission-scoped, private goals/messages remain private, and routes for all six previous build waves remain accessible. No new data migration is introduced. Rich editing/media, staging operations and larger platform capabilities remain roadmap work.
+
+
+## Alpha 09: private lesson resources
+
+Creators attach files to lessons as part of the existing private draft: PDF, DOCX, PPTX, XLSX, JPEG, PNG or WebP, up to 10 MB each and 12 per lesson, with a learner-facing name and optional description. They can reorder, replace and remove files. Changes are saved privately, shown in the private preview and released only by explicit publication. Revision history keeps each version's files, and restoring a revision brings them back into the draft only. See `LESSON_RESOURCES.md` and `decisions/009-private-lesson-resources.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| R01 | Only active owners/admins upload, attach, replace, remove or discard lesson files | Domain, HTTP, database and browser tests |
+| R02 | Draft and history files are private to authors; published files only to people who can currently open the lesson, track and space | Domain matrix, RLS, HTTP and connected browser |
+| R03 | No cross-tenant access to files, intents or download links | Domain, database, HTTP, PostgreSQL CI |
+| R04 | Uploads are bound to an exact key, type and size; completion verifies the stored signature and pins the generation | Storage adapter, HTTP and connected browser |
+| R05 | Downloads are short-lived, attachment-only and never serve unverified or overwritten bytes | Real-SDK offline signing and HTTP tests |
+| R06 | Stale editors cannot overwrite newer drafts or silently drop files | Domain and database tests |
+| R07 | Replacement and removal reach learners only on publication; history keeps referenced files | Domain and browser journeys |
+| R08 | Existing lessons, revisions, completions and member uploads upgrade unchanged | Migration 0009 upgrade tests |
+| R09 | The fictional demo runs the same rules with browser-local bytes | Demo browser journey |
+
+Malware scanning, real bucket verification, file previews, download analytics and assessments are outside this release. Downloads never count as completion or evidence.

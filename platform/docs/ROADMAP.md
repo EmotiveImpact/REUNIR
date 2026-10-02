@@ -1,4 +1,4 @@
-# REUNIR roadmap after rich lesson authoring
+# REUNIR roadmap after private lesson resources
 
 ## Product mission, not a new scope
 
@@ -15,12 +15,14 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 05 | Project workboards, assignments, task discussion and existing proof review | No task file uploads or realtime collaboration |
 | Alpha 06 | Private lesson drafts, explicit publishing, revision history, restore-as-draft and ordering | Plain text/resource links; no rich blocks/private attachments |
 | Alpha 07 | Approved v4 shell/Home in the actual React application, shadcn Button/Avatar/Menu, photo fixtures and responsive navigation | Not a full replacement of every form with shadcn; hosted pilot remains separate |
+| Alpha 08 | Rich lesson editing with Tiptap, safe external images and YouTube/Vimeo, compatible rich and plain revisions | External media only; no uploads |
+| Alpha 09 | Private lesson files: ordered, named, described, replaceable and removable, following draft, preview, publication and revision; verified uploads and access-gated downloads | No malware scanning; real bucket, IAM and CORS unverified; no assessments yet |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 
 ## Deployment deferred by the user
 
-The user will clone, deploy and run hosted tests later. Continue product development without treating deployment as a prerequisite or claiming it is complete. Alpha 08 adds rich lesson editing, safe external media and compatible revisions; see RICH_LESSONS.md. Full application/browser/HTTP/PostgreSQL CI passed in run 36969054997. PR #2 tracks publication and merge.
+The user will clone, deploy and run hosted tests later. Continue product development without treating deployment as a prerequisite or claiming it is complete. Alpha 08 added rich lesson editing, safe external media and compatible revisions (RICH_LESSONS.md); PR #2 was merged after CI run 36969054997 passed. Alpha 09 adds private lesson resources (LESSON_RESOURCES.md); BUILD_STATUS.md records its local and remote verification. A hosted bucket needs the storage steps in SETUP.md when deployment resumes.
 
 ## Release work when deployment resumes: make the pilot operable
 
@@ -32,7 +34,7 @@ The user will clone, deploy and run hosted tests later. Continue product develop
 
 ## Next product slices
 
-**Creator Studio 2:** Rich editing, HTTPS images, safe YouTube/Vimeo insertion and compatible revision restoration are implemented in Alpha 08. Next: private resource upload/access lifecycle and assessments. Preserve plaintext compatibility, draft versus published separation and immutable review attribution.
+**Creator Studio:** Rich editing and safe external media (Alpha 08) and private lesson resources with lesson/space access inheritance (Alpha 09) are implemented. Next: assessments, meaning quizzes, learner attempts, scoring and instructor feedback, built on the same draft, publication and revision model and the existing review conventions. Keep scores separate from reputation and credentials, and keep attempts private to the learner and authorised reviewers. Then instructor-scoped authoring permissions.
 
 **Everyday reliability:** page-level cursor pagination beyond messages, notification preferences/digests, role-scoped instructor workflows and useful content curation. Replace placeholder course/project art with authorised original content. Improve loading/error/empty states through real pilot observations.
 

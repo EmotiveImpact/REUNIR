@@ -1,4 +1,8 @@
-# Research status: Alpha 05
+# Research status: Alpha 09
+
+Alpha 09 (private lesson resources) reviewed specific files in LearnHouse, Frappe Learning and ClassroomIO at pinned commits; see notes/14_LESSON_RESOURCES.md and the `lesson-resources` decision in reuse-register.json. All three are AGPL at their roots, so they are behavioural references only. Imported donor files: zero. New runtime dependencies: none. The next queued investigation is assessments (quizzes, attempts, scoring and feedback).
+
+## Alpha 05 record
 
 The original comparative notes are retained as historical research. This release performed targeted re-reads through the GitHub connector of Roost, OpenCircle, ClassroomIO, LearnHouse, Frappe Learning and the official HumHub Tasks module. Exact files and known snapshots are in reuse-register.json. No complete new clone or whole-repository audit was performed.
 
