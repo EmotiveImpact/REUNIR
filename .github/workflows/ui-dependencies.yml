@@ -1,0 +1,31 @@
+name: REUNIR UI dependency preparation
+on:
+  push:
+    branches: ['integration/source-ingest-20261002']
+    paths: ['.github/workflows/ui-dependencies.yml']
+permissions:
+  contents: read
+jobs:
+  dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          mkdir ui-toolchain
+          cd ui-toolchain
+          npm init -y
+          npm install --ignore-scripts --save-exact react@19.3.0 react-dom@19.3.0 @radix-ui/react-slot@1.2.3 @radix-ui/react-dropdown-menu@2.1.16 class-variance-authority@0.7.1 clsx@2.1.1 tailwind-merge@3.3.1 tailwindcss@4.1.14 @tailwindcss/vite@4.1.14
+          mkdir upstream
+          git ls-remote https://github.com/shadcn-ui/ui.git HEAD > upstream/source-ref.txt
+          REF=$(cut -f1 upstream/source-ref.txt)
+          for NAME in button dropdown-menu; do curl --fail --silent --show-error "https://raw.githubusercontent.com/shadcn-ui/ui/$REF/apps/v4/registry/new-york-v4/ui/$NAME.tsx" -o "upstream/$NAME.tsx"; done
+          curl --fail --silent --show-error "https://raw.githubusercontent.com/shadcn-ui/ui/$REF/LICENSE.md" -o upstream/LICENSE.md
+          tar czf ../ui-dependencies.tar.gz node_modules package.json package-lock.json upstream
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reunir-ui-dependencies
+          path: ui-dependencies.tar.gz
+          retention-days: 7
