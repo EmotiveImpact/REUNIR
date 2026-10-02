@@ -1,6 +1,6 @@
 {
   "name": "reunir",
-  "version": "0.9.0-alpha.1",
+  "version": "0.10.0-alpha.1",
   "description": "Purposeful communities. People, purpose, progress, projects and proof.",
   "scripts": {
     "dev": "tsx scripts/dev.ts",
@@ -35,7 +35,9 @@
     "test:browser:v4": "tsx scripts/v4-integration-browser-check.ts",
     "test:browser:rich-lessons": "tsx scripts/rich-lessons-browser-check.ts",
     "test:browser:resources": "tsx scripts/resources-browser-check.ts",
-    "test:browser:resources-connected": "tsx scripts/resources-connected-check.ts"
+    "test:browser:resources-connected": "tsx scripts/resources-connected-check.ts",
+    "test:browser:assessments": "tsx scripts/assessments-browser-check.ts",
+    "test:browser:assessments-connected": "tsx scripts/assessments-connected-check.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.13.0",

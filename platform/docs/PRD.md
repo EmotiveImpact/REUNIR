@@ -1,6 +1,6 @@
 # REUNIR · Product Requirements Document
 
-Version 0.9 · 2 October 2026 · Private lesson resources, Alpha 09 (application 0.9.0-alpha.1), on the approved v4 design. Requirements and actual delivery are distinguished below.
+Version 0.10 · 2 October 2026 · Knowledge checks, Alpha 10 (application 0.10.0-alpha.1), on the approved v4 design. Requirements and actual delivery are distinguished below.
 
 ## 1. Product
 
@@ -59,7 +59,7 @@ Purpose-led Home, separate Discussions and space feeds, create a text post, post
 
 ### Learning
 
-Track catalogue, track detail, ordered lessons, enrolment, text/resource lesson viewer and idempotent lesson completion. Progress is calculated from published lessons, never invented. Initial content is sample editorial material, labelled as such. Quizzes, advanced authoring and cohort schedules remain next-wave work unless independently tested in this build.
+Track catalogue, track detail, ordered lessons, enrolment, text/resource lesson viewer and idempotent lesson completion. Progress is calculated from published lessons, never invented. Initial content is sample editorial material, labelled as such. Knowledge checks arrived in Alpha 10 (see that section); cohort schedules remain next-wave work.
 
 ### Doing
 
@@ -373,3 +373,22 @@ Creators attach files to lessons as part of the existing private draft: PDF, DOC
 | R09 | The fictional demo runs the same rules with browser-local bytes | Demo browser journey |
 
 Malware scanning, real bucket verification, file previews, download analytics and assessments are outside this release. Downloads never count as completion or evidence.
+
+## Alpha 10: knowledge checks
+
+Creators add one optional knowledge check to a lesson inside the existing private draft: single choice, multiple choice, short answer and written response questions, an optional pass mark, an attempt limit and a choice about revealing answers. Learners who joined the track answer it below the lesson; the server scores it, and written answers wait for an owner or administrator to mark them and send feedback from the Community studio queue. Scores are private feedback, never reputation, completion or a credential. See `ASSESSMENTS.md` and `decisions/010-knowledge-checks.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| K01 | Only active owners/admins author checks, and checks follow draft, private preview, explicit publication, capture and restore | Domain, database and demo browser tests |
+| K02 | Learners never receive correct options, accepted answers or explanations before the author's reveal rule allows them | Domain, HTTP, rendering, database snapshot and connected browser tests |
+| K03 | Scoring happens only on the server and is deterministic; clients cannot send scores | Domain and HTTP tests |
+| K04 | Answers to a check that changed since the learner opened it are refused, not scored | Domain, HTTP and connected browser tests |
+| K05 | Attempts keep the quiz they answered and cannot be rewritten or deleted; only review fields change once | Column grants, RLS and PostgreSQL tests |
+| K06 | Only an active owner/admin who is not the learner reviews, marking every written answer within its points | Domain, database (including suspended and demoted roles), HTTP and browser tests |
+| K07 | Attempts are visible only to the learner and their community's owners/admins; no cross-tenant access | Domain, RLS, HTTP, PostgreSQL |
+| K08 | Attempts change no completion, reputation or public profile | Domain and browser tests |
+| K09 | Existing lessons, drafts, revisions and completions upgrade unchanged | Migration 0010 upgrade test |
+| K10 | The fictional demo runs the same rules, including a seeded review queue | Demo browser journey |
+
+Question banks, timers, partial credit, file answers, exports and an erasure procedure for attempts are outside this release.

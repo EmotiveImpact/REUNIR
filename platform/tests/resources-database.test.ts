@@ -51,14 +51,14 @@ test('0009 upgrade keeps lessons, drafts, history, completions and member upload
         const strip = (rows: Record<string, unknown>[], extra: string[]) => rows.map(r => Object.fromEntries(Object.entries(r).filter(([k]) => !extra.includes(k))));
         for (const [table, rows] of [['lessons', before.lessons], ['lesson_drafts', before.drafts], ['lesson_revisions', before.revisions]] as const) {
             const now = await read(table);
-            assert.deepEqual(strip(now, ['resources']), rows, table);
-            assert(now.every(r => r.resources === null), table);
+            assert.deepEqual(strip(now, ['resources', 'quiz']), rows, table);
+            assert(now.every(r => r.resources === null && r.quiz === null), table);
         }
         assert.deepEqual(await read('completions'), before.completions);
         const uploads = await read('upload_intents');
         assert.deepEqual(strip(uploads, ['purpose', 'track_id', 'completed_at', 'generation']), before.uploads);
         assert.deepEqual(uploads.map(u => [u.purpose, u.track_id, u.completed_at, u.generation]), [['member', null, null, null]]);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 9);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 10);
     } finally { await old.close(); }
 });
 test('the restricted runtime role records, verifies, attaches and publishes a lesson file', async () => {

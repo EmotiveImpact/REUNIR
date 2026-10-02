@@ -1,4 +1,79 @@
-# Alpha 09 private lesson resources
+# Alpha 10 knowledge checks
+
+2 October 2026. Application 0.10.0-alpha.1. Creators add an optional knowledge check to a lesson in the private draft; learners answer it and the server scores it; owners and administrators mark written answers and send feedback. Scores are private feedback, not reputation, completion or credentials. See ASSESSMENTS.md and decisions/010-knowledge-checks.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/stoic-euler-lx2zk7`, restarted from main `788e5d7` after PR #3 merged |
+| Verified locally | Yes, every suite below, in this cloud workspace |
+| Verified remotely (GitHub Actions) | See the publication receipt below |
+| Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- Migration `0010_assessments.sql` (additive): a nullable `quiz` object on lessons, drafts and revisions, and a `quiz_attempts` table with forced RLS, constraints that tie status to review fields and forbid self-review, and a uniqueness rule per learner, lesson and attempt number. `npm run db:grant-runtime` revokes UPDATE and DELETE on attempts and grants UPDATE only on the review columns. Migrations 0001 to 0009 are byte-identical.
+- Commands `quiz.attempt.submit` and `quiz.attempt.review` on the existing commands route; `lesson.draft.save` carries the quiz. Answer keys are stripped for non-authors; stale answers are refused by fingerprint.
+- Creator Studio gains a knowledge-check editor and preview; lessons gain the learner check; Community studio gains a Knowledge checks review tab reached from the notification.
+- The fictional Code Black demo has two checks and one attempt waiting for review.
+- Fixed a pre-existing bug: `npm run dev` rendered a blank page ("Cannot access 'lazy' before initialization") because `lib/context.tsx` declared a lazy page above its React import, which Vite's development server rewrites in place. Builds and the preview bundle were unaffected, so no browser check had caught it. `tests/web-modules.test.ts` now guards module order.
+- No new runtime dependency. Release constant and package version are 0.10.0-alpha.1.
+
+## Local verification, 2 October 2026
+
+Environment as for Alpha 09: Node 22.22.0, npm 10.9.4, `npm ci` from the committed lockfile, Playwright Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16.14 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 466 passed, 0 failed (425 existing plus 20 domain, 8 database, 6 HTTP, 6 rendering and 1 module-order test) |
+| `npm run test:http` | 17 passed |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Existing demo-browser suites | 223 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 15 monochrome, 20 v4 |
+| `npm run test:browser:assessments` (new) | 14 passed: creator, learner and reviewer journey, axe scans, neutral-colour checks, overflow at 390px and 360px |
+| Existing connected-browser suites | 21 passed: 12 connected, 9 resources |
+| `npm run test:browser:assessments-connected` (new) | 8 passed: live build, Better Auth sessions, PGlite, owner review and a concurrent edit refused then re-answered |
+| `npm run test:postgres` | 9 passed, including the new restricted-role knowledge-check check |
+| Python helpers, `scripts/check_research.py` | 32 passed; 22 pinned sources, 12 decisions |
+| `VITE_DATA_MODE=demo npm run dev` | Renders in Chromium after the module-order fix; learner, reviewer and studio screens inspected |
+
+Tests changed rather than added: the old-schema fixture skips the new collection and column (its documented rule), four migration-count assertions moved from 9 to 10, the 0008 and 0009 upgrade tests also strip the new nullable column, and one enrolment assertion now counts the acting member's own enrolments, because the seed adds a fictional enrolment for Sofia Chen. No business assertion was weakened.
+
+## Corrections made while verifying
+
+- Global form styles stretched radio buttons and checkboxes to full width, hiding the option text fields in the studio editor. Choice inputs now keep their natural size.
+- A blank choice question reported "Each option needs different text" alongside "Give every option some text". Duplicate checks now consider only filled-in options.
+- Database assertions written with `rowCount` were vacuous because the SQL wrapper does not expose it. They now use `RETURNING` counts, and a rolled-back positive control proves the same statement succeeds for an active owner.
+- The automated Codex review on PR #4 found that the `attempt_review` row policy still matched attempts that were already reviewed, so SQL bypassing the domain could rewrite a finished review. Migration 0010 (not yet merged or applied anywhere outside test databases) now requires an unreviewed row before the update and a reviewed row at version 2 after, and inserts must start at version 1. New database and PostgreSQL assertions failed before the change and pass after it.
+
+## Not verified, and why
+
+- Hosted behaviour on Neon and Vercel, real sessions over the internet, email and backups remain deferred by the user.
+- Very large review queues: attempts load with the bounded workspace snapshot; pagination is a follow-up.
+
+## Preview
+
+The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `http://127.0.0.1:5173`, reachable only from inside the container. This environment does not publish a public preview URL. Clone the branch (or main after merge) and run `npm ci && npm run dev` from `platform/`.
+
+## Publication receipt
+
+Pushed to `claude/stoic-euler-lx2zk7` and opened as [EmotiveImpact/REUNIR#4](https://github.com/EmotiveImpact/REUNIR/pull/4). After each push the remote ref was fetched back and matched the local commit and tree.
+
+- First head `51dd503bccd18935a8935c692da0a8a4b5d919cc` (tree `df74f75c3b7f8d77c1c4af462092921f671b2c78`) passed both jobs in [run 37066181651](https://github.com/EmotiveImpact/REUNIR/actions/runs/37066181651) (push) and [run 37066222452](https://github.com/EmotiveImpact/REUNIR/actions/runs/37066222452) (pull request).
+- The automated Codex review then found the review-policy gap described under corrections. The fix, `ea40ab917433382f3a40b48c57a7fcbe3e26e986` (tree `001f2a3e74a01b7a09115099edd71a648a7e0604`), passed both jobs in [run 37067079371](https://github.com/EmotiveImpact/REUNIR/actions/runs/37067079371) (push) and [run 37067083907](https://github.com/EmotiveImpact/REUNIR/actions/runs/37067083907) (pull request). The application job ran the research checker, typecheck, all application tests, 17 HTTP checks, both builds, every demo-browser suite including knowledge checks, every connected-browser suite including knowledge checks, and the Python helpers; the PostgreSQL 17 job ran the 9 restricted-role checks. The review thread was answered and resolved.
+
+This receipt commit changes only documentation and source hashes; the merge into main is recorded in the pull request and in the next status update.
+
+## Next actions
+
+1. Merge this slice once GitHub Actions passes, then read back main.
+2. Instructor-scoped authoring and review permissions, a paginated review queue and a learner export of their own attempts.
+3. When deployment resumes: Neon staging with ten migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests.
+
+---
+## Historical Alpha 09 evidence: private lesson resources
 
 2 October 2026. Application 0.9.0-alpha.1. Creators attach ordered, named and described files to lesson drafts, replace and remove them, preview them privately and release them by explicit publication. Learners download files only while they can open the lesson. See LESSON_RESOURCES.md and decisions/009-private-lesson-resources.md.
 
@@ -63,10 +138,12 @@ Pushed to `claude/stoic-euler-lx2zk7` at `16f3071d645f6bae54fd5c42716e562ccd72e1
 
 GitHub Actions passed every job on that commit: [run 37060579827](https://github.com/EmotiveImpact/REUNIR/actions/runs/37060579827) (push) and [run 37060617081](https://github.com/EmotiveImpact/REUNIR/actions/runs/37060617081) (pull request), each with the application job (typecheck, all application tests, 17 HTTP checks, both builds, 223 demo-browser checks, 21 connected-browser checks, 32 helper tests, research checker) and the PostgreSQL 17 job (8 checks, including the restricted-role resource check). This receipt commit changes only documentation and source hashes; the merge into main is recorded in the pull request and in the next status update.
 
-## Next actions
+**Merged.** The receipt commit `a6d4adb8edce9a1eec652a25fe2f944575cadad4` passed both jobs again in [run 37061204163](https://github.com/EmotiveImpact/REUNIR/actions/runs/37061204163) (push) and [run 37061210244](https://github.com/EmotiveImpact/REUNIR/actions/runs/37061210244) (pull request). PR #3 was then merged with a merge commit: main is `788e5d70df7083a07c6a254b315e7aa97965fd5a` (parents `016c16e` and `a6d4adb`). Main was fetched back; its tree `ae626acb8109f8afd65d01c05a3d8ced1a78c4f9` is identical to the tested PR head's tree.
 
-1. Merge this slice once GitHub Actions passes, then read back main.
-2. Build assessments: quizzes, learner attempts, scoring and instructor feedback, on the same draft, publication and revision model.
+## Next actions recorded at the time
+
+1. Merge this slice once GitHub Actions passes, then read back main (done; see above).
+2. Build assessments (done in Alpha 10).
 3. When deployment resumes: configure the private bucket (SETUP.md section 6), verify real signed uploads and downloads, then add scanning and an orphaned-object sweep.
 
 ---

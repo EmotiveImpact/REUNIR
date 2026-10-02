@@ -1,6 +1,10 @@
-# Research status: Alpha 09
+# Research status: Alpha 10
 
-Alpha 09 (private lesson resources) reviewed specific files in LearnHouse, Frappe Learning and ClassroomIO at pinned commits; see notes/14_LESSON_RESOURCES.md and the `lesson-resources` decision in reuse-register.json. All three are AGPL at their roots, so they are behavioural references only. Imported donor files: zero. New runtime dependencies: none. The next queued investigation is assessments (quizzes, attempts, scoring and feedback).
+Alpha 10 (knowledge checks) reviewed specific files in Frappe Learning, LearnHouse and ClassroomIO at the same pinned commits; see notes/15_ASSESSMENTS.md and the `knowledge-checks` decision in reuse-register.json. All three are AGPL at their roots, so they are behavioural references only. Imported donor files: zero. New runtime dependencies: none. Question banks, partial credit, timers and file answers stay queued under `authoring-next`.
+
+## Alpha 09 record
+
+Alpha 09 (private lesson resources) reviewed specific files in LearnHouse, Frappe Learning and ClassroomIO at pinned commits; see notes/14_LESSON_RESOURCES.md and the `lesson-resources` decision in reuse-register.json. All three are AGPL at their roots, so they are behavioural references only. Imported donor files: zero. New runtime dependencies: none. Assessments followed in Alpha 10.
 
 ## Alpha 05 record
 

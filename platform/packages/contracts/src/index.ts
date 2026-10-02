@@ -1,5 +1,6 @@
 import { lessonDocumentSchema, type LessonDocument } from './lesson-document';
 import { lessonResourcesInput, type LessonResource } from './lesson-resources';
+import { lessonQuizSchema, quizAnswersInput, quizFingerprintInput, quizMarksInput, type LessonQuiz, type QuizAnswer, type QuizResult } from './assessments';
 import { z } from 'zod';
 export type Id = string;
 export type Role = 'owner' | 'admin' | 'moderator' | 'member';
@@ -97,6 +98,8 @@ export interface Lesson extends TenantRecord {
     richBody?: LessonDocument | null;
     /** Ordered private files. NULL on lessons published before resources existed. */
     resources?: LessonResource[] | null;
+    /** Optional knowledge check. Learners receive it without answers. */
+    quiz?: LessonQuiz | null;
     trackId: Id;
     title: string;
     summary: string;
@@ -108,7 +111,7 @@ export interface Lesson extends TenantRecord {
 }
 export interface LessonContent {
     title: string; summary: string; body: string; minutes: number; resourceUrl: string; richBody?: LessonDocument | null;
-    resources?: LessonResource[] | null;
+    resources?: LessonResource[] | null; quiz?: LessonQuiz | null;
 }
 /** Private to active community owners and administrators. Never learner content. */
 export interface LessonDraft extends TenantRecord, LessonContent {
@@ -126,6 +129,17 @@ export interface Upload extends TenantRecord {
     originalName: string; contentType: string; sizeBytes: number;
     status: 'pending' | 'ready' | 'rejected';
     objectKey: string; completedAt: string | null; generation: string | null;
+}
+/**
+ * One submitted knowledge check. Immutable apart from review fields. Scores are private feedback,
+ * not reputation, completion or a credential.
+ */
+export interface QuizAttempt extends TenantRecord {
+    lessonId: Id; trackId: Id; userId: Id; attemptNumber: number;
+    /** The quiz exactly as scored. Answer keys are removed in learner views unless the reveal rule allows them. */
+    quiz: LessonQuiz; answers: QuizAnswer[]; results: QuizResult[];
+    score: number; maxScore: number; status: 'scored' | 'awaiting_review' | 'reviewed'; passed: boolean | null;
+    feedback: string; reviewerId: Id | null; reviewedAt: string | null; version: number;
 }
 export interface Enrolment extends TenantRecord {
     trackId: Id;
@@ -271,6 +285,7 @@ export interface MemberGoal extends TenantRecord {
     visibility: 'private' | 'members'; status: 'active' | 'paused' | 'completed'; completedAt: string | null;
 }
 export interface Workspace {
+    quizAttempts: QuizAttempt[];
     uploads: Upload[];
     lessonDrafts: LessonDraft[];
     lessonRevisions: LessonRevision[];
@@ -335,7 +350,9 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({type:z.literal('lesson.draft.save'),draftId:id,expectedVersion,
         title:z.string().trim().max(120),summary:z.string().trim().max(240),body:z.string().trim().max(20000),
         minutes:z.number().int().min(1).max(240),resourceUrl:link.default(''),richBody:lessonDocumentSchema.nullable().optional(),
-        resources:lessonResourcesInput.optional()}).strict(),
+        resources:lessonResourcesInput.optional(),quiz:lessonQuizSchema.nullable().optional()}).strict(),
+    z.object({type:z.literal('quiz.attempt.submit'),lessonId:id,fingerprint:quizFingerprintInput,answers:quizAnswersInput}).strict(),
+    z.object({type:z.literal('quiz.attempt.review'),attemptId:id,expectedVersion,marks:quizMarksInput.default([]),feedback:text(2000)}).strict(),
     z.object({type:z.literal('lesson.draft.publish'),draftId:id,expectedVersion}).strict(),
     z.object({type:z.literal('lesson.draft.archive'),draftId:id,expectedVersion,archived:z.boolean()}).strict(),
     z.object({type:z.literal('lesson.draft.restore'),draftId:id,expectedVersion,revisionId:id}).strict(),
