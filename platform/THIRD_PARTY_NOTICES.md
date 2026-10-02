@@ -70,3 +70,7 @@ Source directory: `apps/v4/registry/new-york-v4/ui/`. The upstream `cn` import i
 - `class-variance-authority` 0.7.1: Apache-2.0. legal/dependencies/class-variance-authority-LICENSE.txt
 - `clsx` 2.1.1: MIT. legal/dependencies/clsx-license.txt
 - `tailwind-merge` 3.3.1: MIT. legal/dependencies/tailwind-merge-LICENSE.md.txt
+
+## Alpha 08 rich lesson editing
+
+`@tiptap/core`, `@tiptap/pm`, `@tiptap/react`, and `@tiptap/starter-kit` are pinned to 3.31.4. Tiptap is MIT licensed; the installed licence is retained in `legal/tiptap-MIT.txt`. Complete licence notices for all 47 newly added packages, including ProseMirror, are retained in `legal/rich-editor-dependencies.txt`. The source and lockfile preserve package integrity hashes. No Tiptap cloud service, commercial extension or donor LMS application is required. Our editor integration, bounded schema and React renderer are local application code.

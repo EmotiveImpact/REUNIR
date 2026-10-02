@@ -10,8 +10,9 @@ export async function seedBeforeProjectWork(db:Database){
         for(const spec of tables.filter(t=>!['projectTasks','taskNotes'].includes(t.key))){
             for(const row of state[spec.key]){
                 const r=row as unknown as Record<string,unknown>;
-                const values=spec.fields.map(f=>f.type==='jsonb'?JSON.stringify(r[f.property]):r[f.property]);
-                await tx.query(`INSERT INTO ${spec.table} (${spec.fields.map(f=>f.column).join(',')}) VALUES (${values.map((_,i)=>'$'+(i+1)).join(',')})`,values);
+                const fields=spec.fields.filter(f=>f.property!=='richBody');
+                const values=fields.map(f=>f.type==='jsonb'?JSON.stringify(r[f.property]):r[f.property]);
+                await tx.query(`INSERT INTO ${spec.table} (${fields.map(f=>f.column).join(',')}) VALUES (${values.map((_,i)=>'$'+(i+1)).join(',')})`,values);
             }
         }
     });

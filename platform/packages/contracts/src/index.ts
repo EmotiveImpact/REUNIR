@@ -1,3 +1,4 @@
+import { lessonDocumentSchema, type LessonDocument } from './lesson-document';
 import { z } from 'zod';
 export type Id = string;
 export type Role = 'owner' | 'admin' | 'moderator' | 'member';
@@ -92,6 +93,7 @@ export interface Track extends TenantRecord {
     published: boolean;
 }
 export interface Lesson extends TenantRecord {
+    richBody?: LessonDocument | null;
     trackId: Id;
     title: string;
     summary: string;
@@ -102,7 +104,7 @@ export interface Lesson extends TenantRecord {
     published: boolean;
 }
 export interface LessonContent {
-    title: string; summary: string; body: string; minutes: number; resourceUrl: string;
+    title: string; summary: string; body: string; minutes: number; resourceUrl: string; richBody?: LessonDocument | null;
 }
 /** Private to active community owners and administrators. Never learner content. */
 export interface LessonDraft extends TenantRecord, LessonContent {
@@ -320,7 +322,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({type:z.literal('lesson.draft.create'),trackId:id,lessonId:optionalSpace.default(null)}).strict(),
     z.object({type:z.literal('lesson.draft.save'),draftId:id,expectedVersion,
         title:z.string().trim().max(120),summary:z.string().trim().max(240),body:z.string().trim().max(20000),
-        minutes:z.number().int().min(1).max(240),resourceUrl:link.default('')}).strict(),
+        minutes:z.number().int().min(1).max(240),resourceUrl:link.default(''),richBody:lessonDocumentSchema.nullable().optional()}).strict(),
     z.object({type:z.literal('lesson.draft.publish'),draftId:id,expectedVersion}).strict(),
     z.object({type:z.literal('lesson.draft.archive'),draftId:id,expectedVersion,archived:z.boolean()}).strict(),
     z.object({type:z.literal('lesson.draft.restore'),draftId:id,expectedVersion,revisionId:id}).strict(),

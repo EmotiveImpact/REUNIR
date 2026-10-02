@@ -1,9 +1,10 @@
+import { lessonDocumentText } from '../../contracts/src/lesson-document';
 import { DomainError, type Command, type Workspace, type TenantContext, type Member, type Lesson, type LessonDraft, type LessonContent } from '../../contracts/src/index';
 import { actorFor, isAdmin, canSeeSpace } from './access';
 
 /** Whitelist learner-facing content. Internal draft state never crosses the publication boundary. */
 export function lessonContent(value: LessonContent): LessonContent {
-    return {title:value.title, summary:value.summary, body:value.body, minutes:value.minutes, resourceUrl:value.resourceUrl};
+    return {title:value.title, summary:value.summary, body:value.richBody?lessonDocumentText(value.richBody):value.body, minutes:value.minutes, resourceUrl:value.resourceUrl, richBody:value.richBody?structuredClone(value.richBody):null};
 }
 export function filterAuthoring(state: Workspace, actor: Member): Workspace {
     const tracks=new Set(state.tracks.map(t=>t.id));
@@ -56,6 +57,7 @@ export function applyAuthoring(s: Workspace, ctx: TenantContext, cmd: Command, n
     }
     if(draft.archived)throw new DomainError('DRAFT_ARCHIVED','Restore this draft before changing or publishing it.',409);
     if(cmd.type==='lesson.draft.save'){
+        if(draft.richBody && cmd.richBody===undefined)throw new DomainError('RICH_CONTENT_REQUIRED','Reload the updated editor before saving this formatted lesson.',409);
         const content=lessonContent(cmd);
         if(JSON.stringify(content)===JSON.stringify(lessonContent(draft)))return result(draft.id,'The draft is already saved.',false);
         Object.assign(draft,content,{version:draft.version+1,updatedAt:now,updatedBy:ctx.userId});

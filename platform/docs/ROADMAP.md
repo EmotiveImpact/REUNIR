@@ -1,4 +1,4 @@
-# REUNIR roadmap after Alpha 07 UI integration
+# REUNIR roadmap after rich lesson authoring
 
 ## Product mission, not a new scope
 
@@ -18,7 +18,11 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 
-## Immediate release work: make the pilot operable
+## Deployment deferred by the user
+
+The user will clone, deploy and run hosted tests later. Continue product development without treating deployment as a prerequisite or claiming it is complete. Alpha 08 adds rich lesson editing, safe external media and compatible revisions; see RICH_LESSONS.md. Full application/browser/HTTP/PostgreSQL CI passed in run 36969054997. PR #2 tracks publication and merge.
+
+## Release work when deployment resumes: make the pilot operable
 
 1. **Source publication completed:** PR #1 contains the full Alpha 07 tree, verified against recovered checkpoint `76b31ab` and fetched back without differences. Preserve historical transport/dependency branches without merging them into the app. Never force-push or overwrite parallel work.
 2. **Application and PostgreSQL CI completed:** run 36964804738 passed all application, HTTP, demo-browser, connected-browser and PostgreSQL checks on commit `75b3f2b`. PR #1 tracks the final source integration. Dependency-resolution CI is no longer the only remote evidence.
@@ -28,7 +32,7 @@ UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exp
 
 ## Next product slices
 
-**Creator Studio 2:** choose a suitable permissively licensed block editor; add headings/lists/links/images and safe video embedding incrementally, private resource upload lifecycle and assessments. Preserve plaintext compatibility, draft versus published separation and immutable review attribution.
+**Creator Studio 2:** Rich editing, HTTPS images, safe YouTube/Vimeo insertion and compatible revision restoration are implemented in Alpha 08. Next: private resource upload/access lifecycle and assessments. Preserve plaintext compatibility, draft versus published separation and immutable review attribution.
 
 **Everyday reliability:** page-level cursor pagination beyond messages, notification preferences/digests, role-scoped instructor workflows and useful content curation. Replace placeholder course/project art with authorised original content. Improve loading/error/empty states through real pilot observations.
 

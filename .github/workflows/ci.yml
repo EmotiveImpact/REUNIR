@@ -35,6 +35,7 @@ jobs:
       - run: npm run test:browser:operations
       - run: npm run test:browser:work
       - run: npm run test:browser:authoring
+      - run: npm run test:browser:rich-lessons
       - run: npm run test:browser:monochrome
       - run: npm run test:browser:v4
       - run: npm run test:browser:connected

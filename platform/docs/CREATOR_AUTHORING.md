@@ -1,3 +1,7 @@
+# Current authoring continuation
+
+Alpha 08 now implements rich lesson editing and safe external media. See RICH_LESSONS.md for the current behaviour, migration and limits. The Alpha 06 text below documents the preserved publication foundation; its plaintext-only limitation is historical.
+
 # Creator authoring: recovered Alpha 06 slice
 
 Application `0.6.0-alpha.1`. This is new work built on the verified Alpha 05 source after the interrupted authoring attempt. It is not a recovered copy of the missing attempt, a rich-text editor release, or a hosted pilot.

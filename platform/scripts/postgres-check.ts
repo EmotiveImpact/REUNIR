@@ -1,3 +1,6 @@
+import { randomUUID } from 'node:crypto';
+import { plainLessonDocument } from '../packages/contracts/src/lesson-document';
+import { lessonContent } from '../packages/domain/src/authoring';
 /** Opt-in integration test against a disposable local PostgreSQL CI service, never Neon/customer data. */
 import {strict as assert} from 'node:assert';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -26,5 +29,21 @@ try{
     await check('parallel connection-pool reads keep two tenant contexts separate',async()=>{const repo=new WorkspaceRepository(runtime!);const slugs=Array.from({length:20},(_,i)=>i%2?'code-black':'studio-north');const rows=await Promise.all(slugs.map(s=>repo.snapshot(s,DEMO_USER)));rows.forEach((r,i)=>assert.equal(r.organisation.slug,slugs[i]));});
     await check('transaction context is reset before a pooled connection is reused',async()=>{await runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',DEMO_USER);assert((await tx.query('SELECT id FROM posts')).rows.length>0);});assert.equal((await runtime!.query('SELECT id FROM posts')).rows.length,0);});
     await check('owner console runs through the restricted PostgreSQL connection',async()=>{const ops=new PilotOperations(new WorkspaceRepository(runtime!),{NODE_ENV:'test',DATABASE_URL:url.toString()});const status=await ops.snapshot('code-black',DEMO_ADMIN);assert.equal(status.checks.find(x=>x.key==='runtime-role')!.state,'pass');assert.equal(status.community.activeMembers,8);});
+    await check('rich lessons publish and restore through a restricted PostgreSQL connection',async()=>{
+        const repo=new WorkspaceRepository(runtime!);
+        const exec=(cmd:unknown)=>repo.execute('code-black',DEMO_ADMIN,cmd,randomUUID(),'rich-postgres');
+        let r=await exec({type:'lesson.draft.create',trackId:'track_product',lessonId:'lesson_4'}),d=r.workspace.lessonDrafts[0];
+        const richBody=plainLessonDocument('Private rich lesson for PostgreSQL');richBody.content[0].content![0].marks=[{type:'bold'}];
+        r=await exec({type:'lesson.draft.save',draftId:d.id,expectedVersion:d.version,...lessonContent(d),richBody});d=r.workspace.lessonDrafts[0];
+        assert.deepEqual(d.richBody,richBody);
+        assert(!JSON.stringify(await repo.snapshot('code-black',DEMO_USER)).includes('Private rich lesson for PostgreSQL'));
+        r=await exec({type:'lesson.draft.publish',draftId:d.id,expectedVersion:d.version});
+        assert.deepEqual((await repo.snapshot('code-black',DEMO_USER)).lessons.find(l=>l.id==='lesson_4')!.richBody,richBody);
+        assert(!JSON.stringify(await repo.snapshot('studio-north',DEMO_ADMIN)).includes('Private rich lesson for PostgreSQL'));
+        r=await exec({type:'lesson.draft.restore',draftId:d.id,expectedVersion:d.version,revisionId:r.workspace.lessonRevisions[0].id});
+        assert.equal(r.workspace.lessonDrafts[0].richBody,null);
+        assert.deepEqual(r.workspace.lessons.find(l=>l.id==='lesson_4')!.richBody,richBody);
+        await assert.rejects(()=>runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',DEMO_ADMIN);await tx.query('UPDATE lesson_revisions SET rich_body=NULL');}));
+    });
     await mkdir('evidence/alpha04',{recursive:true});await writeFile('evidence/alpha04/postgres-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Disposable local PostgreSQL service, not Neon.',results},null,2));
 }finally{await runtime?.close();await admin.close();}
