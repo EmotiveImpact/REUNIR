@@ -1,8 +1,8 @@
 {
   "release": "REUNIR Alpha 09 private lesson resources",
   "version": "0.9.0-alpha.1",
-  "sourceBaseline": "016c16e51212f9a71aff3f9b18b311d209194d9d",
-  "generatedAt": "2026-10-02T20:32:01.995835+00:00",
+  "sourceBaseline": "788e5d70df7083a07c6a254b315e7aa97965fd5a",
+  "generatedAt": "2026-10-02T21:04:49.679891+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "4e9cb0c1203a0b5b5bd579c0aff8939f97e4ea28aa774a295c1a76448bc18c07",
-      "bytes": 6493
+      "sha256": "374a1c0ec31739c4ec216c026202abca4d0c43f0ae546d1647250e7ffb2ad44a",
+      "bytes": 6714
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "f9296378f2be49a8e6a5e0aebecd9a61b21add3426f0610223a066ab57d5c4ed",
-      "bytes": 11380
+      "sha256": "3067a8adfc88e7c9c098f5ef1509112b82ff65c14837877069c0abc40acbeb44",
+      "bytes": 11992
     },
     {
       "path": "platform/.dockerignore",
@@ -351,8 +351,8 @@
     },
     {
       "path": "platform/apps/web/src/styles.css",
-      "sha256": "bfc1575a7ad402e78f81533886d141381e97c305c7189b363905471058e8aa9e",
-      "bytes": 109275
+      "sha256": "b31c7414b08bf31791fe4fbee286cdd61486a8b51b5b69ba0e5d6b30ca3c2773",
+      "bytes": 109645
     },
     {
       "path": "platform/apps/web/src/v4.css",
@@ -391,8 +391,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "0601ef7e2486f499a6d0d6940a02f0f5d651e6e69d92e57497401e6ac638fa8e",
-      "bytes": 17808
+      "sha256": "03b599041d5e27f9b6fd17721aefcc8132f49127672f8676d2595f478ec0f991",
+      "bytes": 22731
     },
     {
       "path": "platform/docs/CREATOR_AUTHORING.md",
@@ -1021,8 +1021,8 @@
     },
     {
       "path": "platform/scripts/monochrome-browser-check.ts",
-      "sha256": "99f7d1fb02b6caf3321ea412d3e666af3edcd8f142bef86e926969ebaeeca2ce",
-      "bytes": 7508
+      "sha256": "6d30b6c4b5c6b66a5d2a56cc35c70756f7b25777b2181da40ef34f3509a0ac3a",
+      "bytes": 8660
     },
     {
       "path": "platform/scripts/operations-browser-check.ts",
@@ -1071,8 +1071,8 @@
     },
     {
       "path": "platform/scripts/resources-connected-check.ts",
-      "sha256": "df3d5f46fe49870733fc16295dfb41ca6d82def1114c2973f1b6564952d2c5cb",
-      "bytes": 15619
+      "sha256": "163a51e71de54b213753bbd320501780e725a134467e60e8f55f6e94ce14df9d",
+      "bytes": 15455
     },
     {
       "path": "platform/scripts/rich-lessons-browser-check.ts",

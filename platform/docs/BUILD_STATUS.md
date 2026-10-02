@@ -9,6 +9,8 @@
 | Implemented | Yes, on `claude/stoic-euler-lx2zk7`, built from main `016c16e` |
 | Verified locally | Yes, every suite below, in this cloud workspace |
 | Verified remotely (GitHub Actions) | Yes: runs 37060579827 (push) and 37060617081 (pull request) passed on `16f3071` |
+| Merged | Yes: main `788e5d7` merges PR #3, and its tree is identical to `a6d4adb` (read back 2 October 2026) |
+| Follow-up | Custom cover contrast on `claude/laughing-goodall-2p7z0v`, not yet merged; see "Follow-up: custom cover contrast" |
 | Deployed | No. No bucket, Neon database, Vercel project, sender or scheduler was created |
 | Operated with real members | No |
 
@@ -45,7 +47,37 @@ Tests changed rather than added: the old-schema fixture now skips the new collec
 - The database run showed that restricted-role RLS already hides a pending file from members, returning 404 before the role check. The domain now checks the author role first, so members get the same clear 403 in every mode.
 - An object overwritten between the metadata read and the pinned signature read surfaced as a 500. It now returns a retryable 409 `UPLOAD_CHANGED` and leaves the intent pending.
 - The connected harness navigated to the same hash URL without reloading, so the learner saw a cached workspace. The harness now reloads. Live mode refreshes every 30 seconds in normal use.
-- A full-page axe scan of a newly created connected track flagged 6px decorative cover text at 4.25:1. The cover is `aria-hidden` and outside this slice, so the connected scan covers the lesson article, and the cover fix is queued as a separate task. The demo learner page with files passes a full-page scan.
+- A full-page axe scan of a newly created connected track flagged 6px decorative cover text at 4.25:1. The cover is `aria-hidden` and outside this slice, so the connected scan covers the lesson article, and the cover fix is queued as a separate task. The demo learner page with files passes a full-page scan. Resolved by the follow-up below: the connected scan covers the whole learner page again.
+
+## Follow-up: custom cover contrast
+
+Branch `claude/laughing-goodall-2p7z0v`, built from main `788e5d7`; tested commit `43bdf4a`. It resolves the cover finding above.
+
+Tracks and projects created in the app get the `custom` cover. It has no art rule of its own, so it uses the default translucent shapes, and these cross the text on narrow covers, above all the track detail cover (285px wide above 1080px, 190px at or below, hidden at 760px and below). axe measured the 6px footer at 4.25:1 (`#ececec` on `#6f6f6f`) at every detail width, and the 9px label too at 1080px and below. axe approximates the rotated shape by its bounding box, so the rendered pixels behind the glyphs were also sampled: the footer fell to 3.44:1, the label to 2.77:1 and the large title to 2.77:1, where large text needs 3:1. Seeded tracks use named covers, which is why the demo suites passed.
+
+- `styles.css`, `.art-custom` only: white lettering; the label and footer sit on the cover's own ground (`#5d5d5d`) with a 3px knockout and 2px radius, and the label hugs its text so the knockout stays local. Named covers and layout are unchanged. Neutral colours only, with no gradient and no recolouring of images.
+- `resources-connected-check.ts`: the axe scan is no longer limited to `.lesson-content`, and the check is renamed "the connected learner page with files passes automated accessibility checks".
+- `monochrome-browser-check.ts`: a new check creates a track through the real form, then runs the neutral colour check and full-page axe scans on its page at 1512px and 1000px.
+
+Unless stated, every check below ran on `43bdf4a` in a clean worktree after its own `npm ci`, with Chromium 1194 through `CHROMIUM_PATH`.
+
+| Check (from `platform/` unless stated) | Result |
+| --- | --- |
+| `npm ci`, `npm run typecheck`, `npm run bundle:preview`, `npm run build` | Passed |
+| `npm test` | 425 passed, 0 failed |
+| `npm run test:browser:monochrome` | 16 passed: the 15 existing checks plus the custom cover check |
+| `npm run test:browser:v4` | 20 passed |
+| `npm run test:browser:resources-connected` | 9 passed; the full-page scan reports no violations |
+| Other demo-browser suites | 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons and 19 resources passed; 224 demo-browser checks in all |
+| `npm run test:browser:connected` | 12 passed; 21 connected-browser checks in all |
+| Negative controls: the same commit's tests with main's `styles.css` swapped in | The connected full-page scan and the new monochrome check both failed on `.cover-foot > span:nth-child(2)` at 4.25:1, as expected |
+| Python helpers and `scripts/check_research.py`, from the repository root | 32 passed; 18 pinned sources, 11 decisions |
+| `scripts/publish_source.py`, verify only, on this receipt commit | Every manifest hash matches |
+| Contrast sweep: a scratch probe, not committed, run on the standalone build | Every cover type at 35 widths from 360px to 1640px on the track list, track detail, project list and project detail, with axe and with pixels sampled behind the glyphs. Custom covers before: 63 failing text samples and 51 axe violation nodes. After: none; worst footer and label 6.58:1, worst title 3.28:1. Named covers measured identically before and after |
+
+Not rerun locally: `npm run test:http` and `npm run test:postgres`, because no server, database or migration file changed; GitHub Actions ran both. GitHub Actions [run 37062824183](https://github.com/EmotiveImpact/REUNIR/actions/runs/37062824183) passed on `43bdf4a`: the application job (typecheck, application tests, HTTP checks, both builds, 224 demo-browser checks including the new monochrome check, 21 connected-browser checks including the full-page learner scan, 32 helper tests, research checker) and the PostgreSQL job.
+
+Outside this fix, and unchanged by it: the seeded `notes` cover (project "Notes from the process") pairs `#eaeaea` with `#8c8c8c` at 2.79:1, so full-page axe scans of the demo `/projects` page and of that project fail on its label, title and footer. No suite scans those pages. Pixel sampling also found named covers whose shapes lower text contrast in places without an axe violation: the `story` label and title, the `business` title, and the `still` title where it crosses the dark bar. These would change seeded artwork, so they are left for a separate decision.
 
 ## Not verified, and why
 
@@ -65,9 +97,10 @@ GitHub Actions passed every job on that commit: [run 37060579827](https://github
 
 ## Next actions
 
-1. Merge this slice once GitHub Actions passes, then read back main.
-2. Build assessments: quizzes, learner attempts, scoring and instructor feedback, on the same draft, publication and revision model.
-3. When deployment resumes: configure the private bucket (SETUP.md section 6), verify real signed uploads and downloads, then add scanning and an orphaned-object sweep.
+1. Done: this slice was merged as main `788e5d7`. Next, merge the custom cover follow-up on `claude/laughing-goodall-2p7z0v` (GitHub Actions passed on `43bdf4a`), then read back main.
+2. Decide a treatment for the seeded `notes` cover (2.79:1) and add a demo scan of `/projects` and that project.
+3. Build assessments: quizzes, learner attempts, scoring and instructor feedback, on the same draft, publication and revision model.
+4. When deployment resumes: configure the private bucket (SETUP.md section 6), verify real signed uploads and downloads, then add scanning and an orphaned-object sweep.
 
 ---
 ## Historical Alpha 08 evidence: rich lesson authoring

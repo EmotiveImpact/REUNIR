@@ -6,6 +6,7 @@
 - One download rule for lessons, drafts and revisions, with a restrictive RLS policy in depth.
 - Additive migration 0009; migrations 0001–0008 unchanged. No new runtime dependency.
 - The fictional demo keeps file bytes in the browser and includes a generated sample worksheet.
+- Custom covers on tracks and projects created in the app keep AA text contrast at every width. The connected resources check scans the whole learner page again, and the monochrome suite now checks a newly created track.
 - Deployment remains deferred by the user; no bucket has been configured.
 
 # 0.8.0-alpha.1: rich lesson authoring
