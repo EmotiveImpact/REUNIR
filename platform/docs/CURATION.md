@@ -1,6 +1,6 @@
 # Collections of useful content
 
-Decision record: `decisions/030-curated-collections.md`. Interface rules: UI_DESIGN_DIRECTION.md.
+Decision record: `decisions/027-curated-collections.md`. Interface rules: UI_DESIGN_DIRECTION.md.
 
 ## What people can do
 
@@ -17,7 +17,7 @@ Decision record: `decisions/030-curated-collections.md`. Interface rules: UI_DES
 
 ## Storage
 
-Migration `0030_curated_collections.sql` (additive) adds `collections` and `collection_items` with forced row security and composite tenant keys. An item names exactly one record of its kind. The runtime role may only change a collection's wording, status, feature and editor, and an item's order and note; run `npm run db:grant-runtime` after migrating. The browser demo seeds a featured "Start here" collection, which includes one team-only post that members never see, and a moderator's draft.
+Migration `0026_curated_collections.sql` (additive) adds `collections` and `collection_items` with forced row security and composite tenant keys. An item names exactly one record of its kind. The runtime role may only change a collection's wording, status, feature and editor, and an item's order and note; run `npm run db:grant-runtime` after migrating. The browser demo seeds a featured "Start here" collection, which includes one team-only post that members never see, and a moderator's draft.
 
 ## Checks
 

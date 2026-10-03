@@ -1,4 +1,4 @@
-# Decision 030: collections of useful content
+# Decision 027: collections of useful content
 
 Status: implemented, verified locally; not deployed. Date: 3 October 2026.
 
