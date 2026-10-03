@@ -8,9 +8,28 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### 0.30.0-alpha.1 (Alpha 30): every form on the shared shadcn components, 3 October 2026
+### Alpha 37: uploaded lesson video (no version change), 3 October 2026
 
-On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass. The package version stays at 0.39.0-alpha.1, set by Alpha 39.
+On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass. Decision 037 and migration 0036, from the block allocated to courses and teaching. Alpha 39 is already on main, so the version stays 0.39.0-alpha.1.
+
+**In plain language:** creators can now upload their own MP4 or WebM video to a lesson, alongside YouTube and Vimeo embeds. Learners press **Play** and watch it in the page; the video stays private to people who can open the lesson. It is off until whoever runs the server sets a size limit.
+
+Details:
+
+- `LESSON_VIDEO_MAX_MB` (1 to 500) switches video on and sets the largest file; unset or 0 keeps it off (403 `VIDEO_UPLOADS_OFF`), larger files get 413 `FILE_TOO_LARGE`. Other lesson files stay at 10 MB.
+- Video is checked by its file signature like every lesson file and stored privately under the track.
+- **Play** asks the server for a signed inline link valid for two hours, after the same access check as a download; downloads stay two-minute attachments (decision 037).
+- Additive migration 0036 lets only lesson files declared as MP4 or WebM exceed 10 MB in upload intents, never 500 MB. No grant change.
+- Video is scanned like every upload when a scanner is configured (Alpha 23). clamd refuses streams over 25 MB by default, so the launch preflight warns to raise `StreamMaxLength` when larger video is switched on; until then such uploads stay pending, never unscanned.
+- The launch preflight, `.env.example` and LAUNCH_RUNBOOK.md cover `LESSON_VIDEO_MAX_MB`.
+
+### Planned
+
+- Nothing further is planned for accounts and trust in this round. Removing someone from a project team, credits on outcomes and appeals against suspension remain undecided.
+
+## 0.30.0-alpha.1 (Alpha 30): every form on the shared shadcn components, 3 October 2026
+
+On main through [PR #32](https://github.com/EmotiveImpact/REUNIR/pull/32), merged as `ec9181d`. The package version stays at 0.39.0-alpha.1, set by Alpha 39.
 
 **In plain language:** every form in the app now uses the same set of shared components for text boxes, labels, drop-down lists, tick boxes, choice buttons and on/off switches. Nothing looks different and nothing moves; keyboard and screen-reader behaviour is now consistent everywhere.
 
@@ -20,23 +39,6 @@ Details:
 - Field names, ids, labels, validation and submit handlers are unchanged. Show archive and showing answers after a knowledge check became switches.
 - The dialogue keeps its native modal `dialog` with shadcn slots and a shadcn close button. File pickers and focal-point sliders stay native.
 - New `test:browser:forms` in CI and a Python contract check (`scripts/test_forms_contract.py`). FORMS.md and decision 030 explain the choices.
-
-### Alpha 36: instructors start their own tracks (no version change), 3 October 2026
-
-On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass. Decision 036 and migration 0035, from the block allocated to courses and teaching. Alpha 39 is already on main, so the version stays 0.39.0-alpha.1.
-
-**In plain language:** someone who already teaches a whole track can now start a new track themselves instead of asking an administrator. The new track stays hidden from members until an owner or administrator publishes it. Administrators are told when a track is started, and the person who started it is told when it is published.
-
-Details:
-
-- **Start a track** on Learning and on the Teaching page for active instructors of at least one whole track. Contributors and lesson-only grants cannot (403 `TRACK_STARTER_REQUIRED`).
-- The track starts unpublished, authored by its starter, with their own whole-track instructor grant. Only its teachers and the community's owners and administrators see it, marked **Not published**.
-- **Publish track** (`track.publish`, owners and administrators) makes it visible, records `track.published` in the audit and tells the starter (decision 036).
-- Additive migration 0035 adds one INSERT policy, `instructor_own_track`, that admits only that self-grant. No grant change.
-
-### Planned
-
-- Nothing further is planned for accounts and trust in this round. Removing someone from a project team, credits on outcomes and appeals against suspension remain undecided.
 
 ## 0.29.0-alpha.1 (Alpha 29): files on project tasks and live project work, 3 October 2026
 
@@ -52,6 +54,19 @@ Details:
 - **Edit conflicts:** a task changed by someone else while you edit shows who changed it and when, keeps your text and waits for you to load theirs or keep yours. No presence indicator, by choice.
 - Additive migration 0029 adds `upload_intents.task_id`, `project_tasks.updated_by` and four restrictive row-security policies; no grant change (decision 029). Task files go through Alpha 23 upload scanning on the shared upload path.
 - New demo browser suite `npm run test:browser:task-files`. No new dependency.
+
+## Alpha 36: instructors start their own tracks (no version change), 3 October 2026
+
+On main through [PR #28](https://github.com/EmotiveImpact/REUNIR/pull/28), merged as `99e919a`. Decision 036 and migration 0035, from the block allocated to courses and teaching. Alpha 39 is already on main, so the version stays 0.39.0-alpha.1.
+
+**In plain language:** someone who already teaches a whole track can now start a new track themselves instead of asking an administrator. The new track stays hidden from members until an owner or administrator publishes it. Administrators are told when a track is started, and the person who started it is told when it is published.
+
+Details:
+
+- **Start a track** on Learning and on the Teaching page for active instructors of at least one whole track. Contributors and lesson-only grants cannot (403 `TRACK_STARTER_REQUIRED`).
+- The track starts unpublished, authored by its starter, with their own whole-track instructor grant. Only its teachers and the community's owners and administrators see it, marked **Not published**.
+- **Publish track** (`track.publish`, owners and administrators) makes it visible, records `track.published` in the audit and tells the starter (decision 036).
+- Additive migration 0035 adds one INSERT policy, `instructor_own_track`, that admits only that self-grant. No grant change.
 
 ## Alpha 34: crediting teammates on a contribution (no version change), 3 October 2026
 

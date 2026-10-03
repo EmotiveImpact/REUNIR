@@ -80,3 +80,13 @@ export function emailVerificationMode(env: Environment) {
     if (!mode) throw new Error('Unsafe REUNIR runtime configuration: email-verification. Set EMAIL_VERIFICATION to required or optional.');
     return mode;
 }
+/**
+ * LESSON_VIDEO_MAX_MB switches on uploaded lesson video and sets its limit, from 1 to 500. Unset or 0 leaves video
+ * uploads off, so storage that was sized for documents never receives video it was not planned for.
+ */
+export function lessonVideoBytes(env: Environment): number {
+    const raw = env.LESSON_VIDEO_MAX_MB?.trim();
+    if (!raw) return 0;
+    if (!/^[0-9]{1,3}$/.test(raw) || Number(raw) > 500) throw new Error('Unsafe REUNIR runtime configuration: lesson-video. Set LESSON_VIDEO_MAX_MB to a whole number from 0 to 500.');
+    return Number(raw) * 1024 * 1024;
+}

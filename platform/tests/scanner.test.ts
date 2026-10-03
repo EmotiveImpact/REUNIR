@@ -8,7 +8,7 @@ import { WorkspaceRepository } from '../packages/db/src/repository';
 import { createSeed, DEMO_ADMIN } from '../packages/domain/src/seed';
 import { createApp } from '../apps/api/src/app';
 import { inspectConfiguration, validateRuntimeConfiguration, uploadScanningSetting } from '../apps/api/src/config';
-import { ScannerUnavailable, clamdScanner, readVerdict, scannerFromEnvironment, type FileScanner } from '../apps/api/src/scanner';
+import { ScannerUnavailable, clamdScanner, readVerdict, scanTimeoutMs, scannerFromEnvironment, type FileScanner } from '../apps/api/src/scanner';
 import { FakeBucket } from './helpers/fake-bucket';
 import { jpegHeader, webpHeader } from './helpers/images';
 
@@ -87,6 +87,12 @@ test('an unreachable, silent or erroring scanner is unavailable, never clean', a
     const gone = clamdScanner({ host: '127.0.0.1', port, timeoutMs: 1000 });
     await assert.rejects(gone.scan(Buffer.from('x')), ScannerUnavailable);
     assert.equal(await gone.ping(), false);
+});
+test('a large file gets a longer scan allowance than a small one', () => {
+    const o = { timeoutMs: 30_000, msPerMegabyte: 1_000 };
+    assert.equal(scanTimeoutMs(o, 0), 30_000);
+    assert.equal(scanTimeoutMs(o, 10 * 1024 * 1024), 40_000);
+    assert.equal(scanTimeoutMs(o, 200 * 1024 * 1024), 230_000, 'a 200 MB lesson video is not cut off at 30 s');
 });
 test('the server builds a scanner only when CLAMAV_HOST is set', () => {
     assert.equal(scannerFromEnvironment({}), undefined);

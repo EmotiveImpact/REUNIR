@@ -19,7 +19,7 @@ import { taskFileUploadRequest } from '../../../packages/contracts/src/task-file
 import { clientUpload, type StoredObservation } from '../../../packages/domain/src/resources';
 import type { CoverObservation } from '../../../packages/domain/src/covers';
 import { learningRecordFilename } from '../../../packages/domain/src/learning-record';
-import { SIGNATURE_BYTES, fileSignatureMatches, resourceUploadRequest, type ResourceContext } from '../../../packages/contracts/src/lesson-resources';
+import { SIGNATURE_BYTES, VIDEO_PLAYBACK_TTL_SECONDS, fileSignatureMatches, isLessonVideo, resourceSizeProblem, resourceUploadRequest, type ResourceContext } from '../../../packages/contracts/src/lesson-resources';
 import { accountDeletionRequest } from '../../../packages/contracts/src/account';
 import { pagedList, pageQuery } from '../../../packages/contracts/src/pages';
 import { ownershipTransferRequest } from '../../../packages/contracts/src/ownership';
@@ -61,8 +61,10 @@ interface Dependencies {
     changeEmail?: (user: { id: string; email: string; name: string }, newEmail: string, callbackURL: string) => Promise<void>;
     /** False for a link to change an address that was asked for before the password last changed. */
     emailChangeLinkValid?: (token: string) => Promise<boolean>;
+    /** Largest lesson video this server accepts. 0, the default, leaves video uploads off. */
+    videoBytes?: number;
 }
-export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, scanner, invitations, mail, cronSecret, registerInvited, verifyPassword, digests, retention, adminTwoFactor = 'optional', emailVerification = 'optional', changeEmail, emailChangeLinkValid }: Dependencies) {
+export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, scanner, invitations, mail, cronSecret, registerInvited, verifyPassword, digests, retention, adminTwoFactor = 'optional', emailVerification = 'optional', changeEmail, emailChangeLinkValid, videoBytes = 0 }: Dependencies) {
     const messaging=new MessagingRepository(repository);
     const canonical = new URL(origin).origin;
     const app = new Hono<{
@@ -85,7 +87,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     });
     app.get('/api/health', async (c) => { await repository.db.query('SELECT 1'); return c.json({ status: 'ok', version: RELEASE_VERSION, mode: 'live', database: repository.db.kind, storage: storage ? 'configured' : 'not-configured' }); });
     app.get('/api/health/live', c=>c.json({status:'ok',version:RELEASE_VERSION}));
-    app.get('/api/account/capabilities', c=>c.json({emailDigests:!!digests&&!!mail?.transport,invitations:!!invitations,passwordRecovery:!!mail?.transport,resourceUploads:!!storage,coverUploads:!!storage,uploadScanning:!!storage&&!!scanner,twoStepSignIn:!!authHandler,adminTwoFactor,emailVerification,emailConfirmation:!!authHandler&&!!mail?.transport,emailChange:!!changeEmail&&!!mail?.transport}));
+    app.get('/api/account/capabilities', c=>c.json({emailDigests:!!digests&&!!mail?.transport,invitations:!!invitations,passwordRecovery:!!mail?.transport,resourceUploads:!!storage,videoUploadBytes:storage?videoBytes:0,coverUploads:!!storage,uploadScanning:!!storage&&!!scanner,twoStepSignIn:!!authHandler,adminTwoFactor,emailVerification,emailConfirmation:!!authHandler&&!!mail?.transport,emailChange:!!changeEmail&&!!mail?.transport}));
     // Best effort after commit: an orphaned object is private and unreferenced, never served.
     const removeQuietly = async (requestId: string, keys: string[]) => { for (const key of keys) {
         try { await storage?.remove(key); }
@@ -261,6 +263,10 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         const body = await c.req.json(), slug = c.req.param('slug'), who = c.get('identity');
         if (body && typeof body === 'object' && (body as { purpose?: unknown }).purpose === 'lesson_resource') {
             const input = resourceUploadRequest.parse(body);
+            if (isLessonVideo(input.contentType)) {
+                const problem = resourceSizeProblem(input.contentType, input.sizeBytes, videoBytes);
+                if (problem) throw new DomainError(videoBytes ? 'FILE_TOO_LARGE' : 'VIDEO_UPLOADS_OFF', problem, videoBytes ? 413 : 403);
+            }
             // The domain checks authoring rights and records the intent before any storage capability exists.
             const { upload, expired } = await repository.beginResourceUpload(slug, who.id, input, (organizationId, id) => resourceObjectKey(organizationId, input.trackId, input.contentType, id), c.get('requestId'));
             await removeQuietly(c.get('requestId'), expired.map(x => x.objectKey));
@@ -450,6 +456,16 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         const url = await storage.download(target.objectKey, { filename: target.filename, contentType: target.contentType, generation: target.generation });
         return { url, expiresIn: 120, filename: target.filename };
     };
+    /** A verified lesson video, signed to play in the page for a lesson's length. Access is checked as for a download. */
+    const resourcePlayback = async (slug: string, userId: string, context: ResourceContext, recordId: string, resourceId: string) => {
+        if (!storage)
+            throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
+        const target = await repository.resourceDownload(slug, userId, { context, recordId: id.parse(recordId), resourceId: id.parse(resourceId) });
+        if (!isLessonVideo(target.contentType))
+            throw new DomainError('NOT_A_VIDEO', 'Only lesson videos play in the page. Download this file instead.', 409);
+        const url = await storage.download(target.objectKey, { filename: target.filename, contentType: target.contentType, generation: target.generation, disposition: 'inline', expiresInSeconds: VIDEO_PLAYBACK_TTL_SECONDS });
+        return { url, expiresIn: VIDEO_PLAYBACK_TTL_SECONDS, contentType: target.contentType };
+    };
     /** Verified image bytes, pinned to their generation, with headers that only let them render as an image. */
     const sendImage = async (c: Context, target: { objectKey: string; generation: string; contentType: string; sizeBytes: number }, missing: string) => {
         let bytes: Uint8Array;
@@ -523,7 +539,10 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         return c.json({ version });
     });
     for (const [segment, context] of [['lessons', 'lesson'], ['lesson-drafts', 'draft'], ['lesson-revisions', 'revision']] as const)
+    {
         app.get(`/api/organisations/:slug/${segment}/:recordId/resources/:resourceId/download`, async (c) => c.json(await resourceDownload(c.req.param('slug'), c.get('identity').id, context, c.req.param('recordId'), c.req.param('resourceId'))));
+        app.get(`/api/organisations/:slug/${segment}/:recordId/resources/:resourceId/play`, async (c) => c.json(await resourcePlayback(c.req.param('slug'), c.get('identity').id, context, c.req.param('recordId'), c.req.param('resourceId'))));
+    }
     app.notFound(c => c.json({ error: { code: 'NOT_FOUND', message: 'Endpoint not found.' } }, 404));
     app.onError((err, c) => {
         if (err instanceof DomainError)

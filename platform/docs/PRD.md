@@ -553,3 +553,17 @@ An instructor of a whole track starts a new track, which an owner or administrat
 | T06 | Suspension ends the right to start a track | Database test |
 
 Instructors archiving or deleting tracks, publishing without an administrator and track templates are outside this release.
+
+## Alpha 37: uploaded lesson video
+
+Creators attach their own MP4 or WebM video to a lesson, and learners play it in the page. See `LESSON_RESOURCES.md` and `decisions/037-lesson-video.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| V01 | Video uploads stay off until `LESSON_VIDEO_MAX_MB` is set from 1 to 500; the server refuses video while off (403) or over the limit (413) before making a storage policy | Contract, config and HTTP tests, launch preflight test |
+| V02 | A stored file declared as MP4 or WebM must carry that format's signature, or it is refused and deleted | Contract and HTTP tests |
+| V03 | Playback uses the download access rules and returns an inline signed link for two hours, pinned to the verified generation; documents never play | HTTP tests |
+| V04 | The database holds MP4 and WebM lesson files up to 500 MB and every other file up to 10 MB | Database test |
+| V05 | A learner plays a published lesson video in the lesson, and can still download it | Demo browser check |
+
+Transcoding, captions, poster frames and scanning of large video are outside this release.
