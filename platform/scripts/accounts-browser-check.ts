@@ -49,6 +49,22 @@ try {
         await neutral(); await a11y('account'); await overflow();
         await page.screenshot({ path: dir + '/account.png', fullPage: true });
     });
+    await check('two-step sign-in is explained for connected communities, with no setup key or codes in the demo', async () => {
+        await account();
+        const panel = page.locator('section.two-step');
+        await expect(panel.getByRole('heading', { name: 'Two-step sign-in', level: 2 })).toBeVisible();
+        await expect(panel).toContainText('six-digit code from an authenticator app');
+        await expect(panel).toContainText('This fictional demo has no passwords or sign-in, so there is nothing to set up here.');
+        await expect(panel.getByRole('button')).toHaveCount(0);
+        await expect(panel.locator('code')).toHaveCount(0);
+        expect(await page.content()).not.toContain('otpauth://');
+        await expect(page.locator('.two-step-notice')).toHaveCount(0);
+        await switchPreviewRole(page, 'admin'); await account();
+        await expect(page.locator('section.two-step')).toContainText('Owners and administrators are asked to turn it on.');
+        await expect(page.locator('.two-step-notice')).toHaveCount(0);
+        await neutral(); await a11y('two-step-demo'); await overflow();
+        await switchPreviewRole(page, 'member');
+    });
     await check('an owner is told why their account cannot be deleted, with no delete button', async () => {
         await switchPreviewRole(page, 'admin'); await account();
         await expect(page.locator('.account-owner-note')).toHaveText(/^You own Code Black and Studio North\. A community needs its owner, so this account cannot be deleted while you own one\./);

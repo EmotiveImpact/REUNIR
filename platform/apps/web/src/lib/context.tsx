@@ -8,6 +8,8 @@ import { discardLessonUpload, downloadLessonResource, uploadLessonResource } fro
 import { DEMO_ADMIN, DEMO_USER } from '../../../../packages/domain/src/seed';
 import { loadWorkspace, sendCommand, displayError, mode, identity, resetDemo, demoState, type Identity } from './data';
 import { demoAccountDeleted, takeDeletionNotice } from './account';
+import { signInWithPassword } from './two-factor';
+import { SecondStepForm } from '../components/second-step';
 // Declared after the imports: Vite's development server turns React's named imports into constants in place.
 const AccountAccessPage = lazy(()=>import('../pages/access').then(m=>({default:m.AccountAccessPage})));
 interface Ctx {
@@ -120,12 +122,13 @@ export function WorkspaceProvider({ children }: {
 }
 function Login({ onDone }: {
     onDone: () => void;
-}) { const [email, E] = useState(''); const [password, P] = useState(''); const [error, Err] = useState(''); const [busy, B] = useState(false); const [recover,R]=useState(false);const [sent,Sent]=useState(false);const [farewell]=useState(takeDeletionNotice);return <main className="login-page"><div className="login-art"><span className="eyebrow">REUNIR</span><h1>Your people.<br />Real progress.</h1><p>A space for the conversations, ideas and work that move you forward.</p></div><form className="form-stack" onSubmit={async (e) => { e.preventDefault(); B(true); Err(''); try {
+}) { const [email, E] = useState(''); const [password, P] = useState(''); const [error, Err] = useState(''); const [busy, B] = useState(false); const [recover,R]=useState(false);const [sent,Sent]=useState(false);const [secondStep,Second]=useState(false);const [farewell]=useState(takeDeletionNotice);
+    const art=<div className="login-art"><span className="eyebrow">REUNIR</span><h1>Your people.<br />Real progress.</h1><p>A space for the conversations, ideas and work that move you forward.</p></div>;
+    // Two-step sign-in: the password was right, and the account asks for its second step before a session exists.
+    if(secondStep)return <main className="login-page">{art}<SecondStepForm onDone={onDone} onRestart={()=>{Second(false);P('');}}/></main>;
+    return <main className="login-page">{art}<form className="form-stack" onSubmit={async (e) => { e.preventDefault(); B(true); Err(''); try {
     if(recover){await api('/api/auth/request-password-reset',{email,redirectTo:window.location.origin+'/#/reset-password'});Sent(true);return;}
-    const res = await fetch('/api/auth/sign-in/email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ email, password }) });
-    const j = await res.json();
-    if (!res.ok)
-        throw new Error(j.message || 'Unable to sign in.');
+    if(await signInWithPassword(email,password)==='second-step'){Second(true);return;}
     onDone();
 }
 catch (e) {

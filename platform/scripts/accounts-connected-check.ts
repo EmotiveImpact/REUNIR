@@ -1,7 +1,8 @@
 /**
  * Live build, real HTTP, Better Auth cookies and password checks, and a local PGlite database, with the API under the
  * restricted runtime role and forced row security. A member deletes their own account; the owner sees what is kept, then
- * hands the community to an administrator and deletes their own account too.
+ * hands the community to an administrator and deletes their own account too. The new owner then meets a server that
+ * requires two-step sign-in, turns it on with a code computed here, signs in with a backup code and turns it off again.
  */
 import { chromium, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
@@ -16,7 +17,8 @@ import { migrate } from '../packages/db/src/migrate';
 import { WorkspaceRepository } from '../packages/db/src/repository';
 import { MessagingRepository } from '../packages/db/src/messaging';
 import { grantRuntimeTables } from '../packages/db/src/runtime-role';
-import { createAuth, passwordCheck } from '../apps/api/src/auth';
+import { createAuth, passwordCheck, sessionResolver } from '../apps/api/src/auth';
+import { totpCode } from '../tests/helpers/totp';
 import { createApp } from '../apps/api/src/app';
 const root = resolve(import.meta.dirname, '..'), dir = root + '/evidence/accounts/connected'; await mkdir(dir, { recursive: true });
 process.env.VITE_DATA_MODE = 'live';
@@ -47,13 +49,17 @@ await repo.execute('pilot', member.id, { type: 'post.create', spaceId, kind: 'qu
 const thread = (await messaging.start('pilot', member.id, owner.id)).id;
 await messaging.send('pilot', member.id, thread, 'Thank you for the invitation. I am glad to be here.', 'member-hello-1');
 const auth = createAuth(db, origin, secret);
-const app = createApp({ repository: repo, origin, verifyPassword: passwordCheck(auth), authHandler: r => auth.handler(r), resolveSession: async headers => { const s = await auth.api.getSession({ headers }); return s ? { id: s.user.id, name: s.user.name } : null; } });
-app.get('/assets/*', serveStatic({ root: '.connected-dist' })); app.get('/', serveStatic({ path: '.connected-dist/index.html' })); handler = app.fetch;
+const served = (adminTwoFactor: 'required' | 'optional') => {
+    const app = createApp({ repository: repo, origin, adminTwoFactor, verifyPassword: passwordCheck(auth), authHandler: r => auth.handler(r), resolveSession: sessionResolver(auth) });
+    app.get('/assets/*', serveStatic({ root: '.connected-dist' })); app.get('/', serveStatic({ path: '.connected-dist/index.html' }));
+    return app;
+};
+const app = served('optional'), strict = served('required'); handler = app.fetch;
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, headless: true, args: ['--no-sandbox'] });
-const [ownerPage, memberPage] = await Promise.all([0, 1].map(async () => (await browser.newContext({ viewport: { width: 1440, height: 960 } })).newPage()));
+const [ownerPage, memberPage, stewardPage] = await Promise.all([0, 1, 2].map(async () => (await browser.newContext({ viewport: { width: 1440, height: 960 } })).newPage()));
 const results: { name: string; passed: boolean }[] = [], errors: string[] = [];
-for (const p of [ownerPage, memberPage]) { p.setDefaultTimeout(10000); p.on('pageerror', e => errors.push(e.message)); }
+for (const p of [ownerPage, memberPage, stewardPage]) { p.setDefaultTimeout(10000); p.on('pageerror', e => errors.push(e.message)); }
 const check = async (name: string, fn: () => Promise<void>) => { await fn(); results.push({ name, passed: true }); console.log('PASS', name); };
 const a11y = async (name: string, p: Page) => { const a = await new AxeBuilder({ page: p }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze(); await writeFile(`${dir}/a11y-${name}.json`, JSON.stringify({ violations: a.violations, incomplete: a.incomplete }, null, 2)); expect(a.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) }))).toEqual([]); };
 const signIn = async (p: Page, email: string, password: string) => { await p.goto(origin); await p.getByLabel('Email', { exact: true }).fill(email); await p.getByLabel('Password', { exact: true }).fill(password); await p.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(p.locator('.topbar')).toBeVisible(); };
@@ -136,11 +142,85 @@ try {
         expect((await db.query('SELECT count(*)::int AS n FROM auth_user WHERE id=$1', [owner.id])).rows[0].n).toBe(0);
         expect((await db.query("SELECT user_id FROM members WHERE role='owner'")).rows.map(r => r.user_id)).toEqual([steward.id]);
     });
+    await check('when the server requires it, the new owner is told to turn on two-step sign-in and owner tools wait', async () => {
+        handler = strict.fetch;
+        await signIn(stewardPage, 'steward@example.test', PASSWORDS.steward);
+        const notice = stewardPage.locator('.two-step-notice');
+        await expect(notice).toContainText('Turn on two-step sign-in to use owner and administrator tools.');
+        await a11y('two-step-notice', stewardPage);
+        const refused = await stewardPage.evaluate(async () => { const r = await fetch('/api/organisations/pilot/commands', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ type: 'space.create', name: 'Owner tools wait', description: 'Refused until two-step sign-in is on.', visibility: 'members', kind: 'discussion' }) }); return { status: r.status, code: (await r.json()).error?.code }; });
+        expect(refused).toEqual({ status: 403, code: 'TWO_FACTOR_REQUIRED' });
+        await notice.getByRole('link', { name: 'Open Your account' }).click();
+        const panel = stewardPage.locator('section.two-step');
+        await expect(panel.locator('.pill')).toHaveText('Off');
+        await expect(panel).toContainText('This server requires two-step sign-in before you can use owner and administrator tools.');
+        await expect(stewardPage.locator('.two-step-notice')).toHaveCount(0);
+    });
+    let backupCodes: string[] = [];
+    await check('the owner turns it on: password, setup key and link, a code from the app, then backup codes shown once', async () => {
+        await stewardPage.getByRole('button', { name: 'Turn on two-step sign-in…', exact: true }).click();
+        await dialog(stewardPage).getByLabel('Your password', { exact: true }).fill('Not-my-password-000!');
+        await dialog(stewardPage).getByRole('button', { name: 'Continue', exact: true }).click();
+        await expect(dialog(stewardPage).getByRole('alert')).toHaveText('That password is not right.');
+        await dialog(stewardPage).getByLabel('Your password', { exact: true }).fill(PASSWORDS.steward);
+        await dialog(stewardPage).getByRole('button', { name: 'Continue', exact: true }).click();
+        await expect(dialog(stewardPage).getByRole('heading', { name: 'Add REUNIR to your authenticator app' })).toBeVisible();
+        const link = await dialog(stewardPage).getByRole('link', { name: 'Open in an authenticator app' }).getAttribute('href');
+        expect(link).toMatch(/^otpauth:\/\/totp\/REUNIR:steward%40example\.test\?secret=[A-Z2-7]+&issuer=REUNIR/);
+        const key = new URL(link!).searchParams.get('secret')!;
+        await expect(dialog(stewardPage).locator('.two-step-key code')).toHaveText(key.replace(/(.{4})/g, '$1 ').trim());
+        await a11y('two-step-setup', stewardPage);
+        await dialog(stewardPage).getByLabel('Six-digit code from the app').fill(totpCode(link!, Date.now() + 10 * 60_000));
+        await dialog(stewardPage).getByRole('button', { name: 'Confirm and turn on', exact: true }).click();
+        await expect(dialog(stewardPage).getByRole('alert')).toContainText('That code is not right.');
+        expect((await db.query('SELECT two_factor_enabled FROM auth_user WHERE id=$1', [steward.id])).rows[0].two_factor_enabled).toBe(false);
+        await dialog(stewardPage).getByLabel('Six-digit code from the app').fill(totpCode(link!));
+        await dialog(stewardPage).getByRole('button', { name: 'Confirm and turn on', exact: true }).click();
+        await expect(dialog(stewardPage).getByRole('heading', { name: 'Two-step sign-in is on' })).toBeVisible();
+        backupCodes = await dialog(stewardPage).locator('.two-step-codes code').allTextContents();
+        expect(backupCodes).toHaveLength(10);
+        await a11y('two-step-codes', stewardPage);
+        await dialog(stewardPage).getByRole('button', { name: 'I have saved them', exact: true }).click();
+        await expect(stewardPage.locator('section.two-step .pill')).toHaveText('On');
+        const row = (await db.query<{ secret: string; backup_codes: string }>('SELECT secret,backup_codes FROM auth_two_factor WHERE user_id=$1', [steward.id])).rows[0];
+        expect(row.secret.includes(key)).toBe(false);
+        for (const code of backupCodes) expect(row.backup_codes.includes(code)).toBe(false);
+        const allowed = await stewardPage.evaluate(async () => (await fetch('/api/organisations/pilot/commands', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify({ type: 'space.create', name: 'Owner tools open', description: 'Allowed once two-step sign-in is on.', visibility: 'members', kind: 'discussion' }) })).status);
+        expect(allowed).toBe(200);
+    });
+    await check('signing in again asks for the second step; a wrong code is refused and a backup code works', async () => {
+        await stewardPage.getByRole('button', { name: 'Account menu', exact: true }).click();
+        await stewardPage.getByRole('menuitem', { name: 'Sign out' }).click();
+        await stewardPage.getByLabel('Email', { exact: true }).fill('steward@example.test'); await stewardPage.getByLabel('Password', { exact: true }).fill(PASSWORDS.steward);
+        await stewardPage.getByRole('button', { name: 'Sign in', exact: true }).click();
+        await expect(stewardPage.getByRole('heading', { name: 'One more step.' })).toBeVisible();
+        await a11y('second-step', stewardPage);
+        await stewardPage.getByLabel('Six-digit code').fill('000000');
+        await stewardPage.getByRole('button', { name: 'Continue', exact: true }).click();
+        await expect(stewardPage.getByRole('alert')).toContainText('That code is not right.');
+        await stewardPage.getByRole('button', { name: 'Use a backup code instead', exact: true }).click();
+        await stewardPage.getByLabel('Backup code').fill(backupCodes[0]);
+        await stewardPage.getByRole('button', { name: 'Continue', exact: true }).click();
+        await expect(stewardPage.locator('.topbar')).toBeVisible();
+        await expect(stewardPage.locator('.two-step-notice')).toHaveCount(0);
+    });
+    await check('turning it off needs the password, and the notice returns', async () => {
+        await account(stewardPage);
+        await stewardPage.getByRole('button', { name: 'Turn off…', exact: true }).click();
+        await dialog(stewardPage).getByLabel('Your password', { exact: true }).fill(PASSWORDS.steward);
+        await dialog(stewardPage).getByRole('button', { name: 'Turn off', exact: true }).click();
+        await expect(stewardPage.locator('section.two-step .pill')).toHaveText('Off');
+        expect((await db.query('SELECT count(*)::int AS n FROM auth_two_factor WHERE user_id=$1', [steward.id])).rows[0].n).toBe(0);
+        await stewardPage.getByRole('button', { name: 'Account menu', exact: true }).click();
+        await stewardPage.getByRole('menuitem', { name: 'Your profile' }).click();
+        await expect(stewardPage.locator('.two-step-notice')).toBeVisible();
+        handler = app.fetch;
+    });
     await check('connected account journeys produced no uncaught browser errors', async () => { expect(errors).toEqual([]); });
     await writeFile(dir + '/results.json', JSON.stringify({ generatedAt: new Date().toISOString(), method: 'Live Vite build + Hono HTTP + Better Auth cookies and password checks + local PGlite database; application under the restricted runtime role with forced row security. No external service.', results, errors }, null, 2));
     console.log(`${results.length} connected account checks passed`);
 } catch (e) {
-    for (const [name, p] of [['owner', ownerPage], ['member', memberPage]] as const) await p.screenshot({ path: `${dir}/failure-${name}.png`, fullPage: true }).catch(() => {});
+    for (const [name, p] of [['owner', ownerPage], ['member', memberPage], ['steward', stewardPage]] as const) await p.screenshot({ path: `${dir}/failure-${name}.png`, fullPage: true }).catch(() => {});
     await writeFile(dir + '/results.json', JSON.stringify({ results, errors, failure: String(e) }, null, 2));
     throw e;
 } finally { await browser.close(); await new Promise<void>(r => server.close(() => r())); await db.close(); }

@@ -64,11 +64,26 @@ On success the administrator becomes the owner, the previous owner becomes an ad
 
 `POST /api/organisations/:slug/ownership` takes `{ memberId, password, confirmation }`, checks the rate limit and the password, then calls `WorkspaceRepository.transferOwnership`, which runs under the community lock with the restricted runtime role: it applies the domain rules (`transferOwnership` in `packages/domain/src/ownership.ts`, shared with the demo), demotes the previous owner and then promotes the new one. It is not a workspace command.
 
+## Two-step sign-in (Alpha 21)
+
+Your account has a **Two-step sign-in** panel. Any account may turn it on; owners and administrators are told why it matters, and when the server requires it the panel says so.
+
+- **Turning it on.** Choose **Turn on two-step sign-in…** and enter your password. The dialogue shows a setup key (grouped in fours) and an **Open in an authenticator app** link (`otpauth://totp/REUNIR:…`). Enter the six-digit code the app shows; until a code is accepted nothing changes. Ten backup codes then appear once, with **Copy the codes** and advice to keep them in a password manager. Each works once.
+- **Signing in.** After the password, the sign-in page asks for the six-digit code, or **Use a backup code instead**. The sign-in on an invitation page does the same before accepting. **Start again** returns to the password.
+- **New backup codes** and **Turn off…** each need the password. New codes replace the old ones at once. Turning it off removes the stored secret and codes.
+- **When the server requires it** (`ADMIN_TWO_FACTOR=required`, the default in production), an owner or administrator who has not turned it on sees a notice across the app linking here. They can still read everything and do whatever a member or moderator can, but owner and administrator tools answer `TWO_FACTOR_REQUIRED` until two-step sign-in is on. Members and moderators are never asked.
+- **The demo** has no passwords, so its panel only explains the feature and never shows a key or codes.
+- Deleting your account removes its two-step sign-in row with the rest of the sign-in.
+
+The plugin is Better Auth's own (`better-auth/plugins/two-factor`, no new dependency). Migration 0021 adds `auth_user.two_factor_enabled` and `auth_two_factor`; the secret and backup codes are encrypted by Better Auth with the session secret. The decision is in `decisions/021-two-step-sign-in.md`.
+
 ## Known limits
 
 - Owners cannot delete their account while they own a community; they hand it to an administrator first (Alpha 16). The new owner is told, not asked.
 - Mentions of the person inside other people's posts and comments stay as their authors wrote them. REUNIR has no mention links, so the text points to no profile; rewriting other people's words would alter their record, so decision 017 keeps them.
 - Since Alpha 17, tasks the person had claimed without proof go back to their teams in every community, including one where they were suspended (migration 0018).
+- Two-step sign-in has no recovery for someone who has lost both their authenticator and their backup codes; an operator would have to remove the `auth_two_factor` row and reset `auth_user.two_factor_enabled` by hand. There is no QR code yet, no passkey and no trusted device.
+- Changing `BETTER_AUTH_SECRET` makes every stored two-step secret and backup code unreadable, so everyone with two-step sign-in would need it reset.
 - Hosted Better Auth, real email delivery and real Google Cloud Storage removal are unverified, as for every connected feature.
 
 ## Running it
@@ -76,3 +91,5 @@ On success the administrator becomes the owner, the previous owner becomes an ad
 Apply migrations 0015 and 0016 with `npm run db:migrate`, then re-run `npm run db:grant-runtime`: the runtime role's grant on knowledge-check attempts now keeps the delete privilege that the new policies bound. Checks: `tests/account-deletion.test.ts` (domain), `tests/account-deletion-database.test.ts` (runtime role and row security), `tests/account-deletion-http.test.ts` (the route), two real Better Auth checks in `npm run test:http`, `npm run test:browser:accounts` (demo), `npm run test:browser:accounts-connected` (live build, Better Auth, restricted role) and the two account deletion checks in `npm run test:postgres` (deletion itself, and an invitation accepted while a deletion is under way).
 
 For ownership transfer, apply migration 0017 with `npm run db:migrate` (no new grants are needed). Checks: `tests/ownership.test.ts` (domain), `tests/ownership-database.test.ts` (runtime role, the unique index, tenancy and inactive roles), `tests/ownership-http.test.ts` (the route), the handover in `npm run test:browser:accounts` and `npm run test:browser:accounts-connected`, and the concurrent handover check in `npm run test:postgres`.
+
+For two-step sign-in, apply migration 0021 with `npm run db:migrate`, then re-run `npm run db:grant-runtime` so the runtime role is granted `auth_two_factor`. Set `ADMIN_TWO_FACTOR` (see `.env.example`). Checks: `tests/two-factor.test.ts` (the rule and the shared helpers), `tests/two-factor-http.test.ts` (real Better Auth through the API: enrolment with an independently computed code, the second step, backup codes, regeneration, turning it off, enforcement in both modes, storage and runtime grants), the demo panel in `npm run test:browser:accounts`, and the full journey in `npm run test:browser:accounts-connected`.

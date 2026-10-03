@@ -20,10 +20,13 @@ import { SIGNATURE_BYTES, fileSignatureMatches, resourceUploadRequest, type Reso
 import { accountDeletionRequest } from '../../../packages/contracts/src/account';
 import { pagedList, pageQuery } from '../../../packages/contracts/src/pages';
 import { ownershipTransferRequest } from '../../../packages/contracts/src/ownership';
+import { TWO_FACTOR_REQUIRED, TWO_FACTOR_REQUIRED_MESSAGE, type AdminTwoFactor } from '../../../packages/contracts/src/two-factor';
 import { COVER_HEAD_BYTES, coverBytesAcceptable, coverLibraryUploadRequest, coverSubject, coverUploadRequest } from '../../../packages/contracts/src/covers';
 export interface SessionIdentity {
     id: string;
     name: string;
+    /** Whether two-step sign-in is turned on for this account. */
+    twoFactorEnabled?: boolean;
 }
 interface Dependencies {
     repository: WorkspaceRepository;
@@ -39,8 +42,10 @@ interface Dependencies {
     /** Checks the signed-in person's current password. False only for a wrong password. */
     verifyPassword?: (headers: Headers, password: string) => Promise<boolean>;
     digests?: DigestService;
+    /** When required, owners and administrators must have two-step sign-in turned on to use their authority. Default optional. */
+    adminTwoFactor?: AdminTwoFactor;
 }
-export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, invitations, mail, cronSecret, registerInvited, verifyPassword, digests }: Dependencies) {
+export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, invitations, mail, cronSecret, registerInvited, verifyPassword, digests, adminTwoFactor = 'optional' }: Dependencies) {
     const messaging=new MessagingRepository(repository);
     const canonical = new URL(origin).origin;
     const app = new Hono<{
@@ -63,7 +68,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     });
     app.get('/api/health', async (c) => { await repository.db.query('SELECT 1'); return c.json({ status: 'ok', version: RELEASE_VERSION, mode: 'live', database: repository.db.kind, storage: storage ? 'configured' : 'not-configured' }); });
     app.get('/api/health/live', c=>c.json({status:'ok',version:RELEASE_VERSION}));
-    app.get('/api/account/capabilities', c=>c.json({emailDigests:!!digests&&!!mail?.transport,invitations:!!invitations,passwordRecovery:!!mail?.transport,resourceUploads:!!storage,coverUploads:!!storage}));
+    app.get('/api/account/capabilities', c=>c.json({emailDigests:!!digests&&!!mail?.transport,invitations:!!invitations,passwordRecovery:!!mail?.transport,resourceUploads:!!storage,coverUploads:!!storage,twoStepSignIn:!!authHandler,adminTwoFactor}));
     // Best effort after commit: an orphaned object is private and unreferenced, never served.
     const removeQuietly = async (requestId: string, keys: string[]) => { for (const key of keys) {
         try { await storage?.remove(key); }
@@ -123,7 +128,17 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         return c.json({ deleted: true, summary });
     });
     app.on(['GET', 'POST'], '/api/auth/*', c => authHandler ? authHandler(c.req.raw) : c.json({ error: { code: 'AUTH_UNAVAILABLE', message: 'Authentication is not configured.' } }, 503));
-    app.get('/api/session', async (c) => { const who = await resolveSession(c.req.raw.headers); return c.json(who ? { ...who, memberships: await repository.memberships(who.id) } : null); });
+    app.get('/api/session', async (c) => { const who = await resolveSession(c.req.raw.headers); return c.json(who ? { ...who, twoFactorEnabled: who.twoFactorEnabled === true, memberships: await repository.memberships(who.id) } : null); });
+    // The one rule for owner and administrator authority when ADMIN_TWO_FACTOR is required: an account without two-step
+    // sign-in keeps everything a member or moderator can do, and reads, but not the tools only owners and administrators
+    // have. Workspace commands are judged by the domain (does it succeed only because of the role?); the routes below that
+    // exist only for owners and administrators check the role directly. Members and moderators are never asked.
+    const administration = (c: Context): 'allowed' | 'withheld' => adminTwoFactor === 'required' && c.get('identity').twoFactorEnabled !== true ? 'withheld' : 'allowed';
+    const requireTwoStepForAdministration = async (c: Context) => {
+        if (administration(c) === 'allowed') return;
+        const role = (await repository.memberships(c.get('identity').id)).find(m => m.slug === c.req.param('slug'))?.role;
+        if (role === 'owner' || role === 'admin') throw new DomainError(TWO_FACTOR_REQUIRED, TWO_FACTOR_REQUIRED_MESSAGE, 403);
+    };
     app.use('/api/organisations/*', async (c, next) => {
         const identity = await resolveSession(c.req.raw.headers);
         if (!identity)
@@ -133,14 +148,15 @@ export function createApp({ repository, operations, origin, resolveSession, auth
             return c.json({ error: { code: 'RATE_LIMITED', message: 'Take a moment before trying again.' } }, 429, { 'Retry-After': '60' });
         await next();
     });
-    app.get('/api/organisations/:slug/pilot-status',async c=>{if(!operations)throw new DomainError('UNAVAILABLE','Pilot operations are not configured.',503);return c.json(await operations.snapshot(c.req.param('slug'),c.get('identity').id));});
+    app.get('/api/organisations/:slug/pilot-status',async c=>{await requireTwoStepForAdministration(c);if(!operations)throw new DomainError('UNAVAILABLE','Pilot operations are not configured.',503);return c.json(await operations.snapshot(c.req.param('slug'),c.get('identity').id));});
     app.get('/api/organisations/:slug/invitations',async c=>{if(!invitations)throw new DomainError('UNAVAILABLE','Invitations not configured.',503);return c.json(await invitations.list(c.req.param('slug'),c.get('identity').id));});
     app.post('/api/organisations/:slug/invitations',async c=>{
         if(!invitations)throw new DomainError('UNAVAILABLE','Invitations not configured.',503);
+        await requireTwoStepForAdministration(c);
         if(!await repository.consumeRateLimit('invite-admin:'+c.get('identity').id,10))throw new DomainError('RATE_LIMITED','Please wait before sending more invitations.',429);
         const {email,trackId}=z.object({email:invitationEmail,trackId:id.optional()}).strict().parse(await c.req.json());return c.json(await invitations.create(c.req.param('slug'),c.get('identity').id,email,trackId),201);
     });
-    app.post('/api/organisations/:slug/invitations/:inviteId/revoke',async c=>{if(!invitations)throw new DomainError('UNAVAILABLE','Invitations not configured.',503);return c.json(await invitations.revoke(c.req.param('slug'),c.get('identity').id,id.parse(c.req.param('inviteId'))));});
+    app.post('/api/organisations/:slug/invitations/:inviteId/revoke',async c=>{if(!invitations)throw new DomainError('UNAVAILABLE','Invitations not configured.',503);await requireTwoStepForAdministration(c);return c.json(await invitations.revoke(c.req.param('slug'),c.get('identity').id,id.parse(c.req.param('inviteId'))));});
     app.get('/api/organisations/:slug/conversations',async c=>c.json(await messaging.list(c.req.param('slug'),c.get('identity').id,c.req.query('before'))));
     app.post('/api/organisations/:slug/conversations',async c=>{const b=startConversation.parse(await c.req.json());return c.json(await messaging.start(c.req.param('slug'),c.get('identity').id,b.userId),201);});
     app.get('/api/organisations/:slug/conversations/:threadId',async c=>c.json(await messaging.detail(c.req.param('slug'),c.get('identity').id,c.req.param('threadId'))));
@@ -164,7 +180,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         if (!key)
             throw new DomainError('KEY_REQUIRED', 'An Idempotency-Key header is required.');
         const input = await c.req.json();
-        const { result, releasedFiles } = await repository.executeCommand(c.req.param('slug'), c.get('identity').id, input, key, c.get('requestId'));
+        const { result, releasedFiles } = await repository.executeCommand(c.req.param('slug'), c.get('identity').id, input, key, c.get('requestId'), { administration: administration(c) });
         // A replaced or removed cover picture nothing shows any more: its record went with the change, its file goes now.
         await removeQuietly(c.get('requestId'), releasedFiles);
         return c.json(result);
@@ -174,6 +190,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     app.post('/api/organisations/:slug/ownership', async c => {
         if (!verifyPassword) throw new DomainError('UNAVAILABLE', 'Ownership transfer is not configured.', 503);
         const who = c.get('identity');
+        await requireTwoStepForAdministration(c);
         if (!await repository.consumeRateLimit('ownership:' + who.id, 5, 900)) throw new DomainError('RATE_LIMITED', 'Too many attempts. Wait a few minutes before trying again.', 429);
         const body = ownershipTransferRequest.parse(await c.req.json());
         if (!await verifyPassword(c.req.raw.headers, body.password)) throw new DomainError('WRONG_PASSWORD', 'That password is not right.', 403);
@@ -199,6 +216,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
             return c.json({ id: upload.id, ...policy, method: 'POST', expiresIn: 300 }, 201);
         }
         if (body && typeof body === 'object' && (body as { purpose?: unknown }).purpose === 'cover_library') {
+            await requireTwoStepForAdministration(c);
             const input = coverLibraryUploadRequest.parse(body);
             const { upload, expired } = await repository.beginCoverLibraryUpload(slug, who.id, input, (organizationId, id) => coverLibraryObjectKey(organizationId, input.contentType, id), c.get('requestId'));
             await removeQuietly(c.get('requestId'), expired.map(x => x.objectKey));
@@ -330,6 +348,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         return sendImage(c, target, 'That picture is not in the cover library.');
     });
     app.post('/api/organisations/:slug/cover-library/:itemId/remove', async (c) => {
+        await requireTwoStepForAdministration(c);
         const result = await repository.removeCoverLibraryItem(c.req.param('slug'), c.get('identity').id, id.parse(c.req.param('itemId')), c.get('requestId'));
         await removeQuietly(c.get('requestId'), result.objectKey ? [result.objectKey] : []);
         return c.json({ id: result.id, status: 'removed' });
