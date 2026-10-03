@@ -8,9 +8,9 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### 0.35.0-alpha.1 (Alpha 35): teaching grants for chosen lessons, 3 October 2026
+### Alpha 35: teaching grants for chosen lessons (no version change), 3 October 2026
 
-On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass. Alpha numbers 27 to 34 are allocated to other work in progress, so this release is Alpha 35 with decision 035 and migration 0034.
+On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass. The coordinator allocated Alpha 35 to 38 to courses and teaching, so this release is Alpha 35 with decision 035 and migration 0034. Alpha 39 reached main first, so the version stays 0.39.0-alpha.1 rather than going backwards.
 
 **In plain language:** when you add someone to teach a track you can now give them only the lessons you choose instead of the whole track. They can write, publish and mark answers on those lessons and nothing else. New lessons, the lesson order and the track cover stay with people who have the whole track.
 
@@ -23,6 +23,20 @@ Details:
 ### Planned
 
 - Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+
+## 0.39.0-alpha.1 (Alpha 39): cover library management and small copies, 3 October 2026
+
+On main through [PR #21](https://github.com/EmotiveImpact/REUNIR/pull/21), merged as `0a818fa`.
+
+**In plain language:** administrators can rename and tag the pictures in the cover library, which now holds up to 60, and anyone choosing a cover can search the library by name or tag. Cards and lists now load a small copy of each cover, so pages with many covers load faster.
+
+Details:
+
+- Up to five tags per library picture; renaming and tagging are audited and need two-step sign-in when the server requires it.
+- New covers wider than 480 pixels get a 480-pixel copy made in the browser and checked by the server; covers without one fall back to the full picture (decision 039).
+- When a virus scanner is configured (Alpha 23), the small copy is scanned whole as well; a flagged copy is deleted and the picture keeps working at full size.
+- Additive migration 0038; run `npm run db:grant-runtime` after migrating. No new runtime dependency.
+- Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 27 before the blocks were agreed; gaps in the sequence on main are expected.
 
 ## Alpha 23: virus scanning of uploads (no version change), 3 October 2026
 

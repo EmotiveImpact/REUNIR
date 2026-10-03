@@ -431,7 +431,7 @@ Invitations to accept, contributor roles beyond instructor, per-lesson grants an
 
 ## Alpha 13: cover library
 
-People who may change a cover can upload their own picture or choose one from a small library their community supplies. Owners and administrators add up to 24 named pictures in Community settings and remove ones nothing uses. Choosing does not copy the picture, and each cover keeps its own focal point. See `COVERS.md` and `decisions/013-cover-library.md`.
+People who may change a cover can upload their own picture or choose one from a small library their community supplies. Owners and administrators add up to 60 named pictures in Community settings, rename them and give them up to five tags, and remove ones nothing uses; the cover picker filters them by name and tag. Cards and lists load a small copy of each new picture drawn in the browser (decision 039). Choosing does not copy the picture, and each cover keeps its own focal point. See `COVERS.md` and `decisions/013-cover-library.md`.
 
 | ID | Requirement | Verification |
 | --- | --- | --- |

@@ -38,20 +38,62 @@ export interface CoverImage {
 
 const key = z.string().min(1).max(100).regex(/^[a-zA-Z0-9_-]+$/);
 export const coverFocus = z.number().int('Use a whole percentage.').min(0).max(100);
+/**
+ * Smaller copies for cards and lists. The browser draws one at most this many pixels wide when it prepares a cover and
+ * uploads it beside the full picture, tied to the same upload record. Covers without one fall back to the full picture.
+ */
+export const COVER_THUMBNAIL_WIDTH = 480;
+export const MAX_COVER_THUMBNAIL_BYTES = 256 * 1024;
+/** Declared with the upload intent; the server checks the stored copy's signature, size and dimensions. */
+export const coverThumbnailRequest = z.object({
+    contentType: coverImageType,
+    sizeBytes: z.number().int().positive('This small copy is empty.').max(MAX_COVER_THUMBNAIL_BYTES, 'The small copy can be up to 256 KB.'),
+}).strict();
+export type CoverThumbnailRequest = z.infer<typeof coverThumbnailRequest>;
+/** Which stored copy a reader asks for. */
+export type CoverVariant = 'full' | 'thumbnail';
+
 /** Upload intent for a cover. The server chooses the bucket, tenant prefix and object key. */
 export const coverUploadRequest = z.object({
     purpose: z.literal('cover_image'), subject: coverSubject, subjectId: key,
     contentType: coverImageType,
     sizeBytes: z.number().int().positive('This image is empty.').max(MAX_COVER_BYTES, 'Cover images can be up to 3 MB.'),
+    thumbnail: coverThumbnailRequest.optional(),
 }).strict();
 export type CoverUploadRequest = z.infer<typeof coverUploadRequest>;
 /** A community's cover library: pictures owners and administrators supply for anyone who edits a cover to choose. */
-export const MAX_COVER_LIBRARY_ITEMS = 24;
+export const MAX_COVER_LIBRARY_ITEMS = 60;
 export const coverLibraryLabel = z.string().trim().min(1, 'Give the picture a short name.').max(80, 'Keep the name under 80 characters.');
+/** Short words that help people find a picture, such as "landscape" or "workshop". */
+export const MAX_COVER_LIBRARY_TAGS = 5;
+export const MAX_COVER_TAG_LENGTH = 24;
+/** Lower case letters and numbers, with single spaces or hyphens between words. */
+export const COVER_TAG_PATTERN = /^[\p{Ll}\p{Lo}\p{N}]+(?:[ -][\p{Ll}\p{Lo}\p{N}]+)*$/u;
+/** Trim, collapse spaces and lower-case one tag. */
+export const normaliseCoverTag = (value: string) => value.normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
+/** Normalised, without empty entries or repeats, in the order given. Too many or too long tags are refused, never cut. */
+export const coverLibraryTags = z.array(z.string().max(200, `Keep each tag under ${MAX_COVER_TAG_LENGTH} characters.`)).max(20, `Use up to ${MAX_COVER_LIBRARY_TAGS} tags.`)
+    .transform(values => [...new Set(values.map(normaliseCoverTag).filter(Boolean))])
+    .refine(tags => tags.length <= MAX_COVER_LIBRARY_TAGS, `Use up to ${MAX_COVER_LIBRARY_TAGS} tags.`)
+    .refine(tags => tags.every(t => Array.from(t).length <= MAX_COVER_TAG_LENGTH), `Keep each tag under ${MAX_COVER_TAG_LENGTH} characters.`)
+    .refine(tags => tags.every(t => COVER_TAG_PATTERN.test(t)), 'Use letters and numbers in tags, with spaces or hyphens between words.');
+/** Tags typed as one line, separated by commas. */
+export const splitCoverTags = (text: string) => text.split(',').map(normaliseCoverTag).filter(Boolean);
+/** Rename a library picture or change its tags. The picture itself never changes. */
+export const coverLibraryDetails = z.object({ label: coverLibraryLabel, tags: coverLibraryTags }).strict();
+export type CoverLibraryDetails = z.infer<typeof coverLibraryDetails>;
+/** Whether a picture matches the picker's filter: every word of the query in its name or tags, and the chosen tag. */
+export function coverLibraryMatches(item: { label: string; tags?: string[] }, query: string, tag = ''): boolean {
+    const tags = item.tags ?? [];
+    if (tag && !tags.includes(tag)) return false;
+    const haystack = [item.label, ...tags].join(' ').toLowerCase();
+    return query.toLowerCase().split(/\s+/).filter(Boolean).every(word => haystack.includes(word));
+}
 /** Upload intent for a library picture. It has no track or project; the server chooses the key. */
 export const coverLibraryUploadRequest = z.object({
     purpose: z.literal('cover_library'), contentType: coverImageType,
     sizeBytes: z.number().int().positive('This image is empty.').max(MAX_COVER_BYTES, 'Cover images can be up to 3 MB.'),
+    thumbnail: coverThumbnailRequest.optional(),
 }).strict();
 export type CoverLibraryUploadRequest = z.infer<typeof coverLibraryUploadRequest>;
 /** Short enough for a screen reader to read in one breath, and to keep the stored cover within its size check. */
@@ -112,6 +154,17 @@ export function coverBytesAcceptable(contentType: string, head: Uint8Array): boo
     if (!isCoverImageType(contentType) || !fileSignatureMatches(contentType, head)) return false;
     const size = imageDimensions(contentType, head);
     return !!size && size.width >= MIN_COVER_EDGE && size.height >= MIN_COVER_EDGE && size.width <= MAX_COVER_EDGE && size.height <= MAX_COVER_EDGE;
+}
+
+/**
+ * A small copy must be a real image of the same picture: a matching signature, at most COVER_THUMBNAIL_WIDTH wide and
+ * narrower than the full picture, at least MIN_COVER_EDGE on each side, and the same shape to within a pixel of height.
+ */
+export function coverThumbnailAcceptable(contentType: string, head: Uint8Array, full: { width: number; height: number } | null): boolean {
+    if (!full || !isCoverImageType(contentType) || !fileSignatureMatches(contentType, head)) return false;
+    const size = imageDimensions(contentType, head);
+    if (!size || size.width < MIN_COVER_EDGE || size.height < MIN_COVER_EDGE || size.width > COVER_THUMBNAIL_WIDTH || size.width >= full.width) return false;
+    return Math.abs(size.height * full.width - size.width * full.height) <= full.width;
 }
 
 /** CSS object position for a stored cover. */

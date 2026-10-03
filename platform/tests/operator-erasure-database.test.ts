@@ -40,8 +40,8 @@ test('0014 upgrade adds one delete policy and changes no rows', async () => {
     const old = await openDatabase('pglite:memory');
     try {
         await migrate(old, '0013');
-        // Teaching grants gained columns after 0013; this upgrade is about attempts, so the seed carries none.
-        await new WorkspaceRepository(old).seed({ ...createSeed(), trackInstructors: [] });
+        // Teaching grants gained columns after 0013, and library pictures and uploads gained columns in 0038; this upgrade is about attempts, so the seed carries none of them.
+        await new WorkspaceRepository(old).seed({ ...createSeed(), trackInstructors: [], coverLibrary: [], uploads: [] });
         const read = async (table: string) => (await old.query(`SELECT * FROM ${table} ORDER BY organization_id,id`)).rows;
         const before = { quiz_attempts: await read('quiz_attempts'), notifications: await read('notifications'), audit: await read('audit') };
         await migrate(old); await migrate(old);
