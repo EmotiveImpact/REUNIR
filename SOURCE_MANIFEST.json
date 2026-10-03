@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 30 every form on the shared shadcn components",
   "version": "0.39.0-alpha.1",
   "sourceBaseline": "94b130b120946a2f6c6276ffe02c0fc892928241",
-  "generatedAt": "2026-10-03T18:08:08.385020+00:00",
+  "generatedAt": "2026-10-03T18:23:05.086257+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -586,8 +586,18 @@
     },
     {
       "path": "platform/apps/web/src/pages/project-work.tsx",
-      "sha256": "d4a90f6285e7f5010cba59223001d74177dc5ceb8fdfe6a7a533f35e72191984",
-      "bytes": 25096
+      "sha256": "59bcd0ab44ee5dca7540939ce2515e9d7e0299fe904eed4553e4e1da0ff09473",
+      "bytes": 25227
+    },
+    {
+      "path": "platform/apps/web/src/pages/project-work.tsx",
+      "sha256": "59bcd0ab44ee5dca7540939ce2515e9d7e0299fe904eed4553e4e1da0ff09473",
+      "bytes": 25227
+    },
+    {
+      "path": "platform/apps/web/src/pages/project-work.tsx",
+      "sha256": "59bcd0ab44ee5dca7540939ce2515e9d7e0299fe904eed4553e4e1da0ff09473",
+      "bytes": 25227
     },
     {
       "path": "platform/apps/web/src/pages/purpose.tsx",
@@ -661,8 +671,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "da2c55340e92fd62f264c789358121fb04621cb08f11d4d6f8d5c01bb9ea1327",
-      "bytes": 167464
+      "sha256": "62469d30a492cf984ff91a714537e7a425103ed425dcb159e88375c2ece73763",
+      "bytes": 167827
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -1641,8 +1651,8 @@
     },
     {
       "path": "platform/packages/domain/src/task-files.ts",
-      "sha256": "865bfd308a38acdc01e2491e89bc8326a06e2ec6f9e708a1f9a4e5360ecb769d",
-      "bytes": 12494
+      "sha256": "924ba8e6a0b6917f70583be239fc5a5aacc7a188dc45357f5de3b93e7580bc6a",
+      "bytes": 13299
     },
     {
       "path": "platform/scripts/accounts-browser-check.ts",
@@ -2186,8 +2196,8 @@
     },
     {
       "path": "platform/tests/task-files.test.ts",
-      "sha256": "fc906b9c17dbdae5de483fe4fef1279b98a2fd14a7fbac3fa6c2159402f9c79c",
-      "bytes": 14221
+      "sha256": "a1d243e35ed0977c73e94296ec038e47a90c8de47bf34963330c8587533c94be",
+      "bytes": 14926
     },
     {
       "path": "platform/tests/two-factor-http.test.ts",

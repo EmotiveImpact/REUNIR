@@ -22,7 +22,7 @@
 
 ## Local verification, 3 October 2026
 
-On this branch, on top of Alpha 29 and main `94b130b`: typecheck, build and bundle passed; `npm test` 774 passed, 0 failed; Python helpers including `test_forms_contract.py` passed; browser suites `forms` 10, `covers` 20, `covers-connected` 15, `v4` 20, `monochrome` 16, `task-files` 12, `curation` 9, `states` 12, `work` 29, `accounts` 13 and `groups` 11 passed. Alpha 39's new cover library fields (tags, the edit dialogue, the picture search and its radio choices) were moved onto the shared components while merging.
+On this branch, on top of Alpha 29 and main `94b130b`: typecheck, build and bundle passed; `npm test` 775 passed, 0 failed (after Alpha 29's review fixes); Python helpers including `test_forms_contract.py` passed; browser suites `forms` 10, `covers` 20, `covers-connected` 15, `v4` 20, `monochrome` 16, `task-files` 12, `curation` 9, `states` 12, `work` 29, `accounts` 13 and `groups` 11 passed. Alpha 39's new cover library fields (tags, the edit dialogue, the picture search and its radio choices) were moved onto the shared components while merging.
 
 ## Not verified, and why
 
@@ -57,12 +57,13 @@ On this branch, on top of Alpha 29 and main `94b130b`: typecheck, build and bund
 - Edit conflicts: the existing `expectedVersion` refusal now names who changed the task and when (`project_tasks.updated_by`), keeps the person's text and offers Load the latest version or Keep my edits.
 - Additive migration 0029: `upload_intents.task_id`, `project_tasks.updated_by` and four restrictive row-security policies; no grant change. Migrations 0001 to 0028 and 0030 are byte-identical. No new dependency.
 - Task files go through Alpha 23 upload scanning on the shared lesson-file completion path: with a scanner configured, every byte of the recorded generation is scanned, a flagged file is rejected and deleted with `FILE_FLAGGED`, and it is never attached. A new HTTP test covers it.
+- Review fixes: completing a task file checks the task and project limits again under the community lock, so two teammates racing for the last place cannot both attach; the conflict choices wait until the newer version has arrived, so Load the latest version never reloads the stale copy.
 
 ## Local verification, 3 October 2026
 
 On base `b24095a` (by the building agent): typecheck, builds, `npm test` 657 passed (32 new), `test:http` 19, every demo suite including the new `test:browser:task-files` (12, plus four repeat runs after fixing a timing race), every connected suite (60), `test:postgres` 21 on PostgreSQL 16, Python helpers 35 and the research register.
 
-On this branch, on top of Alpha 28 and main `0a818fa`: typecheck, build and bundle passed; `npm test` 774 passed, 0 failed (including the new scanned task file test, and two upgrade tests that now expect both the 0029 and 0038 columns); `test:http` 19 passed; `test:postgres` runs in CI (it last passed locally with 23 before main's 0038); `task-files` 12, `work` 29, `states` 12, `curation` 9, `covers` 20, `v4` 20 and `monochrome` 16 passed.
+On this branch, on top of Alpha 28 and main `0a818fa`: typecheck, build and bundle passed; `npm test` 775 passed, 0 failed (including the new scanned task file test, a race for the last file place on a task, and two upgrade tests that now expect both the 0029 and 0038 columns); `test:http` 19 passed; `test:postgres` runs in CI (it last passed locally with 23 before main's 0038); `task-files` 12, `work` 29, `states` 12, `curation` 9, `covers` 20, `v4` 20 and `monochrome` 16 passed.
 
 ## Not verified, and why
 
