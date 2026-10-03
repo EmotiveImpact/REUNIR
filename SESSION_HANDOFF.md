@@ -1,18 +1,50 @@
-# Current continuation: Alpha 28 collections of useful content, then task files and shared forms
+# Current continuation: Alpha 29 files on project tasks and live project work, then shared forms
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, CURATION.md, decisions/028-curated-collections.md, STATES.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, PROJECT_WORK.md, decisions/029-task-files-and-live-project-work.md, LESSON_RESOURCES.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `f9f32d6`, the merge of PR #22 (Alpha 27), tree identical to its tested head `297dab8`.
+- Base: Alpha 28 on `claude/everyday-use-4z9rmz`, on main `f9f32d6`.
 - This slice: branch `claude/everyday-use-4z9rmz`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - This thread holds Alpha 27 to 30, decisions 027 to 030 and migrations 0028 and 0029.
 
 ## What is done
 
-Owners, administrators and moderators curate collections of existing content with notes and order, drafted privately and published explicitly; one can be featured on Home. Each viewer sees only items they can already open. Additive migration 0028 with forced row security.
+Project teams attach files to tasks through the shared upload-intent path; boards and open tasks refresh through a cheap change check; concurrent task edits are caught and explained. Additive migration 0029, no grant change.
 
 ## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Open Projects, a project, Open project workspace, then a task and Attach a file. Two demo tabs stand in for two people. For PostgreSQL: `npm run db:migrate` (applies 0029); no grant change.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (now including `test:browser:task-files`), and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`.
+
+## Next
+
+1. Shared form components (Alpha 30). When upload scanning (Alpha 23) lands, confirm task files go through it and gate downloads where decision 029 says.
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical handover: Alpha 28 collections of useful content, then task files and shared forms
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, CURATION.md, decisions/028-curated-collections.md, STATES.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `f9f32d6`, the merge of PR #22 (Alpha 27), tree identical to its tested head `297dab8`.
+- This slice: branch `claude/everyday-use-4z9rmz`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- This thread holds Alpha 27 to 30, decisions 027 to 030 and migrations 0028 and 0029.
+
+### What is done
+
+Owners, administrators and moderators curate collections of existing content with notes and order, drafted privately and published explicitly; one can be featured on Home. Each viewer sees only items they can already open. Additive migration 0028 with forced row security.
+
+### Run it
 
 ```sh
 cd platform
@@ -24,7 +56,7 @@ Open Collections in the sidebar, or Preview as admin to edit "Start here". For P
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (now including `test:browser:curation`), and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`.
 
-## Next
+### Next
 
 1. Task files with live updates (Alpha 29) and shared form components (Alpha 30).
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.

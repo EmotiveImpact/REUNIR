@@ -1,4 +1,45 @@
-# Alpha 28 collections of useful content
+# Alpha 29 files on project tasks and live project work
+
+3 October 2026. Application 0.29.0-alpha.1. Project teams attach files to tasks through the shared verified upload path, boards and open tasks refresh when teammates change something, and concurrent edits are caught and explained. See decisions/029-task-files-and-live-project-work.md and PROJECT_WORK.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of Alpha 28 |
+| Verified locally | Yes: the full suite on base `b24095a`, and the checks below on top of Alpha 28 and main `f9f32d6` |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. Nothing was provisioned |
+| Operated with real members | No |
+
+## What changed
+
+- A task file is a row in `upload_intents` with purpose `task_file` and a `task_id`, created and completed through the existing upload-intent endpoints and storage adapter, verified on the pinned generation, and downloaded through the access-checked same-origin route. `packages/domain/src/task-files.ts` decides attaching, downloading and removal.
+- Limits: lesson-file types and 10 MB; 12 files per task, 200 per project, 5 unfinished uploads per person. Removal by the uploader, the project lead or an active owner or administrator (who needs two-step sign-in when required and acting off-team).
+- Account deletion keeps attached files as Former member work and deletes the person's unfinished or refused uploads (`taskFileUploads`); `db:prune-covers` also clears stale task uploads.
+- Live project work: `GET` change check per project with ETag and 304, polled every 5 seconds while visible, paused when hidden, backing off to 60 seconds on errors, behind `watchProjectChanges`/`useProjectChanges`. "Updated just now" shows only for other people's changes.
+- Edit conflicts: the existing `expectedVersion` refusal now names who changed the task and when (`project_tasks.updated_by`), keeps the person's text and offers Load the latest version or Keep my edits.
+- Additive migration 0029: `upload_intents.task_id`, `project_tasks.updated_by` and four restrictive row-security policies; no grant change. Migrations 0001 to 0028 are byte-identical. No new dependency.
+
+## Local verification, 3 October 2026
+
+On base `b24095a` (by the building agent): typecheck, builds, `npm test` 657 passed (32 new), `test:http` 19, every demo suite including the new `test:browser:task-files` (12, plus four repeat runs after fixing a timing race), every connected suite (60), `test:postgres` 21 on PostgreSQL 16, Python helpers 35 and the research register.
+
+On this branch, on top of Alpha 28 and main `f9f32d6`: typecheck, build and bundle passed; `npm test` 729 passed, 0 failed; `test:http` 19 passed; `test:postgres` 23 passed on a fresh PostgreSQL 16 loopback cluster with no leftover `reunir_*` roles; `task-files` 12, `work` 29, `states` 12, `curation` 9, `v4` 20 and `monochrome` 16 passed.
+
+## Not verified, and why
+
+- Google Cloud Storage signing, CORS, deletion and generation pinning against a real bucket; the tests use the existing stand-in adapter.
+- Live polling and the conflict screen against the real API in a browser; the HTTP tests cover the change check, 304s, the conflict refusal and download access, and the demo suite covers the screens.
+- Upload scanning (Alpha 23) is not on main yet. Decision 029 names where its verdict gates task-file downloads.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Shared form components (Alpha 30).
+
+## Historical evidence: Alpha 28 collections of useful content
 
 3 October 2026. Application 0.28.0-alpha.1. Owners, administrators and moderators gather useful posts, tracks, lessons, paths, projects, events, missions and community outputs into collections with notes and a chosen order; one published collection can be featured on Home. See decisions/028-curated-collections.md and CURATION.md.
 

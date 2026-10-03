@@ -8,6 +8,21 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
+### 0.29.0-alpha.1 (Alpha 29): files on project tasks and live project work, 3 October 2026
+
+On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass.
+
+**In plain language:** project teams can now attach files to tasks, through the same private, checked upload path as lesson files. Workboards and open tasks update within a few seconds when a teammate changes something, and if someone changes a task you are editing, you are told who and choose whether to load their version or keep your own edits.
+
+Details:
+
+- **Task files:** up to 12 per task and 200 per project, the same types and 10 MB limit as lesson files. Only people who can currently work on the project can download them; suspension ends access at once. The uploader, the project lead or an active owner or administrator can remove a file, and its stored copy is deleted once the change commits.
+- Account deletion keeps attached files as Former member work and removes the person's unfinished uploads; `db:prune-covers` also clears stale task uploads.
+- **Live project work:** the browser checks a small per-project change endpoint every 5 seconds while the tab is visible (304 when nothing changed), pauses when hidden and backs off on errors. No new infrastructure; server-sent events could replace it later behind the same hook.
+- **Edit conflicts:** a task changed by someone else while you edit shows who changed it and when, keeps your text and waits for you to load theirs or keep yours. No presence indicator, by choice.
+- Additive migration 0029 adds `upload_intents.task_id`, `project_tasks.updated_by` and four restrictive row-security policies; no grant change (decision 029). When upload scanning (Alpha 23) lands, task files go through it on the shared upload path.
+- New demo browser suite `npm run test:browser:task-files`. No new dependency.
+
 ### 0.28.0-alpha.1 (Alpha 28): collections of useful content, 3 October 2026
 
 On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass.
