@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 11 cover images",
   "version": "0.11.0-alpha.1",
   "sourceBaseline": "365e1c9a822297ce471083d891eea1f1256e0c63",
-  "generatedAt": "2026-10-03T03:48:13.371808+00:00",
+  "generatedAt": "2026-10-03T04:05:03.762574+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -436,8 +436,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "faa6bd43bbadf59c2e8a53652e2719b39153239696012b811aeafa1f7731c918",
-      "bytes": 36475
+      "sha256": "c6b83f8d81e50a90cb6cc48f64f4c601cd88c9a80db95295cb8175714b360b6b",
+      "bytes": 37517
     },
     {
       "path": "platform/docs/COVERS.md",

@@ -62,7 +62,11 @@ The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `h
 
 ## Publication receipt
 
-Pending: the push, the remote read-back and the GitHub Actions runs are recorded here after they happen.
+Pushed to `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)). The remote ref was fetched back and matched the local commit and tree: head `108f0cebabfa0328812a883ca5b328accc2680d8` (tree `a551ccc8efbcdfabd840f17dfe2faffcef08c36a`), which is tested commit `f62d513` plus documentation and the source manifest.
+
+Both jobs passed on that head in [run 37094420188](https://github.com/EmotiveImpact/REUNIR/actions/runs/37094420188) (push) and [run 37094422988](https://github.com/EmotiveImpact/REUNIR/actions/runs/37094422988) (pull request). The application job ran the research checker, typecheck, all application tests, 17 HTTP checks, both builds, every demo-browser suite including covers, every connected-browser suite including covers, and the Python helpers; the PostgreSQL 17 job ran the 10 restricted-role checks, including covers. The automated Codex review ran when the pull request was opened, on `8d87020`, and reported no findings; later pushes do not trigger it.
+
+This receipt commit changes only documentation and source hashes. Merging into main needs the owner's approval.
 
 ## Next actions
 
