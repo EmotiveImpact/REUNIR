@@ -23,3 +23,6 @@
 .instructor-invite input[type=email]{flex:1;min-width:180px}
 .instructor-invite small{color:var(--muted)}
 .instructor-invite p[role=status]{font-size:13px}
+.instructor-list select{width:auto;flex:0 0 auto}
+.instructor-add select[aria-label=Role]{flex:0 0 auto;min-width:0}
+@media(max-width:560px){.instructor-list li{flex-wrap:wrap}}
