@@ -64,6 +64,27 @@ try{
         assert.equal((await admin.query("SELECT 1 FROM request_limits WHERE key='retention-check'")).rows.length,1,'a dry run changes nothing');
         await new RetentionJob(runtime!).run(new Date(),true);
         assert.equal((await admin.query("SELECT 1 FROM request_limits WHERE key='retention-check'")).rows.length,0);});
+    await check('evidence history keeps reviewed wording, accepts withdrawn and records only decisions (migration 0032)',async()=>{
+        const priv=async(action:string)=>(await admin.query<{ok:boolean}>("SELECT has_table_privilege('reunir_app','evidence_changes',$1) AS ok",[action])).rows[0].ok;
+        assert.deepEqual([await priv('SELECT'),await priv('INSERT'),await priv('UPDATE'),await priv('DELETE')],[true,true,false,false]);
+        for(const column of ['status','decided_by','decided_at','response','previous','proposed','reason'])assert.equal((await admin.query<{ok:boolean}>("SELECT has_column_privilege('reunir_app','evidence_changes',$1,'UPDATE') AS ok",[column])).rows[0].ok,['status','decided_by','decided_at','response'].includes(column),column);
+        const defs=(await admin.query<{conname:string;def:string}>("SELECT conname,pg_get_constraintdef(oid) AS def FROM pg_constraint WHERE conname IN ('contributions_status_check','outcomes_status_check') ORDER BY conname")).rows;
+        assert.equal(defs.length,2);assert(defs.every(d=>d.def.includes("'withdrawn'")));
+        const repo=new WorkspaceRepository(runtime!),exec=(cmd:unknown,user:string)=>repo.execute('code-black',user,cmd,randomUUID(),'evidence-postgres');
+        const r=await exec({type:'evidence.correct',subject:'outcome',subjectId:'outcome_notes',title:'Notes from the studio: issue 01, revised',text:'A fictional community-made publication, corrected.',evidenceUrl:'',reason:'The issue title changed before printing.'},'member_sofia');
+        assert(!(await repo.snapshot('code-black',DEMO_USER)).evidenceChanges.some(c=>c.id===r.objectId),'a waiting correction is not shown to other members');
+        await exec({type:'evidence.correction.review',changeId:r.objectId,decision:'accepted',response:'Matches the printed issue.'},DEMO_ADMIN);
+        assert.equal((await admin.query<{title:string}>("SELECT title FROM community_outputs WHERE organization_id='org_code_black' AND outcome_id='outcome_notes'")).rows[0].title,'Notes from the studio: issue 01, revised');
+        await exec({type:'evidence.withdraw',subject:'outcome',subjectId:'outcome_notes',reason:'Withdrawn for this check.'},DEMO_ADMIN);
+        assert.equal((await admin.query<{status:string}>("SELECT status FROM outcomes WHERE organization_id='org_code_black' AND id='outcome_notes'")).rows[0].status,'withdrawn');
+        await assert.rejects(()=>admin.query("UPDATE outcomes SET status='retracted' WHERE organization_id='org_code_black' AND id='outcome_notes'"),/outcomes_status_check/);
+        await assert.rejects(()=>admin.query("UPDATE contributions SET status='retracted' WHERE organization_id='org_code_black' AND id='contribution_notes'"),/contributions_status_check/);
+        const rows=(org:string,sql:string,params:unknown[]=[])=>runtime!.transaction(async tx=>{await setContext(tx,org,DEMO_ADMIN);return (await tx.query<{id:string}>(sql,params)).rows;});
+        assert.equal((await rows('org_code_black','SELECT id FROM evidence_changes')).length,2);
+        assert.equal((await rows('org_studio_north','SELECT id FROM evidence_changes')).length,0);
+        await assert.rejects(()=>rows('org_code_black',"UPDATE evidence_changes SET previous='{}'::jsonb WHERE id=$1",[r.objectId]),/permission denied/);
+        await assert.rejects(()=>rows('org_code_black','DELETE FROM evidence_changes WHERE id=$1',[r.objectId]),/permission denied/);
+    });
     await check('curated collections: drafts stay with the team, writes are curators’ only and one collection is featured',async()=>{
         const repo=new WorkspaceRepository(runtime!);
         const ids=(org:string,user:string,sql:string)=>runtime!.transaction(async tx=>{await setContext(tx,org,user);return (await tx.query<{id:string}>(sql)).rows.map(r=>r.id);});
