@@ -8,8 +8,8 @@
 | --- | --- |
 | Implemented | Yes, on `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)), after Alpha 11 to 13 on the same branch |
 | Verified locally | Yes: every suite, from a clean worktree of tested commit `2252441` after `npm ci` (see below) |
-| Verified remotely (GitHub Actions) | See the publication receipt below |
-| Merged | No. Merging into main needs the owner's approval |
+| Verified remotely (GitHub Actions) | Yes: both jobs passed on `d52fbcd` in the push and pull request runs (publication receipt below) |
+| Merged | Approved by the owner on 3 October 2026, to follow once CI is green on the receipt commit; the merge and main's read-back are recorded in the next status update |
 | Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
 | Operated with real members | No |
 
@@ -60,11 +60,15 @@ The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `h
 
 ## Publication receipt
 
-Pending: the push, the remote read-back and the GitHub Actions runs are recorded here after they happen.
+Pushed to `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)). The remote ref was fetched back and matched the local commit and tree: head `d52fbcddf9f16a738c279d826ebf8e1ae97a84ad` (tree `6d6e0d5d7172395b41f98b2e51c1abe299b36c67`), which is tested commit `2252441`, the test-only PostgreSQL check `440c1b7`, documentation and the source manifest.
+
+Both jobs passed on that head in [run 37100233918](https://github.com/EmotiveImpact/REUNIR/actions/runs/37100233918) (push) and [run 37100236985](https://github.com/EmotiveImpact/REUNIR/actions/runs/37100236985) (pull request). The application job ran the research checker, typecheck, all application tests, 17 HTTP checks, both builds, every demo-browser suite including the record download and queue paging, every connected-browser suite including the live download, and the Python helpers; the PostgreSQL 17 job ran the 14 restricted-role checks, including erasure and cover pruning through a role without row-security bypass.
+
+This receipt commit changes only documentation and source hashes. The owner approved merging PR #5 into main once CI is green.
 
 ## Next actions
 
-1. Owner review of PR #5 (Alpha 11 to 14) in the demo; merge only with the owner's approval, then read back main.
+1. Merge PR #5 (Alpha 11 to 14) into main as the owner approved in the demo; merge only with the owner's approval, then read back main.
 2. Account deletion and identity scrubbing across communities, designed for shared accounts.
 3. Server-side pagination for review queues and other long lists.
 4. When deployment resumes: Neon staging with fourteen migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests.

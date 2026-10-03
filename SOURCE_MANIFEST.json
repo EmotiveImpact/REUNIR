@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 14 learner records",
   "version": "0.14.0-alpha.1",
   "sourceBaseline": "365e1c9a822297ce471083d891eea1f1256e0c63",
-  "generatedAt": "2026-10-03T05:33:51.289461+00:00",
+  "generatedAt": "2026-10-03T05:43:22.143923+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "f67d00438ef52affd5c6777ea7e022fd229b2ced768be8bd089789af0b668a61",
-      "bytes": 30103
+      "sha256": "b53e8359f86f63864f28bac0a622294d7606b63ce5161924672d1fd34250557b",
+      "bytes": 30384
     },
     {
       "path": "platform/.dockerignore",
@@ -476,8 +476,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "ebdfab4fbd28d407abed252187b78640622cbf2f1dc957c3f05a587307d58b96",
-      "bytes": 61219
+      "sha256": "f5785e8627547e2508037f80a36c4ae3e4a002d38077d23dcebe9c85c98667e5",
+      "bytes": 62477
     },
     {
       "path": "platform/docs/COVERS.md",

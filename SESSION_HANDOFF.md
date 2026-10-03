@@ -5,7 +5,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, LEARNER_RECORDS.md, COVERS.md, AS
 ## Where the source is
 
 - Base: main `365e1c9a822297ce471083d891eea1f1256e0c63`, the merge of PR #4 (Alpha 10 knowledge checks). Main had not moved when this slice was pushed.
-- This slice and the three before it: branch `claude/laughing-goodall-2p7z0v`, [PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5). Alpha 11 (receipt `bffa3b7`), Alpha 12 (receipt `98fcee5`) and Alpha 13 (receipt `0fb6903`; CI runs 37098543959 and 37098546160 green on `be9c6c8`) were verified, pushed and recorded first. Alpha 14 learner records follows on the same branch; the publication receipt in BUILD_STATUS.md records its pushed commit and CI runs. Merging into main needs the owner's approval.
+- This slice and the three before it: branch `claude/laughing-goodall-2p7z0v`, [PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5). Alpha 11 (receipt `bffa3b7`), Alpha 12 (receipt `98fcee5`) and Alpha 13 (receipt `0fb6903`; CI runs 37098543959 and 37098546160 green on `be9c6c8`) were verified, pushed and recorded first. Alpha 14 learner records follows on the same branch; its head `d52fbcd` passed CI runs 37100233918 (push) and 37100236985 (pull request), recorded in the BUILD_STATUS.md receipt. The owner approved merging PR #5 into main on 3 October 2026 once CI is green.
 
 ## What is done
 
@@ -29,8 +29,8 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 
 ## Next
 
-1. Owner review of PR #5 (Alpha 11 to 14) in the demo, then merge with the owner's approval and read back main.
-2. Account deletion and identity scrubbing across communities, designed for shared accounts.
+1. Merge PR #5 (Alpha 11 to 14) into main, as the owner approved, and read back main.
+2. Account deletion, as the owner decided: posts, comments and project work stay, shown as "Former member"; name, photo and profile are removed; private things (goals, notes, the learning record) are deleted; direct messages stay for the other person. Owners cannot delete their account until ownership can be handed over.
 3. Server-side pagination for review queues and other long lists, beyond the bounded workspace snapshot.
 4. Deployment remains deferred by the user: Neon, Vercel, bucket, sender and scheduler are all unprovisioned.
 
