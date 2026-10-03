@@ -80,7 +80,7 @@ try {
         await dialog().getByRole('button', { name: 'Add', exact: true }).click();
         await expect(toast()).toContainText('Maya Bennett can now author and review Stories that make people feel.');
         await expect(dialog().locator('.instructor-list li')).toHaveCount(1);
-        await expect(dialog().locator('.instructor-list li')).toContainText('Instructor · added by Amina Okafor');
+        await expect(dialog().locator('.instructor-list li')).toContainText('Instructor, whole track · added by Amina Okafor');
         await neutral(); await a11y('instructors-dialog'); await dialog().screenshot({ path: dir + '/instructors-dialog.png' });
         await dialog().getByRole('button', { name: 'Remove Maya Bennett from this track', exact: true }).click();
         await expect(dialog()).toContainText('No instructors yet.');
@@ -92,13 +92,38 @@ try {
         await dialog().getByLabel('Role', { exact: true }).selectOption('contributor');
         await dialog().getByRole('button', { name: 'Add', exact: true }).click();
         await expect(toast()).toContainText('Maya Bennett can now write drafts for Stories that make people feel. Instructors publish them.');
-        await expect(dialog().locator('.instructor-list li')).toContainText('Contributor · added by Amina Okafor');
+        await expect(dialog().locator('.instructor-list li')).toContainText('Contributor, whole track · added by Amina Okafor');
         await neutral(); await a11y('contributor-dialog');
         await dialog().getByLabel('Role for Maya Bennett').selectOption('instructor');
-        await expect(dialog().locator('.instructor-list li')).toContainText('Instructor · added by Amina Okafor');
+        await expect(dialog().locator('.instructor-list li')).toContainText('Instructor, whole track · added by Amina Okafor');
         await dialog().getByRole('button', { name: 'Remove Maya Bennett from this track', exact: true }).click();
         await expect(dialog()).toContainText('No instructors yet.');
         await dialog().getByRole('button', { name: 'Done', exact: true }).click(); await expect(dialog()).toHaveCount(0);
+    });
+    await check('an administrator grants chosen lessons only, the list names them, and the grant widens in place', async () => {
+        await track('track_product');
+        await page.getByRole('button', { name: 'Instructors', exact: true }).click();
+        await dialog().getByLabel('Add someone to teach').selectOption({ label: 'Maya Bennett' });
+        await dialog().getByLabel('Only the lessons I choose').check();
+        await expect(dialog().getByRole('button', { name: 'Add', exact: true })).toBeDisabled();
+        await dialog().locator('.instructor-lessons [role=checkbox]').first().check();
+        await dialog().getByRole('button', { name: 'Add', exact: true }).click();
+        await expect(toast()).toContainText('Maya Bennett can now author and review 1 lesson of From idea to first version.');
+        const row = dialog().locator('.instructor-list li', { hasText: 'Maya Bennett' });
+        await expect(row).toContainText('Instructor for ');
+        await expect(dialog().locator('.instructor-list li', { hasText: 'Idris Cole' })).toContainText('whole track');
+        await neutral(); await a11y('lesson-grant-dialog');
+        // Widening the grant replaces it in place; nobody has to be removed and added again.
+        await dialog().getByRole('button', { name: 'Change lessons for Maya Bennett', exact: true }).click();
+        await expect(row.locator('.instructor-grant-scope [role=checkbox]').first()).toBeChecked();
+        await row.getByLabel('The whole track, including new lessons').check();
+        await row.getByRole('button', { name: 'Save lessons', exact: true }).click();
+        await expect(row).toContainText('Instructor, whole track');
+        await expect(row.locator('.instructor-grant-scope')).toHaveCount(0);
+        await dialog().getByRole('button', { name: 'Remove Maya Bennett from this track', exact: true }).click();
+        await expect(row).toHaveCount(0);
+        await dialog().getByRole('button', { name: 'Done', exact: true }).click(); await expect(dialog()).toHaveCount(0);
+        await track('track_story');
     });
     await check('an administrator invites someone new by email to teach the track; the preview sends nothing', async () => {
         await page.getByRole('button', { name: 'Instructors', exact: true }).click();

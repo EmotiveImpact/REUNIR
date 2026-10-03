@@ -1760,6 +1760,9 @@ tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'role',col
 // Task files: verified uploads bound to one project task, and who made a task's latest change, for conflict messages.
 tables.find(t => t.key === 'uploads')!.fields.push({property:'taskId',column:'task_id',type:'text'});
 tables.find(t => t.key === 'projectTasks')!.fields.push({property:'updatedBy',column:'updated_by',type:'text'});
+
+// Alpha 35: a grant may cover only some of a track's lessons. NULL keeps the whole track.
+tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'lessonIds',column:'lesson_ids',type:'jsonb'});
 // Collections of useful content. Items follow every record they can point at, so they are inserted after them. Only the
 // listed properties change in place: who created a collection, and what an item points at, are fixed.
 tables.push({key:'collections',table:'collections',mutable:['title','description','status','featured','updatedBy','updatedAt','publishedAt'],fields:[

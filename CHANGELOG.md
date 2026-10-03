@@ -36,9 +36,25 @@ Details:
 - Additive migration 0029 adds `upload_intents.task_id`, `project_tasks.updated_by` and four restrictive row-security policies; no grant change (decision 029). Task files go through Alpha 23 upload scanning on the shared upload path.
 - New demo browser suite `npm run test:browser:task-files`. No new dependency.
 
-### 0.28.0-alpha.1 (Alpha 28): collections of useful content, 3 October 2026
+### Alpha 35: teaching grants for chosen lessons (no version change), 3 October 2026
 
-On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass. Alpha 31 and Alpha 39 reached main first, so the package version stays at 0.39.0-alpha.1.
+On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass. The coordinator allocated Alpha 35 to 38 to courses and teaching, so this release is Alpha 35 with decision 035 and migration 0034. Alpha 39 reached main first, so the version stays 0.39.0-alpha.1 rather than going backwards.
+
+**In plain language:** when you add someone to teach a track you can now give them only the lessons you choose instead of the whole track. They can write, publish and mark answers on those lessons and nothing else. New lessons, the lesson order and the track cover stay with people who have the whole track.
+
+Details:
+
+- **What they work on** in a track's Instructors dialogue: the whole track (the default) or chosen lessons, with a checkbox per lesson. The list names the lessons.
+- Drafts, history, draft files, publishing and knowledge-check answers follow the chosen lessons; other drafts are not found (decision 035).
+- Additive migration 0034 adds `track_instructors.lesson_ids` and scopes the draft, history, publishing and attempt policies to the listed lessons. Every existing grant keeps the whole track. No grant change.
+
+### Planned
+
+- Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+
+## 0.28.0-alpha.1 (Alpha 28): collections of useful content, 3 October 2026
+
+On main through [PR #25](https://github.com/EmotiveImpact/REUNIR/pull/25), merged as `94b130b`. Alpha 31 and Alpha 39 reached main first, so the package version stays at 0.39.0-alpha.1.
 
 **In plain language:** communities can now gather useful material into collections such as "Start here". Owners, administrators and moderators pick posts, lessons, tracks, paths, projects, events, missions and community outputs, add short notes and choose the order, keeping a collection private until they publish it. Everyone sees only the items they already have access to, and one featured collection appears on Home.
 
@@ -51,9 +67,9 @@ Details:
 - Additive migration 0028 adds `collections` and `collection_items` with forced row security and column-limited updates (decision 028). Run `npm run db:grant-runtime` after migrating.
 - New demo browser suite `npm run test:browser:curation`. No new dependency.
 
-### 0.39.0-alpha.1 (Alpha 39): cover library management and small copies, 3 October 2026
+## 0.39.0-alpha.1 (Alpha 39): cover library management and small copies, 3 October 2026
 
-On a pull request from `claude/build-out-tvzn40`, to be merged once its checks pass.
+On main through [PR #21](https://github.com/EmotiveImpact/REUNIR/pull/21), merged as `0a818fa`.
 
 **In plain language:** administrators can rename and tag the pictures in the cover library, which now holds up to 60, and anyone choosing a cover can search the library by name or tag. Cards and lists now load a small copy of each cover, so pages with many covers load faster.
 
@@ -64,10 +80,6 @@ Details:
 - When a virus scanner is configured (Alpha 23), the small copy is scanned whole as well; a flagged copy is deleted and the picture keeps working at full size.
 - Additive migration 0038; run `npm run db:grant-runtime` after migrating. No new runtime dependency.
 - Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 27 before the blocks were agreed; gaps in the sequence on main are expected.
-
-### Planned
-
-- Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
 
 ## Alpha 23: virus scanning of uploads (no version change), 3 October 2026
 
@@ -127,7 +139,7 @@ Details:
 
 ## 0.25.0-alpha.1 (Alpha 25): contributor roles for teaching, 3 October 2026
 
-On main through [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20), merged as `fab9510`. Alpha 26 reached main first.
+On main through [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20), merged as `fab9510`. Alpha 26 (PR #18) reached main first, so the application version stayed 0.26.0-alpha.1.
 
 **In plain language:** when you add someone to teach a track you can now make them a contributor instead of an instructor. Contributors write and save lesson drafts and attach files; the track's instructors decide when to publish them. Contributors do not see learners' quiz answers.
 
