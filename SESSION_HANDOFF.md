@@ -1,17 +1,51 @@
-# Current continuation: Alpha 26 email confirmation and change, then the rest of accounts and trust
+# Current continuation: Alpha 27 data retention, then the rest of accounts and trust
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, ACCOUNTS.md, SECURITY.md, decisions/026-email-confirmation-and-change.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, RETENTION.md, decisions/027-data-retention.md, ACCOUNTS.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `b24095a` (Alpha 21), with main `ec4285d` (PR #15, Alpha 22 cover descriptions) merged in. Main `f5ec8d3` (PR #17, launch kit: LAUNCH_RUNBOOK.md and `npm run launch:preflight`) and `d62424d` (PR #19, Alpha 24 group conversations, migration 0022) are merged in too. Alpha 23 is claimed by open pull requests (#16, #21), Alpha 24 (group conversations, PR #19) reached main first, and Alpha 25 is on PR #20, so this release is Alpha 26 with decision 026.
+- Base: main `9b34cac`, the merge of PR #18 (Alpha 26, email confirmation and change).
 - This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ## What is done
 
-People confirm their email address by a link from Your account, and accepting an invitation confirms the invited address. `EMAIL_VERIFICATION` (`required` by default in production, applied only where mail can be sent) refuses a session to an unconfirmed address and queues a fresh link. `POST /api/account/email` checks the password and sends a link to the new address; the address changes only when it is opened, and the current address is told. No migration.
+Housekeeping records are cleared by one list of rules (RETENTION.md): expired sessions and links, rate counters, request receipts, change events, finished mail and read notices. The job is a dry run unless told to apply, reports counts only, and clears each community's records inside its own tenant context. Migration 0023 adds the job's read-only community listing policy. Your account says how long everything is kept. Nothing is scheduled.
 
 ## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed. `npm run retention:run` needs `DATABASE_URL` and is a dry run by default.
+
+## Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Retention clears housekeeping only; reviewed evidence and the audit trail stay. An address changes only by a link opened at the new address after the password. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+## Next
+
+1. Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and consented credit for several contributors, one pull request each. They are built locally in separate worktrees and need renumbering from main when opened.
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 26 handover: confirming and changing your email address
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, ACCOUNTS.md, SECURITY.md, decisions/026-email-confirmation-and-change.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `b24095a` (Alpha 21), with main `ec4285d` (PR #15, Alpha 22 cover descriptions) merged in. Main `f5ec8d3` (PR #17, launch kit: LAUNCH_RUNBOOK.md and `npm run launch:preflight`) and `d62424d` (PR #19, Alpha 24 group conversations, migration 0022) are merged in too. Alpha 23 is claimed by open pull requests (#16, #21), Alpha 24 (group conversations, PR #19) reached main first, and Alpha 25 is on PR #20, so this release is Alpha 26 with decision 026.
+- Outcome: [PR #18](https://github.com/EmotiveImpact/REUNIR/pull/18), merged into main as `9b34cac`.
+- This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+
+### What is done
+
+People confirm their email address by a link from Your account, and accepting an invitation confirms the invited address. `EMAIL_VERIFICATION` (`required` by default in production, applied only where mail can be sent) refuses a session to an unconfirmed address and queues a fresh link. `POST /api/account/email` checks the password and sends a link to the new address; the address changes only when it is opened, and the current address is told. No migration.
+
+### Run it
 
 ```sh
 cd platform
@@ -23,11 +57,11 @@ The demo's Your account explains the Email address panel; it has no addresses. I
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. An address changes only by a link opened at the new address after the password; the old address is always told. Authority is granted explicitly and must be current when it takes effect. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
 
-## Next
+### Next
 
 1. Data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and consented credit for several contributors, one pull request each.
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.

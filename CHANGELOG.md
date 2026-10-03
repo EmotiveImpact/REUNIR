@@ -8,9 +8,26 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### 0.26.0-alpha.1 (Alpha 26): confirming and changing your email address, 3 October 2026
+### 0.27.0-alpha.1 (Alpha 27): data retention rules, 3 October 2026
 
-On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. Alpha 23 is claimed by open pull requests (#16, #21), Alpha 24 (group conversations, PR #19) reached main first, and Alpha 25 is on PR #20, so this release is Alpha 26 with decision 026.
+On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. Alpha 26 (email confirmation and change) is on main; open pull requests claim Alpha 23, 25 and 26 again, so this is Alpha 27 with decision 027 and migration 0023.
+
+**In plain language:** REUNIR now clears its own housekeeping on a schedule: expired sign-in sessions and links, old rate counters, technical receipts, records of email already sent and notices people read long ago. What people make, reviewed evidence and the audit trail are never cleared by it. Your account has a new **How long things are kept** panel that says what is kept and for how long.
+
+Details:
+
+- One list of rules (`packages/contracts/src/retention.ts`) serves the job, the panel and `platform/docs/RETENTION.md` (decision 027).
+- `npm run retention:run` is a dry run with exact counts; `RETENTION=apply` clears. An authenticated `GET /api/internal/retention` applies the rules on a schedule, `?dry=1` only counts. Counts per rule only, never contents.
+- Additive migration 0023: a read-only policy so the job lists communities only as its own worker, and an index for read notices. Each community's records are cleared inside that community's tenant context.
+- Nothing is scheduled; the operator chooses a daily schedule.
+
+### Planned
+
+- Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+
+## 0.26.0-alpha.1 (Alpha 26): confirming and changing your email address, 3 October 2026
+
+On main through [PR #18](https://github.com/EmotiveImpact/REUNIR/pull/18), merged as `9b34cac`.
 
 **In plain language:** people can now confirm their email address with a link, and accepting an invitation confirms it automatically. Once the app is live, an address has to be confirmed before it can sign in. Anyone can also move their account to a new email address: they enter their password, open the link sent to the new address, and their old address is told.
 
@@ -22,10 +39,6 @@ Details:
 - Changing or resetting the password cancels any change link asked for before it.
 - The launch preflight also checks `EMAIL_VERIFICATION`.
 - No migration and no new runtime dependency: Better Auth's own email verification and change-email flows, through the encrypted outbox.
-
-### Planned
-
-- Data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
 
 ## 0.24.0-alpha.1 (Alpha 24): group conversations, 3 October 2026
 

@@ -1,4 +1,56 @@
-# Alpha 26 confirming and changing your email address
+# Alpha 27 data retention rules
+
+3 October 2026. Application 0.27.0-alpha.1. Housekeeping records are cleared on a schedule by one list of rules, and Your account says how long everything is kept. What people make, reviewed evidence and the audit trail are never cleared by the job. See decisions/027-data-retention.md and RETENTION.md.
+
+Numbering: main carries Alpha 26 (PR #18). Open pull requests claim Alpha 23 (#16, #21), 25 (#20) and 26 again (#22), so this is Alpha 27 with decision 027. Main has migrations up to 0022 and two open pull requests propose another 0022, so this takes 0023.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/accounts-trust-zojuqs`, restarted from main `9b34cac` (the merge of PR #18, Alpha 26) |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- **Rules** (`packages/contracts/src/retention.ts`): expired sessions, expired links and rate counters one day after expiry; request receipts 30 days; internal change events 90 days; sent and cancelled mail records 90 days; undelivered mail contents 30 days, the record 90; read notices 180 days. Unread notices and queued mail are never touched.
+- **Job** (`packages/db/src/retention.ts`): records outside any community are cleared directly; each community's receipts, change events and read notices inside its own tenant context. A dry run does the same work and rolls it back, so its counts are exact. Each applied run is recorded as `retention-job` in service observations.
+- **Running it**: `npm run retention:run` (dry run unless `RETENTION=apply`) and `GET /api/internal/retention` with the scheduler secret (applies; `?dry=1` counts). Nothing is scheduled.
+- **Migration 0023** (additive): `organisations_retention`, a read-only policy that lists communities only when the transaction sets `app.worker` to `retention`, and `notifications_read_idx`. 0001 to 0022 unchanged; no grant change.
+- **How long things are kept** panel on Your account, from the same list. RETENTION.md, PILOT_OPERATIONS.md and SECURITY.md updated.
+- Migration-count assertions moved from 22 to 23.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 on loopback.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | RET_TESTS (4 new in `tests/retention-database.test.ts`: one list of rules, the worker-only community listing, an exact dry run then a real run that clears only what the rules name, and the scheduled route) |
+| `npm run test:http` | RET_HTTP |
+| `npm run build`, `npm run bundle:preview` | Passed |
+| Demo-browser suites | `accounts` RET_ACCOUNTS (1 new: the retention panel, at phone width too), `monochrome` RET_MONO, `v4` RET_V4 |
+| Connected-browser suites | `accounts-connected` RET_CONNECTED |
+| `npm run test:postgres` | RET_PG passed on PostgreSQL 16 (1 new: the worker policy and a dry and real run through the restricted runtime role) |
+| Python helpers | RET_PY |
+
+## Not verified, and why
+
+- No scheduler runs the job: the operator chooses one when deploying. Hosted PostgreSQL was not exercised.
+- The periods are the same for every community; per-community settings and a period for the audit trail need the owner's decision.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and consented credit for several contributors, one pull request each.
+3. When deployment resumes: schedule the retention job daily after a dry run on staging.
+
+## Historical Alpha 26 evidence: confirming and changing your email address
 
 3 October 2026. Application 0.26.0-alpha.1. People confirm their email address by a link, and accepting an invitation confirms it. When the server requires it, the production default, an unconfirmed address cannot sign in. Anyone can move their account to a new address with their password and a link sent there. See decisions/026-email-confirmation-and-change.md and ACCOUNTS.md.
 
@@ -10,8 +62,8 @@ Numbering: first opened as Alpha 24. Alpha 23 is claimed by open pull requests (
 | --- | --- |
 | Implemented | Yes, on `claude/accounts-trust-zojuqs`, from main `b24095a` with main `ec4285d` (PR #15, Alpha 22) `f5ec8d3` (PR #17, launch kit) and `d62424d` (PR #19, Alpha 24 group conversations) merged in |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes: runs 37124825018 and 37124821464 (application and postgres) on `a427140` |
+| Merged | Yes: [PR #18](https://github.com/EmotiveImpact/REUNIR/pull/18), merged into main as `9b34cac` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 
