@@ -5,7 +5,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, ACCOUNTS.md, LEARNER_RECORDS.md, 
 ## Where the source is
 
 - Base: main `661fac9d921292f4d7432c1df4c7b98827cf6211`, the merge of PR #5 (Alpha 11 to 14), whose tree matched its tested head and whose push to main passed CI run 37101346869.
-- This slice: branch `claude/laughing-goodall-2p7z0v`, restarted from that main as a fresh change, a new pull request opens once the final local run completes. Tested commit `67623fb`; BUILD_STATUS.md records the local runs and the CI receipt. Merging into main needs the owner's approval.
+- This slice: branch `claude/laughing-goodall-2p7z0v`, restarted from that main as a fresh change, [PR EmotiveImpact/REUNIR#6](https://github.com/EmotiveImpact/REUNIR/pull/6). Tested commit `67623fb`; BUILD_STATUS.md records the local runs and the CI receipt. Merging into main needs the owner's approval.
 
 ## What is done
 

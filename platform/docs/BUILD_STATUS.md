@@ -6,8 +6,8 @@
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/laughing-goodall-2p7z0v`, restarted from main `661fac9` after PR #5 was merged (a new pull request opens once the final local run completes) |
-| Verified locally | In progress: every suite passed from a clean worktree of release commit `d21fdbf` after `npm ci` (see below); the same run of tested commit `67623fb`, which adds four corrections, is under way |
+| Implemented | Yes, on `claude/laughing-goodall-2p7z0v`, restarted from main `661fac9` after PR #5 was merged ([PR EmotiveImpact/REUNIR#6](https://github.com/EmotiveImpact/REUNIR/pull/6)) |
+| Verified locally | Yes: every suite, from a clean worktree of tested commit `67623fb` after `npm ci` (see below) |
 | Verified remotely (GitHub Actions) | Pending: CI on the pushed head follows in the publication receipt |
 | Merged | No. Merging into main needs the owner's approval |
 | Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
@@ -28,7 +28,7 @@ The owner approved merging PR #5 (Alpha 11 to 14) once CI was green. Both jobs h
 
 ## Local verification, 3 October 2026
 
-Node 22.22.0, npm 10.9.4, `npm ci` from the committed lockfile in a clean worktree of release commit `d21fdbf`, Playwright with Chromium 141 at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16.14 in a disposable loopback cluster (CI uses PostgreSQL 17).
+Node 22.22.0, npm 10.9.4, `npm ci` from the committed lockfile in a clean worktree of tested commit `67623fb`, Playwright with Chromium 141 at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16.14 in a disposable loopback cluster (CI uses PostgreSQL 17).
 
 | Check | Result |
 | --- | --- |
@@ -37,13 +37,11 @@ Node 22.22.0, npm 10.9.4, `npm ci` from the committed lockfile in a clean worktr
 | `npm run test:http` | 19 passed (17 existing plus 2 real Better Auth deletion checks: a wrong password and an owner are refused; a member deletes their account, after which their session, sign-in and workspace access are gone and their message reads as from a former member) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
 | Existing demo-browser suites | 265 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 16 covers, 9 instructors, 16 monochrome, 20 v4 |
-| `npm run test:browser:accounts` | 8 passed: the account page, the owner's refusal, the dialogue's checks and cancel, deletion and the farewell, the owner's view of the kept comment, conversation and team place as Former member, restarting, and phone width, with axe and neutral-colour checks |
+| `npm run test:browser:accounts` | 9 passed: the account page, the owner's refusal, the dialogue's checks and cancel, deletion and the farewell, the owner's view of the kept comment, conversation and team place as Former member, restarting after a second deletion, restarting straight after the first, and phone width, with axe and neutral-colour checks |
 | Existing connected-browser suites | 49 passed: 12 connected, 9 resources, 9 assessments, 13 covers, 6 instructors |
 | `npm run test:browser:accounts-connected` | 6 passed (live build, Better Auth cookies and password checks, API under the restricted runtime role): the member's page, a wrong password refused, the owner refused, deletion back to sign-in with a notice and the old password refused, and the owner's view of the kept post and read-only conversation |
 | `npm run test:postgres` | 15 passed on PostgreSQL 16.14 (14 existing plus 1: a member, suspended in one community, deletes their account through the restricted runtime connection; answers, grants and personal records go, team places stay, and the owner is refused) |
 | Python helpers, `scripts/check_research.py` | 35 passed (34 existing plus 1: a former member never shows a portrait); the register validates with 51 pinned sources and 17 decisions at the documentation commit (47 and 16 at the tested commit, before the review was recorded) |
-
-The same run of tested commit `67623fb`, which adds the four corrections below and one more demo check, is under way; its results will replace this table.
 
 Tests changed rather than added: eight migration-count assertions moved from 14 to 15. Five assertions that the runtime role's delete on attempts fails with "permission denied" now assert that it deletes nothing (in `assessments-database`, `operator-erasure-database` and the PostgreSQL check), because the role holds DELETE for a person's own deletion; new tests prove the policies refuse every other case, including another member's attempts with the mark set and the operator erasure path. The upgrade test now lists the three delete policies on attempts.
 
@@ -67,7 +65,7 @@ The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `h
 
 ## Publication receipt
 
-Pending. The branch was pushed with this documentation while the final local run of `67623fb` was under way; the remote read-back, the pull request and CI follow in the receipt.
+Pending. The documentation for the first clean run was pushed as `3f29c0d`; this status, with the final run of `67623fb`, follows on the same branch, and the remote read-back and CI are recorded in the receipt.
 
 ## Next actions
 

@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 15 account deletion",
   "version": "0.15.0-alpha.1",
   "sourceBaseline": "661fac9d921292f4d7432c1df4c7b98827cf6211",
-  "generatedAt": "2026-10-03T07:26:23.995019+00:00",
+  "generatedAt": "2026-10-03T07:33:08.171575+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "3f97eb4ce43de747905b96a4206242350904d24d5ee86031e8bf601a6eff58a1",
-      "bytes": 34340
+      "sha256": "911f83fe41a1f977ee28006260836fe9c237b10765df57c2ecdfc90ebd8ce0cd",
+      "bytes": 34356
     },
     {
       "path": "platform/.dockerignore",
@@ -496,8 +496,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "6ea8aa2d718ef4ce16801e173416070f51bd0e6342a40623b4d1907b15b7dd70",
-      "bytes": 73974
+      "sha256": "cdb43d0eff6ef3aca3e56be69625e30bf29d011312a0b491e616aa9766d343d4",
+      "bytes": 73828
     },
     {
       "path": "platform/docs/COVERS.md",
