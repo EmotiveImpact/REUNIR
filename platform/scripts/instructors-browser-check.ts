@@ -140,6 +140,27 @@ try {
         await go('/admin'); await page.getByRole('button', { name: /^Knowledge checks · \d+$/ }).click();
         await expect(page.locator('.quiz-review details').filter({ hasText: 'Reviewed' }).locator('summary')).toContainText('1');
     });
+    await check('an instructor starts a track; members see it only after an administrator publishes it', async () => {
+        const title = 'Running a first workshop', learn = async () => { await go('/paths'); await page.locator('a[href="/learn"]').first().click(); };
+        await switchPreviewRole(page, 'instructor'); await go('/teaching');
+        await page.getByRole('button', { name: 'Start a track', exact: true }).click();
+        await dialog().getByLabel('Title', { exact: true }).fill(title);
+        await dialog().getByLabel('Short description', { exact: true }).fill('Plan, run and follow up a small workshop.');
+        await dialog().getByLabel('Description', { exact: true }).fill('Three short lessons on running a workshop people remember.');
+        await dialog().getByLabel('Category', { exact: true }).fill('Facilitation');
+        await dialog().locator('button.primary').click(); await expect(dialog()).toHaveCount(0);
+        await go('/teaching');
+        await expect(page.locator('.teaching-track', { hasText: title })).toContainText('Not published · Instructor');
+        await switchPreviewRole(page, 'member'); await learn();
+        await expect(page.locator('.track-card', { hasText: title })).toHaveCount(0);
+        await switchPreviewRole(page, 'admin'); await learn();
+        await page.locator('.track-card', { hasText: title }).click();
+        await expect(page.locator('.unpublished-track')).toBeVisible(); await neutral(); await a11y('unpublished-track');
+        await page.getByRole('button', { name: 'Publish track', exact: true }).click();
+        await expect(page.locator('.unpublished-track')).toHaveCount(0);
+        await switchPreviewRole(page, 'member'); await learn();
+        await expect(page.locator('.track-card', { hasText: title })).toHaveCount(1);
+    });
     await switchPreviewRole(page, 'instructor');
     await check('390px: the teaching page stays readable without horizontal overflow', async () => {
         await page.setViewportSize({ width: 390, height: 844 });

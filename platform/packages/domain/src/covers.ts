@@ -4,7 +4,7 @@ import {
     type CoverImage, type CoverLibraryDetails, type CoverLibraryUploadRequest, type CoverSubject, type CoverThumbnailRequest, type CoverUploadRequest, type CoverVariant,
 } from '../../contracts/src/covers';
 import { actorFor, canSeeSpace, isAdmin } from './access';
-import { teaches } from './instructors';
+import { seesTrack, teaches } from './instructors';
 import { normalisePurposeState } from './purpose';
 
 /**
@@ -30,9 +30,9 @@ export function normaliseCover(value: CoverImage | null | undefined): CoverImage
     const description = typeof value.description === 'string' ? value.description.trim().slice(0, MAX_COVER_DESCRIPTION) : '';
     return { fileId: value.fileId, contentType: value.contentType, sizeBytes: value.sizeBytes, focusX: value.focusX, focusY: value.focusY, ...(description ? { description } : {}) };
 }
-/** The same visibility the workspace applies: space access, and unpublished tracks only for administrators. */
+/** The same visibility the workspace applies: space access, and unpublished tracks only for administrators and their own grants. */
 export function visibleSubject(s: Workspace, actor: Member, kind: CoverSubject, id: string): Subject | undefined {
-    if (kind === 'track') return s.tracks.find(t => t.id === id && t.organizationId === actor.organizationId && canSeeSpace(s, actor, t.spaceId) && (t.published || isAdmin(actor)));
+    if (kind === 'track') return s.tracks.find(t => t.id === id && t.organizationId === actor.organizationId && canSeeSpace(s, actor, t.spaceId) && seesTrack(s, actor, t));
     return s.projects.find(p => p.id === id && p.organizationId === actor.organizationId && canSeeSpace(s, actor, p.spaceId));
 }
 /** A track cover follows the right to teach the track; a project cover, its owner or an administrator. */

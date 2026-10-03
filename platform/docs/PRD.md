@@ -538,3 +538,18 @@ An owner or administrator gives a teaching grant for the whole track or for less
 | L06 | An invitation to teach is accepted only for a whole track | Migration 0034 policy; the domain only ever creates whole-track invitations. No dedicated test |
 
 Lesson grants by invitation, and grants that follow a lesson into another track, are outside this release.
+
+## Alpha 36: instructors start their own tracks
+
+An instructor of a whole track starts a new track, which an owner or administrator publishes. See `INSTRUCTORS.md` and `decisions/036-instructor-tracks.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| T01 | Only owners, administrators and active instructors of a whole track start tracks; others get 403 `TRACK_STARTER_REQUIRED` | Domain and database tests, demo browser check |
+| T02 | An instructor's track starts unpublished, authored by them, with their own whole-track instructor grant | Domain and database (restricted role) tests |
+| T03 | Members see nothing of an unpublished track, its lessons or its cover | Domain tests |
+| T04 | Only an owner or administrator publishes a track, once; the author is told and the audit records it | Domain tests, demo browser check |
+| T05 | Row security admits a self-grant only for a new unpublished track the instructor wrote, with no other grant, while they teach another whole track | Database (forced RLS) tests |
+| T06 | Suspension ends the right to start a track | Database test |
+
+Instructors archiving or deleting tracks, publishing without an administrator and track templates are outside this release.

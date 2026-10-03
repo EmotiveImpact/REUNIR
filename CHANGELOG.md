@@ -8,9 +8,26 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### Alpha 34: crediting teammates on a contribution (no version change), 3 October 2026
+### Alpha 36: instructors start their own tracks (no version change), 3 October 2026
 
-On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. This thread holds Alpha 31 to 34 and migrations 0030 to 0033, so this is Alpha 34 with decision 034 and migration 0033. Alpha 39 reached main first, so the application version stays 0.39.0-alpha.1.
+On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass. Decision 036 and migration 0035, from the block allocated to courses and teaching. Alpha 39 is already on main, so the version stays 0.39.0-alpha.1.
+
+**In plain language:** someone who already teaches a whole track can now start a new track themselves instead of asking an administrator. The new track stays hidden from members until an owner or administrator publishes it. Administrators are told when a track is started, and the person who started it is told when it is published.
+
+Details:
+
+- **Start a track** on Learning and on the Teaching page for active instructors of at least one whole track. Contributors and lesson-only grants cannot (403 `TRACK_STARTER_REQUIRED`).
+- The track starts unpublished, authored by its starter, with their own whole-track instructor grant. Only its teachers and the community's owners and administrators see it, marked **Not published**.
+- **Publish track** (`track.publish`, owners and administrators) makes it visible, records `track.published` in the audit and tells the starter (decision 036).
+- Additive migration 0035 adds one INSERT policy, `instructor_own_track`, that admits only that self-grant. No grant change.
+
+### Planned
+
+- Nothing further is planned for accounts and trust in this round. Removing someone from a project team, credits on outcomes and appeals against suspension remain undecided.
+
+## Alpha 34: crediting teammates on a contribution (no version change), 3 October 2026
+
+On main through [PR #30](https://github.com/EmotiveImpact/REUNIR/pull/30), merged as `5f7b827`. This thread holds Alpha 31 to 34 and migrations 0030 to 0033, so this is Alpha 34 with decision 034 and migration 0033. Alpha 39 reached main first, so the application version stays 0.39.0-alpha.1.
 
 **In plain language:** when you record a contribution to a project, you can now credit the teammates who did the work with you. Each person is asked first and only appears once they accept. Accepted credits show on the contribution ("With Nia James") and on the person's profile under Credited on. A credit is a thank-you, not evidence: it never counts towards milestones, goals, outcomes or roles.
 
@@ -22,10 +39,6 @@ Details:
 - A person credited on a contribution cannot review it.
 - Additive migration 0033: `contribution_credits` under forced row security, with column-level updates on the answer and withdrawal fields only. Deleting your account deletes every credit naming you.
 - Community review, not accreditation (decision 034).
-
-### Planned
-
-- Nothing further is planned for accounts and trust in this round. Removing someone from a project team, credits on outcomes and appeals against suspension remain undecided.
 
 ## Alpha 33: correcting and withdrawing reviewed evidence (no version change), 3 October 2026
 
@@ -99,7 +112,7 @@ Details:
 
 ## Alpha 23: virus scanning of uploads (no version change), 3 October 2026
 
-On main through [PR #16](https://github.com/EmotiveImpact/REUNIR/pull/16), merged as `16b2768`.
+On main through [PR #16](https://github.com/EmotiveImpact/REUNIR/pull/16), merged as `16b2768`. Alpha 23 was allocated to this slice before it was built; it reaches main after Alpha 31, so the version stays 0.31.0-alpha.1 rather than going backwards.
 
 **In plain language:** once a virus scanner is connected, every file people upload (lesson files, cover pictures, library pictures and attachments) is checked before anyone can use it. A flagged file is deleted straight away and the uploader is told why. If the scanner is briefly unavailable, the upload simply waits and can be tried again.
 
@@ -113,7 +126,7 @@ Details:
 
 ## 0.31.0-alpha.1 (Alpha 31): data retention rules, 3 October 2026
 
-On main through [PR #23](https://github.com/EmotiveImpact/REUNIR/pull/23), merged as `b80fc04`.
+On main through [PR #23](https://github.com/EmotiveImpact/REUNIR/pull/23), merged as `b80fc04`. Numbering follows the project's allocation of 3 October 2026: this thread holds Alpha 31 to 34, decision records 031 to 034 and migrations 0030 to 0033, so data retention is Alpha 31, decision 031 and migration 0030 (first opened as Alpha 27 with migration 0023).
 
 **In plain language:** REUNIR now clears its own housekeeping on a schedule: expired sign-in sessions and links, old rate counters, technical receipts, records of email already sent and notices people read long ago. What people make, reviewed evidence and the audit trail are never cleared by it. Your account has a new **How long things are kept** panel that says what is kept and for how long.
 

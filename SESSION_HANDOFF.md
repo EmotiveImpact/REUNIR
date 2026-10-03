@@ -1,15 +1,16 @@
-# Current continuation: Alpha 34 consented credits, the last accounts and trust item
+# Current continuation: Alpha 36 instructors start their own tracks, then uploaded lesson video
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, CREDITS.md, decisions/034-contribution-credits.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, decisions/025-contributor-roles.md, decisions/035-lesson-grants.md, decisions/036-instructor-tracks.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `e930e39`, the merge of PR #29 (Alpha 33, correcting and withdrawing reviewed evidence). The application version stays main's 0.39.0-alpha.1.
-- This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- Base: main `3c770b5`, the merge of PR #24 (Alpha 35 teaching grants for chosen lessons), with main `f3efa39` (PR #26, Alpha 32 appeals) and main `e930e39` (PR #29, Alpha 33 evidence history) and main `5f7b827` (PR #30, Alpha 34 credits) merged in. The application version stays 0.39.0-alpha.1 because Alpha 39 is already on main.
+- This slice: branch `claude/courses-teaching-6hum2q`, restarted from that main. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- Numbering: courses and teaching uses Alpha 35 to 38, decisions 035 to 038 and migrations 0034 to 0037, as allocated by the project coordinator on 3 October 2026. Other threads hold Alpha 27 to 34 and 39 to 40.
 
 ## What is done
 
-The author of a contribution credits teammates; each person accepts or declines, and only accepted credits are shown, on the contribution and under Credited on in the person's profile. Credits never count as evidence. Invitations stay between the two people, under forced row security. Migration 0033.
+Contributor roles (Alpha 25) and lesson grants (Alpha 35) are on main. This slice lets an active instructor of a whole track start a new track. It stays unpublished, seen only by its teachers and administrators, until an owner or administrator chooses **Publish track**. Additive migration 0035 admits only the starter's own grant on that new track.
 
 ## Run it
 
@@ -19,26 +20,62 @@ npm ci
 VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
 ```
 
+Preview as an instructor of a whole track, open Learning or Teaching and choose **Start a track**. Switch to admin to see **Not published** and **Publish track**. For PostgreSQL: `npm run db:migrate` (applies 0035; no grant changes).
+
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
 ## Product invariants for the next slice
 
-People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores, notification settings, appeals and unanswered credits private. Reviewed evidence is corrected only through review and withdrawn only with a reason. A credit is shown only with the credited person's consent and is never evidence. Nobody decides about their own work. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Authority is granted explicitly and must be current when it takes effect; teaching is a per-track grant with a role and an optional set of lessons, not a community role, and publishing a lesson stays with instructors. A track an instructor starts reaches members only when an owner or administrator publishes it. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
 
 ## Next
+
+1. Uploaded lesson video (Alpha 37, migration 0036), built locally in this thread and off until the operator sets `LESSON_VIDEO_MAX_MB`. Question banks, timers and partial marks wait for pilot needs.
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 34 handover: consented credits, the last accounts and trust item
+- Outcome: [PR #30](https://github.com/EmotiveImpact/REUNIR/pull/30), merged into main as `5f7b827`.
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, CREDITS.md, decisions/034-contribution-credits.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `e930e39`, the merge of PR #29 (Alpha 33, correcting and withdrawing reviewed evidence). The application version stays main's 0.39.0-alpha.1.
+- This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+
+### What is done
+
+The author of a contribution credits teammates; each person accepts or declines, and only accepted credits are shown, on the contribution and under Credited on in the person's profile. Credits never count as evidence. Invitations stay between the two people, under forced row security. Migration 0033.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+### Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores, notification settings, appeals and unanswered credits private. Reviewed evidence is corrected only through review and withdrawn only with a reason. A credit is shown only with the credited person's consent and is never evidence. Nobody decides about their own work. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+### Next
 
 1. Accounts and trust is complete for this round once this merges. Undecided: removing someone from a project team, credits on outcomes, and appeals against suspension or message-report outcomes.
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
 
 ---
-## Historical Alpha 33 handover: correcting and withdrawing reviewed evidence
+## Historical Alpha 33 handover: evidence history
+- Outcome: [PR #29](https://github.com/EmotiveImpact/REUNIR/pull/29), merged into main as `e930e39`.
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, EVIDENCE_HISTORY.md, decisions/033-evidence-history.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ### Where the source is
 
 - Base: main `f3efa39`, the merge of PR #26 (Alpha 32, appealing a hidden post). The application version stays main's 0.39.0-alpha.1.
-- Outcome: [PR #29](https://github.com/EmotiveImpact/REUNIR/pull/29), merged into main as `e930e39`.
 - This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ### What is done
@@ -65,14 +102,14 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
 
 ---
-## Historical Alpha 32 handover: appealing a hidden post
+## Historical Alpha 32 handover: appeals
+- Outcome: [PR #26](https://github.com/EmotiveImpact/REUNIR/pull/26), merged into main as `f3efa39`.
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, MODERATION.md, decisions/032-moderation-appeals.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ### Where the source is
 
 - Base: main `b80fc04`, the merge of PR #23 (Alpha 31, data retention rules), with main `16b2768` (PR #16, Alpha 23 virus scanning) main `0a818fa` (PR #21, Alpha 39 cover library management, migration 0038) and main `94b130b` (PR #25, Alpha 28 collections, migration 0028) and main `3c770b5` (PR #24, Alpha 35 lesson grants, migration 0034) merged in. The application version stays main's 0.39.0-alpha.1.
-- Outcome: [PR #26](https://github.com/EmotiveImpact/REUNIR/pull/26), merged into main as `f3efa39`.
 - This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ### What is done
@@ -104,17 +141,17 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, decisions/025-contributor-roles.md, decisions/035-lesson-grants.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
-## Where the source is
+### Where the source is
 
 - Base: main `fab9510`, the merge of PR #20 (Alpha 25 contributor roles), with main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) and main `b80fc04` (PR #23, Alpha 31 data retention, migration 0030) and main `16b2768` (PR #16, Alpha 23 virus scanning) and main `0a818fa` (PR #21, Alpha 39 cover library, migration 0038) and main `94b130b` (PR #25, Alpha 28 collections, migration 0028) merged in.
 - This slice: branch `claude/courses-teaching-6hum2q`, restarted from that main. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Numbering: courses and teaching uses Alpha 35 to 38, decisions 035 to 038 and migrations 0034 to 0037, as allocated by the project coordinator on 3 October 2026. Other threads hold Alpha 27 to 34 and 39 to 40.
 
-## What is done
+### What is done
 
 Contributor roles (Alpha 25) are on main. This slice lets a teaching grant cover only chosen lessons: those lessons' drafts, history, draft files, publishing and answers, nothing else. New lessons, the order and the cover stay with whole-track grants. Additive migration 0034 adds `track_instructors.lesson_ids` and lesson-scoped policies.
 
-## Run it
+### Run it
 
 ```sh
 cd platform
@@ -126,11 +163,11 @@ Preview as admin, open a track, choose **Instructors**, pick a member, choose **
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Authority is granted explicitly and must be current when it takes effect; teaching is a per-track grant with a role and an optional set of lessons, not a community role, and publishing stays with instructors. Owner and administrator authority may require two-step sign-in. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
 
-## Next
+### Next
 
 1. Instructors starting their own tracks, published by an administrator (Alpha 36, migration 0035), then uploaded lesson video (Alpha 37, migration 0036). Both are built locally in this thread. Question banks, timers and partial marks wait for pilot needs.
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
@@ -250,7 +287,6 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, RETENTION.md, decisions/031-data-
 ### Where the source is
 
 - Base: main `9b34cac`, the merge of PR #18 (Alpha 26, email confirmation and change), with main `fab9510` (PR #20, Alpha 25 contributor roles, migration 0023) and main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) merged in.
-- Outcome: [PR #23](https://github.com/EmotiveImpact/REUNIR/pull/23), merged into main as `b80fc04`.
 - This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ### What is done
