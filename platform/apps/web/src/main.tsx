@@ -25,6 +25,8 @@ import './lesson-resources.css';
 import './knowledge-checks.css';
 import './covers.css';
 import './instructors.css';
+import './appeals.css';
+import './groups.css';
 import './learning-record.css';
 import './account.css';
 import './evidence-history.css';

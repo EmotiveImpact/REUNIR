@@ -12,7 +12,7 @@ Reviewed evidence (recognised contributions and verified outcomes) can be correc
 ## Data
 
 - Commands: `evidence.correct`, `evidence.correction.review`, `evidence.withdraw` (packages/domain/src/evidence-history.ts).
-- Migration 0022 adds `withdrawn` to the `contributions_status_check` and `outcomes_status_check` constraints and creates `evidence_changes` (forced row security, tenant policy, one waiting correction per item enforced by a partial unique index). The runtime role may select and insert; it may update only `status`, `decided_by`, `decided_at` and `response`, and may not delete.
+- Migration 0032 adds `withdrawn` to the `contributions_status_check` and `outcomes_status_check` constraints and creates `evidence_changes` (forced row security, tenant policy, one waiting correction per item enforced by a partial unique index). The runtime role may select and insert; it may update only `status`, `decided_by`, `decided_at` and `response`, and may not delete.
 
 ## Known limits
 

@@ -95,6 +95,8 @@ export class InvitationService {
             }
         }
         await sql.query("UPDATE invitations SET status='accepted',accepted_by=$2,accepted_at=now() WHERE id=$1",[i.id,userId]);
+        // The invitation went to this address and only its link could be used, so accepting it confirms the address.
+        await sql.query('UPDATE auth_user SET email_verified=true,updated_at=now() WHERE id=$1 AND NOT email_verified',[userId]);
         await sql.query('UPDATE organisations SET revision=revision+1 WHERE id=$1',[i.organization_id]);
         await this.log(sql,i.organization_id,userId,'invitation.accepted',i.id);
         return {slug:org.slug,name:org.name,teaching};

@@ -5,6 +5,7 @@ import { coverChange, coverLibraryLabel, type CoverImage, type CoverImageType } 
 import { z } from 'zod';
 import type { WorkspaceSummary } from './pages';
 import { notificationPreferencesInput, type DigestFrequency, type MutableTopic } from './notifications';
+import { appealCommands, type AppealStatus, type AppealSubject } from './appeals';
 export type Id = string;
 export type Role = 'owner' | 'admin' | 'moderator' | 'member';
 export interface TenantContext {
@@ -71,6 +72,9 @@ export interface Post extends TenantRecord {
     pinned: boolean;
     hidden: boolean;
     cover: string;
+    /** Who last hid or restored the post through moderation, and when. NULL on posts moderated before this was recorded. */
+    moderatedBy?: Id | null;
+    moderatedAt?: string | null;
 }
 export interface Comment extends TenantRecord {
     postId: Id;
@@ -325,6 +329,20 @@ export interface CoverLibraryItem extends TenantRecord {
     sizeBytes: number;
     addedBy: Id;
 }
+/**
+ * A member's request for a second look at a moderation decision about their own work. Private to the appellant and the
+ * community's owners and administrators. Only the decision fields change after it is made.
+ */
+export interface ModerationAppeal extends TenantRecord {
+    subject: AppealSubject;
+    subjectId: Id;
+    appellantId: Id;
+    reason: string;
+    status: AppealStatus;
+    decidedBy: Id | null;
+    decidedAt: string | null;
+    response: string;
+}
 /** One member's notice settings in one community. Absent means every topic on and no digest. */
 export interface NotificationPreference extends TenantRecord {
     userId: Id;
@@ -335,6 +353,7 @@ export interface NotificationPreference extends TenantRecord {
     lastDigestAt: string | null;
 }
 export interface Workspace {
+    moderationAppeals: ModerationAppeal[];
     evidenceChanges: EvidenceChange[];
     notificationPreferences: NotificationPreference[];
     /** Exact totals for lists the snapshot shortens (see pages.ts). Absent on stored state. */
@@ -456,6 +475,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('post.bookmark'), postId: id }).strict(),
     z.object({ type: z.literal('post.report'), postId: id, reason: text(1000) }).strict(),
     z.object({ type: z.literal('post.moderate'), postId: id, hidden: z.boolean() }).strict(),
+    ...appealCommands,
     z.object({ type: z.literal('track.enrol'), trackId: id }).strict(),
     z.object({ type: z.literal('lesson.complete'), trackId: id, lessonId: id }).strict(),
     z.object({ type: z.literal('mission.submit'), missionId: id, body: text(10000), url: link.default('') }).strict(),

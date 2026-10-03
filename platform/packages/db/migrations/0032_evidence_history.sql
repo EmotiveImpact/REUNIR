@@ -1,7 +1,7 @@
 -- Additive: reviewed evidence can be corrected or withdrawn without rewriting its history. Contributions and outcomes gain
 -- a 'withdrawn' status (the column checks named by PostgreSQL in 0002 are replaced with the same list plus that value), and
 -- every correction or withdrawal is kept in evidence_changes with the reviewed wording it replaced. Existing rows are
--- unchanged and nothing is backfilled; 0001 to 0021 are unchanged.
+-- unchanged and nothing is backfilled; 0001 to 0031 are unchanged.
 ALTER TABLE contributions DROP CONSTRAINT contributions_status_check;
 ALTER TABLE contributions ADD CONSTRAINT contributions_status_check CHECK (status IN ('submitted','recognised','changes_requested','withdrawn'));
 ALTER TABLE outcomes DROP CONSTRAINT outcomes_status_check;

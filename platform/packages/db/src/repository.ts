@@ -382,6 +382,9 @@ export class WorkspaceRepository {
                     if (gone !== erasure.removed[key]) throw new Error(`Row security admitted only part of the deletion (${spec.table}), so nothing was changed.`);
                     add(key, gone);
                 }
+                const appeals = (await sql.query('DELETE FROM moderation_appeals WHERE organization_id=$1 AND appellant_id=$2 RETURNING id', [orgId, userId])).rows.length;
+                if (appeals !== erasure.removed.moderationAppeals) throw new Error('Row security admitted only part of the deletion (moderation_appeals), so nothing was changed.');
+                add('moderationAppeals', appeals);
                 await drop('messageReceipts', 'DELETE FROM message_receipts WHERE organization_id=$1 AND user_id=$2 RETURNING conversation_id', [orgId, userId]);
                 await drop('memberBlocks', 'DELETE FROM member_blocks WHERE organization_id=$1 AND user_id=$2 RETURNING blocked_user_id', [orgId, userId]);
                 await drop('commandReceipts', 'DELETE FROM command_receipts WHERE organization_id=$1 AND user_id=$2 RETURNING request_key', [orgId, userId]);
