@@ -1,6 +1,6 @@
-# Decision 030: loading, error and empty screens
+# Decision 026: loading, error and empty screens
 
-Status: implemented in Alpha A1 (placeholder number), verified locally in the browser demo; not deployed. Date: 3 October 2026.
+Status: implemented in Alpha 26, verified locally in the browser demo; not deployed. Date: 3 October 2026.
 
 ## Problem
 

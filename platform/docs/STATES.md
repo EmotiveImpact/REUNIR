@@ -1,6 +1,6 @@
 # Loading, error and empty screens
 
-How the web app says "on its way", "that did not work" and "nothing here yet". Every new page or panel should follow these conventions so a person never meets a blank area, a silent failure or an offer they are not allowed to take up. The pieces live in `apps/web/src/components/states.tsx` and `components/ui.tsx` (`Empty`), styled in `apps/web/src/states.css`. Decision record: `decisions/030-loading-error-empty-states.md`.
+How the web app says "on its way", "that did not work" and "nothing here yet". Every new page or panel should follow these conventions so a person never meets a blank area, a silent failure or an offer they are not allowed to take up. The pieces live in `apps/web/src/components/states.tsx` and `components/ui.tsx` (`Empty`), styled in `apps/web/src/states.css`. Decision record: `decisions/026-loading-error-empty-states.md`.
 
 There are no pilot observations yet. These are the defaults; change them when real members show where they get stuck.
 

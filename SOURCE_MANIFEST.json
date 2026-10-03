@@ -1,13 +1,13 @@
 {
-  "release": "REUNIR Alpha 22 cover descriptions and launch kit",
-  "version": "0.22.0-alpha.1",
-  "sourceBaseline": "ec4285d41f7107fb44bfcd9a6b419d5eb31a3cc1",
-  "generatedAt": "2026-10-03T12:17:48.296388+00:00",
+  "release": "REUNIR Alpha 26 loading, error and empty screens",
+  "version": "0.26.0-alpha.1",
+  "sourceBaseline": "f5ec8d3ebd1f937990ef8139657af3e718cf1301",
+  "generatedAt": "2026-10-03T12:55:30.294109+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "d1ebe6caa4d37e7f6e42323ab99b8a04428d6de01cb9b41dc85793528a4144b1",
-      "bytes": 3219
+      "sha256": "114ee0b76cfb07d6be3848c54203344d92eec4685bf93b42597791f49fd5919a",
+      "bytes": 3260
     },
     {
       "path": ".gitignore",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "a1c7c746fde25ece4c49a9fa310189a91beb8d8b7dbbb598a77e8ea50f6eeced",
-      "bytes": 27875
+      "sha256": "07f50593ca8765f5a69a4fe01b1dd7c68326683042c3b71d394c014f8ff8934b",
+      "bytes": 29351
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "2f7c5c0ee71fedbfabcdb4f810c0e31b52d300bfe6c4ba60711a54ad9b7d72e2",
-      "bytes": 58305
+      "sha256": "412e01f5b8da302dabc26d097a947eb6e4076cd0213343287795d2908af5c7a2",
+      "bytes": 60446
     },
     {
       "path": "platform/.dockerignore",
@@ -151,8 +151,8 @@
     },
     {
       "path": "platform/apps/web/src/App.tsx",
-      "sha256": "429eec4c19f21a8e7840f8725dc69829715636041286273f7fa9b1d50daab9de",
-      "bytes": 21368
+      "sha256": "c2c759d1a22f71d94e5b2136d3d03ab6e5d5b48e33a442afc5a9b5d2a88064e0",
+      "bytes": 22112
     },
     {
       "path": "platform/apps/web/src/account.css",
@@ -206,8 +206,8 @@
     },
     {
       "path": "platform/apps/web/src/components/cover-library.tsx",
-      "sha256": "62133265b669e72342957b62b25dc5ffbcf89db8d4544be8b2e437c044313eb4",
-      "bytes": 8606
+      "sha256": "5094d4820ed5bdfd4c23f99450032621e92ce1380a4c49084a8e181fa42492d0",
+      "bytes": 8614
     },
     {
       "path": "platform/apps/web/src/components/cover.tsx",
@@ -231,8 +231,8 @@
     },
     {
       "path": "platform/apps/web/src/components/learning-record.tsx",
-      "sha256": "d8d0b441aeb2443186a25865c3fa55a726758bf2339fe1b55dd5cd50c1014c0c",
-      "bytes": 1357
+      "sha256": "fa2290bee5da88a2b904e1a85356ce89195260210214a327ead5aa71570fdf30",
+      "bytes": 1365
     },
     {
       "path": "platform/apps/web/src/components/lesson-content.tsx",
@@ -266,8 +266,8 @@
     },
     {
       "path": "platform/apps/web/src/components/quiz-review.tsx",
-      "sha256": "f260c82c4793beb3119ed298b318e67a9af53a4d6fad599385541129550e360a",
-      "bytes": 7927
+      "sha256": "074a2b2348d5b8940af2a33b0a30c4b1bbcdd74f56d6f9d7d9336abaef9b388a",
+      "bytes": 8032
     },
     {
       "path": "platform/apps/web/src/components/quiz-view.tsx",
@@ -285,14 +285,24 @@
       "bytes": 2255
     },
     {
+      "path": "platform/apps/web/src/components/simulated-fault.tsx",
+      "sha256": "0272e39c6f516fcb1f8fbec7a2649cd5cfa7a70c4bc77171fb087627c2031575",
+      "bytes": 1017
+    },
+    {
+      "path": "platform/apps/web/src/components/states.tsx",
+      "sha256": "169c14f44dc7035745fc348887f91f9bb8648d8014b9be84fd12649ea38c717f",
+      "bytes": 9989
+    },
+    {
       "path": "platform/apps/web/src/components/two-step.tsx",
       "sha256": "3ceb19daf4d6848f961ec066274430f72fddbd04a28a6b65ed7bf1d7bd109766",
       "bytes": 12204
     },
     {
       "path": "platform/apps/web/src/components/ui.tsx",
-      "sha256": "262aa48c2c04df7a01c8492864b066f4052001055a57bb2e042de9b0e51d399c",
-      "bytes": 4878
+      "sha256": "38b1991b76dda731d136fa3d25d2dfcf3fba23353ac8d5b6ba0ead91b3593a93",
+      "bytes": 5197
     },
     {
       "path": "platform/apps/web/src/components/ui/avatar.tsx",
@@ -356,8 +366,8 @@
     },
     {
       "path": "platform/apps/web/src/lib/context.tsx",
-      "sha256": "584381b019e9de413713e9e5f8faf97fdf3255873838d0d2c9e2663791caf782",
-      "bytes": 11095
+      "sha256": "ec46424bff026f936a1ebcddeab45dcedb8b1a7dbf59dd6d02f2768966d9f462",
+      "bytes": 12106
     },
     {
       "path": "platform/apps/web/src/lib/covers.ts",
@@ -366,13 +376,18 @@
     },
     {
       "path": "platform/apps/web/src/lib/data.ts",
-      "sha256": "1babb029400f41afed30efa13aec486a583c99fdae9095ac612a4974bb8122ba",
-      "bytes": 4690
+      "sha256": "7d126856b92d5ce938a7533551b0ba900f67568c1bd0f20cdf1bf4c635336a60",
+      "bytes": 4638
     },
     {
       "path": "platform/apps/web/src/lib/demo-files.ts",
       "sha256": "1e08952682371804f028cd27a4f0f15d978d94ec0e79cbf4219ebc71d081c4d1",
       "bytes": 2023
+    },
+    {
+      "path": "platform/apps/web/src/lib/errors.ts",
+      "sha256": "d666f89dc5ffd84d881827a2c22e61ff044148a80ccd3725d804764fac9d818e",
+      "bytes": 2777
     },
     {
       "path": "platform/apps/web/src/lib/invitations.ts",
@@ -396,8 +411,8 @@
     },
     {
       "path": "platform/apps/web/src/lib/pages.ts",
-      "sha256": "68b5a48534a47c4e7662189c46c066ec5e15fde6ddc60eafa09d286b4af65157",
-      "bytes": 2531
+      "sha256": "8896de6476b11f3d061d7185c63231f6327d47fa38ef75ee590e3d6440c3d759",
+      "bytes": 2631
     },
     {
       "path": "platform/apps/web/src/lib/portraits.ts",
@@ -421,13 +436,13 @@
     },
     {
       "path": "platform/apps/web/src/main.tsx",
-      "sha256": "72790df323c15dc98f8ce5f1cfa9f36210d6805f218694f01ce14ccf2da4942e",
-      "bytes": 1573
+      "sha256": "3e6c4f96d9bc7c54d9ca5cda0ea2e567b60ec1ab85d1d2906cef2206e97a1273",
+      "bytes": 1878
     },
     {
       "path": "platform/apps/web/src/pages/access.tsx",
-      "sha256": "6b7d626f2d3bd079ab606fb0d8ae7d967a87e54e97fea5b5d6612d5cf8a649b5",
-      "bytes": 13872
+      "sha256": "bf4a78453bc6122edc95556bd459a90fc99b48a3ba9f1e69fcee769b89be3dd4",
+      "bytes": 14212
     },
     {
       "path": "platform/apps/web/src/pages/account.tsx",
@@ -436,58 +451,63 @@
     },
     {
       "path": "platform/apps/web/src/pages/authoring.tsx",
-      "sha256": "98163b6bc23f39ead1e2735694b7188a499def130f15f5b5438e049e201b0932",
-      "bytes": 13734
+      "sha256": "12d94279a9fec2be816c00b04645931218f43d71044d985973ba43415210af93",
+      "bytes": 13753
     },
     {
       "path": "platform/apps/web/src/pages/community.tsx",
-      "sha256": "dfbde14a0d46850157a03d2dc04f28d8ae04584498866bec7d330a33c1f0b913",
-      "bytes": 13443
+      "sha256": "bb3f7633d31852065ceb1b2fd761b4663da921488ba9a6b39cabbbb49740a9b4",
+      "bytes": 14271
     },
     {
       "path": "platform/apps/web/src/pages/doing.tsx",
-      "sha256": "2c9a61146aaa191f9a337bb57e6c55ac84b39e8cb695d612b26811823fc53152",
-      "bytes": 12304
+      "sha256": "2a215be59b2b1f407f868c07b54f2bcc3d3621d3457b7c76313568391026ea90",
+      "bytes": 13713
     },
     {
       "path": "platform/apps/web/src/pages/events.tsx",
-      "sha256": "f34cb371948ceab4b769b3c4c38091e4bc25f94d3427df219718b776a42e1f68",
-      "bytes": 6354
+      "sha256": "f7a249ba02ef574e6b4c05c6ff97a04eadee6f9f87fc709483858a0ff6a5fa4e",
+      "bytes": 6984
     },
     {
       "path": "platform/apps/web/src/pages/learning.tsx",
-      "sha256": "8bef5bd0c00dab30183823eb8444ea19460d7775a07a85fb541817237d751ef6",
-      "bytes": 8318
+      "sha256": "08fc32273b772acee04828a89ced2a62d90e69cabab249de0bcfcfa91a000147",
+      "bytes": 9088
     },
     {
       "path": "platform/apps/web/src/pages/messages.tsx",
-      "sha256": "7cc699bd61a0bdcfdab5effc8937ae1d6b65bde42037679c3aafbc6ac563bb04",
-      "bytes": 12490
+      "sha256": "51aa149d40376041907cab515c50ccba6ccd3e0e9e91bdab2d8ab8eb64b9c431",
+      "bytes": 13371
     },
     {
       "path": "platform/apps/web/src/pages/operations.tsx",
-      "sha256": "7e2f8f7b536ec6d694843b70bf39bfb228a7365df111afccf8d7c7006cbc09ed",
-      "bytes": 10184
+      "sha256": "10ce6ebdd132c301e8f46743cb6e10ce5ccc5e829e31f58c8a43a2db5c3ee658",
+      "bytes": 10103
     },
     {
       "path": "platform/apps/web/src/pages/people.tsx",
-      "sha256": "48aaca101cbd03b13af4d57354c25ed3f715468e94cef3b0ea760b692c1ca8b2",
-      "bytes": 19366
+      "sha256": "7776a2a63ab06a23f50b1dd58d8cb528619cba35995b7133683100844938244a",
+      "bytes": 20141
     },
     {
       "path": "platform/apps/web/src/pages/project-work.tsx",
-      "sha256": "b9f0c008c89936dc62b6d71b1ff127e757bc3de6b10ee6114659b722b8d94e07",
-      "bytes": 15548
+      "sha256": "60e72ef53384dca6b2d4954ddef249b09e3a29d19e64f9b86e6cc1d1e949bb03",
+      "bytes": 16232
     },
     {
       "path": "platform/apps/web/src/pages/purpose.tsx",
-      "sha256": "0052b840bca380afd90e1a704807908081bce8adadaf7c2bd2156e16a8de73bd",
-      "bytes": 39039
+      "sha256": "f174cc9068b5f259caceea69af3b9a29dc242e528f2a7bcb2b5e32e530a1f5d7",
+      "bytes": 39579
     },
     {
       "path": "platform/apps/web/src/pages/teaching.tsx",
-      "sha256": "365ec622ff572ec7eca092b221ff60c33a8c4ef0f63b64b5dca0c75b368fbca5",
-      "bytes": 2164
+      "sha256": "a2b76907b79c1d0225370b5b1367fa2f33fc8fa80687f1162164cf628427dd63",
+      "bytes": 2200
+    },
+    {
+      "path": "platform/apps/web/src/states.css",
+      "sha256": "3d4226a2c75893fb95807b15959055725fd48e5eb7ce81eb0714bffac02cf26d",
+      "bytes": 4246
     },
     {
       "path": "platform/apps/web/src/styles.css",
@@ -541,8 +561,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "d7165d3fa3222a59f1b6843aa606cb9426d5cf9c6bc40b17e31c53affeedc001",
-      "bytes": 118210
+      "sha256": "486d150ff4e9b4f2fb8bc80d45743a510ce7ebcff79b30b53ad53dc32696a1cc",
+      "bytes": 122025
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -616,8 +636,8 @@
     },
     {
       "path": "platform/docs/ROADMAP.md",
-      "sha256": "9f990d1338374bdfdf9a13b57574614e5bcbdd5ae24148b5eb95af7014bafcc7",
-      "bytes": 10383
+      "sha256": "e73468711d0cc0e199be130d954497becabb1783d71aebe0f1d0dd151c3ff51c",
+      "bytes": 10954
     },
     {
       "path": "platform/docs/SECURITY.md",
@@ -630,9 +650,14 @@
       "bytes": 17573
     },
     {
+      "path": "platform/docs/STATES.md",
+      "sha256": "7c8a3bbb85be22042ead17189e70274826684ccacf7adcf0ba2cad5343e9ddd7",
+      "bytes": 6545
+    },
+    {
       "path": "platform/docs/UI_DESIGN_DIRECTION.md",
-      "sha256": "5cb4e8cf7b8dbc50b465ae04e38a3c5ffd0b49136f565143623e29ac6d2ef248",
-      "bytes": 4711
+      "sha256": "3418e123b773b2b2d2736d97e3aa101d9309da80cd7ea7201231e123cd37329b",
+      "bytes": 5076
     },
     {
       "path": "platform/docs/V4_INTEGRATION_REVIEW.md",
@@ -728,6 +753,11 @@
       "path": "platform/docs/decisions/022-cover-descriptions.md",
       "sha256": "7181839cd510cbbf123c62044be191cab7458d97f69e07a9d6e1991b2b3aa5ab",
       "bytes": 1593
+    },
+    {
+      "path": "platform/docs/decisions/026-loading-error-empty-states.md",
+      "sha256": "ac7316bc723b54f8e26e8f8e40d2cedc1c3d1bdf330c9ea99922da7246903dbd",
+      "bytes": 3511
     },
     {
       "path": "platform/docs/history/ALPHA_05_BUILD_STATUS.md",
@@ -1036,13 +1066,13 @@
     },
     {
       "path": "platform/package-lock.json",
-      "sha256": "c1f45960e3ced239a038f725c13ba7006cfee9aa71e4edb5af0f7d2844c6d5a4",
+      "sha256": "7a79e44a0e87325bb3b4fed55097a454a4e88cded24be108f8c4d30c425a53d9",
       "bytes": 173096
     },
     {
       "path": "platform/package.json",
-      "sha256": "b8a16ecbcbf3d574597f651f25ea403eec433785c926a18c907c3d584dbb1989",
-      "bytes": 4501
+      "sha256": "39009ef6008a83bc65f42f0414eafec34038e78697ed0085ddd9624f6659fa49",
+      "bytes": 4567
     },
     {
       "path": "platform/packages/contracts/package.json",
@@ -1091,7 +1121,7 @@
     },
     {
       "path": "platform/packages/contracts/src/operations.ts",
-      "sha256": "f4303b42acc1004c3e8d9127afad930c8cceff0ae8bb99118dbe6af10c9e9b97",
+      "sha256": "bebe0d48110975fab7b696208d5ffa2c9397178c2d75fd79ec3b251b3c82bc58",
       "bytes": 1937
     },
     {
@@ -1515,6 +1545,11 @@
       "bytes": 7902
     },
     {
+      "path": "platform/scripts/states-browser-check.ts",
+      "sha256": "d45c87d8de7a2210f019e5c6255f4fda33da97c5c16a10dcb2e8ca8b1cc5b906",
+      "bytes": 14255
+    },
+    {
       "path": "platform/scripts/ui-test-helpers.ts",
       "sha256": "3ad2e346c92e4106ab90c782dd4fe97579fb58d8f0b765352aa388e25d55bfbc",
       "bytes": 750
@@ -1775,6 +1810,11 @@
       "bytes": 7768
     },
     {
+      "path": "platform/tests/states.test.ts",
+      "sha256": "75f347f0d150f2d091e764e08ea5a1255bf547c6fe50c0de794ddb36e1027610",
+      "bytes": 1888
+    },
+    {
       "path": "platform/tests/two-factor-http.test.ts",
       "sha256": "3e436530139c2760db724c1b9701ad5c57f61c209381170ac55e584fca1ef2ca",
       "bytes": 17386
@@ -1946,7 +1986,7 @@
     },
     {
       "path": "research/reuse-register.json",
-      "sha256": "e55edece6ab9b35092bf40589f248c5b1554ed978eabbbe3660fd8d6793e7faf",
+      "sha256": "67f0f52744b97e1a8782c896717018456c127b1f44d46c56c44dd00264078d7a",
       "bytes": 64889
     },
     {

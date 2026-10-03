@@ -20,6 +20,20 @@ Details:
 - `npm run launch:preflight` checks the shape of a production environment without printing a value or opening a connection, including `ADMIN_TWO_FACTOR`.
 - No migration, no runtime code change, no new dependency.
 
+### 0.26.0-alpha.1 (Alpha 26): loading, error and empty screens, 3 October 2026
+
+On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass. Alpha 23 to 25 are claimed by other open pull requests, so this release takes the next free number.
+
+**In plain language:** the app now shows calm loading outlines instead of blank areas, and keeps its navigation when a page fails. Failures are explained in plain words with a Try again button, and there is a proper Not found page. Losing the connection, an ended session or a refused change is said clearly instead of silently. Empty lists tell "nothing here yet" apart from "nothing matches", and only offer a next step the person is actually allowed to take.
+
+Details:
+
+- Shared loading, error and empty pieces in `apps/web/src/components/states.tsx` and `states.css`, with the conventions in `platform/docs/STATES.md` (decision 026).
+- Route error boundaries with Try again inside the app shell; the top-level boundary stays as the last resort. Unknown addresses show a Not found page.
+- Offline and failed-refresh notices; a failed background refresh keeps the page instead of replacing the app. Failed commands, uploads and downloads show a marked error toast and keep what was typed.
+- Empty states distinguish first run from no results, and actions appear only for roles that may take them.
+- New demo browser suite `npm run test:browser:states`. No migration, no grant change, no new dependency.
+
 ### Planned
 
 - Virus scanning of uploads, group conversations, and email verification and change.

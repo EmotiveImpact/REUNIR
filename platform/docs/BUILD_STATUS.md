@@ -1,4 +1,55 @@
-# Launch kit: runbook and offline preflight (no version change)
+# Alpha 26 loading, error and empty screens
+
+3 October 2026. Application 0.26.0-alpha.1. Shared loading, error and empty states across the web app: shell-preserving loading outlines, route error boundaries with Try again, a Not found page, offline and failed-refresh notices, marked command failures and role-aware empty states. See decisions/026-loading-error-empty-states.md and STATES.md. Alpha 23 to 25 are claimed by other open pull requests, so this slice takes the next free number.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, from main `f5ec8d3` (the merge of PR #17, the launch kit, after Alpha 22) |
+| Verified locally | Yes: the full suite on the original base `b24095a`, and the checks below again on top of `f5ec8d3` |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. Nothing was provisioned |
+| Operated with real members | No |
+
+## What changed
+
+- `apps/web/src/components/states.tsx` and `states.css`: `Loading`, `PageLoading`, `ShellLoading`, `ErrorState`, `InlineError`, `PageBoundary`, `NotFound` and `ConnectionNotice`; `apps/web/src/lib/errors.ts` sorts failures into offline, session ended, two-step sign-in required, no access, not found, outdated code or unknown.
+- Routes sit inside a page error boundary and a skeleton fallback; unknown addresses show Not found. A failed background refresh keeps the page and shows a notice; failed commands, uploads and downloads show a marked error toast and keep what was typed. The existing `TWO_FACTOR_REQUIRED` notice is unchanged.
+- Empty states tell first run apart from no results, and offer actions only to roles allowed to take them. "Show more" buttons set `aria-busy`.
+- A demo-only fault page (`#/states/fault`) exists only in the fictional demo build, for the browser check.
+- No migration, no grant change, no new dependency. Migrations 0001 to 0021 are byte-identical.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, Chromium at `/opt/pw-browsers/chromium-1194` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster.
+
+On the original base `b24095a`:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`, `npm run build`, `npm run bundle:preview` | Passed |
+| `npm test` | 627 passed, 0 failed (2 new in `tests/states.test.ts`) |
+| `npm run test:http` | 19 passed |
+| Demo-browser suites | 294 passed: the 282 existing checks unchanged, plus 12 in the new `test:browser:states` |
+| Connected-browser suites | 60 passed |
+| `npm run test:postgres` | 20 passed |
+| Python helpers, `scripts/check_research.py` | 35 passed; register validates |
+
+After merging main `f5ec8d3` (Alpha 22 and the launch kit), on this branch: typecheck, build and bundle passed; `npm test` 641 passed, 0 failed; `test:browser:states` 12, `covers` 17, `monochrome` 16, `v4` 20 and `work` 29 passed; Python helpers and the research register passed. The merge kept Alpha 22's described covers on the project and track pages, where both sides had changed the same lines.
+
+## Not verified, and why
+
+- Connected-mode offline, expired-session, failed-refresh and outdated-code screens were not exercised in a browser; their classification is unit-tested and they share components with the browser-checked demo screens.
+- No pilot observations exist yet, so the states follow an audit of every route rather than what members actually hit.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Content curation, task files with live updates, and the shared form components follow as their own pull requests from the same thread.
+
+## Historical launch kit evidence: runbook and offline preflight (no version change)
 
 3 October 2026. Application still 0.22.0-alpha.1. Everything needed to switch the app on is written down and checkable offline. Nothing was provisioned, no account was created and nothing is live, by the owner's instruction. See LAUNCH_RUNBOOK.md.
 
