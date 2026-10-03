@@ -36,6 +36,13 @@ export const creditedOn = (s: Workspace, userId: string) => s.contributionCredit
     .map(k => ({ credit: k, contribution: s.contributions.find(c => c.id === k.contributionId) }))
     .filter((x): x is { credit: ContributionCredit; contribution: Contribution } => !!x.contribution);
 
+/** Whether this person holds an accepted credit on the contribution, so someone else must review it. */
+export const isCreditedOn = (s: Workspace, contributionId: string, userId: string) =>
+    (s.contributionCredits ?? []).some(k => k.contributionId === contributionId && k.userId === userId && k.status === 'accepted');
+/** Whether this person reviewed the contribution or decided a correction to it, so they cannot also share its credit. */
+export const hasReviewed = (s: Workspace, c: Contribution, userId: string) => c.reviewerId === userId
+    || (s.evidenceChanges ?? []).some(x => x.subject === 'contribution' && x.subjectId === c.id && x.kind === 'correction' && x.status !== 'pending' && x.decidedBy === userId);
+
 type Result = { message: string; objectId: string; changed: boolean; audit?: boolean };
 const commands = new Set(['credit.invite', 'credit.respond', 'credit.withdraw']);
 export function applyCredits(s: Workspace, ctx: TenantContext, cmd: Command, now: string, makeId: () => string): Result | undefined {
@@ -65,6 +72,7 @@ export function applyCredits(s: Workspace, ctx: TenantContext, cmd: Command, now
             const target = s.members.find(m => m.organizationId === ctx.organizationId && m.userId === cmd.userId && m.status === 'active');
             if (!target || !canSeeSpace(s, target, p.spaceId) || !s.projectMembers.some(x => x.organizationId === ctx.organizationId && x.projectId === p.id && x.userId === cmd.userId))
                 fail('INVALID_CREDIT', 'Choose an active member of this project’s team.');
+            if (hasReviewed(s, c, cmd.userId)) fail('REVIEWER_NOT_CREDITED', `${target!.name} reviewed this contribution, so they cannot also be credited on it.`);
             const history = s.contributionCredits.filter(k => k.organizationId === ctx.organizationId && k.contributionId === c.id);
             const theirs = history.filter(k => k.userId === cmd.userId);
             if (theirs.some(isLive)) fail('ALREADY_CREDITED', `${target!.name} is already credited or invited on this contribution.`);
@@ -82,6 +90,7 @@ export function applyCredits(s: Workspace, ctx: TenantContext, cmd: Command, now
             if (k.userId !== ctx.userId) missing();
             const { c, p } = contribution(k.contributionId);
             if (k.status !== 'invited') fail('NOT_PENDING', 'This credit is no longer waiting for your answer.');
+            if (cmd.decision === 'accepted' && hasReviewed(s, c, ctx.userId)) fail('REVIEWER_NOT_CREDITED', 'You reviewed this contribution, so you cannot also be credited on it. Decline the invitation instead.');
             k.status = cmd.decision; k.respondedAt = now;
             notify(k.invitedBy, cmd.decision === 'accepted' ? 'Credit accepted' : 'Credit declined', `${actor.name} ${cmd.decision} the credit on “${c.title}”.`, p.id);
             return { objectId: k.id, message: cmd.decision === 'accepted' ? 'Credit accepted. It now shows on the contribution and your profile.' : 'Credit declined. Nothing is shown.', changed: true };

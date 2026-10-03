@@ -180,6 +180,28 @@ test('deleting an account removes the person’s credits; the author’s contrib
     assert.equal(run(pending, { type: 'credit.respond', creditId, decision: 'accepted' }, IDRIS).notifications.length, before);
 });
 
+test('a reviewer is never also credited, and a credited person never reviews a correction', () => {
+    // Idris owns Common Ground and recognises Alex's contribution: he cannot then be credited on it.
+    const { s, contributionId } = contributed();
+    const reviewed = run(s, { type: 'contribution.review', contributionId, decision: 'recognised', feedback: 'Seen.' }, IDRIS);
+    throwsCode(() => exec(reviewed, { type: 'credit.invite', contributionId, userId: IDRIS, role: '' }), 'REVIEWER_NOT_CREDITED');
+    // Invited first and reviewing before answering: accepting is refused, declining still works.
+    const i = invited();
+    const later = run(i.s, { type: 'contribution.review', contributionId: i.contributionId, decision: 'recognised', feedback: 'Seen.' }, IDRIS);
+    throwsCode(() => exec(later, { type: 'credit.respond', creditId: i.creditId, decision: 'accepted' }, IDRIS), 'REVIEWER_NOT_CREDITED');
+    assert.equal(credit(run(later, { type: 'credit.respond', creditId: i.creditId, decision: 'declined' }, IDRIS), i.creditId).status, 'declined');
+    // Credited, then recognised by an administrator: a correction is decided by someone other than Idris.
+    let t = run(i.s, { type: 'credit.respond', creditId: i.creditId, decision: 'accepted' }, IDRIS);
+    t = run(t, { type: 'contribution.review', contributionId: i.contributionId, decision: 'recognised', feedback: 'Seen.' }, DEMO_ADMIN);
+    const asked = exec(t, { type: 'evidence.correct', subject: 'contribution', subjectId: i.contributionId, title: 'Ran the first two onboarding tests', text: 'Observed five sessions with Idris.', evidenceUrl: '', reason: 'Two more sessions.' });
+    throwsCode(() => exec(asked.workspace, { type: 'evidence.correction.review', changeId: asked.objectId, decision: 'accepted', response: 'Looks right.' }, IDRIS), 'FORBIDDEN');
+    const decided = run(asked.workspace, { type: 'evidence.correction.review', changeId: asked.objectId, decision: 'accepted', response: 'Fine.' }, DEMO_ADMIN);
+    assert.equal(decided.contributions.find(c => c.id === i.contributionId)!.reviewerId, DEMO_ADMIN);
+    // Whoever decided a correction cannot be credited afterwards either.
+    const joined = run(decided, { type: 'project.join', projectId: 'project_common' }, DEMO_ADMIN);
+    throwsCode(() => exec(joined, { type: 'credit.invite', contributionId: i.contributionId, userId: DEMO_ADMIN, role: '' }), 'REVIEWER_NOT_CREDITED');
+});
+
 test('credits stay inside their community', () => {
     const { s, creditId } = invited();
     const north = createSeed('studio-north');

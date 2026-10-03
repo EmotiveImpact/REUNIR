@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 34 crediting teammates on a contribution",
   "version": "0.39.0-alpha.1",
   "sourceBaseline": "e930e39a2bab3108b937c91ffb91010011c67865",
-  "generatedAt": "2026-10-03T19:39:27.214816+00:00",
+  "generatedAt": "2026-10-03T19:54:26.805932+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -246,8 +246,8 @@
     },
     {
       "path": "platform/apps/web/src/components/evidence-history.tsx",
-      "sha256": "f1990451090d7020b5223c408504f9681f17098d7890b59001554a69cd06d6c8",
-      "bytes": 9308
+      "sha256": "b0d4415c3e333b1ad35b9e6bca1eecff824ecce089854227bb7659be39dd9116",
+      "bytes": 9457
     },
     {
       "path": "platform/apps/web/src/components/featured-collection.tsx",
@@ -641,8 +641,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "c018f19011fecba6d5be731b5066c497fe069179738b5a4475918d13bbd1e5a0",
-      "bytes": 178539
+      "sha256": "603c871c29defda82449e371d8148ff3f86fc5e54a87414598f381340b92e600",
+      "bytes": 178863
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -656,8 +656,8 @@
     },
     {
       "path": "platform/docs/CREDITS.md",
-      "sha256": "7b70433b883c8e706987c221be3dddb54b6202edfe3310095c8d92a9ccce1eb1",
-      "bytes": 2386
+      "sha256": "4253ff49e4ba3668e7b1ffda5e51a2075316b90406ac187fad04171af20be3b9",
+      "bytes": 2675
     },
     {
       "path": "platform/docs/CURATION.md",
@@ -906,8 +906,8 @@
     },
     {
       "path": "platform/docs/decisions/034-contribution-credits.md",
-      "sha256": "112418d4c57ebd2220d58488fc703fb4fe8218e95fb973d5aaeac8e6415a9e2b",
-      "bytes": 3898
+      "sha256": "c0fd507c409e649fb8b3016f01d4a9f38920fb6df65c733dab6948b5335b769a",
+      "bytes": 4072
     },
     {
       "path": "platform/docs/decisions/035-lesson-grants.md",
@@ -1581,8 +1581,8 @@
     },
     {
       "path": "platform/packages/domain/src/credits.ts",
-      "sha256": "cb375913e10b72da1b70fd689c4a547b68946944df3b40f8ca875bf6ad996697",
-      "bytes": 9013
+      "sha256": "1d36ce9d3a2f41d0452d7c261f8a15de95faad8efaa507ba6b425697061127e1",
+      "bytes": 10116
     },
     {
       "path": "platform/packages/domain/src/demo-files.ts",
@@ -1596,8 +1596,8 @@
     },
     {
       "path": "platform/packages/domain/src/evidence-history.ts",
-      "sha256": "048f111f073eee5eb76df22b8c6791a6121a087285ce6d31d56500611bbeeae1",
-      "bytes": 13432
+      "sha256": "43f4cbdebfe6be606753e9ecdc2453aa9d6d9a6c77197ef7afe37e76ebd155fb",
+      "bytes": 13659
     },
     {
       "path": "platform/packages/domain/src/instructors.ts",
@@ -1996,8 +1996,8 @@
     },
     {
       "path": "platform/tests/credits.test.ts",
-      "sha256": "200d7912587230e56590ec0a65b737b850919c62b9513661cea1ee4e59ea954c",
-      "bytes": 16264
+      "sha256": "27144f3a0843063abd54d2568205e1fe2e2b94d7d25838b8050a7a62a70bf683",
+      "bytes": 18695
     },
     {
       "path": "platform/tests/database.test.ts",

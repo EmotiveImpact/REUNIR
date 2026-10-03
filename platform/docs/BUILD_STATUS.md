@@ -23,6 +23,7 @@ Numbering: this thread holds Alpha 31 to 34, decisions 031 to 034 and migrations
 - **Migration 0033** (additive): `contribution_credits` with forced row security, a partial unique index for one live credit per person per contribution, and foreign keys tying the inviter to the author and the credited person to the project team. The runtime role may select, insert and delete (deletion only during the person's own account deletion), and update only `status`, `responded_at`, `withdrawn_by` and `withdrawn_at`. 0001 to 0032 unchanged.
 - **Web.** Credit a teammate, Accept credit / Decline and Remove on the project view; "With …" on the contribution; **Credited on** on profiles. Neutral colours only.
 - **Demo.** One fictional accepted credit in Code Black, so the journey works in the browser demo.
+- Review fix on PR #30 (Codex): the recusal now runs both ways and covers corrections. A credited person cannot decide a correction to the contribution, and whoever reviewed it or decided a correction cannot be invited or accept a credit (`REVIEWER_NOT_CREDITED`). One new domain test covers each path.
 
 ## Local verification, 3 October 2026
 
@@ -31,7 +32,7 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 815 passed, 0 failed (21 new in `tests/credits.test.ts` and `tests/credits-database.test.ts`, including cross-tenant, suspended-member, administrator-cannot-see and restricted-role cases) |
+| `npm test` | 816 passed, 0 failed after the review fix (22 new in `tests/credits.test.ts` and `tests/credits-database.test.ts`, including cross-tenant, suspended-member, administrator-cannot-see and restricted-role cases) |
 | `npm run test:http` | 19 passed |
 | `npm run build`, `npm run bundle:preview` | Passed |
 | Demo-browser suites | `credits` 7 (new), `evidence` 7, `purpose` 34, `work` 29, `appeals` 7, `curation` 9, `accounts` 13, `monochrome` 16, `v4` 20, `covers` 20, `states` 12, `instructors` 12, `notifications` 5 |

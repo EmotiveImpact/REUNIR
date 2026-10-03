@@ -25,3 +25,7 @@ Migration `0033_contribution_credits.sql`, additive, with forced row security an
 - An open invitation from a person who then deletes their account can still be accepted or declined.
 - Credit descriptions are free text chosen by the author and are not moderated separately.
 - The demo seed holds one fictional accepted credit (Nia James on Sofia Chen's Notes contribution).
+
+## Reviewers and credits
+
+Nobody both reviews a contribution and shares its credit. A credited person cannot recognise the contribution or decide a correction to it, and someone who reviewed it or decided a correction cannot be invited or accept a credit on it (`REVIEWER_NOT_CREDITED`).
