@@ -1,3 +1,4 @@
+import { RetentionJob } from '../packages/db/src/retention';
 import { randomUUID, randomBytes, createHash } from 'node:crypto';
 import { plainLessonDocument } from '../packages/contracts/src/lesson-document';
 import { lessonContent } from '../packages/domain/src/authoring';
@@ -30,6 +31,14 @@ try{
     await admin.transaction(grantRuntimeTables);url.username='reunir_app';url.password='LOCAL_CI_TEST_ONLY_12345678901234567890';runtime=await openDatabase(url.toString());
     await check('separate runtime connection is non-owner and cannot bypass RLS',async()=>{assert(await runtimeRoleIsSafe(runtime!));await assert.rejects(()=>runtime!.query('SELECT * FROM schema_migrations'));});
     await check('the runtime role is granted the two-step sign-in table (migration 0021)',async()=>{for(const action of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await admin.query<{ok:boolean}>("SELECT has_table_privilege('reunir_app','auth_two_factor',$1) AS ok",[action])).rows[0].ok,true,action);assert.equal((await runtime!.query<{n:number}>('SELECT count(*)::int AS n FROM auth_two_factor')).rows[0].n,0);});
+    await check('the retention job lists communities only as its own worker, then clears housekeeping as the runtime role (migration 0022)',async()=>{
+        const listed=(worker:string)=>runtime!.transaction(async tx=>{await tx.query("SELECT set_config('app.worker',$1,true)",[worker]);return (await tx.query('SELECT id FROM organisations')).rows.length;});
+        assert.equal(await listed(''),0);assert.ok(await listed('retention')>0);
+        await admin.query("INSERT INTO request_limits(key,count,window_start) VALUES('retention-check',1,now()-interval '3 days')");
+        const dry=await new RetentionJob(runtime!).run(new Date(),false);assert.ok(dry.counts.rateCounters>=1);
+        assert.equal((await admin.query("SELECT 1 FROM request_limits WHERE key='retention-check'")).rows.length,1,'a dry run changes nothing');
+        await new RetentionJob(runtime!).run(new Date(),true);
+        assert.equal((await admin.query("SELECT 1 FROM request_limits WHERE key='retention-check'")).rows.length,0);});
     await check('missing tenant context denies rows on a fresh connection',async()=>{assert.equal((await runtime!.query('SELECT id FROM posts')).rows.length,0);});
     await check('parallel connection-pool reads keep two tenant contexts separate',async()=>{const repo=new WorkspaceRepository(runtime!);const slugs=Array.from({length:20},(_,i)=>i%2?'code-black':'studio-north');const rows=await Promise.all(slugs.map(s=>repo.snapshot(s,DEMO_USER)));rows.forEach((r,i)=>assert.equal(r.organisation.slug,slugs[i]));});
     await check('transaction context is reset before a pooled connection is reused',async()=>{await runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',DEMO_USER);assert((await tx.query('SELECT id FROM posts')).rows.length>0);});assert.equal((await runtime!.query('SELECT id FROM posts')).rows.length,0);});
