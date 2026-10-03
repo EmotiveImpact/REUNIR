@@ -6,7 +6,7 @@ export function normalisePurposeState(s: Workspace): Workspace {
     s.collections ??= []; s.collectionItems ??= []; s.moderationAppeals ??= []; s.notificationPreferences ??= []; s.coverLibrary ??= []; for (const item of s.coverLibrary) item.tags ??= []; s.trackInstructors ??= []; s.quizAttempts ??= []; s.uploads ??= []; s.lessonDrafts ??= []; s.lessonRevisions ??= [];
     s.projectTasks ??= []; s.taskNotes ??= [];
     s.purposes ??= []; s.paths ??= []; s.milestones ??= []; s.pathEnrolments ??= [];
-    s.contributions ??= []; s.outcomes ??= []; s.communityOutputs ??= []; s.memberGoals ??= [];
+    s.contributions ??= []; s.outcomes ??= []; s.evidenceChanges ??= []; s.communityOutputs ??= []; s.memberGoals ??= [];
     for (const p of s.projects) p.purposeId ??= null;
     for (const g of s.memberGoals) g.outcomeId ??= null;
     return s;
@@ -25,9 +25,9 @@ export function filterPurposeWorkspace(s: Workspace, ctx: TenantContext, actor: 
     s.pathEnrolments = tenant(s.pathEnrolments).filter(x => paths.has(x.pathId) && x.userId === ctx.userId);
     s.memberGoals = tenant(s.memberGoals).filter(g => purposes.has(g.purposeId) && (!g.pathId || paths.has(g.pathId)) && (g.userId === ctx.userId || g.visibility === 'members'));
     const teamProof = new Set(s.projectTasks.filter(t => t.organizationId === ctx.organizationId && projects.has(t.projectId) && (isAdmin(actor) || s.projects.some(p=>p.id===t.projectId&&p.ownerId===ctx.userId) || s.projectMembers.some(m=>m.projectId===t.projectId&&m.userId===ctx.userId&&m.organizationId===ctx.organizationId))).map(t=>t.contributionId));
-    s.contributions = tenant(s.contributions).filter(c => projects.has(c.projectId) && (teamProof.has(c.id) || c.status === 'recognised' || c.userId === ctx.userId || isAdmin(actor) || s.projects.some(p => p.id === c.projectId && p.ownerId === ctx.userId)));
+    s.contributions = tenant(s.contributions).filter(c => projects.has(c.projectId) && (teamProof.has(c.id) || c.status === 'recognised' || c.status === 'withdrawn' || c.userId === ctx.userId || isAdmin(actor) || s.projects.some(p => p.id === c.projectId && p.ownerId === ctx.userId)));
     const contributions = new Set(s.contributions.map(x => x.id)), submissions = new Set(s.submissions.map(x => x.id));
-    s.outcomes = tenant(s.outcomes).filter(o => purposes.has(o.purposeId) && (!o.projectId || projects.has(o.projectId)) && (o.contributionId ? contributions.has(o.contributionId) : !!o.submissionId && submissions.has(o.submissionId)) && (o.status === 'verified' || o.authorId === ctx.userId || isAdmin(actor)));
+    s.outcomes = tenant(s.outcomes).filter(o => purposes.has(o.purposeId) && (!o.projectId || projects.has(o.projectId)) && (o.contributionId ? contributions.has(o.contributionId) : !!o.submissionId && submissions.has(o.submissionId)) && (o.status === 'verified' || o.status === 'withdrawn' || o.authorId === ctx.userId || isAdmin(actor)));
     const outcomes = new Set(s.outcomes.filter(o => o.status === 'verified').map(x => x.id));
     s.memberGoals = s.memberGoals.filter(g=>!g.outcomeId || outcomes.has(g.outcomeId));
     s.communityOutputs = tenant(s.communityOutputs).filter(o => outcomes.has(o.outcomeId) && purposes.has(o.purposeId) && (!o.projectId || projects.has(o.projectId)));

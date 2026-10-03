@@ -13,7 +13,7 @@ export function canWorkOnProject(s:Workspace,m:Member,p:Project):boolean {
 }
 export function taskStage(s:Workspace,t:ProjectTask):TaskStage {
     const c=t.contributionId?s.contributions.find(x=>x.id===t.contributionId&&x.projectId===t.projectId&&x.organizationId===t.organizationId):null;
-    return c?.status==='recognised'?'done':c?.status==='submitted'?'review':c?.status==='changes_requested'?'doing':t.workState;
+    return c?.status==='recognised'?'done':c?.status==='submitted'?'review':c?.status==='changes_requested'||c?.status==='withdrawn'?'doing':t.workState;
 }
 export function taskNeedsChanges(s:Workspace,t:ProjectTask):boolean {return s.contributions.some(c=>c.id===t.contributionId&&c.status==='changes_requested');}
 export function normaliseProjectWork(s:Workspace):Workspace {s.projectTasks??=[];s.taskNotes??=[];return s;}
@@ -82,8 +82,9 @@ export function applyProjectWork(s:Workspace,ctx:TenantContext,cmd:Command,now:s
             const t=task(cmd.taskId);current(t,cmd.expectedVersion);open(t);mine(t);assignee(project(t.projectId),ctx.userId);
             if(!t.contributionId&&t.workState!=='doing')fail('START_FIRST','Start this task before submitting proof.');
             const previous=t.contributionId?s.contributions.find(c=>c.id===t.contributionId):null;
-            if(t.contributionId&&previous?.status!=='changes_requested')fail('PROOF_LOCKED','This proof is already awaiting review or recognised.');
-            const evidence=applyPurposeCommand(s,ctx,t.contributionId?{type:'contribution.resubmit',contributionId:t.contributionId,title:t.title,body:cmd.body,evidenceUrl:cmd.evidenceUrl}:{type:'contribution.submit',projectId:t.projectId,title:t.title,body:cmd.body,evidenceUrl:cmd.evidenceUrl},now,makeId)!;
+            if(t.contributionId&&previous?.status!=='changes_requested'&&previous?.status!=='withdrawn')fail('PROOF_LOCKED','This proof is already awaiting review or recognised.');
+            // Withdrawn proof stays on record; new proof for the same task is a new contribution with its own review.
+            const evidence=applyPurposeCommand(s,ctx,t.contributionId&&previous?.status!=='withdrawn'?{type:'contribution.resubmit',contributionId:t.contributionId,title:t.title,body:cmd.body,evidenceUrl:cmd.evidenceUrl}:{type:'contribution.submit',projectId:t.projectId,title:t.title,body:cmd.body,evidenceUrl:cmd.evidenceUrl},now,makeId)!;
             t.contributionId=evidence.objectId;touch(t);return result(t.id,'Proof sent to the existing contribution review. The task is not done until recognised.');
         }
         case 'task.note': {

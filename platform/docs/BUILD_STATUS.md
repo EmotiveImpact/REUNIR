@@ -6,7 +6,7 @@
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of main `94b130b` (PR #25, Alpha 28, merged 3 October 2026; tree identical to its tested head `e4d69fa`), with main `3c770b5` (Alpha 35 teaching grants for chosen lessons) and `f3efa39` (Alpha 32 appealing a hidden post) merged in |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of main `94b130b` (PR #25, Alpha 28, merged 3 October 2026; tree identical to its tested head `e4d69fa`), with main `3c770b5` (Alpha 35 teaching grants for chosen lessons) `f3efa39` (Alpha 32 appealing a hidden post) and `e930e39` (Alpha 33 correcting and withdrawing reviewed evidence) merged in |
 | Verified locally | Yes: the full suite on base `b24095a`, and the checks below on top of Alpha 28 and main `0a818fa` |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
@@ -28,7 +28,7 @@
 
 On base `b24095a` (by the building agent): typecheck, builds, `npm test` 657 passed (32 new), `test:http` 19, every demo suite including the new `test:browser:task-files` (12, plus four repeat runs after fixing a timing race), every connected suite (60), `test:postgres` 21 on PostgreSQL 16, Python helpers 35 and the research register.
 
-On this branch, on top of Alpha 28 and main `0a818fa`: typecheck, build and bundle passed; `npm test` 804 passed, 0 failed after merging main `f3efa39` (the 0029 upgrade test now seeds with main's schema-aware `seedAtSchema`; including the new scanned task file test, a race for the last file place on a task, and two upgrade tests that now expect both the 0029 and 0038 columns); `test:http` 19 passed; `test:postgres` runs in CI (it last passed locally with 23 before main's 0038); `task-files` 12, `work` 29, `states` 12, `curation` 9, `covers` 20, `instructors` 12, `appeals` 7, `v4` 20 and `monochrome` 16 passed.
+On this branch, on top of Alpha 28 and main `0a818fa`: typecheck, build and bundle passed; `npm test` 828 passed, 0 failed after merging main `e930e39` (the 0029 upgrade test now seeds with main's schema-aware `seedAtSchema`; including the new scanned task file test, a race for the last file place on a task, and two upgrade tests that now expect both the 0029 and 0038 columns); `test:http` 19 passed; `test:postgres` runs in CI (it last passed locally with 23 before main's 0038); `task-files` 12, `work` 29, `states` 12, `curation` 9, `covers` 20, `instructors` 12, `appeals` 7, `evidence` 7, `v4` 20 and `monochrome` 16 passed.
 
 ## Not verified, and why
 
@@ -40,7 +40,57 @@ On this branch, on top of Alpha 28 and main `0a818fa`: typecheck, build and bund
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. Shared form components (Alpha 30).
 
-## Historical evidence: Alpha 32 appealing a hidden post
+## Historical evidence: Alpha 33 correcting and withdrawing reviewed evidence
+
+3 October 2026. The application version stays 0.39.0-alpha.1: Alpha 39 (PR #21) reached main first. Authors ask to correct reviewed evidence and a reviewer decides; authors or administrators withdraw it with a reason; reviewed wording is never rewritten. See decisions/033-evidence-history.md and EVIDENCE_HISTORY.md.
+
+Numbering: this thread holds Alpha 31 to 34, decisions 031 to 034 and migrations 0030 to 0033. This is Alpha 33 with migration 0032.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/accounts-trust-zojuqs`, restarted from main `f3efa39` (the merge of PR #26, Alpha 32) |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- **Commands** `evidence.correct`, `evidence.correction.review` and `evidence.withdraw` (packages/domain/src/evidence-history.ts). One correction waits per item; it must change something and keeps the first submission's limits. The author is notified of the decision; reviewers are notified of a request.
+- **Withdrawal** marks the contribution or outcome `withdrawn`. It stops counting for path milestones, profiles, outcome sources, goal completion and the output archive. Verified outcomes built on a withdrawn contribution are withdrawn too; a goal completed with a withdrawn outcome reopens and its owner is told; a waiting correction is declined; a project task whose proof was withdrawn returns to in progress.
+- **Migration 0032** (additive): `withdrawn` added to `contributions_status_check` and `outcomes_status_check`, and `evidence_changes` with forced row security, a tenant policy and a partial unique index for one waiting correction. The runtime role may select and insert, and update only `status`, `decided_by`, `decided_at` and `response`. 0001 to 0031 unchanged.
+- **Web.** Correct, Withdraw, Review a correction and History dialogues on the project view and Community outputs. Neutral colours only.
+- Review fix on PR #29 (Codex): an accepted correction now records the accepting reviewer, time and response on the evidence, and the history keeps the earlier wording with the review it carried (`previous.review`). One new domain test and two new database assertions cover this.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 on loopback.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 794 passed, 0 failed after the review fix (24 new: 18 in `tests/evidence-history.test.ts`, including cross-tenant and suspended-member cases, and 6 in `tests/evidence-history-database.test.ts` under the restricted role) |
+| `npm run test:http` | 19 passed |
+| `npm run build`, `npm run bundle:preview` | Passed |
+| Demo-browser suites | `evidence` 7 (new), `purpose` 34, `work` 29, `appeals` 7, `curation` 9, `accounts` 13, `monochrome` 16, `v4` 20, `covers` 20, `states` 12, `instructors` 12, `notifications` 5 |
+| `npm run test:postgres` | 27 passed on PostgreSQL 16 (1 new: grants, the withdrawn status and a correction accepted through a restricted connection) |
+| Python helpers | 35 passed; research register valid |
+
+## Not verified, and why
+
+- No HTTP-level test of the evidence commands: they use the existing generic `/commands` route, covered by the domain, database and PostgreSQL checks.
+- Hosted PostgreSQL was not exercised.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Consented credit for several contributors (Alpha 34, migration 0033).
+3. Undecided: undoing a withdrawal, corrections to mission proof and a community-wide change log.
+
+## Historical Alpha 32 evidence: appealing a hidden post
 
 3 October 2026. The application version stays 0.39.0-alpha.1: Alpha 39 (PR #21) reached main first. The author of a hidden post is told, still sees it, and can appeal; an owner or administrator who did not hide it decides. See decisions/032-moderation-appeals.md and MODERATION.md.
 
@@ -52,8 +102,8 @@ Numbering: this thread holds Alpha 31 to 34, decisions 031 to 034 and migrations
 | --- | --- |
 | Implemented | Yes, on `claude/accounts-trust-zojuqs`, restarted from main `b80fc04` (the merge of PR #23, Alpha 31), with main `16b2768` (PR #16, Alpha 23 virus scanning) main `0a818fa` (PR #21, Alpha 39 cover library management, migration 0038) and main `94b130b` (PR #25, Alpha 28 collections, migration 0028) and main `3c770b5` (PR #24, Alpha 35 lesson grants, migration 0034) merged in |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes: runs 37145103758 and 37145107626 (application and postgres) on `fcdd0f8` |
+| Merged | Yes: [PR #26](https://github.com/EmotiveImpact/REUNIR/pull/26), merged into main as `f3efa39` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 
