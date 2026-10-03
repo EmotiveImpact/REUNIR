@@ -25,6 +25,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 15 | People delete their own account; posts, comments and project work stay as Former member, private things and the learning record go, messages stay for the other person; owners refused | No ownership transfer; mentions inside other people's posts stay; hosted Better Auth and real email unverified |
 | Alpha 16 | Owners hand a community to an administrator with their password and the community's name; the previous owner stays as an administrator and can then delete their account | Only to an existing administrator; the new owner is told, not asked; hosted Better Auth unverified |
 | Alpha 17 | Deleting an account hands back claimed tasks everywhere, suspended communities included; replaced covers are erased at once; the deletion-during-acceptance case is tested | Mentions in other people's posts stay as written; real bucket deletion unverified |
+| Alpha 18 | Notices, knowledge-check review queues and the audit trail load a page at a time with exact counts; workspace reads stop growing with those histories | Posts, tasks and other collections still load with the snapshot; no archive of old notices yet |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 
@@ -44,7 +45,7 @@ The user will clone, deploy and run hosted tests later. Continue product develop
 
 **Creator Studio:** Rich editing and safe external media (Alpha 08), private lesson resources with lesson/space access inheritance (Alpha 09) and knowledge checks with private attempts and reviewed feedback (Alpha 10) are implemented. Instructor-scoped authoring and review followed in Alpha 12, and Alpha 14 added the learner's own record download, owner-authorised erasure of a learner's answers and paged review queues. Question banks, partial credit and timers wait for real pilot needs.
 
-**Everyday reliability:** page-level cursor pagination beyond messages, notification preferences/digests, useful content curation. Course and project art is now uploaded by each community (Alpha 11); smaller renditions for thumbnails can follow real usage. Improve loading/error/empty states through real pilot observations.
+**Everyday reliability:** cursor pagination for posts and tasks (notices, review queues and the audit trail page since Alpha 18), notification preferences/digests, useful content curation. Course and project art is now uploaded by each community (Alpha 11); smaller renditions for thumbnails can follow real usage. Improve loading/error/empty states through real pilot observations.
 
 **Account and trust operations:** privileged MFA, general email verification/change, retention (self-service account deletion with Former member attribution arrived in Alpha 15, after the learning record download and answer erasure in Alpha 14, and ownership transfer, which lets owners delete their accounts too, in Alpha 16), moderator appeals/escalation, reviewed-evidence correction/revocation history and consented multi-contributor credits.
 

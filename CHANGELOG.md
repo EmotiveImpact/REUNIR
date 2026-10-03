@@ -8,9 +8,26 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### 0.17.0-alpha.1 (Alpha 17): loose ends after account deletion, 3 October 2026
+### 0.18.0-alpha.1 (Alpha 18): server pages for long lists, 3 October 2026
 
 On a pull request from `claude/build-out-tvzn40`, to be merged once its checks pass.
+
+**In plain language:** notices, the knowledge-check review queues and the audit trail now load a page at a time, with "Show older" buttons and counts that stay exact, so busy communities stay quick.
+
+Details:
+
+- `GET /api/organisations/:slug/pages/:list` pages notices, the three review queues and the audit trail (administrators only) with opaque keyset cursors, 20 a page by default and at most 50.
+- The snapshot carries the newest 30 notices, the newest 12 audit entries for administrators, only the person's own attempts and exact counts.
+- Workspace reads skip the outbox, read the newest 100 audit entries and only the acting person's notices (decision 018).
+- No migration, no grant change, no new runtime dependency.
+
+### Planned
+
+- Notification settings and email digests.
+
+## 0.17.0-alpha.1 (Alpha 17): loose ends after account deletion, 3 October 2026
+
+On main through [PR #10](https://github.com/EmotiveImpact/REUNIR/pull/10), merged as `a924295`.
 
 **In plain language:** when someone deletes their account, tasks they had claimed now go back to their teams in every community, even one where they had been suspended. Changing or removing a cover picture now deletes the old picture straight away instead of later.
 
@@ -21,10 +38,6 @@ Details:
 - A new PostgreSQL check covers a deletion that starts while an invitation acceptance holds the account.
 - Mentions of a former member in other people's posts stay as written (decision 017).
 - Migrations 0001 to 0017 unchanged; no grant changes; no new runtime dependency.
-
-### Planned
-
-- Server-side pagination for review queues and other long lists.
 
 ## 0.16.0-alpha.1 (Alpha 16): ownership transfer, 3 October 2026
 

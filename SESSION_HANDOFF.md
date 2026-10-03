@@ -1,17 +1,53 @@
-# Current continuation: Alpha 17 loose ends, then the rest of the roadmap
+# Current continuation: Alpha 18 server pages, then the rest of the roadmap
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, ACCOUNTS.md, COVERS.md, decisions/017-follow-ups-after-account-deletion.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, decisions/018-server-pages-for-long-lists.md, ARCHITECTURE.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `12ed75c`, the merge of PR #8 (Alpha 16 ownership transfer), with PR #9 (its merge record) merged in.
+- Base: main `a924295`, the merge of PR #10 (Alpha 17), tree identical to its tested head `8f73bdd`.
 - This slice: branch `claude/build-out-tvzn40`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ## What is done
 
-Deleting your own account hands back tasks you had claimed without proof in every community, including one where you were suspended (additive migration 0018, admitted only during your own deletion). A replaced or removed track or project cover loses its upload record in the same change and its stored file straight after commit. The PostgreSQL check covers a deletion that starts while an invitation acceptance holds the account. Mentions of a former member in other people's posts stay as written (decision 017).
+Notices, the knowledge-check review queues and the audit trail load a page at a time from `GET /api/organisations/:slug/pages/:list` with opaque keyset cursors. The snapshot carries the newest 30 notices, the newest 12 audit entries for administrators, only the person's own attempts and a `summary` of exact counts that badges and tabs read. Workspace reads skip the outbox, read the newest 100 audit entries and only the acting person's notices; account deletion and operator erasure still read in full. No migration and no grant change.
 
 ## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+For PostgreSQL: `npm run db:migrate` (no new migration in this slice).
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+## Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages and scores private. Lists that grow page from the server with keyset cursors, never offsets, and counts come from the summary rather than the window. A deleted person's shared work stays as Former member. A community has exactly one owner. Authority is granted, never inferred from attribution or engagement. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+## Next
+
+1. Notification settings and email digests (Alpha 19).
+2. Later roadmap features: instructor email invitations, two-step sign-in for owners and administrators, cover descriptions, upload scanning, group conversations and the account and trust items in ROADMAP.md.
+3. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 17 handover: loose ends after account deletion
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, ACCOUNTS.md, COVERS.md, decisions/017-follow-ups-after-account-deletion.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `12ed75c`, the merge of PR #8 (Alpha 16 ownership transfer), with PR #9 (its merge record) merged in.
+- This slice: branch `claude/build-out-tvzn40`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+
+### What is done
+
+Deleting your own account hands back tasks you had claimed without proof in every community, including one where you were suspended (additive migration 0018, admitted only during your own deletion). A replaced or removed track or project cover loses its upload record in the same change and its stored file straight after commit. The PostgreSQL check covers a deletion that starts while an invitation acceptance holds the account. Mentions of a former member in other people's posts stay as written (decision 017).
+
+### Run it
 
 ```sh
 cd platform
@@ -23,11 +59,11 @@ For PostgreSQL: `npm run db:migrate` (applies 0018; no grant changes).
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages and scores private. A deleted person's shared work stays as Former member, and other people's words about them are not rewritten. A community has exactly one owner, and ownership changes only by the owner's re-authenticated handover to an administrator. Authority is granted, never inferred from attribution or engagement. Pictures keep their own colours and carry no words; the interface stays black, white and neutral grey. Community review is not accreditation.
 
-## Next
+### Next
 
 1. Server-side pagination for review queues and other long lists (Alpha 18).
 2. Later roadmap features: instructor email invitations, two-step sign-in for owners and administrators, notification settings and digests, cover descriptions, upload scanning, group conversations and the account and trust items in ROADMAP.md.

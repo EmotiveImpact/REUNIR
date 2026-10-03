@@ -54,7 +54,7 @@ The fictional Code Black demo has two checks: "Cut it down to the useful part" (
 ## Limits and not yet done
 
 - No question banks, randomised order, timers, partial credit, negative marking, fuzzy matching, file or rich-text answers.
-- Attempts load with the workspace snapshot, like other community records, within its existing bounds (5,000 rows per table). Since Alpha 14 the review queue shows 20 at a time with exact totals; a community with many thousands of attempts will still need server pagination and an archive.
+- Attempts load with the workspace snapshot, like other community records, within its existing bounds (5,000 rows per table). Since Alpha 18 the three review queues page from the server, 20 at a time with exact totals, and the snapshot carries only the person's own attempts; an archive for very old attempts can follow.
 - Attempts are retained as feedback history. Since Alpha 14 a learner can download their own attempts in their learning record, and an owner-authorised operator procedure erases a learner's answers on request (LEARNER_RECORDS.md).
 - Notifications for reviewers are in-app only; the email outbox is not used for knowledge checks.
 - Not deployed. Real Neon, Vercel and hosted sessions have not exercised this slice.

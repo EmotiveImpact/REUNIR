@@ -1,4 +1,63 @@
-# Alpha 17 loose ends after account deletion and ownership transfer
+# Alpha 18 server pages for long lists
+
+3 October 2026. Application 0.18.0-alpha.1. Notices, the knowledge-check review queues and the audit trail now load a page at a time from the server, with exact counts, so a busy community no longer sends ever larger snapshots to every browser. See decisions/018-server-pages-for-long-lists.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/build-out-tvzn40`, from main `a924295` (the merge of PR #10, Alpha 17) |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
+| Operated with real members | No |
+
+## PR #10 merged into main
+
+Alpha 17 was merged into main on 3 October 2026 as `a924295aa767b2301dcacb30bf73a0baf8247343`, a merge commit whose parents are the previous main `b68ba2e` (PR #9) and the tested head `8f73bdd`; its tree, `980e6f9e2f940b30838b8cc64719deb0aefe2cde`, is identical to the tested head's tree. CI run 37117343967 (application and postgres) passed on `8f73bdd`, as did runs 37116692953 and 37116701760 on the earlier head `78140d5`, whose tree differs only by PR #9's already-included record. This slice started from that main.
+
+## What changed
+
+- **One paging route.** `GET /api/organisations/:slug/pages/:list` serves `notifications`, `review-waiting`, `review-scored`, `review-reviewed` and `audit`, 20 a page by default and at most 50, with an opaque keyset cursor (time and id). Offsets and foreign cursors are refused; unknown lists return 404; members get 403 for the audit trail; strangers get 404 and signed-out visitors 401.
+- **The snapshot carries a window and a summary.** The newest 30 notices, the newest 12 audit entries for administrators, only the person's own knowledge-check attempts, and exact counts for unread notices, each review queue, waiting answers per track and the whole audit trail.
+- **Reads are bounded.** A workspace read skips the outbox, reads the newest 100 audit entries and only the acting person's own notices; account deletion and operator erasure still read in full. The audit page is read in SQL with millisecond keyset ordering.
+- **Interface.** Notices show "Show older notices" and keep focus on the first new one; the three knowledge-check queues page from the server, the scored and reviewed lists only once opened; the community studio opens "the full audit trail" a page at a time; tab and badge counts come from the summary. The demo uses the same domain paging over fictional data.
+- No migration, no grant change, no new runtime dependency. Release constant and package version are 0.18.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 595 passed, 0 failed (584 existing plus 11: 4 domain paging, 5 under the restricted role, 2 through the API) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 275 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 16 covers, 9 instructors, 10 accounts, 16 monochrome, 20 v4 |
+| Connected-browser suites | 56 passed: 12 connected, 9 resources, 9 assessments, 13 covers, 6 instructors, 7 accounts |
+| `npm run test:postgres` | 18 passed on PostgreSQL 16 |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates with 55 pinned sources and 18 register decisions |
+
+Tests changed rather than added: knowledge-check and instructor tests that read other people's attempts from the snapshot now read them from the review pages or the unshortened domain view.
+
+## Corrections made while verifying
+
+- The first database tests missed the community filter on two counts and used a role change that changed nothing; both were corrected before the run above.
+- The seed has no audit entries, so the API test now inserts some before paging the audit trail.
+
+## Not verified, and why
+
+- Hosted PostgreSQL and real traffic remain deferred by the user; page timings on a large community are not measured.
+
+## Next actions
+
+1. Push, open the pull request, drive CI green and merge with the owner's standing approval; read back main.
+2. Notification settings and email digests (Alpha 19).
+3. When deployment resumes: Neon staging with eighteen migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests.
+
+## Historical Alpha 17 evidence: loose ends after account deletion
 
 3 October 2026. Application 0.17.0-alpha.1. Deleting your own account now hands back claimed tasks in every community, including one where you were suspended; a replaced or removed cover picture is erased at once; the deletion-during-acceptance timing case has a PostgreSQL test; mentions in other people's posts stay as written. See decisions/017-follow-ups-after-account-deletion.md.
 
@@ -8,8 +67,8 @@
 | --- | --- |
 | Implemented | Yes, on `claude/build-out-tvzn40`, from main `12ed75c` (the merge of PR #8, Alpha 16) |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes: run 37117343967 on `8f73bdd` (application and postgres) |
+| Merged | Yes, [PR #10](https://github.com/EmotiveImpact/REUNIR/pull/10) as `a924295`, under the owner's standing approval (3 October 2026) |
 | Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
 | Operated with real members | No |
 
