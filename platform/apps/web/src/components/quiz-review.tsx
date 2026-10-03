@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Send } from 'lucide-react';
+import { CheckCircle2, Send } from 'lucide-react';
+import { InlineError, Loading } from './states';
 import { Button } from './ui/button';
 import { Avatar, Empty } from './ui';
 import { AttemptView, attemptStatus } from './quiz-view';
@@ -26,8 +27,8 @@ export function Paged({ list, noun, empty, children }: { list: ReturnType<typeof
         document.getElementById(firstNew.current)?.focus();
         firstNew.current = null;
     }, [list.items.length, list.loadingMore]);
-    if (list.loading) return <p className="muted" role="status">Loading…</p>;
-    if (list.error) return <p className="muted" role="alert">{displayError(list.error)}</p>;
+    if (list.loading) return <Loading label={`Loading ${noun}…`}/>;
+    if (list.error) return <InlineError error={list.error} onRetry={list.retry}/>;
     if (!list.items.length) return <>{empty}</>;
     const shown = list.items, rest = list.total - shown.length;
     const more = async () => { const r = await list.more(); const page = r.data?.pages.at(-1)?.items[0]; if (page) firstNew.current = reviewHeading(page as QuizAttempt); };
@@ -35,7 +36,7 @@ export function Paged({ list, noun, empty, children }: { list: ReturnType<typeof
         {children(shown)}
         {list.hasMore && <div className="review-more">
             <span>Showing {shown.length} of {list.total} {noun}.</span>
-            <button type="button" className="button secondary" disabled={list.loadingMore} onClick={() => void more()}>{list.loadingMore ? 'Loading…' : `Show ${Math.min(REVIEW_PAGE, Math.max(rest, 0))} more`}</button>
+            <button type="button" className="button secondary" disabled={list.loadingMore} aria-busy={list.loadingMore || undefined} onClick={() => void more()}>{list.loadingMore ? 'Loading…' : `Show ${Math.min(REVIEW_PAGE, Math.max(rest, 0))} more`}</button>
         </div>}
     </>;
 }
@@ -51,7 +52,7 @@ export function QuizReviewQueue() {
     return <div className="quiz-review">
         <p className="quiz-review-intro">Written answers wait here for marks and feedback. You can also send feedback on an attempt that was scored automatically. Scores are private feedback for the learner, not points, completion or a credential.</p>
         <h2 className="quiz-review-heading">Waiting for feedback <span>{totals.waiting}</span></h2>
-        <Paged list={waiting} noun="waiting answers" empty={<Empty title="No written answers are waiting." body="Knowledge-check answers that need marking will appear here."/>}>{shown => <div className="review-grid">{shown.map(a => <ReviewCard key={a.id} attempt={a}/>)}</div>}</Paged>
+        <Paged list={waiting} noun="waiting answers" empty={<Empty icon={CheckCircle2} title="No written answers are waiting." body="Knowledge-check answers that need marking will appear here."/>}>{shown => <div className="review-grid">{shown.map(a => <ReviewCard key={a.id} attempt={a}/>)}</div>}</Paged>
         <details className="quiz-history" onToggle={e => setScoredOpen((e.target as HTMLDetailsElement).open)}><summary>Scored automatically <span>{totals.scored}</span></summary>
             {scoredOpen && <Paged list={scored} noun="scored attempts" empty={<p className="muted">No automatically scored attempts yet.</p>}>{shown => <div className="review-grid">{shown.map(a => <ReviewCard key={a.id} attempt={a}/>)}</div>}</Paged>}
         </details>

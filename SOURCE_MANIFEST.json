@@ -1,13 +1,13 @@
 {
   "release": "REUNIR Alpha 39 cover library management and small copies",
   "version": "0.39.0-alpha.1",
-  "sourceBaseline": "fab951092928133ac014f17c0430e893d1b91dfe",
-  "generatedAt": "2026-10-03T13:48:26.748938+00:00",
+  "sourceBaseline": "f9f32d6db2d9a028e33395ce540114af683364ad",
+  "generatedAt": "2026-10-03T14:03:54.729667+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "432ad4ac25058359a3897bdba0d12ddaff6fee310d04414d888b465e2e737342",
-      "bytes": 3260
+      "sha256": "6a22d791b26d8f9b54ded44b87ca33d9f7439631546dc97babacbfa9d1215fc7",
+      "bytes": 3301
     },
     {
       "path": ".gitignore",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "a6803fe4071768eada44ff2742ce4f826e88ae47a4fb730f0600629be750414e",
-      "bytes": 33187
+      "sha256": "360375b5d218c4f973f00edf99c0c6d8f46db08159eb3d47499e6de322718480",
+      "bytes": 34703
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "2845a128ce57cc3122caee8956c4af8e6642d7975c3b8cc89cf33ab3900ccb0c",
-      "bytes": 75743
+      "sha256": "9166f240d2c4ee99f5458c53ed80df529b549d0c9df45058ab06bfd9958d99bc",
+      "bytes": 77787
     },
     {
       "path": "platform/.dockerignore",
@@ -151,8 +151,8 @@
     },
     {
       "path": "platform/apps/web/src/App.tsx",
-      "sha256": "7923659b784350de2459f53dee37d60da06f8f1f7dc22299770cba756b59a096",
-      "bytes": 21376
+      "sha256": "357887583cb249b6b24bd6fea91cfa9a2c56d0bd7375c0814b5feb4c952aa7b1",
+      "bytes": 22120
     },
     {
       "path": "platform/apps/web/src/account.css",
@@ -206,8 +206,8 @@
     },
     {
       "path": "platform/apps/web/src/components/cover-library.tsx",
-      "sha256": "203e7cb802695333568a241f6241ecd235ea77279337fdc1595b2ef439407a61",
-      "bytes": 12969
+      "sha256": "12ea70459e78eaed9a4c33d5de0cf3b619cbfc1d9fba83917ae643bea6c81f7f",
+      "bytes": 12977
     },
     {
       "path": "platform/apps/web/src/components/cover.tsx",
@@ -236,8 +236,8 @@
     },
     {
       "path": "platform/apps/web/src/components/learning-record.tsx",
-      "sha256": "d8d0b441aeb2443186a25865c3fa55a726758bf2339fe1b55dd5cd50c1014c0c",
-      "bytes": 1357
+      "sha256": "fa2290bee5da88a2b904e1a85356ce89195260210214a327ead5aa71570fdf30",
+      "bytes": 1365
     },
     {
       "path": "platform/apps/web/src/components/lesson-content.tsx",
@@ -271,8 +271,8 @@
     },
     {
       "path": "platform/apps/web/src/components/quiz-review.tsx",
-      "sha256": "f260c82c4793beb3119ed298b318e67a9af53a4d6fad599385541129550e360a",
-      "bytes": 7927
+      "sha256": "074a2b2348d5b8940af2a33b0a30c4b1bbcdd74f56d6f9d7d9336abaef9b388a",
+      "bytes": 8032
     },
     {
       "path": "platform/apps/web/src/components/quiz-view.tsx",
@@ -290,14 +290,24 @@
       "bytes": 2255
     },
     {
+      "path": "platform/apps/web/src/components/simulated-fault.tsx",
+      "sha256": "0272e39c6f516fcb1f8fbec7a2649cd5cfa7a70c4bc77171fb087627c2031575",
+      "bytes": 1017
+    },
+    {
+      "path": "platform/apps/web/src/components/states.tsx",
+      "sha256": "169c14f44dc7035745fc348887f91f9bb8648d8014b9be84fd12649ea38c717f",
+      "bytes": 9989
+    },
+    {
       "path": "platform/apps/web/src/components/two-step.tsx",
       "sha256": "3ceb19daf4d6848f961ec066274430f72fddbd04a28a6b65ed7bf1d7bd109766",
       "bytes": 12204
     },
     {
       "path": "platform/apps/web/src/components/ui.tsx",
-      "sha256": "262aa48c2c04df7a01c8492864b066f4052001055a57bb2e042de9b0e51d399c",
-      "bytes": 4878
+      "sha256": "38b1991b76dda731d136fa3d25d2dfcf3fba23353ac8d5b6ba0ead91b3593a93",
+      "bytes": 5197
     },
     {
       "path": "platform/apps/web/src/components/ui/avatar.tsx",
@@ -366,8 +376,8 @@
     },
     {
       "path": "platform/apps/web/src/lib/context.tsx",
-      "sha256": "584381b019e9de413713e9e5f8faf97fdf3255873838d0d2c9e2663791caf782",
-      "bytes": 11095
+      "sha256": "ec46424bff026f936a1ebcddeab45dcedb8b1a7dbf59dd6d02f2768966d9f462",
+      "bytes": 12106
     },
     {
       "path": "platform/apps/web/src/lib/covers.ts",
@@ -376,8 +386,8 @@
     },
     {
       "path": "platform/apps/web/src/lib/data.ts",
-      "sha256": "ec78e4af69bfb2ebe57483995295d583b9386d8a06b39dbe459bd78d2fbc0902",
-      "bytes": 4847
+      "sha256": "e6cd8e4bed589348b678cd44ab40a9766452ac6fcde35e7d3f8b52570dff2635",
+      "bytes": 4795
     },
     {
       "path": "platform/apps/web/src/lib/demo-files.ts",
@@ -388,6 +398,11 @@
       "path": "platform/apps/web/src/lib/email.ts",
       "sha256": "3323444aa0f0eda580aa1be9270c7b59ad1e335a0c151212204652bee9ad923c",
       "bytes": 1432
+    },
+    {
+      "path": "platform/apps/web/src/lib/errors.ts",
+      "sha256": "d666f89dc5ffd84d881827a2c22e61ff044148a80ccd3725d804764fac9d818e",
+      "bytes": 2777
     },
     {
       "path": "platform/apps/web/src/lib/invitations.ts",
@@ -411,8 +426,8 @@
     },
     {
       "path": "platform/apps/web/src/lib/pages.ts",
-      "sha256": "68b5a48534a47c4e7662189c46c066ec5e15fde6ddc60eafa09d286b4af65157",
-      "bytes": 2531
+      "sha256": "8896de6476b11f3d061d7185c63231f6327d47fa38ef75ee590e3d6440c3d759",
+      "bytes": 2631
     },
     {
       "path": "platform/apps/web/src/lib/portraits.ts",
@@ -436,13 +451,13 @@
     },
     {
       "path": "platform/apps/web/src/main.tsx",
-      "sha256": "552578f476c70943895ee6447f23b6f0efda08fa48a47b15eba2aa4671d66b0c",
-      "bytes": 1596
+      "sha256": "8007b218ef97be5c44d936bfd74f2e4b4160ecb66843fc3d42a8a351ec44b773",
+      "bytes": 1901
     },
     {
       "path": "platform/apps/web/src/pages/access.tsx",
-      "sha256": "6b7d626f2d3bd079ab606fb0d8ae7d967a87e54e97fea5b5d6612d5cf8a649b5",
-      "bytes": 13872
+      "sha256": "bf4a78453bc6122edc95556bd459a90fc99b48a3ba9f1e69fcee769b89be3dd4",
+      "bytes": 14212
     },
     {
       "path": "platform/apps/web/src/pages/account.tsx",
@@ -451,28 +466,28 @@
     },
     {
       "path": "platform/apps/web/src/pages/authoring.tsx",
-      "sha256": "e46168944c3aade151a6d2e2313bf9fcb07b142842512aa67f7f4bdff69e33e1",
-      "bytes": 14387
+      "sha256": "eae72cb0b89d25db338750156a62c89247b18494ace38128f327ce1e5990b6ee",
+      "bytes": 14406
     },
     {
       "path": "platform/apps/web/src/pages/community.tsx",
-      "sha256": "35112ccb885fa363a38f120890b9f5331db9a516355d12b3452d8e773c8b76c2",
-      "bytes": 13448
+      "sha256": "66ae26ac3a835a656b1b01bd9324774e0e6c218ae1d8ad3e519fc12db31ad7e6",
+      "bytes": 14276
     },
     {
       "path": "platform/apps/web/src/pages/doing.tsx",
-      "sha256": "2c9a61146aaa191f9a337bb57e6c55ac84b39e8cb695d612b26811823fc53152",
-      "bytes": 12304
+      "sha256": "2a215be59b2b1f407f868c07b54f2bcc3d3621d3457b7c76313568391026ea90",
+      "bytes": 13713
     },
     {
       "path": "platform/apps/web/src/pages/events.tsx",
-      "sha256": "f34cb371948ceab4b769b3c4c38091e4bc25f94d3427df219718b776a42e1f68",
-      "bytes": 6354
+      "sha256": "f7a249ba02ef574e6b4c05c6ff97a04eadee6f9f87fc709483858a0ff6a5fa4e",
+      "bytes": 6984
     },
     {
       "path": "platform/apps/web/src/pages/learning.tsx",
-      "sha256": "a5ca81e89493ad705b59ea628c1133bee767c638100f1541c6ea23e572a420c0",
-      "bytes": 8360
+      "sha256": "957b3cf64df4b91dbc3649e43d68eeb4c425d4dacb5eb211f8d8b07e9a2ae928",
+      "bytes": 9130
     },
     {
       "path": "platform/apps/web/src/pages/message-groups.tsx",
@@ -481,33 +496,38 @@
     },
     {
       "path": "platform/apps/web/src/pages/messages.tsx",
-      "sha256": "56a557cf00cd4707fd5f48c02a98c40f702d8caf72f4b4b0372dd5aa6ad84cf6",
-      "bytes": 13882
+      "sha256": "6dcc6d1d9c73c838611d332024ac0dad6e89dd5a2fbb59a7e408d0c557575dca",
+      "bytes": 14800
     },
     {
       "path": "platform/apps/web/src/pages/operations.tsx",
-      "sha256": "7e2f8f7b536ec6d694843b70bf39bfb228a7365df111afccf8d7c7006cbc09ed",
-      "bytes": 10184
+      "sha256": "10ce6ebdd132c301e8f46743cb6e10ce5ccc5e829e31f58c8a43a2db5c3ee658",
+      "bytes": 10103
     },
     {
       "path": "platform/apps/web/src/pages/people.tsx",
-      "sha256": "48aaca101cbd03b13af4d57354c25ed3f715468e94cef3b0ea760b692c1ca8b2",
-      "bytes": 19366
+      "sha256": "7776a2a63ab06a23f50b1dd58d8cb528619cba35995b7133683100844938244a",
+      "bytes": 20141
     },
     {
       "path": "platform/apps/web/src/pages/project-work.tsx",
-      "sha256": "b9f0c008c89936dc62b6d71b1ff127e757bc3de6b10ee6114659b722b8d94e07",
-      "bytes": 15548
+      "sha256": "60e72ef53384dca6b2d4954ddef249b09e3a29d19e64f9b86e6cc1d1e949bb03",
+      "bytes": 16232
     },
     {
       "path": "platform/apps/web/src/pages/purpose.tsx",
-      "sha256": "0052b840bca380afd90e1a704807908081bce8adadaf7c2bd2156e16a8de73bd",
-      "bytes": 39039
+      "sha256": "f174cc9068b5f259caceea69af3b9a29dc242e528f2a7bcb2b5e32e530a1f5d7",
+      "bytes": 39579
     },
     {
       "path": "platform/apps/web/src/pages/teaching.tsx",
-      "sha256": "bf0fc459f96493c4aeec7cf2a554d710ac5414a15b3652745c1544c8ea5fdd3f",
-      "bytes": 2491
+      "sha256": "949d1ea793dc23199fa73a45c042167e550f24b77f3b045f239ae6788d58a5b0",
+      "bytes": 2527
+    },
+    {
+      "path": "platform/apps/web/src/states.css",
+      "sha256": "3d4226a2c75893fb95807b15959055725fd48e5eb7ce81eb0714bffac02cf26d",
+      "bytes": 4246
     },
     {
       "path": "platform/apps/web/src/styles.css",
@@ -561,8 +581,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "b857db4619a6140c2850e46cdb2cc82c8f51487a044315f2592f56193a1ad379",
-      "bytes": 139999
+      "sha256": "997e52ca721144dae1527a21195899241173c87d5a3312aaafdb036b5050124d",
+      "bytes": 145344
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -636,8 +656,8 @@
     },
     {
       "path": "platform/docs/ROADMAP.md",
-      "sha256": "0d7aef55585320706dbd1627d6e685472188320b7442307083cab0ff233b8a9f",
-      "bytes": 11609
+      "sha256": "3b44a9c2977cc42ae771cc76c56f76150632aaf4e04cbd33d8a4ea12ce55a2a0",
+      "bytes": 12180
     },
     {
       "path": "platform/docs/SECURITY.md",
@@ -650,9 +670,14 @@
       "bytes": 17573
     },
     {
+      "path": "platform/docs/STATES.md",
+      "sha256": "99b9837b76191b82e21be1f502f807180ef7d472a95d9d96d04ee171db90c3d7",
+      "bytes": 6545
+    },
+    {
       "path": "platform/docs/UI_DESIGN_DIRECTION.md",
-      "sha256": "5cb4e8cf7b8dbc50b465ae04e38a3c5ffd0b49136f565143623e29ac6d2ef248",
-      "bytes": 4711
+      "sha256": "3418e123b773b2b2d2736d97e3aa101d9309da80cd7ea7201231e123cd37329b",
+      "bytes": 5076
     },
     {
       "path": "platform/docs/V4_INTEGRATION_REVIEW.md",
@@ -763,6 +788,11 @@
       "path": "platform/docs/decisions/026-email-confirmation-and-change.md",
       "sha256": "1212486dd8bcc2244171b3f160dba94e01283755cf365caf567feb405c1c47d2",
       "bytes": 5162
+    },
+    {
+      "path": "platform/docs/decisions/027-loading-error-empty-states.md",
+      "sha256": "7374f66fa9ed1ffee33b48dc1d4b3ac746a49c454613e11bb1a956b272bf97cf",
+      "bytes": 3511
     },
     {
       "path": "platform/docs/decisions/039-cover-library-management-and-small-copies.md",
@@ -1580,6 +1610,11 @@
       "bytes": 7902
     },
     {
+      "path": "platform/scripts/states-browser-check.ts",
+      "sha256": "d45c87d8de7a2210f019e5c6255f4fda33da97c5c16a10dcb2e8ca8b1cc5b906",
+      "bytes": 14255
+    },
+    {
       "path": "platform/scripts/ui-test-helpers.ts",
       "sha256": "3ad2e346c92e4106ab90c782dd4fe97579fb58d8f0b765352aa388e25d55bfbc",
       "bytes": 750
@@ -1888,6 +1923,11 @@
       "path": "platform/tests/rich-lessons.test.ts",
       "sha256": "91cb41715da9745c9f28bd710d58c77e79477217449dad5cb13572b0623996ba",
       "bytes": 7768
+    },
+    {
+      "path": "platform/tests/states.test.ts",
+      "sha256": "75f347f0d150f2d091e764e08ea5a1255bf547c6fe50c0de794ddb36e1027610",
+      "bytes": 1888
     },
     {
       "path": "platform/tests/two-factor-http.test.ts",

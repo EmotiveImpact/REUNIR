@@ -6,16 +6,16 @@
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/build-out-tvzn40` ([PR #21](https://github.com/EmotiveImpact/REUNIR/pull/21)), first opened on main `f5ec8d3` and brought up to main `fab9510` (the merge of PR #20, Alpha 25) |
+| Implemented | Yes, on `claude/build-out-tvzn40` ([PR #21](https://github.com/EmotiveImpact/REUNIR/pull/21)), first opened on main `f5ec8d3` and brought up to main `f9f32d6` (the merge of PR #22, Alpha 27) |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 
-## PR #19, PR #18 and PR #20 merged into main
+## PR #19, PR #18, PR #20 and PR #22 merged into main
 
-Three other threads' releases reached main while this slice was open. Alpha 24 (group conversations) was merged as `d62424dc5b68cf9386757173a89464211f5b7021` on top of `f5ec8d3`, its tree `85e91e8022d87830336918d8765392698795b48d` identical to its tested head `5c97bb4` (CI runs 37123762116 and 37123778756). Alpha 26 (email confirmation and change) was then merged as `9b34cac`, its tree `2e61a0a1ea8f287c3fe3e8dc6a2f455f57a7e3b5` identical to its tested head `a427140` (CI runs 37124821464 and 37124825018). Alpha 25 (contributor roles for teaching, migration 0023) was merged as `fab9510`, its tree `b07530cedae56e6c312e45318a4797e395889069` identical to its tested head `518bc06` (CI runs 37126085213 and 37126087981); it also replaced the fixed migration counts in upgrade tests with a count of the migration files. This slice merged all three in.
+Four other threads' releases reached main while this slice was open. Alpha 24 (group conversations) was merged as `d62424dc5b68cf9386757173a89464211f5b7021` on top of `f5ec8d3`, its tree `85e91e8022d87830336918d8765392698795b48d` identical to its tested head `5c97bb4` (CI runs 37123762116 and 37123778756). Alpha 26 (email confirmation and change) was then merged as `9b34cac`, its tree `2e61a0a1ea8f287c3fe3e8dc6a2f455f57a7e3b5` identical to its tested head `a427140` (CI runs 37124821464 and 37124825018). Alpha 25 (contributor roles for teaching, migration 0023) was merged as `fab9510`, its tree `b07530cedae56e6c312e45318a4797e395889069` identical to its tested head `518bc06` (CI runs 37126085213 and 37126087981); it also replaced the fixed migration counts in upgrade tests with a count of the migration files. Alpha 27 (loading, error and empty screens, no migration) was merged as `f9f32d6`, its tree `e9981087152749e62cb402b8f5d3eb0150030215` identical to its tested head `297dab8` (CI runs 37127344409 and 37127347035). This slice merged all four in.
 
 Numbering: Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 27 before the blocks were agreed; gaps in the sequence on main are expected.
 
@@ -29,12 +29,12 @@ Numbering: Parallel threads now take numbers from agreed blocks, and this one ho
 
 ## Local verification, 3 October 2026
 
-Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). The full run below ran on this branch's tree on top of main `9b34cac`, using the earlier Alpha 27 numbering; after renaming the migration to 0038, the decision to 039 and the version to 0.39.0-alpha.1, `check_research.py`, `npm run typecheck`, `npm test` (691), `npm run test:postgres` (22) and the Python helpers were run again and passed.
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). The full run below ran on this branch's tree on top of main `9b34cac` and was repeated on top of main `f9f32d6` (see the counts), using the earlier Alpha 27 numbering; after renaming the migration to 0038, the decision to 039 and the version to 0.39.0-alpha.1, `check_research.py`, `npm run typecheck`, `npm test` (691), `npm run test:postgres` (22) and the Python helpers were run again and passed.
 
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 701 passed, 0 failed (676 on main `fab9510` plus 25: 6 library management, 6 small copies, 6 database tests under the restricted role including cross-tenant and inactive-role refusals, 7 HTTP) |
+| `npm test` | 703 passed, 0 failed (678 on main `f9f32d6` plus 25: 6 library management, 6 small copies, 6 database tests under the restricted role including cross-tenant and inactive-role refusals, 7 HTTP) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
 | Demo-browser suites | 298 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 20 covers (3 new), 10 instructors, 12 accounts, 16 monochrome, 20 v4, 5 notifications, 11 groups |
@@ -57,6 +57,63 @@ Tests changed rather than added: upgrade tests count the migration files (from P
 
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. When deployment resumes: follow LAUNCH_RUNBOOK.md, and run `npm run db:grant-runtime` after migrating.
+
+## Historical Alpha 27 evidence: loading, error and empty screens
+
+3 October 2026. Application 0.27.0-alpha.1. Shared loading, error and empty states across the web app: shell-preserving loading outlines, route error boundaries with Try again, a Not found page, offline and failed-refresh notices, marked command failures and role-aware empty states. See decisions/027-loading-error-empty-states.md and STATES.md. Alpha 23 is claimed by another open pull request, and Alpha 24 to 26 are on main, so this slice takes the next free number.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, from main `f5ec8d3` (the launch kit after Alpha 22), with main `fab9510` (Alpha 24 group conversations, Alpha 26 email confirmation and Alpha 25 contributor roles) merged in |
+| Verified locally | Yes: the full suite on the original base `b24095a`, and the checks below again on top of `f5ec8d3` |
+| Verified remotely (GitHub Actions) | Yes: runs 37127344409 and 37127347035 on `297dab8` (application and postgres) |
+| Merged | Yes, [PR #22](https://github.com/EmotiveImpact/REUNIR/pull/22) as `f9f32d6`, under the owner's standing approval (3 October 2026) |
+| Deployed | No. Nothing was provisioned |
+| Operated with real members | No |
+
+## What changed
+
+- `apps/web/src/components/states.tsx` and `states.css`: `Loading`, `PageLoading`, `ShellLoading`, `ErrorState`, `InlineError`, `PageBoundary`, `NotFound` and `ConnectionNotice`; `apps/web/src/lib/errors.ts` sorts failures into offline, session ended, two-step sign-in required, no access, not found, outdated code or unknown.
+- Routes sit inside a page error boundary and a skeleton fallback; unknown addresses show Not found. A failed background refresh keeps the page and shows a notice; failed commands, uploads and downloads show a marked error toast and keep what was typed. The existing `TWO_FACTOR_REQUIRED` notice is unchanged.
+- Empty states tell first run apart from no results, and offer actions only to roles allowed to take them. "Show more" buttons set `aria-busy`.
+- A demo-only fault page (`#/states/fault`) exists only in the fictional demo build, for the browser check.
+- No migration, no grant change, no new dependency. Migrations 0001 to 0021 are byte-identical.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, Chromium at `/opt/pw-browsers/chromium-1194` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster.
+
+On the original base `b24095a`:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`, `npm run build`, `npm run bundle:preview` | Passed |
+| `npm test` | 627 passed, 0 failed (2 new in `tests/states.test.ts`) |
+| `npm run test:http` | 19 passed |
+| Demo-browser suites | 294 passed: the 282 existing checks unchanged, plus 12 in the new `test:browser:states` |
+| Connected-browser suites | 60 passed |
+| `npm run test:postgres` | 20 passed |
+| Python helpers, `scripts/check_research.py` | 35 passed; register validates |
+
+After merging main `f5ec8d3` (Alpha 22 and the launch kit), on this branch: typecheck, build and bundle passed; `npm test` 641 passed, 0 failed; `test:browser:states` 12, `covers` 17, `monochrome` 16, `v4` 20 and `work` 29 passed; Python helpers and the research register passed. The merge kept Alpha 22's described covers on the project and track pages, where both sides had changed the same lines.
+
+After merging main `d62424d` (Alpha 24 group conversations): typecheck, build and bundle passed; `npm test` 656 passed, 0 failed; `test:browser` 24 + 34 + 27, `groups` 11, `states` 12, `v4` 20 and `monochrome` 16 passed. In Messages, the group inbox keeps its search by group name and people, and gains the shared loading, error and empty states; the new-message picker list is named `candidates` so it does not clash with the group People dialogue.
+
+After merging main `9b34cac` (Alpha 26 email confirmation, which took the number this slice first used, so this slice became Alpha 27 and decision 027): typecheck, build and bundle passed; `npm test` 668 passed, 0 failed; `states` 12, `accounts` 12, `v4` 20 and `monochrome` 16 passed.
+
+After merging main `fab9510` (Alpha 25 contributor roles): typecheck, build and bundle passed; `npm test` 678 passed, 0 failed; `states` 12, `instructors` 11, `authoring` 27, `v4` 20 and `monochrome` 16 passed. The learning, authoring and teaching pages keep Alpha 25's changes with this slice's empty states applied on top.
+
+## Not verified, and why
+
+- Connected-mode offline, expired-session, failed-refresh and outdated-code screens were not exercised in a browser; their classification is unit-tested and they share components with the browser-checked demo screens.
+- No pilot observations exist yet, so the states follow an audit of every route rather than what members actually hit.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Content curation, task files with live updates, and the shared form components follow as their own pull requests from the same thread.
 
 ## Historical Alpha 25 evidence: contributor roles for teaching
 
