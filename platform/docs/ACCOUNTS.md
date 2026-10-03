@@ -77,6 +77,17 @@ Version 0.21.0-alpha.1. Your account has a **Two-step sign-in** panel. Any accou
 
 The plugin is Better Auth's own (`better-auth/plugins/two-factor`, no new dependency). Migration 0021 adds `auth_user.two_factor_enabled` and `auth_two_factor`; the secret and backup codes are encrypted by Better Auth with the session secret. The decision is in `decisions/021-two-step-sign-in.md`.
 
+## Your email address (Alpha 22)
+
+Version 0.22.0-alpha.1. Your account has an **Email address** panel showing the address you sign in with and whether it is **Confirmed**.
+
+- **Confirming it.** **Send a confirmation link** queues a link to that address; it works once, for 24 hours. Opening it returns to Your account with "Thank you. This address is confirmed." Accepting an invitation confirms the invited address as well, since only that inbox received the link.
+- **When the server requires it** (`EMAIL_VERIFICATION=required`, the default in production once a sender is configured), signing in with an unconfirmed address makes no session: the sign-in page says a new link is on its way, and the person signs in after opening it.
+- **Changing it.** **Change email address…** asks for the new address and your password. A confirmation link goes to the new address and a notice to the current one, naming the new address only in part. Nothing changes until the link is opened; then the new address signs in, is confirmed, and the old one no longer works. If the new address already has an account, the answer is the same and nothing is sent there. Five attempts in fifteen minutes are allowed. Invitations already sent to the old address still need it.
+- **The demo** has no addresses, so its panel only explains the feature.
+
+`POST /api/account/email` checks the password with Better Auth and then calls Better Auth's change-email flow; Better Auth's own `/api/auth/change-email` route is closed so the password is always asked for. No migration: `auth_user.email_verified` and `auth_verification` already existed. The decision is in `decisions/022-email-confirmation-and-change.md`.
+
 ## Known limits
 
 - Owners cannot delete their account while they own a community; they hand it to an administrator first (Alpha 16). The new owner is told, not asked.
@@ -84,6 +95,8 @@ The plugin is Better Auth's own (`better-auth/plugins/two-factor`, no new depend
 - Since Alpha 17, tasks the person had claimed without proof go back to their teams in every community, including one where they were suspended (migration 0018).
 - Two-step sign-in has no recovery for someone who has lost both their authenticator and their backup codes; an operator would have to remove the `auth_two_factor` row and reset `auth_user.two_factor_enabled` by hand. There is no QR code yet, no passkey and no trusted device.
 - Changing `BETTER_AUTH_SECRET` makes every stored two-step secret and backup code unreadable, so everyone with two-step sign-in would need it reset.
+- Changing an address needs a working mail sender; without one the panel says to ask the community owner. A server with no sender asks for no confirmation.
+- Opening the link that confirms a new address while signed out signs the person in, as Better Auth does, without asking for two-step sign-in again; asking for the change needed the password and a full sign-in.
 - Hosted Better Auth, real email delivery and real Google Cloud Storage removal are unverified, as for every connected feature.
 
 ## Running it
@@ -91,5 +104,7 @@ The plugin is Better Auth's own (`better-auth/plugins/two-factor`, no new depend
 Apply migrations 0015 and 0016 with `npm run db:migrate`, then re-run `npm run db:grant-runtime`: the runtime role's grant on knowledge-check attempts now keeps the delete privilege that the new policies bound. Checks: `tests/account-deletion.test.ts` (domain), `tests/account-deletion-database.test.ts` (runtime role and row security), `tests/account-deletion-http.test.ts` (the route), two real Better Auth checks in `npm run test:http`, `npm run test:browser:accounts` (demo), `npm run test:browser:accounts-connected` (live build, Better Auth, restricted role) and the two account deletion checks in `npm run test:postgres` (deletion itself, and an invitation accepted while a deletion is under way).
 
 For ownership transfer, apply migration 0017 with `npm run db:migrate` (no new grants are needed). Checks: `tests/ownership.test.ts` (domain), `tests/ownership-database.test.ts` (runtime role, the unique index, tenancy and inactive roles), `tests/ownership-http.test.ts` (the route), the handover in `npm run test:browser:accounts` and `npm run test:browser:accounts-connected`, and the concurrent handover check in `npm run test:postgres`.
+
+For email confirmation and change, no migration is needed. Set `EMAIL_VERIFICATION` (see `.env.example`) together with `RESEND_API_KEY` and `EMAIL_FROM`. Checks: `tests/email-http.test.ts` (real Better Auth through the API with the outbox captured: the setting, the session fields, sign-in refused and confirmed by link, the password-checked change, the notice to the old address, an address that is taken, the rate limit and confirmation by invitation), the demo panel in `npm run test:browser:accounts`, and confirming and changing an address in a real browser in `npm run test:browser:accounts-connected`.
 
 For two-step sign-in, apply migration 0021 with `npm run db:migrate`, then re-run `npm run db:grant-runtime` so the runtime role is granted `auth_two_factor`. Set `ADMIN_TWO_FACTOR` (see `.env.example`). Checks: `tests/two-factor.test.ts` (the rule and the shared helpers), `tests/two-factor-http.test.ts` (real Better Auth through the API: enrolment with an independently computed code, the second step, backup codes, regeneration, turning it off, enforcement in both modes, storage and runtime grants), the demo panel in `npm run test:browser:accounts`, and the full journey in `npm run test:browser:accounts-connected`.

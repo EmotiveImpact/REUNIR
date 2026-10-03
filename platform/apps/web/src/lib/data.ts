@@ -10,6 +10,9 @@ const prefix = 'reunir.alpha1.v1.';
 export interface Identity {
     id: string;
     name: string;
+    /** Live mode: the account's sign-in address and whether it is confirmed. The demo has no addresses. */
+    email?: string;
+    emailVerified?: boolean;
     /** Live mode: whether two-step sign-in is on for this account. The demo has no sign-in. */
     twoFactorEnabled?: boolean;
     memberships: {

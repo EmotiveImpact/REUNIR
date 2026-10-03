@@ -8,9 +8,26 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### 0.21.0-alpha.1 (Alpha 21): two-step sign-in, 3 October 2026
+### 0.22.0-alpha.1 (Alpha 22): confirming and changing your email address, 3 October 2026
 
-On a pull request from `claude/build-out-tvzn40`, to be merged once its checks pass.
+On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass.
+
+**In plain language:** people can now confirm their email address with a link, and accepting an invitation confirms it automatically. Once the app is live, an address has to be confirmed before it can sign in. Anyone can also move their account to a new email address: they enter their password, open the link sent to the new address, and their old address is told.
+
+Details:
+
+- **Email address** panel on Your account: the address, Confirmed or Not confirmed, **Send a confirmation link** and **Change email address…**.
+- `EMAIL_VERIFICATION` (`required` or `optional`, required by default in production, applied only where mail can be sent): an unconfirmed address gets a fresh link instead of a session (decision 022).
+- `POST /api/account/email` checks the password, then sends a confirmation link to the new address; the address changes only when it is opened. The current address gets a notice. Better Auth's own change-email route is closed.
+- No migration and no new runtime dependency: Better Auth's own email verification and change-email flows, through the encrypted outbox.
+
+### Planned
+
+- Data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+
+## 0.21.0-alpha.1 (Alpha 21): two-step sign-in, 3 October 2026
+
+On main through [PR #14](https://github.com/EmotiveImpact/REUNIR/pull/14), merged as `b24095a`.
 
 **In plain language:** anyone can now turn on two-step sign-in, using a code from an authenticator app or a one-time backup code. Owners and administrators need it before they can use their community tools when the server asks for it, which it does by default once the app is live.
 
@@ -20,10 +37,6 @@ Details:
 - `ADMIN_TWO_FACTOR` (`required` or `optional`, required by default in production): without two-step sign-in, an owner or administrator keeps reads and everything a member or moderator can do, but owner and administrator actions return `TWO_FACTOR_REQUIRED` (decision 021).
 - Additive migration 0021 adds `auth_user.two_factor_enabled` and `auth_two_factor`; run `npm run db:grant-runtime` after migrating, for the new table's grant.
 - Uses Better Auth's own two-factor plugin; no new runtime dependency.
-
-### Planned
-
-- Cover picture descriptions, virus scanning of uploads, group conversations, and email verification and change.
 
 ## 0.20.0-alpha.1 (Alpha 20): inviting someone new to teach a track, 3 October 2026
 
