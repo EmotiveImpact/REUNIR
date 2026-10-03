@@ -27,6 +27,19 @@ Details:
 
 - Data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
 
+## 0.24.0-alpha.1 (Alpha 24): group conversations, 3 October 2026
+
+On main through [PR #19](https://github.com/EmotiveImpact/REUNIR/pull/19), merged as `d62424d`.
+
+**In plain language:** you can now start a private group conversation in Messages with two or more people from your community, up to 20 in all. Anyone in the group can add people and rename it, and anyone can leave. Someone added later only sees what is written after they join.
+
+Details:
+
+- **New group** in Messages: a name and at least two other active members. Groups show in the inbox by name, each message shows who wrote it, and **People** lists everyone, adds people, renames the group and leaves it. Only the person who started a group can remove others.
+- Only the people in a group can read it; owners, administrators and moderators have no access to groups they are not in. A block stops two people adding each other but never pauses a group they share. Reporting a message in a group works as before.
+- Additive migration 0022 adds `kind`, `title` and `created_by` to conversations, the `conversation_joins` table and row-security policies for late joiners and leaving (decision 024). Run `npm run db:grant-runtime` after migrating, for the new table's grant.
+- No new runtime dependency.
+
 ## Launch kit (no version change), 3 October 2026
 
 On main through [PR #17](https://github.com/EmotiveImpact/REUNIR/pull/17), merged as `f5ec8d3`.
