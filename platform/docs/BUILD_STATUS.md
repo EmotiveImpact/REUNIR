@@ -33,11 +33,11 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 703 passed, 0 failed after the review fix; 716 passed after main's Alpha 23 was merged in (20 new: 14 in `tests/appeals.test.ts`, including cross-tenant and inactive-administrator cases, and 6 in `tests/appeals-database.test.ts` under the restricted role) |
+| `npm test` | 703 passed, 0 failed after the review fix; 716 passed after main's Alpha 23 was merged in; 742 passed after main's Alpha 39 was merged in (20 new: 14 in `tests/appeals.test.ts`, including cross-tenant and inactive-administrator cases, and 6 in `tests/appeals-database.test.ts` under the restricted role) |
 | `npm run test:http` | 19 passed |
 | `npm run build`, `npm run bundle:preview` | Passed |
 | Demo-browser suites | `appeals` 7 (new), `accounts` 13, `monochrome` 16, `v4` 20, `covers` 17, `states` 12, `instructors` 11, `notifications` 5 |
-| `npm run test:postgres` | 24 passed on PostgreSQL 16 (2 new: the column grant, and an appeal reversed through a restricted connection) |
+| `npm run test:postgres` | 24 passed on PostgreSQL 16, 25 after the Alpha 39 merge (2 new: the column grant, and an appeal reversed through a restricted connection) |
 | Python helpers | 35 passed; research register valid |
 
 ## Not verified, and why

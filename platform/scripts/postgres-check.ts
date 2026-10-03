@@ -188,6 +188,7 @@ try{
         assert.deepEqual(await rows('org_code_black',NIA,`SELECT status,decided_by,reason FROM moderation_appeals WHERE id='${id}'`),[{status:'reversed',decided_by:DEMO_ADMIN,reason:'A celebration, not an advert.'}]);
         assert((await repo.snapshot('code-black',DEMO_USER)).posts.some(p=>p.id==='post_win'),'members see the restored post');
         await assert.rejects(()=>rows('org_code_black',DEMO_USER,"INSERT INTO moderation_appeals(id,organization_id,created_at,subject,subject_id,appellant_id,reason) VALUES('forged_pg','org_code_black',now(),'post','post_common','member_alex','Forged')"),/row-level security/);
+    });
     await check('library pictures are renamed and tagged, and covers keep verified small copies, through a restricted PostgreSQL connection',async()=>{
         const repo=new WorkspaceRepository(runtime!);
         const rows=(user:string,org:string,sql:string)=>runtime!.transaction(async tx=>{await setContext(tx,org,user);return (await tx.query<Record<string,unknown>>(sql)).rows;});
