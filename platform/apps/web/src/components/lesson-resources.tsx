@@ -4,13 +4,15 @@ import { Button } from './ui/button';
 import { ResourceIcon, describeResource as describe } from './resource-list';
 import { useWorkspace } from '../lib/context';
 import { newId } from '../../../../packages/contracts/src/index';
-import { MAX_LESSON_RESOURCES, RESOURCE_FILE_ACCEPT, type LessonResource } from '../../../../packages/contracts/src/lesson-resources';
+import { MAX_LESSON_RESOURCES, MAX_VIDEO_BYTES, RESOURCE_FILE_ACCEPT, formatFileSize, isLessonVideo, type LessonResource } from '../../../../packages/contracts/src/lesson-resources';
 
 const displayName = (filename: string) => filename.replace(/\.[a-z0-9]{2,5}$/i, '').replace(/[\u0000-\u001f\u007f-\u009f]+/g, ' ').trim().slice(0, 120) || 'Lesson file';
 
 /** Studio editor for the draft's ordered files. Changes stay in the draft buffer until it is saved. */
-export function ResourceEditor({ trackId, resources, saved, disabled, uploadsAvailable, onChange }: {
+export function ResourceEditor({ trackId, resources, saved, disabled, uploadsAvailable, videoBytes = 0, onChange }: {
     trackId: string; resources: LessonResource[]; saved: LessonResource[]; disabled: boolean; uploadsAvailable: boolean;
+    /** The community's video limit; 0 when video uploads are off. */
+    videoBytes?: number;
     /** Updater form, so an upload that finishes later never applies a stale list. */
     onChange: (update: (current: LessonResource[]) => LessonResource[]) => void;
 }) {
@@ -28,7 +30,7 @@ export function ResourceEditor({ trackId, resources, saved, disabled, uploadsAva
     const upload = async (file: File) => {
         const target = replacing.current;
         setUploading(true); setStatus(`Uploading ${file.name} privately…`);
-        const u = await uploadResource(trackId, file);
+        const u = await uploadResource(trackId, file, videoBytes);
         setUploading(false);
         if (!u) { setStatus('The file was not attached. Nothing in the draft changed.'); return; }
         const fields = { fileId: u.id, contentType: u.contentType as LessonResource['contentType'], sizeBytes: u.sizeBytes };
@@ -45,9 +47,9 @@ export function ResourceEditor({ trackId, resources, saved, disabled, uploadsAva
     return <section className="resource-editor" aria-labelledby={heading}>
         <div className="resource-editor-head">
             <div><h3 id={heading}><Paperclip size={16} aria-hidden="true"/>Lesson files <small>{resources.length} of {MAX_LESSON_RESOURCES}</small></h3>
-                <p>PDF, Word, PowerPoint, Excel, JPEG, PNG or WebP, up to 10 MB each. Only people who can open the published lesson can download them.</p></div>
+                <p>PDF, Word, PowerPoint, Excel, JPEG, PNG or WebP, up to 10 MB each.{videoBytes > 0 ? ` MP4 or WebM video up to ${formatFileSize(Math.min(videoBytes, MAX_VIDEO_BYTES)).replace('.0 MB', ' MB')}, which learners can play in the lesson.` : ''} Only people who can open the published lesson can download them.</p></div>
             <Button type="button" variant="outline" size="sm" disabled={locked || full || !uploadsAvailable} onClick={() => choose(null)}>{uploading ? <LoaderCircle size={15} className="spin" aria-hidden="true"/> : <FileUp size={15} aria-hidden="true"/>}Add file</Button>
-            <input ref={picker} type="file" accept={RESOURCE_FILE_ACCEPT} hidden onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; if (file) void upload(file); }}/>
+            <input ref={picker} type="file" accept={videoBytes > 0 ? RESOURCE_FILE_ACCEPT : RESOURCE_FILE_ACCEPT.split(',').filter(t => !isLessonVideo(t) && t !== '.mp4' && t !== '.webm').join(',')} hidden onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; if (file) void upload(file); }}/>
         </div>
         {!uploadsAvailable && <p className="resource-warning" role="note">Private file storage is not configured for this community, so new files cannot be uploaded. Existing files can still be arranged.</p>}
         <p className="resource-status" role="status" aria-live="polite">{status}</p>

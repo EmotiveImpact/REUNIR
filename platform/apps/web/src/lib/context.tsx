@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useCallback, lazy, Suspense, type 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Workspace, Member, CommandInput, MutationResult, Upload } from '../../../../packages/contracts/src/index';
 import type { ResourceRef } from '../../../../packages/contracts/src/lesson-resources';
-import { discardLessonUpload, downloadLessonResource, uploadLessonResource } from './resources';
+import { discardLessonUpload, downloadLessonResource, playLessonResource, uploadLessonResource } from './resources';
 import { DEMO_ADMIN, DEMO_USER } from '../../../../packages/domain/src/seed';
 import { loadWorkspace, sendCommand, displayError, mode, identity, resetDemo, demoState, type Identity } from './data';
 import { demoAccountDeleted, takeDeletionNotice } from './account';
@@ -25,9 +25,11 @@ interface Ctx {
     /** Reports failure through `onError` when given (for example inside a dialogue), otherwise as a toast. */
     command: (c: CommandInput, options?: { onError?: (message: string) => void }) => Promise<MutationResult | undefined>;
     /** Private lesson files. Each reports its own outcome and leaves the global busy state alone. */
-    uploadResource: (trackId: string, file: File) => Promise<Upload | undefined>;
+    uploadResource: (trackId: string, file: File, videoBytes?: number) => Promise<Upload | undefined>;
     discardUpload: (uploadId: string) => Promise<boolean>;
     downloadResource: (ref: ResourceRef) => Promise<boolean>;
+    /** A playable address for a lesson video, or undefined after showing why not. */
+    playResource: (ref: ResourceRef) => Promise<string | undefined>;
     /** A short message for everyone; `error` marks a failure so it is not mistaken for a success. */
     toast: (s: string, tone?: 'error') => void;
     reload: () => void;
@@ -76,8 +78,8 @@ export function WorkspaceProvider({ children }: {
         setBusy(false);
     } };
     const refresh = async (workspace?: Workspace) => { if (workspace) cache.setQueryData(key, workspace); else await query.refetch(); };
-    const uploadResource = async (trackId: string, file: File) => { try {
-        const r = await uploadLessonResource(activeSlug, userId, trackId, file);
+    const uploadResource = async (trackId: string, file: File, videoBytes?: number) => { try {
+        const r = await uploadLessonResource(activeSlug, userId, trackId, file, videoBytes);
         await refresh(r.workspace);
         toast(r.message);
         return r.upload;
@@ -95,6 +97,13 @@ export function WorkspaceProvider({ children }: {
     catch (e) {
         toast(displayError(e), 'error');
         return false;
+    } };
+    const playResource = async (ref: ResourceRef) => { try {
+        return await playLessonResource(activeSlug, userId, ref);
+    }
+    catch (e) {
+        toast(displayError(e), 'error');
+        return undefined;
     } };
     const downloadResource = async (ref: ResourceRef) => { try {
         toast(`Downloading ${await downloadLessonResource(activeSlug, userId, ref)}.`);
@@ -127,7 +136,7 @@ export function WorkspaceProvider({ children }: {
             {ident.data.memberships.length > 1 && <div className="empty-actions">{ident.data.memberships.filter(m => m.slug !== activeSlug).map(m => <button key={m.slug} type="button" className="button secondary" onClick={() => setSlug(m.slug)}>Open {m.name}</button>)}</div>}
             {mode === 'live' && <small>No demo data has been substituted.</small>}</main>;
     const me = query.data.members.find(m => m.userId === userId)!;
-    return <Context.Provider value={{ data: query.data, me, slug: activeSlug, setSlug, userId, setUserId: (id) => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); setDemoUser(id); }, busy, command, uploadResource, discardUpload, downloadResource, toast, reload: () => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); query.refetch(); }, mode, identity: ident.data, accountDeleted, refreshError: query.error }}>{children}<div className={`toast ${notice.text ? 'visible' : ''} ${notice.tone === 'error' ? 'error' : ''}`} role="status" aria-live="polite" data-tone={notice.tone}>{notice.tone === 'error' && <CircleAlert size={16} aria-hidden="true"/>}<span>{notice.text}</span></div></Context.Provider>;
+    return <Context.Provider value={{ data: query.data, me, slug: activeSlug, setSlug, userId, setUserId: (id) => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); setDemoUser(id); }, busy, command, uploadResource, discardUpload, downloadResource, playResource, toast, reload: () => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); query.refetch(); }, mode, identity: ident.data, accountDeleted, refreshError: query.error }}>{children}<div className={`toast ${notice.text ? 'visible' : ''} ${notice.tone === 'error' ? 'error' : ''}`} role="status" aria-live="polite" data-tone={notice.tone}>{notice.tone === 'error' && <CircleAlert size={16} aria-hidden="true"/>}<span>{notice.text}</span></div></Context.Provider>;
 }
 function Login({ onDone }: {
     onDone: () => void;

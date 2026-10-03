@@ -1,7 +1,7 @@
 import { api, commitDemo, demoState, mode, snapshot } from './data';
 import { getDemoFile, putDemoFile, removeDemoFile } from './demo-files';
 import { newId, type Upload, type Workspace } from '../../../../packages/contracts/src/index';
-import { MAX_RESOURCE_BYTES, SIGNATURE_BYTES, fileSignatureMatches, resourceTypeForFile, type LessonResourceType, type ResourceRef } from '../../../../packages/contracts/src/lesson-resources';
+import { MAX_VIDEO_BYTES, RESOURCE_TYPES_HINT, SIGNATURE_BYTES, fileSignatureMatches, isLessonVideo, resourceSizeProblem, resourceTypeForFile, type LessonResourceType, type ResourceRef } from '../../../../packages/contracts/src/lesson-resources';
 import { beginResourceUpload, clientUpload, completeResourceUpload, discardResourceUpload, resolveResourceDownload } from '../../../../packages/domain/src/resources';
 import { DEMO_WORKSHEET_FILE, demoWorksheetPdf } from '../../../../packages/domain/src/demo-files';
 
@@ -12,16 +12,18 @@ const segments = { lesson: 'lessons', draft: 'lesson-drafts', revision: 'lesson-
 const tenant = (s: Workspace, userId: string) => ({ organizationId: s.organisation.id, userId, requestId: newId() });
 const now = () => new Date().toISOString();
 
-export function checkResourceFile(file: File): LessonResourceType {
+/** `videoBytes` is the server's video limit, 0 when video is off. The server checks again either way. */
+export function checkResourceFile(file: File, videoBytes = 0): LessonResourceType {
     const contentType = resourceTypeForFile(file.name, file.type);
-    if (!contentType) throw new Error('Use a PDF, Word, PowerPoint, Excel, JPEG, PNG or WebP file.');
-    if (!file.size) throw new Error('This file is empty.');
-    if (file.size > MAX_RESOURCE_BYTES) throw new Error('Files can be up to 10 MB.');
+    if (!contentType) throw new Error(RESOURCE_TYPES_HINT);
+    const problem = resourceSizeProblem(contentType, file.size, videoBytes);
+    if (problem) throw new Error(problem);
     return contentType;
 }
 
-export async function uploadLessonResource(slug: string, userId: string, trackId: string, file: File): Promise<ResourceResult & { upload: Upload }> {
-    const contentType = checkResourceFile(file);
+export async function uploadLessonResource(slug: string, userId: string, trackId: string, file: File, videoBytes = 0): Promise<ResourceResult & { upload: Upload }> {
+    // The fictional preview keeps bytes in this browser, so it shows video at the largest size a server could allow.
+    const contentType = checkResourceFile(file, mode === 'demo' ? MAX_VIDEO_BYTES : videoBytes);
     const request = { purpose: 'lesson_resource' as const, trackId, name: file.name.slice(0, 160), contentType, sizeBytes: file.size };
     if (mode === 'demo') {
         const id = newId();
@@ -81,7 +83,24 @@ export async function downloadLessonResource(slug: string, userId: string, ref: 
     return r.filename;
 }
 
-export async function resourceUploadsAvailable(): Promise<boolean> {
-    if (mode === 'demo') return true;
-    return !!(await api<{ resourceUploads?: boolean }>('/api/account/capabilities')).resourceUploads;
+/**
+ * A playable address for a lesson video. Live, it is a signed link that plays in the page for two hours; in the
+ * fictional preview it is this browser's copy of the bytes. Access is decided exactly as for a download.
+ */
+export async function playLessonResource(slug: string, userId: string, ref: ResourceRef): Promise<string> {
+    if (mode === 'demo') {
+        const s = demoState(slug), target = resolveResourceDownload(s, tenant(s, userId), ref);
+        if (!isLessonVideo(target.upload.contentType)) throw new Error('Only lesson videos play in the page. Download this file instead.');
+        const stored = await getDemoFile(slug, target.upload.id);
+        if (!stored) throw new Error('This fictional video is no longer stored in this browser. Upload it again.');
+        return URL.createObjectURL(new Blob([stored], { type: target.upload.contentType }));
+    }
+    return (await api<{ url: string }>(`${base(slug)}/${segments[ref.context]}/${encodeURIComponent(ref.recordId)}/resources/${encodeURIComponent(ref.resourceId)}/play`)).url;
+}
+
+export interface UploadLimits { uploads: boolean; videoBytes: number }
+export async function resourceUploadLimits(): Promise<UploadLimits> {
+    if (mode === 'demo') return { uploads: true, videoBytes: MAX_VIDEO_BYTES };
+    const c = await api<{ resourceUploads?: boolean; videoUploadBytes?: number }>('/api/account/capabilities');
+    return { uploads: !!c.resourceUploads, videoBytes: c.resourceUploads ? Math.max(0, Number(c.videoUploadBytes) || 0) : 0 };
 }
