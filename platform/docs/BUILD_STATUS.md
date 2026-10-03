@@ -1,13 +1,13 @@
 # Alpha 23 virus scanning of uploads
 
-3 October 2026. Application 0.23.0-alpha.1. When a ClamAV scanner is configured, every upload is scanned before it can be used; flagged files are deleted and uploads wait while the scanner is unavailable. Required by default in production. See decisions/023-upload-scanning.md, SECURITY.md and SETUP.md section 6.
+3 October 2026. Application version stays 0.31.0-alpha.1: Alpha 23 was allocated before it was built and reaches main after Alpha 31. When a ClamAV scanner is configured, every upload is scanned before it can be used; flagged files are deleted and uploads wait while the scanner is unavailable. Required by default in production. See decisions/023-upload-scanning.md, SECURITY.md and SETUP.md section 6.
 
 ## Status at a glance
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/upload-scanning-1p9o9m`, from main `b24095a` (PR #14, Alpha 21), with main `ec4285d` (PR #15, Alpha 22) merged in |
-| Verified locally | Yes: typecheck, `npm test`, `npm run test:http`, build, Python helpers and the research register (see below) |
+| Implemented | Yes, on `claude/upload-scanning-1p9o9m`, from main `b24095a` (PR #14, Alpha 21), with main merged in at `ec4285d` (Alpha 22) and `b80fc04` (PR #23, Alpha 31, which brought Alpha 24 to 27) |
+| Verified locally | Yes: typecheck, `npm test`, `npm run test:http`, build, preview bundle, Python helpers and the research register (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
 | Deployed | No. No clamd, bucket, database or other service was created |
@@ -21,18 +21,19 @@
 - **A rejected member attachment** now returns 409 `FILE_REJECTED` if completion is tried again, so a second upload under the same policy cannot be marked ready unscanned.
 - **Configuration:** `CLAMAV_HOST`, `CLAMAV_PORT` (default 3310) and `UPLOAD_SCANNING` (`required` or `optional`, required by default in production). A new `upload-scanning` pilot check blocks start-up when scanning is required, a bucket is set and no scanner is configured, or when the setting or port is invalid. `/api/account/capabilities` reports `uploadScanning`.
 - **`npm run scan:check`** pings a configured clamd and checks a harmless sample and the EICAR test file. It is not run in CI because no clamd is provisioned.
-- No migration; migrations 0001 to 0021 are byte-identical. Release constant, package version and research register are 0.23.0-alpha.1.
+- **Launch kit:** `npm run launch:preflight` fails a production environment with a bucket and no `CLAMAV_HOST` (unless `UPLOAD_SCANNING=optional`, which warns) or with an invalid setting or port, and never prints the host. LAUNCH_RUNBOOK.md section 6 adds running clamd on a private network beside the API, since Vercel functions cannot run it.
+- No migration; every existing migration is byte-identical. The release constant, package version and research register stay at main's 0.31.0-alpha.1.
 
 ## Local verification, 3 October 2026
 
-Node 22, npm 10, on this branch's tree on top of main `b24095a`.
+Node 22, npm 10, on this branch's tree after merging main `b80fc04`.
 
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 639 passed, 0 failed after merging main `ec4285d` (627 existing plus 12 in `tests/scanner.test.ts`: reply parsing, the clamd client against a stand-in clamd on a real TCP socket, silent, erroring and closed scanners, the settings and pilot check, and HTTP completion for lesson files, covers and member attachments with a stand-in scanner) |
+| `npm test` | 696 passed, 0 failed: main's tests plus 12 in `tests/scanner.test.ts` (reply parsing, the clamd client against a stand-in clamd on a real TCP socket, silent, erroring and closed scanners, the settings and pilot check, and HTTP completion for lesson files, covers and member attachments with a stand-in scanner) and 1 launch-preflight test |
 | `npm run test:http` | 19 passed (unchanged) |
-| `npm run build` | Passed (existing chunk-size advisory) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory) |
 | Python helpers, `scripts/check_research.py` | Passed; the register validates with 55 pinned sources and 18 register decisions |
 
 Browser suites and `npm run test:postgres` were not rerun locally: no interface, migration or grant changed. CI runs both on the pull request.
@@ -49,6 +50,328 @@ Browser suites and `npm run test:postgres` were not rerun locally: no interface,
 2. Group conversations (Alpha 24) continue in their own thread.
 3. When deployment resumes: run clamd on a private network beside the API, set `CLAMAV_HOST`, and run `npm run scan:check`.
 
+## Historical Alpha 31 evidence: data retention rules
+
+3 October 2026. Application 0.31.0-alpha.1. Housekeeping records are cleared on a schedule by one list of rules, and Your account says how long everything is kept. What people make, reviewed evidence and the audit trail are never cleared by the job. See decisions/031-data-retention.md and RETENTION.md.
+
+Numbering follows the project's allocation of 3 October 2026: this thread holds Alpha 31 to 34, decision records 031 to 034 and migrations 0030 to 0033, so data retention is Alpha 31, decision 031 and migration 0030 (first opened as Alpha 27 with migration 0023). Migration 0023 (contributor roles, Alpha 25) is on main and 0024 to 0029 belong to other threads, so a gap before 0030 is expected; the runner applies files in order and does not need consecutive numbers.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/accounts-trust-zojuqs`, restarted from main `9b34cac` (the merge of PR #18, Alpha 26), with main `fab9510` (PR #20, Alpha 25 contributor roles, migration 0023) and main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) merged in |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- **Rules** (`packages/contracts/src/retention.ts`): expired sessions, expired links and rate counters one day after expiry; request receipts 30 days; internal change events 90 days; sent and cancelled mail records 90 days; undelivered mail contents 30 days, the record 90; read notices 180 days. Unread notices and queued mail are never touched.
+- **Job** (`packages/db/src/retention.ts`): records outside any community are cleared directly; each community's receipts, change events and read notices inside its own tenant context. A dry run does the same work and rolls it back, so its counts are exact. Each applied run is recorded as `retention-job` in service observations.
+- **Running it**: `npm run retention:run` (dry run unless `RETENTION=apply`) and `GET /api/internal/retention` with the scheduler secret (applies; `?dry=1` counts). Nothing is scheduled.
+- **Migration 0030** (additive): `email_outbox.failed_at`, `organisations_retention`, a read-only policy that lists communities only when the transaction sets `app.worker` to `retention`, and `notifications_read_idx`. 0001 to 0023 unchanged; no grant change.
+- **How long things are kept** panel on Your account, from the same list. RETENTION.md, PILOT_OPERATIONS.md and SECURITY.md updated.
+- Review fixes on PR #23: migration 0030 also adds `email_outbox.failed_at` (set by the mail worker; mail already failed starts its period at migration), and failed mail is counted from it; `npm run launch:preflight` and LAUNCH_RUNBOOK.md now require `CRON_SECRET` even without mail, and list the retention route; against the blank `.env.example` the preflight now reports 6 failures and 5 warnings.
+- Upgrade tests count the migration files (`tests/helpers/migrations.ts`, from Alpha 25), so no count changed.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 on loopback.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 671 passed, 0 failed after the review fixes; 683 passed, 0 failed after main's Alpha 25 and Alpha 27 were merged in (5 new in `tests/retention-database.test.ts`: one list of rules, the worker-only community listing, an exact dry run then a real run that clears only what the rules name, the scheduled route, and failed mail counted from its failure) |
+| `npm run test:http` | 19 passed |
+| `npm run build`, `npm run bundle:preview` | Passed |
+| Demo-browser suites | `accounts` 13 (1 new: the retention panel, at phone width too), `monochrome` 16, `v4` 20 |
+| Connected-browser suites | `accounts-connected` 13; `instructors` 11 after the Alpha 25 merge; `states` 12 after the Alpha 27 merge |
+| `npm run test:postgres` | 22 passed on PostgreSQL 16 (1 new: the worker policy and a dry and real run through the restricted runtime role) |
+| Python helpers | 35 passed; research register valid |
+
+## Not verified, and why
+
+- No scheduler runs the job: the operator chooses one when deploying. Hosted PostgreSQL was not exercised.
+- The periods are the same for every community; per-community settings and a period for the audit trail need the owner's decision.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and consented credit for several contributors, one pull request each.
+3. When deployment resumes: schedule the retention job daily after a dry run on staging.
+
+## Historical Alpha 27 evidence: loading, error and empty screens
+
+3 October 2026. Application 0.27.0-alpha.1. Shared loading, error and empty states across the web app: shell-preserving loading outlines, route error boundaries with Try again, a Not found page, offline and failed-refresh notices, marked command failures and role-aware empty states. See decisions/027-loading-error-empty-states.md and STATES.md. Alpha 23 is claimed by another open pull request, and Alpha 24 to 26 are on main, so this slice takes the next free number.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, from main `f5ec8d3` (the launch kit after Alpha 22), with main `fab9510` (Alpha 24 group conversations, Alpha 26 email confirmation and Alpha 25 contributor roles) merged in |
+| Verified locally | Yes: the full suite on the original base `b24095a`, and the checks below again on top of `f5ec8d3` |
+| Verified remotely (GitHub Actions) | Run 37124475400 (application and postgres) passed on `bc37d8c` before main moved; the merge with Alpha 24 is recorded on the pull request |
+| Merged | Yes: [PR #22](https://github.com/EmotiveImpact/REUNIR/pull/22), merged into main as `f9f32d6` |
+| Deployed | No. Nothing was provisioned |
+| Operated with real members | No |
+
+## What changed
+
+- `apps/web/src/components/states.tsx` and `states.css`: `Loading`, `PageLoading`, `ShellLoading`, `ErrorState`, `InlineError`, `PageBoundary`, `NotFound` and `ConnectionNotice`; `apps/web/src/lib/errors.ts` sorts failures into offline, session ended, two-step sign-in required, no access, not found, outdated code or unknown.
+- Routes sit inside a page error boundary and a skeleton fallback; unknown addresses show Not found. A failed background refresh keeps the page and shows a notice; failed commands, uploads and downloads show a marked error toast and keep what was typed. The existing `TWO_FACTOR_REQUIRED` notice is unchanged.
+- Empty states tell first run apart from no results, and offer actions only to roles allowed to take them. "Show more" buttons set `aria-busy`.
+- A demo-only fault page (`#/states/fault`) exists only in the fictional demo build, for the browser check.
+- No migration, no grant change, no new dependency. Migrations 0001 to 0021 are byte-identical.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, Chromium at `/opt/pw-browsers/chromium-1194` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster.
+
+On the original base `b24095a`:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`, `npm run build`, `npm run bundle:preview` | Passed |
+| `npm test` | 627 passed, 0 failed (2 new in `tests/states.test.ts`) |
+| `npm run test:http` | 19 passed |
+| Demo-browser suites | 294 passed: the 282 existing checks unchanged, plus 12 in the new `test:browser:states` |
+| Connected-browser suites | 60 passed |
+| `npm run test:postgres` | 20 passed |
+| Python helpers, `scripts/check_research.py` | 35 passed; register validates |
+
+After merging main `f5ec8d3` (Alpha 22 and the launch kit), on this branch: typecheck, build and bundle passed; `npm test` 641 passed, 0 failed; `test:browser:states` 12, `covers` 17, `monochrome` 16, `v4` 20 and `work` 29 passed; Python helpers and the research register passed. The merge kept Alpha 22's described covers on the project and track pages, where both sides had changed the same lines.
+
+After merging main `d62424d` (Alpha 24 group conversations): typecheck, build and bundle passed; `npm test` 656 passed, 0 failed; `test:browser` 24 + 34 + 27, `groups` 11, `states` 12, `v4` 20 and `monochrome` 16 passed. In Messages, the group inbox keeps its search by group name and people, and gains the shared loading, error and empty states; the new-message picker list is named `candidates` so it does not clash with the group People dialogue.
+
+After merging main `9b34cac` (Alpha 26 email confirmation, which took the number this slice first used, so this slice became Alpha 27 and decision 027): typecheck, build and bundle passed; `npm test` 668 passed, 0 failed; `states` 12, `accounts` 12, `v4` 20 and `monochrome` 16 passed.
+
+After merging main `fab9510` (Alpha 25 contributor roles): typecheck, build and bundle passed; `npm test` 678 passed, 0 failed; `states` 12, `instructors` 11, `authoring` 27, `v4` 20 and `monochrome` 16 passed. The learning, authoring and teaching pages keep Alpha 25's changes with this slice's empty states applied on top.
+
+## Not verified, and why
+
+- Connected-mode offline, expired-session, failed-refresh and outdated-code screens were not exercised in a browser; their classification is unit-tested and they share components with the browser-checked demo screens.
+- No pilot observations exist yet, so the states follow an audit of every route rather than what members actually hit.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Content curation, task files with live updates, and the shared form components follow as their own pull requests from the same thread.
+
+## Historical Alpha 25 evidence: contributor roles for teaching
+
+3 October 2026. Alpha 26 (PR #18) reached main first, so the application version stays 0.26.0-alpha.1. An owner or administrator adds someone to a track as an instructor or a contributor. Contributors write the track's lesson drafts and files; instructors publish them, and only instructors see and review learners' knowledge-check answers. See decisions/025-contributor-roles.md and INSTRUCTORS.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/courses-teaching-6hum2q`, from main `ec4285d` (the merge of PR #15, Alpha 22), with main `f5ec8d3` (PR #17, the launch kit) main `d62424d` (PR #19, Alpha 24) and main `9b34cac` (PR #18, Alpha 26) merged in |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Passed on `919b352` (run 37125616557) before main moved again; the merge with Alpha 26 is recorded on the pull request |
+| Merged | Yes: [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20), merged into main as `fab9510` |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+Alpha 23 (upload scanning, PR #16) was still open when this slice started, and Alpha 24 was reserved for group conversations, so this slice took the next unreserved number. Group conversations then merged with migration 0022, so this slice's migration became 0023. Email change (PR #18) then merged as Alpha 26 with no migration.
+
+## What changed
+
+- **Instructor or Contributor** when adding someone in a track's Instructors dialogue, and a role menu beside each person. Instructor is the default for the command, the API and every existing grant.
+- Contributors open, save, preview and restore drafts, upload and attach lesson files, and see the track's drafts, history and upload records. Publishing, archiving, reordering, the cover and knowledge-check attempts need an instructor or administrator (`INSTRUCTOR_REQUIRED`, or the existing cover and reviewer refusals).
+- Changing a role replaces the grant in the acting administrator's name; grants are still never updated in place.
+- Additive migration `0023_contributor_roles.sql`: `track_instructors.role` (`instructor` or `contributor`, NOT NULL, default `instructor`), and role-aware replacements for the published-revision, attempt read, attempt review and invitation policies. 0001 to 0022 are byte-identical; no grant change.
+- Database upgrade tests count the migration files (`tests/helpers/migrations.ts`) instead of a fixed number, so additive migrations from parallel slices no longer edit nine tests.
+- The 0014 upgrade test now seeds without teaching grants, whose newer columns do not exist at 0013.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). The final run was on `5882bb6`, this branch with main `d62424d` (Alpha 24 group conversations) merged in.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 664 passed, 0 failed (main's 654 plus 6 contributor domain and 4 contributor database tests) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 271 passed across 15 suites, including 11 group conversation checks from main and 11 instructor checks (1 new: adding a contributor and changing their role) |
+| Connected-browser suites | 60 passed (unchanged; the instructor suite follows the renamed controls) |
+| `npm run test:postgres` | Passed on PostgreSQL 16 |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
+
+## Corrections made while verifying
+
+- Merging main brought group conversations in as migration 0022, so this slice's migration was renamed from 0022 to 0023 before it reached main. The upgrade test now starts from 0022.
+- The first full `npm test` run failed one test, the 0014 upgrade, because it seeded the current fixture (with a teaching role) into a 0013 schema. The test now seeds without grants; the rerun passed.
+
+## Not verified, and why
+
+- Contributor invitations by email are not built: an invitation still makes an instructor, and the 0023 policy refuses any other role on acceptance.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Per-lesson grants, instructor-started tracks and uploaded lesson video, each its own release.
+3. When deployment resumes: follow the launch runbook once it lands.
+
+## Historical Alpha 26 evidence: confirming and changing your email address
+
+3 October 2026. Application 0.26.0-alpha.1. People confirm their email address by a link, and accepting an invitation confirms it. When the server requires it, the production default, an unconfirmed address cannot sign in. Anyone can move their account to a new address with their password and a link sent there. See decisions/026-email-confirmation-and-change.md and ACCOUNTS.md.
+
+Numbering: first opened as Alpha 24. Alpha 23 is claimed by open pull requests (#16, #21), Alpha 24 (group conversations, PR #19) reached main first, and Alpha 25 is on PR #20, so this release is Alpha 26 with decision 026. It has no migration.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/accounts-trust-zojuqs`, from main `b24095a` with main `ec4285d` (PR #15, Alpha 22) `f5ec8d3` (PR #17, launch kit) and `d62424d` (PR #19, Alpha 24 group conversations) merged in |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Yes: runs 37124825018 and 37124821464 (application and postgres) on `a427140` |
+| Merged | Yes: [PR #18](https://github.com/EmotiveImpact/REUNIR/pull/18), merged into main as `9b34cac` |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- **Email address** panel on Your account: the address, Confirmed or Not confirmed, **Send a confirmation link** and **Change email address…**. The demo panel only explains the feature.
+- **`EMAIL_VERIFICATION`** is `required` or `optional`; unset means required in production. It applies only where mail can be sent; required without a sender blocks the pilot checklist but does not stop the server, and an invalid value stops it. When required, Better Auth refuses a session to an unconfirmed address with `EMAIL_NOT_VERIFIED` and queues a fresh link.
+- **Invitations confirm the address** they were sent to when accepted.
+- **`POST /api/account/email`** checks the password (five attempts in fifteen minutes), then Better Auth sends a confirmation link to the new address; the address changes only when it is opened. The current address gets a notice with the new address masked and no link. A taken address gets the same answer and no mail. Better Auth's own `/api/auth/change-email` answers 404.
+- `/api/account/capabilities` adds `emailVerification`, `emailConfirmation` and `emailChange`; `/api/session` adds the person's own `email` and `emailVerified`.
+- Review fixes on PR #18: changing or resetting the password cancels any change link asked for before it (the server refuses an older link and the address stays), and the password check no longer needs a session started within the last day, so days two to seven of a session can change the address, delete the account or hand over a community.
+- `npm run launch:preflight` (from PR #17) now also checks `EMAIL_VERIFICATION`: an invalid value fails, `optional` warns. Against the blank `.env.example` it reports 5 failures and 6 warnings.
+- No migration, no grant change, no new runtime dependency. Release constant and package version are 0.26.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`. The full suite ran on this slice before main `ec4285d` was merged in; typecheck, unit tests, both builds, the HTTP checks and the accounts and covers browser suites ran again after the merge.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 634 passed before the merge (625 plus 9 new in `tests/email-http.test.ts`, real Better Auth with the outbox captured); 636 of 636 after merging main at `ec4285d`; 666 of 666 after the review fixes (2 new) and merging main at `d62424d` (Alpha 24) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | `test:browser` 85, `v4` 20, `monochrome` 16, `accounts` 12 (1 new: the explanatory email panel), `covers` 17 after the merge, `accounts-connected` 13 |
+| Connected-browser suites | `accounts-connected` 13 (2 new: confirming an address by its link, and changing it in a real browser) |
+| `npm run test:postgres` | 21 passed on PostgreSQL 16 after merging main at `d62424d` |
+| Python helpers | 35 passed |
+
+## Not verified, and why
+
+- No real mail was sent; links were read from the encrypted outbox. Hosted Better Auth and a real reverse proxy were not exercised.
+- Opening a change link while signed out creates a session without the second step, as Better Auth does (decision 026).
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. The remaining account and trust items: data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and consented credit for several contributors.
+3. When deployment resumes: set `EMAIL_VERIFICATION` with a verified sender.
+
+## Historical Alpha 24 evidence: group conversations
+
+3 October 2026. Application 0.24.0-alpha.1. Members start named group conversations of up to 20 people from Messages. People added later read only what is written after they join. See decisions/024-group-conversations.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/group-conversations-5arqv6`, from main `b24095a` with main `f5ec8d3` (PR #15 Alpha 22 and PR #17 launch kit) merged in |
+| Verified locally | Yes: every suite on the merged tree (see below) |
+| Verified remotely (GitHub Actions) | Yes, on PR #19 before it merged |
+| Merged | Yes: [PR #19](https://github.com/EmotiveImpact/REUNIR/pull/19), merged into main as `d62424d` |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## PR #17 merged into main
+
+The launch kit was merged into main on 3 October 2026 as `f5ec8d3ebd1f937990ef8139657af3e718cf1301`, a merge commit whose parents are the previous main `ec4285d` (PR #15, Alpha 22) and the tested head `8e2fdfc`; its tree, `47a92acd740b5ecfdd79106f5c2941093ba1883c`, is identical to the tested head's tree. This slice merged that main in before its final local runs.
+
+## What changed
+
+- **Messages** has **New group**: a name of up to 80 characters and at least two other active members, up to 20 people in all. The inbox lists groups by name and finds them by name or by anyone in them; each message from someone else shows their name; **People** lists everyone, adds people, renames the group and leaves it. Only the person who started a group can remove others. Direct threads, blocking and reporting are unchanged.
+- **Privacy.** Only the people in a group can read it; there is no owner, administrator or moderator access. Someone added later reads only what is written after they join, enforced by a restrictive row-security policy on `messages` as well as the API. Leaving or removal ends access; their messages stay for the others.
+- **Blocks** stop two people adding each other to a group but never pause a group they share.
+- **Additive migration 0022** adds `kind`, `title` and `created_by` to `conversations` (existing rows become `direct`), replaces 0004's two-person column check with one shape check, adds `conversation_joins` with forced row security, and adds the late-joiner and leaving policies. `conversation_joins` is granted explicitly to the runtime role: run `npm run db:grant-runtime` after migrating.
+- Five routes under `/api/organisations/:slug/`: `conversation-groups`, and `conversations/:id/title`, `/participants`, `/participants/:userId/remove` and `/leave`. The browser demo runs the same rules.
+- Migrations 0001 to 0021 are byte-identical; no new runtime dependency. Release constant and package version are 0.24.0-alpha.1. Alpha 23 (PR #16) was still open, so this release skips 0.23.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). Every step below ran on this branch's tree after merging main `f5ec8d3`.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 654 passed, 0 failed (639 on main plus 11 database tests through the restricted runtime role and 4 HTTP tests for groups) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 270 passed across the 15 demo scripts in CI, including 11 in the new `test:browser:groups` (start, send, sender names, people, add, rename, remove, leave, direct threads unchanged, phone width, accessibility and monochrome) |
+| Connected-browser suites | 60 passed (unchanged) |
+| `npm run test:postgres` | 21 passed on PostgreSQL 16 on a fresh database (1 new: late joiners, leaving and the new grant under row security) |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
+
+Tests changed rather than added: migration-count assertions moved from 21 to 22. The groups browser check refreshes a thread after switching preview person, because the demo, like the live inbox between polls, keeps a thread it read under 30 seconds earlier.
+
+## Not verified, and why
+
+- Hosted PostgreSQL, Better Auth and polling under real load were not exercised. Nothing was deployed.
+- A first attempt to apply a group conversations patch prepared by another thread was refused by this session's safety checks, so this slice was written afresh from main rather than from that patch.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Alpha 23 (PR #16) and the email confirmation slice (PR #18) must take the next free alpha and migration numbers when they merge after this.
+3. When the owner decides to launch: follow LAUNCH_RUNBOOK.md, and run `npm run db:grant-runtime` after migrating to 0022.
+
+## Historical launch kit evidence: runbook and offline preflight (no version change)
+
+3 October 2026. Application still 0.22.0-alpha.1. Everything needed to switch the app on is written down and checkable offline. Nothing was provisioned, no account was created and nothing is live, by the owner's instruction. See LAUNCH_RUNBOOK.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/build-out-tvzn40`, from main `ec4285d` (the merge of PR #15, Alpha 22) |
+| Verified locally | Yes: typecheck, unit tests and the preflight against `.env.example` (see below) |
+| Verified remotely (GitHub Actions) | Yes, on PR #17 before it merged |
+| Merged | Yes: [PR #17](https://github.com/EmotiveImpact/REUNIR/pull/17), merged into main as `f5ec8d3` |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## PR #15 merged into main
+
+Alpha 22 was merged into main on 3 October 2026 as `ec4285d41f7107fb44bfcd9a6b419d5eb31a3cc1`, a merge commit whose parents are the previous main `b24095a` (PR #14) and the tested head `1645ab7`; its tree, `e7da8b1618bb48e903444b596f74d5a3abeb4af3`, is identical to the tested head's tree. CI runs 37121503128 and 37121505780 (application and postgres) passed on `1645ab7`. This slice started from that main.
+
+## What changed
+
+- **`platform/docs/LAUNCH_RUNBOOK.md`**: the launch in order, with checkboxes. Neon project with separate administrative and `reunir_app` roles; migrations and runtime grants; the first owner; every server variable and where it must never be; Google Cloud Storage; Resend sender verification; the Vercel project; hosted health and privacy checks with two people and two communities; the mail and digest scheduler (deliberately no `crons` entry until the owner chooses); backups with a restore rehearsal; monitoring; rollback; the evidence log and the written approvals before pilot members are invited.
+- **`npm run launch:preflight`** (`scripts/launch-preflight.ts`): checks the names and shapes of a production environment without printing any value, opening a connection or calling a provider. It fails on local or non-https origins, an owner role as the runtime database user, migration or provisioning credentials in the runtime, secret-like `VITE_` names, short, placeholder or reused secrets, a half-configured mail or storage pair and an invalid `ADMIN_TWO_FACTOR`; it warns on optional gaps.
+- `.env.example` and SETUP.md point to both. No migration, no runtime code change, no new dependency.
+
+## Local verification, 3 October 2026
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 639 passed, 0 failed (627 existing plus 12 for the preflight, including that no value ever appears in its output) |
+| `npm run launch:preflight -- --env-file .env.example` | Exits 1 with 5 failures and 5 warnings, as expected for the blank example file |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates with 55 pinned sources and 18 register decisions |
+
+The browser and PostgreSQL suites were not rerun locally: this slice changes no application code, and CI runs them on the pull request.
+
+## Not verified, and why
+
+- Every hosted step in the runbook is unverified until the owner decides to launch: Neon, Vercel, the bucket, Resend, the scheduler, backups and monitoring were deliberately not created.
+
+## Next actions
+
+1. Drive the pull request green and merge; read back main.
+2. Cover thumbnails, cover library renaming and tags, and a higher library limit.
+3. When the owner decides to launch: follow LAUNCH_RUNBOOK.md from section 0, running `npm run launch:preflight` against the staged values first.
+
 ## Historical Alpha 22 evidence: cover picture descriptions
 
 3 October 2026. Application 0.22.0-alpha.1. Whoever may change a track or project cover can describe the picture, and a screen reader reads that description on the track's or project's own page. See decisions/022-cover-descriptions.md and COVERS.md.
@@ -59,8 +382,8 @@ Browser suites and `npm run test:postgres` were not rerun locally: no interface,
 | --- | --- |
 | Implemented | Yes, on `claude/build-out-tvzn40`, from main `b24095a` (the merge of PR #14, Alpha 21) |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes: runs 37121503128 and 37121505780 on `1645ab7` (application and postgres) |
+| Merged | Yes, [PR #15](https://github.com/EmotiveImpact/REUNIR/pull/15) as `ec4285d`, under the owner's standing approval (3 October 2026) |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 

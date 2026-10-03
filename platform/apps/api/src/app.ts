@@ -21,11 +21,16 @@ import { SIGNATURE_BYTES, fileSignatureMatches, resourceUploadRequest, type Reso
 import { accountDeletionRequest } from '../../../packages/contracts/src/account';
 import { pagedList, pageQuery } from '../../../packages/contracts/src/pages';
 import { ownershipTransferRequest } from '../../../packages/contracts/src/ownership';
+import { EMAIL_CHANGE_SENT, EMAIL_CONFIRMED_PATH, EMAIL_LINK_REFUSED_PATH, changeNoticeMail, emailChangeRequest, type EmailVerification } from '../../../packages/contracts/src/email';
 import { TWO_FACTOR_REQUIRED, TWO_FACTOR_REQUIRED_MESSAGE, type AdminTwoFactor } from '../../../packages/contracts/src/two-factor';
 import { COVER_HEAD_BYTES, coverBytesAcceptable, coverLibraryUploadRequest, coverSubject, coverUploadRequest } from '../../../packages/contracts/src/covers';
 export interface SessionIdentity {
     id: string;
     name: string;
+    /** The account's sign-in address, shown only to its owner. */
+    email?: string;
+    /** Whether that address has been confirmed by a link sent to it. */
+    emailVerified?: boolean;
     /** Whether two-step sign-in is turned on for this account. */
     twoFactorEnabled?: boolean;
 }
@@ -41,14 +46,21 @@ interface Dependencies {
     invitations?: InvitationService;
     mail?: MailQueue;
     cronSecret?: string;
+    retention?: { run(now?: Date, apply?: boolean): Promise<{ applied: boolean; counts: Record<string, number>; communities: number }> };
     registerInvited?: (name:string,email:string,password:string)=>Promise<{id:string}>;
     /** Checks the signed-in person's current password. False only for a wrong password. */
     verifyPassword?: (headers: Headers, password: string) => Promise<boolean>;
     digests?: DigestService;
     /** When required, owners and administrators must have two-step sign-in turned on to use their authority. Default optional. */
     adminTwoFactor?: AdminTwoFactor;
+    /** Whether an unconfirmed address may sign in. Reported to the browser; Better Auth enforces it. Default optional. */
+    emailVerification?: EmailVerification;
+    /** Asks the auth provider to send a confirmation link to a new address. Only this API's password-checked route calls it. */
+    changeEmail?: (user: { id: string; email: string; name: string }, newEmail: string, callbackURL: string) => Promise<void>;
+    /** False for a link to change an address that was asked for before the password last changed. */
+    emailChangeLinkValid?: (token: string) => Promise<boolean>;
 }
-export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, scanner, invitations, mail, cronSecret, registerInvited, verifyPassword, digests, adminTwoFactor = 'optional' }: Dependencies) {
+export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, scanner, invitations, mail, cronSecret, registerInvited, verifyPassword, digests, retention, adminTwoFactor = 'optional', emailVerification = 'optional', changeEmail, emailChangeLinkValid }: Dependencies) {
     const messaging=new MessagingRepository(repository);
     const canonical = new URL(origin).origin;
     const app = new Hono<{
@@ -71,7 +83,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     });
     app.get('/api/health', async (c) => { await repository.db.query('SELECT 1'); return c.json({ status: 'ok', version: RELEASE_VERSION, mode: 'live', database: repository.db.kind, storage: storage ? 'configured' : 'not-configured' }); });
     app.get('/api/health/live', c=>c.json({status:'ok',version:RELEASE_VERSION}));
-    app.get('/api/account/capabilities', c=>c.json({emailDigests:!!digests&&!!mail?.transport,invitations:!!invitations,passwordRecovery:!!mail?.transport,resourceUploads:!!storage,coverUploads:!!storage,uploadScanning:!!storage&&!!scanner,twoStepSignIn:!!authHandler,adminTwoFactor}));
+    app.get('/api/account/capabilities', c=>c.json({emailDigests:!!digests&&!!mail?.transport,invitations:!!invitations,passwordRecovery:!!mail?.transport,resourceUploads:!!storage,coverUploads:!!storage,uploadScanning:!!storage&&!!scanner,twoStepSignIn:!!authHandler,adminTwoFactor,emailVerification,emailConfirmation:!!authHandler&&!!mail?.transport,emailChange:!!changeEmail&&!!mail?.transport}));
     // Best effort after commit: an orphaned object is private and unreferenced, never served.
     const removeQuietly = async (requestId: string, keys: string[]) => { for (const key of keys) {
         try { await storage?.remove(key); }
@@ -90,6 +102,11 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     app.get('/api/internal/digests',async c=>{
         if(!scheduled(c))return c.json({error:{code:'FORBIDDEN',message:'Not authorised.'}},403);
         return c.json(digests ? {configured:true,...await digests.run()} : {configured:false,due:0,queued:0,quiet:0,skipped:0});
+    });
+    // Clears the housekeeping records in RETENTION_DAYS (docs/RETENTION.md). Same scheduler secret; ?dry=1 only counts.
+    app.get('/api/internal/retention',async c=>{
+        if(!scheduled(c))return c.json({error:{code:'FORBIDDEN',message:'Not authorised.'}},403);
+        return c.json(retention ? {configured:true,...await retention.run(new Date(),c.req.query('dry')!=='1')} : {configured:false});
     });
     app.use('/api/auth/request-password-reset',async(c,next)=>{if(!mail?.transport)return c.json({error:{code:'EMAIL_UNAVAILABLE',message:'Password recovery is not configured. Contact the community owner.'}},503);await next();});
     app.use('/api/invitations/*',async(c,next)=>{
@@ -130,8 +147,32 @@ export function createApp({ repository, operations, origin, resolveSession, auth
             c.header('Set-Cookie', `${name}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`, { append: true });
         return c.json({ deleted: true, summary });
     });
+    // Changing your sign-in address: the password re-entered, then a confirmation link to the new address. The address changes
+    // only when that link is opened, and the current address is told at once. The answer is the same whether or not the new
+    // address already has an account, so the form reveals nothing about anyone else.
+    app.post('/api/account/email', async c => {
+        const who = await resolveSession(c.req.raw.headers);
+        if (!who) throw new DomainError('UNAUTHENTICATED', 'Please sign in.', 401);
+        if (!verifyPassword || !changeEmail || !mail?.transport) throw new DomainError('EMAIL_UNAVAILABLE', 'Changing your email address needs email to be set up. Ask the community owner.', 503);
+        if (!await repository.consumeRateLimit('email-change:' + who.id, 5, 900)) throw new DomainError('RATE_LIMITED', 'Too many attempts. Wait a few minutes before trying again.', 429);
+        const body = emailChangeRequest.parse(await c.req.json());
+        if (!await verifyPassword(c.req.raw.headers, body.password)) throw new DomainError('WRONG_PASSWORD', 'That password is not right.', 403);
+        if (body.newEmail === who.email?.toLowerCase()) throw new DomainError('SAME_EMAIL', 'That is already your email address.');
+        if (!who.email) throw new DomainError('EMAIL_UNAVAILABLE', 'Your account has no email address to change.', 409);
+        await changeEmail({ id: who.id, email: who.email, name: who.name }, body.newEmail, canonical + '/#' + EMAIL_CONFIRMED_PATH);
+        await mail.enqueue({ to: who.email, ...changeNoticeMail(body.newEmail) });
+        return c.json({ requested: true, message: EMAIL_CHANGE_SENT });
+    });
+    // Only the route above may change an address, so the password is always asked for.
+    app.post('/api/auth/change-email', c => c.json({ error: { code: 'NOT_FOUND', message: 'Endpoint not found.' } }, 404));
+    // A change link asked for before the password last changed no longer works, so a password change or reset stops it.
+    app.get('/api/auth/verify-email', async (c, next) => {
+        const token = c.req.query('token');
+        if (token && emailChangeLinkValid && !await emailChangeLinkValid(token)) return c.redirect(canonical + '/#' + EMAIL_LINK_REFUSED_PATH);
+        await next();
+    });
     app.on(['GET', 'POST'], '/api/auth/*', c => authHandler ? authHandler(c.req.raw) : c.json({ error: { code: 'AUTH_UNAVAILABLE', message: 'Authentication is not configured.' } }, 503));
-    app.get('/api/session', async (c) => { const who = await resolveSession(c.req.raw.headers); return c.json(who ? { ...who, twoFactorEnabled: who.twoFactorEnabled === true, memberships: await repository.memberships(who.id) } : null); });
+    app.get('/api/session', async (c) => { const who = await resolveSession(c.req.raw.headers); return c.json(who ? { ...who, emailVerified: who.emailVerified === true, twoFactorEnabled: who.twoFactorEnabled === true, memberships: await repository.memberships(who.id) } : null); });
     // The one rule for owner and administrator authority when ADMIN_TWO_FACTOR is required: an account without two-step
     // sign-in keeps everything a member or moderator can do, and reads, but not the tools only owners and administrators
     // have. Workspace commands are judged by the domain (does it succeed only because of the role?); the routes below that
@@ -162,6 +203,11 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     app.post('/api/organisations/:slug/invitations/:inviteId/revoke',async c=>{if(!invitations)throw new DomainError('UNAVAILABLE','Invitations not configured.',503);await requireTwoStepForAdministration(c);return c.json(await invitations.revoke(c.req.param('slug'),c.get('identity').id,id.parse(c.req.param('inviteId'))));});
     app.get('/api/organisations/:slug/conversations',async c=>c.json(await messaging.list(c.req.param('slug'),c.get('identity').id,c.req.query('before'))));
     app.post('/api/organisations/:slug/conversations',async c=>{const b=startConversation.parse(await c.req.json());return c.json(await messaging.start(c.req.param('slug'),c.get('identity').id,b.userId),201);});
+    app.post('/api/organisations/:slug/conversation-groups',async c=>c.json(await messaging.startGroup(c.req.param('slug'),c.get('identity').id,await c.req.json()),201));
+    app.post('/api/organisations/:slug/conversations/:threadId/title',async c=>c.json(await messaging.rename(c.req.param('slug'),c.get('identity').id,c.req.param('threadId'),await c.req.json())));
+    app.post('/api/organisations/:slug/conversations/:threadId/participants',async c=>c.json(await messaging.add(c.req.param('slug'),c.get('identity').id,c.req.param('threadId'),await c.req.json())));
+    app.post('/api/organisations/:slug/conversations/:threadId/participants/:userId/remove',async c=>c.json(await messaging.remove(c.req.param('slug'),c.get('identity').id,c.req.param('threadId'),c.req.param('userId'))));
+    app.post('/api/organisations/:slug/conversations/:threadId/leave',async c=>c.json(await messaging.leave(c.req.param('slug'),c.get('identity').id,c.req.param('threadId'))));
     app.get('/api/organisations/:slug/conversations/:threadId',async c=>c.json(await messaging.detail(c.req.param('slug'),c.get('identity').id,c.req.param('threadId'))));
     app.get('/api/organisations/:slug/conversations/:threadId/messages',async c=>c.json(await messaging.messages(c.req.param('slug'),c.get('identity').id,c.req.param('threadId'),c.req.query('before'))));
     app.post('/api/organisations/:slug/conversations/:threadId/messages',async c=>{const b=sendMessage.parse(await c.req.json());if(!c.req.header('idempotency-key'))throw new DomainError('KEY_REQUIRED','An Idempotency-Key header is required.');return c.json(await messaging.send(c.req.param('slug'),c.get('identity').id,c.req.param('threadId'),b.body,c.req.header('idempotency-key')!),201);});

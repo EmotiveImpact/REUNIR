@@ -4,12 +4,17 @@ import { createSeed, DEMO_USER } from '../../../../packages/domain/src/seed';
 import { newId } from '../../../../packages/contracts/src/index';
 import type { Workspace, CommandInput, MutationResult } from '../../../../packages/contracts/src/index';
 import { clearDemoFiles } from './demo-files';
+import { ApiError, OFFLINE_MESSAGE } from './errors';
+export { ApiError, OFFLINE_MESSAGE, displayError, failureOf, type Failure } from './errors';
 export type DataMode = 'demo' | 'live';
 export const mode: DataMode = import.meta.env.VITE_DATA_MODE === 'live' ? 'live' : 'demo';
 const prefix = 'reunir.alpha1.v1.';
 export interface Identity {
     id: string;
     name: string;
+    /** Live mode: the account's sign-in address and whether it is confirmed. The demo has no addresses. */
+    email?: string;
+    emailVerified?: boolean;
     /** Live mode: whether two-step sign-in is on for this account. The demo has no sign-in. */
     twoFactorEnabled?: boolean;
     memberships: {
@@ -20,12 +25,14 @@ export interface Identity {
     }[];
 }
 export async function api<T>(path: string, body?: unknown, requestKey?: string): Promise<T> {
-    const res = await fetch(path, { credentials: 'include', headers: body ? { 'Content-Type': 'application/json', 'Idempotency-Key': requestKey || newId() } : undefined, method: body ? 'POST' : 'GET', body: body ? JSON.stringify(body) : undefined });
+    let res: Response;
+    try { res = await fetch(path, { credentials: 'include', headers: body ? { 'Content-Type': 'application/json', 'Idempotency-Key': requestKey || newId() } : undefined, method: body ? 'POST' : 'GET', body: body ? JSON.stringify(body) : undefined }); }
+    catch { throw new ApiError(OFFLINE_MESSAGE, 0, 'OFFLINE'); }
     if (!res.headers.get('content-type')?.includes('application/json'))
-        throw new Error('The REUNIR API is not connected. Live mode never falls back to demo data.');
+        throw new ApiError('The REUNIR API is not connected. Live mode never falls back to demo data.', res.status, 'API_UNAVAILABLE');
     const data = await res.json();
     if (!res.ok)
-        throw new Error(data.error?.message || data.message || 'Something did not go through. Please try again.');
+        throw new ApiError(data.error?.message || data.message || 'Something did not go through. Please try again.', res.status, data.error?.code || 'HTTP_' + res.status);
     return data;
 }
 let memory: Record<string, Workspace> = {};
@@ -74,11 +81,3 @@ export async function sendCommand(slug: string, userId: string, command: Command
 }
 export async function identity(): Promise<Identity | null> { if (mode === 'demo')
     return { id: DEMO_USER, name: 'Alex Morgan', memberships: [{ slug: 'code-black', name: 'Code Black' }, { slug: 'studio-north', name: 'Studio North' }] }; return api('/api/session'); }
-export function displayError(error: unknown): string { if (error && typeof error === 'object' && 'issues' in error) {
-    const issues = (error as {
-        issues: {
-            message: string;
-        }[];
-    }).issues;
-    return issues[0]?.message || 'Please check the form.';
-} return error instanceof Error ? error.message : 'Something unexpected happened. Try again.'; }

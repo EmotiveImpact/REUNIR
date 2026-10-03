@@ -1,4 +1,5 @@
 /** Actual bundled React in Chromium with fictional browser-local data. Deleting a demo account changes only this page. */
+import { RETENTION_DAYS, RETENTION_POLICY } from '../packages/contracts/src/retention';
 import { chromium, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
@@ -64,6 +65,28 @@ try {
         await expect(page.locator('.two-step-notice')).toHaveCount(0);
         await neutral(); await a11y('two-step-demo'); await overflow();
         await switchPreviewRole(page, 'member');
+    });
+    await check('the email address panel explains confirmation and change, with no address or link in the demo', async () => {
+        await account();
+        const panel = page.locator('section.email-address');
+        await expect(panel.getByRole('heading', { name: 'Email address', level: 2 })).toBeVisible();
+        await expect(panel).toContainText('the change happens only when you open the link sent there');
+        await expect(panel).toContainText('This fictional demo has no email addresses or sign-in, so there is nothing to confirm or change here.');
+        await expect(panel.getByRole('button')).toHaveCount(0);
+        expect(await panel.textContent()).not.toMatch(/@/);
+        await neutral(); await a11y('email-demo'); await overflow();
+    });
+    await check('Your account says how long things are kept, from the same rules the retention job applies', async () => {
+        await account();
+        const panel = page.locator('section.retention');
+        await expect(panel.getByRole('heading', { name: 'How long things are kept', level: 2 })).toBeVisible();
+        await expect(panel.locator('dt')).toHaveCount(RETENTION_POLICY.length);
+        await expect(panel).toContainText(`${RETENTION_DAYS.readNotices} days after you read them`);
+        await expect(panel).toContainText('Reviewed evidence and the audit trail');
+        await expect(panel).toContainText('As long as the community exists');
+        await neutral(); await a11y('retention-panel');
+        await page.setViewportSize({ width: 390, height: 844 }); await account(); await overflow();
+        await page.setViewportSize({ width: 1512, height: 1100 });
     });
     await check('an owner is told why their account cannot be deleted, with no delete button', async () => {
         await switchPreviewRole(page, 'admin'); await account();

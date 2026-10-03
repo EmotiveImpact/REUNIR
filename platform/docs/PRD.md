@@ -493,3 +493,33 @@ A community's owner hands it to one of its administrators, after re-entering the
 | O06 | The fictional demo runs the same rules in the browser | Demo browser check |
 
 Accepting or declining a handover, transferring to someone who is not yet an administrator, and deleting a community are outside this release.
+
+## Alpha 24: group conversations
+
+Members talk privately in a named group as well as one to one. A group is still a private conversation: only the people in it can read it, and nothing from it enters the feed, search, notices or activity. See decision 024.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| G01 | An active member starts a group with a name of up to 80 characters and at least two other active members, up to 20 people in all; suspended, former and unknown members, and anyone with a block either way, are refused | Database, HTTP and demo browser checks |
+| G02 | Only the people in a group read or write it; owners, administrators, moderators, other members and other communities cannot, through the API or a direct query as the runtime role | Database (restricted role), HTTP and PostgreSQL checks |
+| G03 | Anyone in a group adds people and renames it; someone added later reads only what is written after they join, enforced by row security as well as the API | Database, HTTP, PostgreSQL and demo browser checks |
+| G04 | Only the person who started a group removes others; anyone leaves; leaving or removal ends access and the person's messages stay for the others | Database, HTTP, PostgreSQL and demo browser checks |
+| G05 | A block stops two people adding each other to a group but never pauses a group they share; direct threads keep blocking and reporting as before | Database and demo browser checks |
+| G06 | Reporting a message in a group shares only that message with moderators | Database test |
+
+Join and leave lines in the conversation, mentions, attachments, notices or emails about group messages and handing over the starter's role are outside this release.
+
+## Alpha 25: contributor roles
+
+An owner or administrator adds someone to a track as an instructor or a contributor. Contributors write the track's lesson drafts and files; instructors publish them. See `INSTRUCTORS.md` and `decisions/025-contributor-roles.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| R01 | A grant names one role, instructor by default; every existing grant stays an instructor's | Contract, domain and migration 0023 upgrade tests |
+| R02 | A contributor opens, saves, previews and restores drafts and manages lesson files of their own tracks only | Domain and database (restricted role) tests |
+| R03 | Publishing, archiving, reordering and the track cover need an instructor or administrator (403 `INSTRUCTOR_REQUIRED` or the cover refusal) | Domain and database tests, demo browser check |
+| R04 | A contributor never sees or reviews learners' knowledge-check attempts, in the domain or under forced RLS | Domain, page and database tests |
+| R05 | Changing a role replaces the grant in the acting administrator's name; the runtime role cannot update a grant | Domain and database tests |
+| R06 | An invitation to teach is accepted only as an instructor | Migration 0023 policy, invitation tests |
+
+Contributor invitations, asking an instructor to publish, per-lesson grants and instructor-created tracks are outside this release.

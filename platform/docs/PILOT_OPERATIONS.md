@@ -8,11 +8,13 @@ Set server-side `RESEND_API_KEY`, `EMAIL_FROM` and a stable random `EMAIL_ENCRYP
 
 Email digests (Alpha 19) use the same arrangement. `npm run digests:queue` queues the digests that are due, at most 200 a run, and exits; an authenticated `GET /api/internal/digests` does the same for at most 100 with the same bearer secret. Neither sends anything itself: the mail drain above delivers what they queue. Digests are only queued when a mail provider is configured. Schedule the digest job about once an hour; a member gets at most one digest per day or week, and overlapping runs queue one.
 
+Data retention uses the same arrangement too. `npm run retention:run` connects with the runtime role, counts what the rules in [RETENTION.md](RETENTION.md) would clear and changes nothing; with `RETENTION=apply` it clears them. An authenticated `GET /api/internal/retention` applies the rules, and `GET /api/internal/retention?dry=1` only counts. Both report counts per rule, never contents, and record the run as `retention-job` in service observations. Schedule it once a day; it needs `CRON_SECRET` even on a server without mail. Run a dry run on staging first and compare the counts with what you expect.
+
 On Vercel, configure a supported scheduling arrangement for the chosen plan and set CRON_SECRET in server environment settings. Confirm the real route, bearer forwarding, duration and cadence on staging. The checked-in vercel.json does not silently create a paid cron dependency. A single invocation does not continuously deliver messages.
 
 The Resend transport has an eight-second request timeout. The outbox uses an exclusive row lease and stable provider idempotency key. A failure records only DELIVERY_FAILED, waits two minutes, and eventually marks failed after five attempts. Do not interpret sent as received/read: it means provider accepted the send request. Bounce/webhook handling and delivery analytics remain future work.
 
-Use an administrative database connection to inspect aggregate queue state: `SELECT status,count(*) FROM email_outbox GROUP BY status;`. Do not select/decrypt payloads just to check queue health. Failed invitations can be replaced through the invitation form; users can request a new reset link. Retention/cleanup and alerting must be configured before a wider rollout. Never reset all jobs or replay expired mail blindly.
+Use an administrative database connection to inspect aggregate queue state: `SELECT status,count(*) FROM email_outbox GROUP BY status;`. Do not select/decrypt payloads just to check queue health. Failed invitations can be replaced through the invitation form; users can request a new reset link. The retention job above clears finished mail and failed mail contents on schedule; alerting must still be configured before a wider rollout. Never reset all jobs or replay expired mail blindly.
 
 ## Invitation flow
 

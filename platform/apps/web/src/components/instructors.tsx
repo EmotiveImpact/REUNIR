@@ -6,7 +6,8 @@ import { useWorkspace } from '../lib/context';
 import { displayError } from '../lib/data';
 import { createInvitation } from '../lib/invitations';
 import { isAdmin } from '../../../../packages/domain/src/access';
-import type { Track } from '../../../../packages/contracts/src/index';
+import type { TeachingRole, Track } from '../../../../packages/contracts/src/index';
+import { teachingRole } from '../../../../packages/domain/src/instructors';
 
 /** Owners and administrators choose who teaches a track. Instructors author and review that track only. */
 export function InstructorsButton({ track }: { track: Track }) {
@@ -21,8 +22,8 @@ export function InstructorsButton({ track }: { track: Track }) {
 
 function InstructorsDialog({ track, onClose }: { track: Track; onClose: () => void }) {
     const { data, command, busy } = useWorkspace();
-    const [choice, setChoice] = useState(''), [error, setError] = useState('');
-    const select = useId(), intro = useId();
+    const [choice, setChoice] = useState(''), [role, setRole] = useState<TeachingRole>('instructor'), [error, setError] = useState('');
+    const select = useId(), roleSelect = useId(), intro = useId();
     const grants = data.trackInstructors.filter(i => i.trackId === track.id);
     const name = (userId: string) => data.members.find(m => m.userId === userId)?.name ?? 'Former member';
     // Administrators already teach every track, so only other active members are offered.
@@ -30,21 +31,24 @@ function InstructorsDialog({ track, onClose }: { track: Track; onClose: () => vo
     const add = async () => {
         if (!choice) return;
         setError('');
-        if (await command({ type: 'track.instructor.add', trackId: track.id, userId: choice }, { onError: setError })) setChoice('');
+        if (await command({ type: 'track.instructor.add', trackId: track.id, userId: choice, role }, { onError: setError })) setChoice('');
     };
+    const change = (userId: string, next: TeachingRole) => { setError(''); void command({ type: 'track.instructor.add', trackId: track.id, userId, role: next }, { onError: setError }); };
     return <Modal title="Track instructors" onClose={onClose}>
         <div className="form-stack instructors-editor">
-            <p id={intro}>Instructors author lessons, files and knowledge checks for <strong>{track.title}</strong> and give feedback on its knowledge checks. They cannot change other tracks or community settings. Owners and administrators can already do all of this.</p>
-            {grants.length ? <ul className="instructor-list" aria-label="Current instructors">{grants.map(g => <li key={g.id}>
-                <Avatar member={data.members.find(m => m.userId === g.userId)} size="sm"/><span className="instructor-name"><strong>{name(g.userId)}</strong><small>Added by {name(g.grantedBy)}</small></span>
-                <button type="button" className="button secondary" disabled={busy} aria-label={`Remove ${name(g.userId)} as an instructor`} onClick={() => { setError(''); void command({ type: 'track.instructor.remove', trackId: track.id, userId: g.userId }, { onError: setError }); }}><UserMinus size={15} aria-hidden="true"/>Remove</button>
+            <p id={intro}>Instructors author, publish and order lessons, files and knowledge checks for <strong>{track.title}</strong> and give feedback on its knowledge checks. Contributors write drafts and attach files for the instructors to publish. Neither can change other tracks or community settings. Owners and administrators can already do all of this.</p>
+            {grants.length ? <ul className="instructor-list" aria-label="Current instructors and contributors">{grants.map(g => <li key={g.id}>
+                <Avatar member={data.members.find(m => m.userId === g.userId)} size="sm"/><span className="instructor-name"><strong>{name(g.userId)}</strong><small>{teachingRole(g) === 'instructor' ? 'Instructor' : 'Contributor'} · added by {name(g.grantedBy)}</small></span>
+                <select aria-label={`Role for ${name(g.userId)}`} value={teachingRole(g)} disabled={busy} onChange={e => change(g.userId, e.target.value as TeachingRole)}><option value="instructor">Instructor</option><option value="contributor">Contributor</option></select>
+                <button type="button" className="button secondary" disabled={busy} aria-label={`Remove ${name(g.userId)} from this track`} onClick={() => { setError(''); void command({ type: 'track.instructor.remove', trackId: track.id, userId: g.userId }, { onError: setError }); }}><UserMinus size={15} aria-hidden="true"/>Remove</button>
             </li>)}</ul> : <p className="muted">No instructors yet. Owners and administrators author this track.</p>}
             <div className="instructor-add">
-                <label htmlFor={select}>Add an instructor</label>
+                <label htmlFor={select}>Add someone to teach</label>
                 <div><select id={select} value={choice} aria-describedby={intro} onChange={e => setChoice(e.target.value)}>
                     <option value="">Choose a member</option>
                     {candidates.map(m => <option key={m.userId} value={m.userId}>{m.name}</option>)}
                 </select>
+                <select id={roleSelect} aria-label="Role" value={role} onChange={e => setRole(e.target.value as TeachingRole)}><option value="instructor">Instructor</option><option value="contributor">Contributor</option></select>
                 <button type="button" className="button primary" disabled={busy || !choice} onClick={() => void add()}><UserPlus size={15} aria-hidden="true"/>Add</button></div>
             </div>
             <InviteToTeach track={track}/>

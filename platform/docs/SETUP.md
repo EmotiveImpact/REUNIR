@@ -2,6 +2,8 @@
 
 24 September 2026. These are reproducible setup instructions, not evidence of an existing cloud deployment.
 
+For the ordered, checkable path from nothing to a private staging pilot, see [LAUNCH_RUNBOOK.md](LAUNCH_RUNBOOK.md). None of its steps has been carried out.
+
 ## 1. Frontend demo
 
 Use Node 22.12+ and Git. From `REUNIR/platform`, run `npm ci`, then `npm run dev`. The local address is `http://127.0.0.1:5173`. No `.env` is required for demo mode.
