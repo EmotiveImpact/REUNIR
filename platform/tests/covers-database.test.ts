@@ -117,3 +117,14 @@ test('a replaced cover’s record goes with the change under the runtime role, a
     assert.deepEqual(removed.releasedFiles, [key('project', 'project_still')('org_code_black', second)]);
     assert.equal((await db.query('SELECT count(*)::int AS n FROM upload_intents WHERE id=$1', [second])).rows[0].n, 0);
 });
+
+test('a long description in any script fits the stored cover’s size check under the runtime role', async () => {
+    const id = await verified(DEMO_ADMIN, 'track', 'track_story');
+    // 150 characters, each four bytes in UTF-8, or two once escaped: the stored object must stay under 1,000 bytes.
+    const description = '🌄'.repeat(76) + '"\\'.repeat(37);
+    assert.equal(Array.from(description).length, 150);
+    await exec({ type: 'track.cover.set', trackId: 'track_story', fileId: id, focusX: 50, focusY: 50, description });
+    const stored = (await db.query<{ cover_image: { description: string } }>("SELECT cover_image FROM tracks WHERE organization_id='org_code_black' AND id='track_story'")).rows[0].cover_image;
+    assert.equal(stored.description, description);
+    assert.equal((await repo.snapshot('code-black', DEMO_USER)).tracks.find(t => t.id === 'track_story')?.coverImage?.description, description);
+});

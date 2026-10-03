@@ -1,6 +1,6 @@
 {
   "name": "reunir",
-  "version": "0.21.0-alpha.1",
+  "version": "0.22.0-alpha.1",
   "description": "Purposeful communities. People, purpose, progress, projects and proof.",
   "scripts": {
     "dev": "tsx scripts/dev.ts",
@@ -30,6 +30,7 @@
     "test:http": "tsx scripts/pilot-http-check.ts",
     "test:browser:connected": "tsx scripts/pilot-connected-check.ts",
     "pilot:check": "tsx scripts/pilot-check.ts",
+    "launch:preflight": "tsx scripts/launch-preflight.ts",
     "test:browser:operations": "tsx scripts/operations-browser-check.ts",
     "test:postgres": "tsx scripts/postgres-check.ts",
     "test:browser:work": "tsx scripts/project-work-browser-check.ts",

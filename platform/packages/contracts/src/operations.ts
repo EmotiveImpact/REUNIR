@@ -16,7 +16,7 @@ export interface PilotStatus {
     community: { activeMembers: number; independentModerators: number; purposes: number | null; paths: number | null; projects: number | null };
     delivery: { queued: number | null; sending: number | null; failed: number | null; oldestQueuedAt: string | null; lastSentAt: string | null; lastWorkerAt: string | null };
 }
-export const RELEASE_VERSION = '0.21.0-alpha.1';
+export const RELEASE_VERSION = '0.22.0-alpha.1';
 export const manualPilotGates = (): PilotCheck[] => [
     {key:'hosted-browser',title:'Hosted member journey',state:'unverified',detail:'Real hosted sign-in, invitation, recovery and messaging must pass in a browser.',action:'Run the connected-browser release gate against staging. Demo tests are not a substitute.'},
     {key:'restore',title:'Backup and restore',state:'unverified',detail:'A database connection does not demonstrate recoverability.',action:'Restore a staging backup into a separate empty database and verify the records and permissions.'},
