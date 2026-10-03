@@ -7,6 +7,7 @@ import { WorkspaceRepository, setContext } from '../packages/db/src/repository';
 import { grantRuntimeTables } from '../packages/db/src/runtime-role';
 import { createSeed, DEMO_ADMIN, DEMO_USER } from '../packages/domain/src/seed';
 import { seedBeforeProjectWork } from './helpers/legacy-fixture';
+import { MIGRATION_COUNT } from './helpers/migrations';
 
 const ORG = 'org_code_black', NORTH = 'org_studio_north', IDRIS = 'member_idris', NIA = 'member_nia', SOFIA = 'member_sofia';
 let db: Database, repo: WorkspaceRepository, contributionId = '', creditId = '';
@@ -42,7 +43,7 @@ test('0033 upgrade keeps every contribution as it was and credits nobody', async
         await migrate(old); await migrate(old);
         for (const table of ['contributions', 'members', 'reputation'] as const) assert.deepEqual(await read(table), before[table], table);
         assert.deepEqual(await read('contribution_credits'), []);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 26);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, MIGRATION_COUNT);
     } finally { await old.close(); }
 });
 

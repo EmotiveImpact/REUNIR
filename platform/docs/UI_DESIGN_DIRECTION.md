@@ -29,6 +29,10 @@ The static mock's 62% is replaced by calculated evidenced progress. Past sample 
 
 The seven sample portrait JPEGs and hero crop originate in the supplied reference. They are fictional preview assets. Production photography and rights review are still required before public launch. Track and project covers are pictures uploaded by the community, cropped around a stored focal point and kept in their natural colours, or a plain neutral panel with one muted icon. No text is placed on a picture: titles and details stay below or beside it, and only opaque status labels may sit on it. The earlier generated cover art is retired and must not return.
 
+## Loading, error and empty screens
+
+Follow `STATES.md`: keep the shell while a page loads or fails, use the shared loading, error and `Empty` components, explain failures in plain words with a way forward, tell first-run apart from no results, and offer an empty-state action only when the viewer's role permits it. Run `test:browser:states` after changing them.
+
 ## Acceptance
 
 Run `test:browser:v4`, the retained community/purpose/pilot/work/authoring suites, the monochrome suite and, for anything that touches covers, `test:browser:covers`. Verify desktop and narrow viewports, one account trigger, no repeated bottom avatars, all routes, real progress, image fallbacks, access boundaries, menu/drawer focus and no horizontal overflow. Preserve original image colours; do not grayscale the entire page.

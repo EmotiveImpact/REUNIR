@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Activity, ArrowUpRight, CheckCircle2, CircleHelp, Download, LockKeyhole, RefreshCw, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { useWorkspace } from '../lib/context';
 import { Empty, PageHeading, Pill } from '../components/ui';
+import { ErrorState, Loading } from '../components/states';
 import { manualPilotGates, RELEASE_VERSION, type PilotCheck, type PilotStatus } from '../../../../packages/contracts/src/operations';
 import type { Workspace } from '../../../../packages/contracts/src/index';
 /** Demo observations never impersonate a configured server. */
@@ -33,9 +34,9 @@ export function PilotOperationsPage() {
         if(!r.ok)throw new Error(r.status===403 ? 'Only the community owner can view pilot operations.' : 'The server checks could not be loaded. No demonstration results have been substituted.');
         return r.json();
     }});
-    if(!owner)return <Empty title="Owner access only" body="Pilot operations are visible only to the community owner. Your private conversations and goals stay separate." action={<Link to="/" className="button secondary">Back to your community</Link>}/>;
-    if(mode==='live' && q.isPending)return <div role="status" className="empty-state">Reading the connected pilot checks…</div>;
-    if(mode==='live' && q.isError)return <div role="alert" className="empty-state"><h2>Checks are unavailable.</h2><p>{q.error.message}</p><button className="button secondary" onClick={()=>setRefresh(x=>x+1)}>Try again</button></div>;
+    if(!owner)return <Empty icon={LockKeyhole} title="Owner access only" body="Pilot operations are visible only to the community owner. Your private conversations and goals stay separate." action={<Link to="/" className="button secondary">Back to your community</Link>}/>;
+    if(mode==='live' && q.isPending)return <Loading label="Reading the connected pilot checks…"/>;
+    if(mode==='live' && q.isError)return <ErrorState error={q.error} onRetry={()=>setRefresh(x=>x+1)}/>;
     const status=mode==='demo' ? demoPilotStatus(data) : q.data!;
     const observed=status.checks.filter(c=>c.state==='pass').length;
     const blocked=status.checks.filter(c=>c.state==='blocked').length;

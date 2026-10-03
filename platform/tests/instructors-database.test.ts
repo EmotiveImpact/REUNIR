@@ -7,6 +7,7 @@ import { WorkspaceRepository, setContext } from '../packages/db/src/repository';
 import { grantRuntimeTables } from '../packages/db/src/runtime-role';
 import { createSeed, DEMO_ADMIN, DEMO_USER } from '../packages/domain/src/seed';
 import { seedBeforeProjectWork } from './helpers/legacy-fixture';
+import { MIGRATION_COUNT } from './helpers/migrations';
 
 const ORG = 'org_code_black', IDRIS = 'member_idris';
 let db: Database, repo: WorkspaceRepository;
@@ -42,7 +43,7 @@ test('0012 upgrade keeps every track, draft and attempt as it was and grants nob
         await migrate(old); await migrate(old);
         for (const table of ['tracks', 'lessons', 'members'] as const) assert.deepEqual(await read(table), before[table], table);
         assert.deepEqual(await read('track_instructors'), []);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 26);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, MIGRATION_COUNT);
     } finally { await old.close(); }
 });
 

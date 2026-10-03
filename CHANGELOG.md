@@ -25,6 +25,20 @@ Details:
 
 - Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
 
+## 0.27.0-alpha.1 (Alpha 27): loading, error and empty screens, 3 October 2026
+
+On main through [PR #22](https://github.com/EmotiveImpact/REUNIR/pull/22), merged as `f9f32d6`.
+
+**In plain language:** the app now shows calm loading outlines instead of blank areas, and keeps its navigation when a page fails. Failures are explained in plain words with a Try again button, and there is a proper Not found page. Losing the connection, an ended session or a refused change is said clearly instead of silently. Empty lists tell "nothing here yet" apart from "nothing matches", and only offer a next step the person is actually allowed to take.
+
+Details:
+
+- Shared loading, error and empty pieces in `apps/web/src/components/states.tsx` and `states.css`, with the conventions in `platform/docs/STATES.md` (decision 027).
+- Route error boundaries with Try again inside the app shell; the top-level boundary stays as the last resort. Unknown addresses show a Not found page.
+- Offline and failed-refresh notices; a failed background refresh keeps the page instead of replacing the app. Failed commands, uploads and downloads show a marked error toast and keep what was typed.
+- Empty states distinguish first run from no results, and actions appear only for roles that may take them.
+- New demo browser suite `npm run test:browser:states`. No migration, no grant change, no new dependency.
+
 ## 0.26.0-alpha.1 (Alpha 26): confirming and changing your email address, 3 October 2026
 
 On main through [PR #18](https://github.com/EmotiveImpact/REUNIR/pull/18), merged as `9b34cac`.
@@ -39,6 +53,19 @@ Details:
 - Changing or resetting the password cancels any change link asked for before it.
 - The launch preflight also checks `EMAIL_VERIFICATION`.
 - No migration and no new runtime dependency: Better Auth's own email verification and change-email flows, through the encrypted outbox.
+
+## 0.25.0-alpha.1 (Alpha 25): contributor roles for teaching, 3 October 2026
+
+On main through [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20), merged as `fab9510`. Alpha 26 reached main first.
+
+**In plain language:** when you add someone to teach a track you can now make them a contributor instead of an instructor. Contributors write and save lesson drafts and attach files; the track's instructors decide when to publish them. Contributors do not see learners' quiz answers.
+
+Details:
+
+- **Instructor or Contributor** in a track's Instructors dialogue, with a role menu for each person. Instructor stays the default.
+- Publishing, archiving, reordering, the track cover and knowledge-check review need an instructor or administrator (`INSTRUCTOR_REQUIRED`, decision 025).
+- Additive migration 0023 adds `track_instructors.role` and role-aware policies for published revisions, attempts and invitations. Every existing grant stays an instructor's. No grant change.
+- Database upgrade tests now count the migration files instead of a fixed number.
 
 ## 0.24.0-alpha.1 (Alpha 24): group conversations, 3 October 2026
 
