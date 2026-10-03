@@ -23,20 +23,6 @@ Details:
 - Additive migration 0028 adds `collections` and `collection_items` with forced row security and column-limited updates (decision 028). Run `npm run db:grant-runtime` after migrating.
 - New demo browser suite `npm run test:browser:curation`. No new dependency.
 
-### 0.27.0-alpha.1 (Alpha 27): loading, error and empty screens, 3 October 2026
-
-On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass. Alpha 23 and 25 are claimed by other open pull requests, and Alpha 24 and 26 are taken, so this release takes the next free number.
-
-**In plain language:** the app now shows calm loading outlines instead of blank areas, and keeps its navigation when a page fails. Failures are explained in plain words with a Try again button, and there is a proper Not found page. Losing the connection, an ended session or a refused change is said clearly instead of silently. Empty lists tell "nothing here yet" apart from "nothing matches", and only offer a next step the person is actually allowed to take.
-
-Details:
-
-- Shared loading, error and empty pieces in `apps/web/src/components/states.tsx` and `states.css`, with the conventions in `platform/docs/STATES.md` (decision 027).
-- Route error boundaries with Try again inside the app shell; the top-level boundary stays as the last resort. Unknown addresses show a Not found page.
-- Offline and failed-refresh notices; a failed background refresh keeps the page instead of replacing the app. Failed commands, uploads and downloads show a marked error toast and keep what was typed.
-- Empty states distinguish first run from no results, and actions appear only for roles that may take them.
-- New demo browser suite `npm run test:browser:states`. No migration, no grant change, no new dependency.
-
 ### 0.26.0-alpha.1 (Alpha 26): confirming and changing your email address, 3 October 2026
 
 On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. Alpha 23 is claimed by open pull requests (#16, #21), Alpha 24 (group conversations, PR #19) reached main first, and Alpha 25 is on PR #20, so this release is Alpha 26 with decision 026.
@@ -69,6 +55,20 @@ Details:
 
 - Data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
 - Virus scanning of uploads, content curation, task files with live updates and shared form components.
+
+## 0.27.0-alpha.1 (Alpha 27): loading, error and empty screens, 3 October 2026
+
+On main through [PR #22](https://github.com/EmotiveImpact/REUNIR/pull/22), merged as `f9f32d6`.
+
+**In plain language:** the app now shows calm loading outlines instead of blank areas, and keeps its navigation when a page fails. Failures are explained in plain words with a Try again button, and there is a proper Not found page. Losing the connection, an ended session or a refused change is said clearly instead of silently. Empty lists tell "nothing here yet" apart from "nothing matches", and only offer a next step the person is actually allowed to take.
+
+Details:
+
+- Shared loading, error and empty pieces in `apps/web/src/components/states.tsx` and `states.css`, with the conventions in `platform/docs/STATES.md` (decision 027).
+- Route error boundaries with Try again inside the app shell; the top-level boundary stays as the last resort. Unknown addresses show a Not found page.
+- Offline and failed-refresh notices; a failed background refresh keeps the page instead of replacing the app. Failed commands, uploads and downloads show a marked error toast and keep what was typed.
+- Empty states distinguish first run from no results, and actions appear only for roles that may take them.
+- New demo browser suite `npm run test:browser:states`. No migration, no grant change, no new dependency.
 
 ## 0.24.0-alpha.1 (Alpha 24): group conversations, 3 October 2026
 
