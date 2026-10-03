@@ -10,6 +10,7 @@ import { DEMO_COVER_LIBRARY_FILE } from '../packages/domain/src/demo-files';
 import { coverBytesAcceptable } from '../packages/contracts/src/covers';
 import { seedBeforeProjectWork } from './helpers/legacy-fixture';
 import { pngHeader } from './helpers/images';
+import { MIGRATION_COUNT } from './helpers/migrations';
 
 const ORG = 'org_code_black';
 let db: Database, repo: WorkspaceRepository;
@@ -53,7 +54,7 @@ test('0013 upgrade keeps tracks, projects, covers and uploads exactly as they we
         // Task files (migration 0029) add an empty task_id to every upload.
         for (const table of ['tracks', 'projects', 'upload_intents', 'members'] as const) assert.deepEqual((await read(table)).map(({ task_id, ...row }) => { assert.equal(task_id ?? null, null); return row; }), before[table], table);
         assert.deepEqual(await read('cover_library'), []);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 24);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, MIGRATION_COUNT);
     } finally { await old.close(); }
 });
 

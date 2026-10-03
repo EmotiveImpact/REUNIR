@@ -508,3 +508,18 @@ Members talk privately in a named group as well as one to one. A group is still 
 | G06 | Reporting a message in a group shares only that message with moderators | Database test |
 
 Join and leave lines in the conversation, mentions, attachments, notices or emails about group messages and handing over the starter's role are outside this release.
+
+## Alpha 25: contributor roles
+
+An owner or administrator adds someone to a track as an instructor or a contributor. Contributors write the track's lesson drafts and files; instructors publish them. See `INSTRUCTORS.md` and `decisions/025-contributor-roles.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| R01 | A grant names one role, instructor by default; every existing grant stays an instructor's | Contract, domain and migration 0023 upgrade tests |
+| R02 | A contributor opens, saves, previews and restores drafts and manages lesson files of their own tracks only | Domain and database (restricted role) tests |
+| R03 | Publishing, archiving, reordering and the track cover need an instructor or administrator (403 `INSTRUCTOR_REQUIRED` or the cover refusal) | Domain and database tests, demo browser check |
+| R04 | A contributor never sees or reviews learners' knowledge-check attempts, in the domain or under forced RLS | Domain, page and database tests |
+| R05 | Changing a role replaces the grant in the acting administrator's name; the runtime role cannot update a grant | Domain and database tests |
+| R06 | An invitation to teach is accepted only as an instructor | Migration 0023 policy, invitation tests |
+
+Contributor invitations, asking an instructor to publish, per-lesson grants and instructor-created tracks are outside this release.

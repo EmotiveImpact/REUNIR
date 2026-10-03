@@ -1751,6 +1751,8 @@ tables.push({key:'notificationPreferences',table:'notification_preferences',fiel
     {property:'userId',column:'user_id',type:'text'},{property:'muted',column:'muted',type:'jsonb'},{property:'digest',column:'digest',type:'text'},
     {property:'updatedAt',column:'updated_at',type:'timestamptz'},{property:'lastDigestAt',column:'last_digest_at',type:'timestamptz'}]});
 
+// Alpha 25: a teaching grant names its role. Changing a role replaces the grant; it is never rewritten in place.
+tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'role',column:'role',type:'text'});
 // Task files: verified uploads bound to one project task, and who made a task's latest change, for conflict messages.
 tables.find(t => t.key === 'uploads')!.fields.push({property:'taskId',column:'task_id',type:'text'});
 tables.find(t => t.key === 'projectTasks')!.fields.push({property:'updatedBy',column:'updated_by',type:'text'});
