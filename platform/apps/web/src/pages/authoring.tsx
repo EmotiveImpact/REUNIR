@@ -20,7 +20,7 @@ export function AuthoringPage() {
     const {id}=useParams(); const {data,me,busy,command}=useWorkspace();
     const [selected,select]=useState<string|null>(null); const [archived,showArchived]=useState(false);
     const track=data.tracks.find(t=>t.id===id);
-    if(!track||!holdsGrant(data,me,track.id))return <Empty title="The creator studio is private." body="The track's instructors and contributors and the community's owners and administrators author lessons here."/>;
+    if(!track||!holdsGrant(data,me,track.id))return <Empty icon={LockKeyhole} title="The creator studio is private." body="The track's instructors and contributors and the community's owners and administrators author lessons here."/>;
     // Order and new lessons belong to the whole track; a grant for some lessons opens only those.
     const lead=teaches(data,me,track.id), whole=contributes(data,me,track.id);
     const lessons=data.lessons.filter(l=>l.trackId===track.id).sort((a,b)=>a.position-b.position);

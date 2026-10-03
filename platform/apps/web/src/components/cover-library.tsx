@@ -26,7 +26,7 @@ export function CoverLibrarySettings() {
         if (!window.confirm(`Remove ${item.label} from the cover library? The stored picture is deleted.`)) return;
         setRemoving(item.id);
         try { toast(await removeLibraryPicture(slug, userId, item)); reload(); }
-        catch (e) { toast(displayError(e)); }
+        catch (e) { toast(displayError(e),'error'); }
         finally { setRemoving(''); }
     };
     return <section className="panel settings-form cover-library-settings" aria-labelledby={heading}>
