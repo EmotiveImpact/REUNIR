@@ -52,6 +52,19 @@ export function isCoverReferenced(s: Workspace, organizationId: string, uploadId
     const uses = (rows: Subject[]) => rows.some(r => r.organizationId === organizationId && r.coverImage?.fileId === uploadId);
     return uses(s.tracks) || uses(s.projects);
 }
+/**
+ * A cover picture uploaded for one track or project goes as soon as nothing shows it any more: the record now, the stored
+ * file once the change has committed. Library pictures stay in the library.
+ */
+function releaseReplacedCover(s: Workspace, organizationId: string, fileId: string | null) {
+    if (!fileId || isCoverReferenced(s, organizationId, fileId)) return;
+    s.uploads = s.uploads.filter(u => !(u.id === fileId && coverFile(u, organizationId)));
+}
+/** Stored files of cover uploads that a change released, for removal after commit. Library pictures never appear here. */
+export function releasedCoverKeys(before: Workspace, after: Workspace): string[] {
+    const kept = new Set(after.uploads.map(u => u.id));
+    return before.uploads.filter(u => u.purpose === 'cover_image' && !kept.has(u.id)).map(u => u.objectKey);
+}
 function record(s: Workspace, ctx: TenantContext, now: string, makeId: () => string, type: string, objectId: string, audit: boolean) {
     s.revision++;
     s.outbox.push({ id: makeId(), organizationId: ctx.organizationId, createdAt: now, actorId: ctx.userId, type, objectId, payload: { requestId: ctx.requestId } });
@@ -183,15 +196,17 @@ export function applyCovers(s: Workspace, ctx: TenantContext, cmd: Command, now:
     const kind: CoverSubject = cmd.type === 'track.cover.set' ? 'track' : 'project';
     const id = cmd.type === 'track.cover.set' ? cmd.trackId : cmd.projectId;
     const { subject } = requireEditor(s, ctx, kind, id);
-    const before = JSON.stringify(normaliseCover(subject.coverImage));
+    const before = JSON.stringify(normaliseCover(subject.coverImage)), previous = normaliseCover(subject.coverImage)?.fileId ?? null;
     if (cmd.fileId === null) {
         subject.coverImage = null;
+        releaseReplacedCover(s, ctx.organizationId, previous);
         return { message: 'Cover removed. The plain panel shows instead.', objectId: subject.id, changed: before !== 'null', audit: true };
     }
     const upload = coverSource(s, ctx.organizationId, kind, id, cmd.fileId);
     if (!upload) throw new DomainError('COVER_UNAVAILABLE', 'This image is not available for this cover. Upload it again.', 409);
     if (upload.status !== 'ready' || !isCoverImageType(upload.contentType)) throw new DomainError('COVER_NOT_READY', 'This image has not passed verification yet. Upload it again.', 409);
     subject.coverImage = { fileId: upload.id, contentType: upload.contentType, sizeBytes: upload.sizeBytes, focusX: cmd.focusX, focusY: cmd.focusY };
+    releaseReplacedCover(s, ctx.organizationId, previous);
     return { message: 'Cover saved.', objectId: subject.id, changed: before !== JSON.stringify(subject.coverImage), audit: true };
 }
 

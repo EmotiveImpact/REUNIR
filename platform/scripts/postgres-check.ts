@@ -206,5 +206,21 @@ try{
         assert.equal(await accepting,'INVITE_ACCOUNT_MISMATCH');
         assert.equal((await admin.query('SELECT count(*)::int AS n FROM members WHERE user_id=$1',[person])).rows[0].n,0,'no membership outlives the account');
     });
+    await check('an account deletion that starts while an acceptance holds the account waits, then removes the new membership too',async()=>{
+        const person='pg_late_joiner',now=new Date().toISOString();
+        await admin.query("INSERT INTO auth_user(id,name,email,email_verified,created_at,updated_at) VALUES($1,'Ravi Shah','ravi@example.test',true,$2,$2)",[person,now]);
+        await admin.query("INSERT INTO members(organization_id,id,created_at,user_id,name,headline,bio,skills,colour,avatar,role,status) VALUES('org_studio_north',$1,now(),$2,'Ravi Shah','','','[]','violet','','member','active')",[randomUUID(),person]);
+        let deleting:Promise<number|string>|undefined;
+        // The acceptance's first step, a share lock on the account, is held open while the deletion starts on another connection.
+        await admin.transaction(async tx=>{
+            await tx.query('SELECT id FROM auth_user WHERE id=$1 FOR SHARE',[person]);
+            deleting=new WorkspaceRepository(runtime!).deleteAccount(person).then(r=>r.summary.communities,(e:{code?:string;message?:string})=>e.code??e.message??'failed');
+            assert.equal(await Promise.race([deleting,new Promise(r=>setTimeout(()=>r('waiting'),500))]),'waiting','deletion waits on the account lock');
+            await tx.query("INSERT INTO members(organization_id,id,created_at,user_id,name,headline,bio,skills,colour,avatar,role,status) VALUES('org_code_black',$1,now(),$2,'Ravi Shah','','','[]','violet','','member','active')",[randomUUID(),person]);
+        });
+        assert.equal(await deleting,2,'the deletion sees the membership the acceptance committed');
+        assert.equal((await admin.query("SELECT count(*)::int AS n FROM members WHERE user_id=$1 AND (status<>'left' OR name<>'Former member')",[person])).rows[0].n,0,'no active membership outlives the account');
+        assert.equal((await admin.query('SELECT count(*)::int AS n FROM auth_user WHERE id=$1',[person])).rows[0].n,0);
+    });
     await mkdir('evidence/alpha04',{recursive:true});await writeFile('evidence/alpha04/postgres-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Disposable local PostgreSQL service, not Neon.',results},null,2));
 }finally{await runtime?.close();await admin.close();}
