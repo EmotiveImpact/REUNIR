@@ -53,7 +53,7 @@ test('0011 upgrade keeps tracks, projects and uploads exactly as they were and s
         const uploads = await read('upload_intents');
         assert.deepEqual(strip(uploads, ['cover_track_id', 'cover_project_id']), before.uploads);
         assert.deepEqual(uploads.map(u => [u.purpose, u.cover_track_id, u.cover_project_id]), [['member', null, null]]);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 17);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 18);
     } finally { await old.close(); }
 });
 test('the restricted runtime role records, verifies and sets a track cover and a project owner’s cover', async () => {
@@ -104,4 +104,16 @@ test('runtime grants cover the new columns without new privileges elsewhere', as
     for (const [table, column] of [['tracks', 'cover_image'], ['projects', 'cover_image'], ['upload_intents', 'cover_track_id'], ['upload_intents', 'cover_project_id']])
         assert.equal((await db.query<{ ok: boolean }>("SELECT has_column_privilege('reunir_app',$1,$2,'SELECT,INSERT,UPDATE') AS ok", [table, column])).rows[0].ok, true, `${table}.${column}`);
     assert.equal((await db.query<{ ok: boolean }>("SELECT has_table_privilege('reunir_app','lesson_revisions','UPDATE') AS ok")).rows[0].ok, false);
+});
+test('a replaced cover’s record goes with the change under the runtime role, and its stored file is handed back for removal', async () => {
+    // Jordan owns project_still; a project owner replaces their own cover, which nobody else shows.
+    const first = await verified('member_jordan', 'project', 'project_still');
+    await repo.execute('code-black', 'member_jordan', { type: 'project.cover.set', projectId: 'project_still', fileId: first }, randomUUID(), 'covers-db');
+    const second = await verified('member_jordan', 'project', 'project_still');
+    const { releasedFiles } = await repo.executeCommand('code-black', 'member_jordan', { type: 'project.cover.set', projectId: 'project_still', fileId: second }, randomUUID(), 'covers-db');
+    assert.deepEqual(releasedFiles, [key('project', 'project_still')('org_code_black', first)]);
+    assert.equal((await db.query('SELECT count(*)::int AS n FROM upload_intents WHERE id=$1', [first])).rows[0].n, 0, 'the replaced record is gone');
+    const removed = await repo.executeCommand('code-black', 'member_jordan', { type: 'project.cover.set', projectId: 'project_still', fileId: null }, randomUUID(), 'covers-db');
+    assert.deepEqual(removed.releasedFiles, [key('project', 'project_still')('org_code_black', second)]);
+    assert.equal((await db.query('SELECT count(*)::int AS n FROM upload_intents WHERE id=$1', [second])).rows[0].n, 0);
 });

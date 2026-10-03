@@ -64,7 +64,7 @@ Library pictures follow the same steps with three differences:
 ## Retention and limits
 
 - Removing an unused library picture deletes its stored file straight away. Library uploads that were never listed are deleted at the next library upload once they are an hour old.
-- A removed or replaced picture stops being served at once. Its stored object is deleted the next time anyone in the community starts a cover upload, once it is more than an hour old. If no one uploads again, it stays in private storage until an operator clears it with `npm run db:prune-covers` (LEARNER_RECORDS.md), which an active owner authorises.
+- A removed or replaced picture stops being served at once. Since Alpha 17 its upload record goes in the same change and its stored object is deleted straight after that change commits, when nothing else shows it (a library picture stays in the library). Moving the focal point keeps the picture. Uploads that were started but never chosen, or were rejected, are still deleted the next time anyone starts a cover upload once they are more than an hour old, or by an operator with `npm run db:prune-covers` (LEARNER_RECORDS.md), which an active owner authorises. If storage refuses the deletion, the object is private and unreferenced, never served, and the operator command lists it.
 - A browser that has already loaded a cover may keep showing it from its private cache for up to an hour after access ends. New requests are refused straight away.
 - One 1,600-pixel file is served at every size, including small thumbnails. Covers are typically a few hundred kilobytes and at most 3 MB; smaller renditions are a follow-up.
 - Covers are decorative (`alt=""`), because every title is real text nearby. There is no alt text field.

@@ -8,7 +8,23 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-- Server-side pagination for review queues and other long lists is planned.
+### 0.17.0-alpha.1 (Alpha 17): loose ends after account deletion, 3 October 2026
+
+On a pull request from `claude/build-out-tvzn40`, to be merged once its checks pass.
+
+**In plain language:** when someone deletes their account, tasks they had claimed now go back to their teams in every community, even one where they had been suspended. Changing or removing a cover picture now deletes the old picture straight away instead of later.
+
+Details:
+
+- Deleting your own account releases claimed tasks without proof everywhere. Additive migration 0018 admits exactly those tasks while the transaction is marked as your own deletion; an update may only leave them unassigned, without proof and in "to do".
+- A replaced or removed track or project cover loses its upload record in the same change, and its stored file is deleted straight after commit. Moving the focal point keeps it; library pictures stay in the library.
+- A new PostgreSQL check covers a deletion that starts while an invitation acceptance holds the account.
+- Mentions of a former member in other people's posts stay as written (decision 017).
+- Migrations 0001 to 0017 unchanged; no grant changes; no new runtime dependency.
+
+### Planned
+
+- Server-side pagination for review queues and other long lists.
 
 ## 0.16.0-alpha.1 (Alpha 16): ownership transfer, 3 October 2026
 

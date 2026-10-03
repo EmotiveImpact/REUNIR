@@ -146,7 +146,10 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         if (!key)
             throw new DomainError('KEY_REQUIRED', 'An Idempotency-Key header is required.');
         const input = await c.req.json();
-        return c.json(await repository.execute(c.req.param('slug'), c.get('identity').id, input, key, c.get('requestId')));
+        const { result, releasedFiles } = await repository.executeCommand(c.req.param('slug'), c.get('identity').id, input, key, c.get('requestId'));
+        // A replaced or removed cover picture nothing shows any more: its record went with the change, its file goes now.
+        await removeQuietly(c.get('requestId'), releasedFiles);
+        return c.json(result);
     });
     // Handing a community to one of its administrators: the owner's password re-entered and the community's name typed.
     // It is not a workspace command, so it can never be sent without the password check.

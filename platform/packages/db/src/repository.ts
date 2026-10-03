@@ -3,7 +3,7 @@ import { applyCommand, visibleWorkspace, actorFor } from '../../domain/src/engin
 import { DomainError, commandSchema, type Workspace, type TenantContext, type MutationResult } from '../../contracts/src/index';
 import type { ResourceRef, ResourceUploadRequest } from '../../contracts/src/lesson-resources';
 import { beginResourceUpload, completeResourceUpload, discardResourceUpload, resolveResourceDownload, type StoredObservation } from '../../domain/src/resources';
-import { beginCoverLibraryUpload, beginCoverUpload, completeCoverUpload, removeCoverLibraryItem, resolveCoverImage, resolveLibraryPicture, staleCoverUploads, type CoverObservation } from '../../domain/src/covers';
+import { releasedCoverKeys, beginCoverLibraryUpload, beginCoverUpload, completeCoverUpload, removeCoverLibraryItem, resolveCoverImage, resolveLibraryPicture, staleCoverUploads, type CoverObservation } from '../../domain/src/covers';
 import type { CoverLibraryUploadRequest, CoverSubject, CoverUploadRequest } from '../../contracts/src/covers';
 import { learningRecord } from '../../domain/src/learning-record';
 import { eraseFromCommunity, PERSONAL_COLLECTIONS } from '../../domain/src/account-deletion';
@@ -97,6 +97,10 @@ export class WorkspaceRepository {
     }
     async snapshot(slug: string, userId: string) { return this.within(slug, userId, false, async (sql, org) => visibleWorkspace(await readAll(sql, org), context(String(org.id), userId))); }
     async execute(slug: string, userId: string, raw: unknown, key: string, requestId: string): Promise<MutationResult> {
+        return (await this.executeCommand(slug, userId, raw, key, requestId)).result;
+    }
+    /** As `execute`, with the storage keys of cover pictures the change released, for the caller to remove after commit. */
+    async executeCommand(slug: string, userId: string, raw: unknown, key: string, requestId: string): Promise<{ result: MutationResult; releasedFiles: string[] }> {
         const command = commandSchema.parse(raw);
         if (!/^[A-Za-z0-9_-]{8,100}$/.test(key))
             throw new DomainError('INVALID_KEY', 'Use a valid idempotency key.');
@@ -115,12 +119,12 @@ export class WorkspaceRepository {
             if (old.rows[0]) {
                 if (old.rows[0].body_hash !== digest)
                     throw new DomainError('KEY_REUSED', 'This request key was already used for a different action.', 409);
-                return { ...old.rows[0].result, workspace: visibleWorkspace(before, ctx) };
+                return { result: { ...old.rows[0].result, workspace: visibleWorkspace(before, ctx) }, releasedFiles: [] };
             }
             const result = applyCommand(before, ctx, command);
             await saveChanges(sql, before, result.workspace);
             await sql.query('INSERT INTO command_receipts(organization_id,user_id,request_key,body_hash,result) VALUES ($1,$2,$3,$4,$5)', [orgId, userId, key, digest, JSON.stringify({ message: result.message, objectId: result.objectId })]);
-            return { ...result, workspace: visibleWorkspace(result.workspace, ctx) };
+            return { result: { ...result, workspace: visibleWorkspace(result.workspace, ctx) }, releasedFiles: releasedCoverKeys(before, result.workspace) };
         });
     }
     async consumeRateLimit(key: string, max = 100, seconds = 60) {
@@ -328,11 +332,18 @@ export class WorkspaceRepository {
                 if (!org) throw new Error('A community could not be locked for account deletion, so nothing was changed.');
                 const before = await readAll(sql, org);
                 const erasure = eraseFromCommunity(before, userId, now, randomUUID), after = erasure.workspace;
-                // 1. While the membership is still current: claimed tasks go back to their teams, notices lose the name.
+                // 1. While the membership is still current: notices lose the name, and claimed tasks without proof go back to
+                // their teams. The tasks are released directly, so this works where the person was suspended too (0018).
                 const staged = structuredClone(before), reworded = new Map(after.notifications.map(n => [n.id, n]));
-                staged.projectTasks = after.projectTasks;
                 staged.notifications = before.notifications.map(n => reworded.get(n.id) ?? n);
                 await saveChanges(sql, before, staged);
+                const claimed = "FROM project_tasks WHERE organization_id=$1 AND assignee_id=$2 AND contribution_id IS NULL AND NOT archived";
+                const tasks = (await sql.query<{ id: string }>(`SELECT id ${claimed} ORDER BY id FOR UPDATE`, [orgId, userId])).rows.map(r => r.id);
+                if (tasks.length !== erasure.releasedTasks) throw new Error('Row security admitted only part of the deletion (project_tasks), so nothing was changed.');
+                // The released tasks are named for the 0018 read policy, which must still admit each row once it is unassigned.
+                await sql.query("SELECT set_config('app.released_tasks',$1,true)", [tasks.join(',')]);
+                if (tasks.length) await sql.query("UPDATE project_tasks SET assignee_id=NULL,work_state='todo',version=version+1,updated_at=$3 WHERE organization_id=$1 AND id = ANY($2::text[])", [orgId, tasks, now]);
+                if ((await sql.query(`SELECT id ${claimed}`, [orgId, userId])).rows.length) throw new Error('Row security admitted only part of the deletion (project_tasks), so nothing was changed.');
                 // 2. Their own records. Row security silently skips rows it does not admit, so a shortfall is refused.
                 for (const key of PERSONAL_COLLECTIONS) {
                     const spec = tables.find(t => t.key === key)!;

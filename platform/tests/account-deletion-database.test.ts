@@ -96,6 +96,19 @@ test('row security admits only the person’s own rows, and only while their own
     const memberships = (mark?: string) => asRuntime('', DEMO_USER, sql => sql.query<{ organization_id: string }>('SELECT organization_id FROM members WHERE user_id IN ($1,$2) ORDER BY organization_id', [DEMO_USER, SOFIA]).then(r => r.rows.map(x => x.organization_id)), mark);
     assert.deepEqual(await memberships(), [ORG]);
     assert.deepEqual(await memberships(DEMO_USER), [ORG, NORTH]);
+    // Where the person is suspended, their own claimed tasks are visible and releasable only with the mark (0018), and
+    // never anyone else's tasks or an unassigned one that the transaction has not named.
+    const tasks = (mark?: string, released = '') => asRuntime(NORTH, DEMO_USER, async sql => { await sql.query("SELECT set_config('app.released_tasks',$1,true)", [released]); return (await sql.query<{ id: string }>('SELECT id FROM project_tasks ORDER BY id')).rows.map(r => r.id); }, mark);
+    assert.deepEqual(await tasks(), [], 'suspension closes the project work');
+    assert.deepEqual(await tasks(SOFIA), [], 'the mark must name the acting person');
+    assert.deepEqual(await tasks(DEMO_USER), ['task_notes', 'task_test']);
+    assert.equal(await count("SELECT count(*)::int AS n FROM project_tasks WHERE organization_id=$1 AND assignee_id IS NULL AND NOT archived", [NORTH]) > 0, true, 'the fixture has unassigned tasks there');
+    // Only the tasks the deletion itself names become readable once unassigned, so the release can complete; the update
+    // policy still admits only the person's own claimed tasks.
+    assert.deepEqual(await tasks(DEMO_USER, 'task_empty'), ['task_empty', 'task_notes', 'task_test']);
+    await asRuntime(NORTH, DEMO_USER, async sql => { await sql.query("SELECT set_config('app.released_tasks','task_empty',true)"); await sql.query("UPDATE project_tasks SET title='Changed' WHERE id='task_empty'"); }, DEMO_USER);
+    assert.equal(await count("SELECT count(*)::int AS n FROM project_tasks WHERE organization_id=$1 AND id='task_empty' AND title='Changed'", [NORTH]), 0, 'an unassigned task cannot be changed');
+    await assert.rejects(() => asRuntime(NORTH, DEMO_USER, sql => sql.query("UPDATE project_tasks SET assignee_id=NULL,work_state='doing' WHERE id='task_notes'"), DEMO_USER), /row-level security/, 'released tasks go back to do');
     // Invitations to the person's own address in a community they never joined, only with the mark.
     const invitations = (mark?: string, who = DEMO_USER) => asRuntime('', who, sql => sql.query<{ id: string }>('SELECT id FROM invitations ORDER BY id').then(r => r.rows.map(x => x.id)), mark);
     assert.deepEqual(await invitations(), []);
@@ -118,7 +131,7 @@ test('deleting an account scrubs every membership, keeps shared work as Former m
     const { summary, files } = await runtime.deleteAccount(DEMO_USER, (sql, email) => mail.forget(email, sql));
     assert.equal(summary.communities, 2);
     assert.deepEqual(files, [privateFile], 'the private file is returned for removal from storage after commit');
-    assert.equal(summary.releasedTasks, 1);
+    assert.equal(summary.releasedTasks, 3, 'one where Alex is active, and both where Alex was suspended');
     assert.equal(summary.rewordedNotices, 3, 'the reply notice, and the contribution notices to the owner and the project lead');
     assert.deepEqual([summary.removed.quizAttempts, summary.removed.trackInstructors, summary.removed.privateFiles, summary.removed.invitations, summary.removed.queuedMail, summary.removed.sessions, summary.removed.signInTokens], [1, 1, 1, 2, 1, 2, 1]);
     // Every membership, the suspended one included, is the same scrubbed record.
@@ -129,8 +142,8 @@ test('deleting an account scrubs every membership, keeps shared work as Former m
     const tasks = await db.query<{ organization_id: string; id: string; assignee_id: string | null; work_state: string }>("SELECT organization_id,id,assignee_id,work_state FROM project_tasks WHERE id IN ('task_test','task_notes') ORDER BY organization_id,id");
     assert.deepEqual(tasks.rows, [
         { organization_id: ORG, id: 'task_notes', assignee_id: null, work_state: 'todo' }, { organization_id: ORG, id: 'task_test', assignee_id: DEMO_USER, work_state: 'doing' },
-        // Suspension had already closed the project's work to them there, so an administrator reassigns these.
-        { organization_id: NORTH, id: 'task_notes', assignee_id: DEMO_USER, work_state: 'todo' }, { organization_id: NORTH, id: 'task_test', assignee_id: DEMO_USER, work_state: 'todo' }]);
+        // Suspension closes the project's work to them there, but their own deletion still hands the tasks back (0018).
+        { organization_id: NORTH, id: 'task_notes', assignee_id: null, work_state: 'todo' }, { organization_id: NORTH, id: 'task_test', assignee_id: null, work_state: 'todo' }]);
     // Private records, learning and access are gone in both communities.
     for (const table of PERSONAL) assert.equal(await mine(table), 0, `${table} has nothing left`);
     assert.equal(await count("SELECT count(*)::int AS n FROM upload_intents WHERE user_id=$1 AND purpose='member'", [DEMO_USER]), 0);

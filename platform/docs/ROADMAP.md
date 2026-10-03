@@ -24,6 +24,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 14 | Members download their own learning record; owner-authorised erasure of a learner's answers and clearing of unused cover files; review queues paged with exact totals | No account deletion or identity scrubbing; queue paging is in the interface, not the server |
 | Alpha 15 | People delete their own account; posts, comments and project work stay as Former member, private things and the learning record go, messages stay for the other person; owners refused | No ownership transfer; mentions inside other people's posts stay; hosted Better Auth and real email unverified |
 | Alpha 16 | Owners hand a community to an administrator with their password and the community's name; the previous owner stays as an administrator and can then delete their account | Only to an existing administrator; the new owner is told, not asked; hosted Better Auth unverified |
+| Alpha 17 | Deleting an account hands back claimed tasks everywhere, suspended communities included; replaced covers are erased at once; the deletion-during-acceptance case is tested | Mentions in other people's posts stay as written; real bucket deletion unverified |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 

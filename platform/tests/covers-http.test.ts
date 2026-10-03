@@ -110,3 +110,16 @@ test('a cover replaced at storage after verification is never served in its plac
     bucket.put(ok.key!, pngHeader(1600, 900), 'image/jpeg');
     assert.equal((await get(`/covers/track/track_brand/${ok.id}`)).status, 404);
 });
+test('replacing or removing a cover deletes the picture nothing shows any more from storage', async () => {
+    as(DEMO_ADMIN);
+    const first = await upload('track', 'track_brand', jpeg());
+    assert.equal((await post('/commands', { type: 'track.cover.set', trackId: 'track_brand', fileId: first.id })).status, 200);
+    const second = await upload('track', 'track_brand', jpeg());
+    const replaced = await post('/commands', { type: 'track.cover.set', trackId: 'track_brand', fileId: second.id });
+    assert.equal(replaced.status, 200);
+    assert(!JSON.stringify(await replaced.json()).includes('covers/'), 'no storage key reaches the browser');
+    assert(bucket.removed.includes(first.key!), 'the replaced picture is removed at once');
+    assert(!bucket.removed.includes(second.key!));
+    assert.equal((await post('/commands', { type: 'track.cover.set', trackId: 'track_brand', fileId: null })).status, 200);
+    assert(bucket.removed.includes(second.key!), 'a removed cover goes too');
+});
