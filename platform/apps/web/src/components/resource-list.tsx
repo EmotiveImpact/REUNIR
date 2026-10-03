@@ -27,6 +27,10 @@ export function ResourceList({ resources, onDownload, onPlay, available = () => 
     // Browser-local preview addresses hold the bytes in memory, so each is released once it is no longer shown.
     const release = () => { if (owned.current) URL.revokeObjectURL(owned.current); owned.current = null; };
     useEffect(() => release, []);
+    // The list can stay mounted while the lesson changes, so a video that is no longer listed stops and is released.
+    useEffect(() => {
+        if (playing && !resources.some(r => r.id === playing.id)) { release(); setPlaying(null); }
+    }, [resources, playing]);
     const play = async (r: LessonResource) => {
         setPending(r.id); setFailed('');
         try {

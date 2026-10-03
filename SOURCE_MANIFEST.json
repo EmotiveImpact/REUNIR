@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 37 uploaded lesson video",
   "version": "0.39.0-alpha.1",
   "sourceBaseline": "99e919a1ddab643da78adb4cb29159357604b4e4",
-  "generatedAt": "2026-10-03T20:30:15.656502+00:00",
+  "generatedAt": "2026-10-03T20:59:16.225516+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -126,8 +126,8 @@
     },
     {
       "path": "platform/apps/api/src/scanner.ts",
-      "sha256": "32a80632404364eb155e7ce666f8014163c4db65d76569feac17627291fa220c",
-      "bytes": 4331
+      "sha256": "7e177115d8daf6e138ff51aa6555cefef1ac9330daedd80613a00675c2ba8eb5",
+      "bytes": 4948
     },
     {
       "path": "platform/apps/api/src/server.ts",
@@ -316,8 +316,8 @@
     },
     {
       "path": "platform/apps/web/src/components/resource-list.tsx",
-      "sha256": "22053247ebcf52c2b6a8af218912f92469a71c59f2034f62b9047f4ca65cefed",
-      "bytes": 5076
+      "sha256": "22782b5d4b3399496c5d5ed1b2d0fca8e2ff97f65592f8dbadfc4d6f09d4df94",
+      "bytes": 5345
     },
     {
       "path": "platform/apps/web/src/components/retention.tsx",
@@ -641,8 +641,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "1f8dbd6c226d1627c7d6adc0ae9fb30354c41c2190bbfba782e795eb26e46d01",
-      "bytes": 187687
+      "sha256": "76f4a1504b9a141bdf383b5d5faa56b87a79cceb2f10fcd68cfb92cb4839d5c8",
+      "bytes": 188040
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -2256,8 +2256,8 @@
     },
     {
       "path": "platform/tests/scanner.test.ts",
-      "sha256": "9137fc13d1c148cc3798cb5423e18367183df90e52012bec7e0f88c45873b99e",
-      "bytes": 14604
+      "sha256": "b0f8ca92a5dbb29051fa5610cee38eb009ec39ae7c86f70b495a6fc511129b14",
+      "bytes": 14978
     },
     {
       "path": "platform/tests/states.test.ts",

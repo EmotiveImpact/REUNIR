@@ -23,6 +23,7 @@ Numbering: Alpha 37, decision 037 and migration 0036 come from the block allocat
 - **Migration 0036** (additive): replaces the 0001 size check on `upload_intents` so only lesson files declared as MP4 or WebM may exceed 10 MB, never 500 MB. Earlier migrations are byte-identical; no grant change.
 - **Scanning**: when a scanner is configured (Alpha 23), video is scanned whole like every upload. clamd refuses streams over its `StreamMaxLength` (25 MB by default), which counts as no verdict, so such uploads stay pending. `npm run launch:preflight` warns when video above 25 MB is on with a scanner.
 - `npm run launch:preflight`, `.env.example` and LAUNCH_RUNBOOK.md cover `LESSON_VIDEO_MAX_MB`.
+- Review fixes on PR #31 (Codex): a scan's time allowance now grows with the file (30 s plus 1 s per MiB, `scanTimeoutMs` in apps/api/src/scanner.ts), so a large video is not cut off at 30 s; and the lesson file list stops and releases a playing demo video once that file is no longer listed, even when the list stays mounted across lessons.
 
 ## Local verification, 3 October 2026
 
@@ -31,12 +32,12 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 831 passed, 0 failed with main's Alpha 32 to 34 merged in; the suites below ran before that merge and are being rerun (7 new in `tests/lesson-video.test.ts`, 1 new in `tests/launch-preflight.test.ts`, which also checks the clamd stream warning) |
+| `npm test` | 832 passed, 0 failed on top of main `99e919a` after the review fixes (7 new in `tests/lesson-video.test.ts`, 1 new in `tests/launch-preflight.test.ts`, which also checks the clamd stream warning, 1 new in `tests/scanner.test.ts` for the scan allowance) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
 | Demo-browser suites | 300 passed across 17 suites, including 20 lesson resource checks (1 new: a creator uploads a WebM clip and a learner plays it) |
 | Connected-browser suites | 64 passed (unchanged) |
-| `npm run test:postgres` | Passed on PostgreSQL 16 |
+| `npm run test:postgres` | 28 passed on PostgreSQL 16 |
 | Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
 
 ## Not verified, and why
