@@ -11,6 +11,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseEnv } from 'node:util';
+import { adminTwoFactorSetting } from '../packages/contracts/src/two-factor';
 
 export type Environment = Readonly<Record<string, string | undefined>>;
 export type FindingState = 'pass' | 'warn' | 'fail';
@@ -86,6 +87,11 @@ export function inspectLaunch(env: Environment): Finding[] {
         : 'No secret-like VITE_ variables are present.');
 
     out.push(secretShape('BETTER_AUTH_SECRET', env.BETTER_AUTH_SECRET, true, 'Sessions cannot be signed.'));
+
+    const twoStep = adminTwoFactorSetting(env);
+    if (!twoStep) add('ADMIN_TWO_FACTOR', 'fail', 'ADMIN_TWO_FACTOR must be required or optional. The server refuses to start otherwise.');
+    else if (twoStep === 'optional') add('ADMIN_TWO_FACTOR', 'warn', 'ADMIN_TWO_FACTOR=optional lets owners and administrators use their tools without two-step sign-in.');
+    else add('ADMIN_TWO_FACTOR', 'pass', 'Owners and administrators need two-step sign-in to use their tools.');
 
     const hasKey = filled(env.RESEND_API_KEY), hasFrom = filled(env.EMAIL_FROM);
     const mail = hasKey && hasFrom;

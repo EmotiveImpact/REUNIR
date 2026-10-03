@@ -40,12 +40,12 @@ Detail: SETUP.md section 3.
 
 ## 3. Migrations and the restricted runtime role
 
-There are 19 ordered migrations, `0001_foundation.sql` to `0019_notification_preferences.sql`, in `packages/db/migrations/`. They are additive, checksummed and serialised by an advisory lock. Migrations never run on a cold start.
+There are 21 ordered migrations at Alpha 22, `0001_foundation.sql` to `0021_two_factor.sql`, in `packages/db/migrations/`. Later releases add more: the expected count is always the number of `.sql` files in that folder for the commit being deployed. They are additive, checksummed and serialised by an advisory lock. Migrations never run on a cold start.
 
 With only `MIGRATION_DATABASE_URL` set in the local shell (leave `DATABASE_URL` unset so nothing falls back to it):
 
 - [ ] `npm run db:migrate`
-- [ ] `npm run pilot:check -- --migrations --json` shows 19 rows, each `pass` (checksum matches source).
+- [ ] `npm run pilot:check -- --migrations --json` shows one row per migration file, each `pass` (checksum matches source).
 - [ ] Generate the runtime password and create the role:
 
   ```sh
@@ -87,7 +87,8 @@ These are every variable the server code reads (`apps/api/src/bootstrap.ts`, `ap
 | `VITE_DATA_MODE` | Yes, at build time | The only public build flag. `live` builds the connected frontend. | `live` |
 | `APP_ORIGIN` | Yes | Canonical origin for cookies, Origin checks and links in email. | `https://<staging-hostname>` with no path |
 | `DATABASE_URL` | Yes | Pooled connection as `reunir_app`. | Section 3 |
-| `BETTER_AUTH_SECRET` | Yes | Signs sessions. | `<generate: openssl rand -base64 48>` |
+| `BETTER_AUTH_SECRET` | Yes | Signs sessions and encrypts two-step sign-in secrets and backup codes. | `<generate: openssl rand -base64 48>` |
+| `ADMIN_TWO_FACTOR` | Recommended | `required` (the production default when unset) or `optional`. When required, owners and administrators must turn on two-step sign-in before using their tools. | `required` |
 | `RESEND_API_KEY` | For mail | Sending-only key for the verified domain. | Section 7 |
 | `EMAIL_FROM` | For mail | Sender, for example `Ferven <pilot@mail.<your-domain>>`. | Section 7 |
 | `EMAIL_ENCRYPTION_KEY` | When mail is set | Encrypts queued mail. Stable: changing it makes pending mail unreadable. | `<generate: openssl rand -base64 48>` |
@@ -150,6 +151,7 @@ Health (no secret needed):
 - [ ] `GET /api/health` returns `"status":"ok"`, `"mode":"live"`, `"database":"postgres"` and the expected `storage` value. This runs `SELECT 1` through the runtime role.
 - [ ] `GET /api/internal/mail` and `GET /api/internal/digests` **without** a header return 403.
 - [ ] Signed in as the owner, `/api/account/capabilities` shows `invitations`, `passwordRecovery` and `emailDigests` true when mail is configured.
+- [ ] The owner turns on two-step sign-in from Your account, stores the backup codes offline, and confirms owner tools work only afterwards when `ADMIN_TWO_FACTOR` is required.
 - [ ] The owner Pilot console shows no blocker you did not expect.
 
 Hosted privacy and access tests from RELEASE_GATES.md "Staging sequence" and PILOT_OPERATIONS.md "Go-live acceptance", in real browsers including a phone, with consented test addresses only:
@@ -202,7 +204,7 @@ Detail: SETUP.md sections 3 and 8; RELEASE_GATES.md step 8.
 
 - [ ] Before any member data, confirm Neon point-in-time restore covers the agreed window.
 - [ ] Take a logical backup with the migration credential, for example `pg_dump --format=custom` with a client at least as new as the server, into encrypted storage controlled by the owner. Never into the repository.
-- [ ] Rehearse: restore into a **separate, empty** Neon branch or project. Then on that copy: `npm run pilot:check -- --migrations --json` (19 matching), confirm `reunir_app` exists with only its grants (rerun `npm run db:grant-runtime` if the restore did not carry roles), `npm run pilot:check -- --database --json` passes, row counts match, and row-level security still blocks a cross-tenant read.
+- [ ] Rehearse: restore into a **separate, empty** Neon branch or project. Then on that copy: `npm run pilot:check -- --migrations --json` (every migration matching), confirm `reunir_app` exists with only its grants (rerun `npm run db:grant-runtime` if the restore did not carry roles), `npm run pilot:check -- --database --json` passes, row counts match, and row-level security still blocks a cross-tenant read.
 - [ ] Record the restore time and who performed it. Repeat before any wider pilot.
 
 ## 12. Monitoring
@@ -217,7 +219,7 @@ Detail: SETUP.md sections 3 and 8; RELEASE_GATES.md step 8.
 - [ ] Application: promote the previous good deployment in Vercel (instant rollback). The schema is additive, so earlier application builds keep working against it; check BUILD_STATUS.md for any noted exception before relying on this.
 - [ ] Scheduler: disable it before rolling back if mail is misbehaving. Do not reset or replay jobs in bulk.
 - [ ] Database: no downgrade scripts exist. Restore only by the backup plan in section 11, into a new branch, then repoint `DATABASE_URL`. Never delete tables by hand.
-- [ ] Secrets: rotate `BETTER_AUTH_SECRET` (signs everyone out), `CRON_SECRET` (update the scheduler at the same time) or the database password if exposed. Rotating `EMAIL_ENCRYPTION_KEY` makes queued mail unreadable; drain or re-enqueue first.
+- [ ] Secrets: rotate `BETTER_AUTH_SECRET` (signs everyone out and makes every stored two-step sign-in secret and backup code unreadable, so everyone with two-step sign-in must set it up again), `CRON_SECRET` (update the scheduler at the same time) or the database password if exposed. Rotating `EMAIL_ENCRYPTION_KEY` makes queued mail unreadable; drain or re-enqueue first.
 - [ ] To close the pilot entirely: disable the scheduler, then remove the Vercel deployment's environment, keeping the database and backups until retention is decided.
 
 ## 14. Evidence log and approval

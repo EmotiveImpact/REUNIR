@@ -83,6 +83,13 @@ test('mail requires its pair, an independent key and a scheduler secret', () => 
     assert.ok(failures({ ...good, RESEND_API_KEY: undefined, EMAIL_FROM: undefined, CRON_SECRET: 'weak' }).includes('CRON_SECRET'));
 });
 
+test('owners and administrators need two-step sign-in unless the launch says otherwise', () => {
+    assert.equal(state(inspectLaunch(good), 'ADMIN_TWO_FACTOR'), 'pass', 'unset means required in production');
+    assert.equal(state(inspectLaunch({ ...good, ADMIN_TWO_FACTOR: 'required' }), 'ADMIN_TWO_FACTOR'), 'pass');
+    assert.equal(state(inspectLaunch({ ...good, ADMIN_TWO_FACTOR: 'optional' }), 'ADMIN_TWO_FACTOR'), 'warn');
+    assert(failures({ ...good, ADMIN_TWO_FACTOR: 'sometimes' }).includes('ADMIN_TWO_FACTOR'));
+});
+
 test('storage variables are paired and shaped', () => {
     assert.deepEqual(failures({ ...good, GCS_BUCKET: undefined }), ['storage-pair']);
     assert.equal(state(inspectLaunch({ ...good, GCS_BUCKET: undefined, GCS_CREDENTIALS_JSON: undefined }), 'storage-pair'), 'warn');

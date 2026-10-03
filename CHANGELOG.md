@@ -8,9 +8,25 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### 0.22.0-alpha.1 (Alpha 22): cover picture descriptions, 3 October 2026
+### Launch kit (no version change), 3 October 2026
 
 On a pull request from `claude/build-out-tvzn40`, to be merged once its checks pass.
+
+**In plain language:** a step-by-step launch guide and an offline check of the launch settings, so the app is ready to switch on when you decide. Nothing was provisioned and nothing is live.
+
+Details:
+
+- `platform/docs/LAUNCH_RUNBOOK.md` walks through every launch step in order: the Neon database and restricted runtime role, migrations, the first owner, server settings, storage, mail, Vercel, hosted privacy checks, the mail and digest scheduler, backups with a restore rehearsal, monitoring, rollback, and the written approvals needed before inviting pilot members.
+- `npm run launch:preflight` checks the shape of a production environment without printing a value or opening a connection, including `ADMIN_TWO_FACTOR`.
+- No migration, no runtime code change, no new dependency.
+
+### Planned
+
+- Virus scanning of uploads, group conversations, and email verification and change.
+
+## 0.22.0-alpha.1 (Alpha 22): cover picture descriptions, 3 October 2026
+
+On main through [PR #15](https://github.com/EmotiveImpact/REUNIR/pull/15), merged as `ec4285d`.
 
 **In plain language:** when you set a cover for a track or project you can now describe the picture, and people using a screen reader hear that description on the track's or project's own page.
 
@@ -19,10 +35,6 @@ Details:
 - **Describe the picture (optional)**, up to 150 characters, in the cover dialogue. Cards and lists stay decorative because their titles sit beside the picture.
 - A new picture starts without a description; moving the focal point keeps it (decision 022).
 - No migration, no grant change, no new runtime dependency.
-
-### Planned
-
-- Virus scanning of uploads, group conversations, and email verification and change.
 
 ## 0.21.0-alpha.1 (Alpha 21): two-step sign-in, 3 October 2026
 
