@@ -10,6 +10,7 @@ import { applyInstructors, filterInstructors } from './instructors';
 import { applyAssessment, filterAssessments } from './assessments';
 import { windowWorkspace } from './pages';
 import { applyNotificationSettings, dropMutedNotices } from './notifications';
+import { applyCollections, filterCollections } from './collections';
 /**
  * What this person may see, shortened for the browser: recent notices and audit entries and only their own attempts, with
  * exact totals in `summary`. The rest of those lists comes a page at a time (`pageOf`). `auditTotal` is the full trail's
@@ -59,7 +60,8 @@ export function visibleRecords(state: Workspace, ctx: TenantContext): Workspace 
     // A membership that left before account deletion existed may still hold its details, so every one is scrubbed here.
     s.members = s.members.filter(x => x.status !== 'suspended' || isAdmin(actor)).map(x => x.status === 'left' ? formerMember(x) : x);
     s.uploads = visibleUploads(s, actor);
-    return filterAssessments(filterAuthoring(filterCoverLibrary(filterInstructors(filterProjectWork(filterPurposeWorkspace(s, ctx, actor), actor), actor), actor), actor), actor);
+    // Collections last: an item is kept only when its content survived every filter above.
+    return filterCollections(filterAssessments(filterAuthoring(filterCoverLibrary(filterInstructors(filterProjectWork(filterPurposeWorkspace(s, ctx, actor), actor), actor), actor), actor), actor), actor);
 }
 export function progress(state: Workspace, userId: string, trackId: string) {
     const lessons = state.lessons.filter(l => l.trackId === trackId && l.published);
@@ -105,7 +107,7 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
     let objectId: string | undefined;
     let changed = true;
     const noticesBefore = new Set(s.notifications.map(n => n.id));
-    const purposeResult = applyNotificationSettings(s, ctx, cmd, now, makeId) ?? applyAuthoring(s, ctx, cmd, now, makeId) ?? applyAssessment(s, ctx, cmd, now, makeId) ?? applyProjectWork(s, ctx, cmd, now, makeId) ?? applyCovers(s, ctx, cmd, now, makeId) ?? applyInstructors(s, ctx, cmd, now, makeId) ?? applyPurposeCommand(s, ctx, cmd, now, makeId);
+    const purposeResult = applyNotificationSettings(s, ctx, cmd, now, makeId) ?? applyAuthoring(s, ctx, cmd, now, makeId) ?? applyAssessment(s, ctx, cmd, now, makeId) ?? applyProjectWork(s, ctx, cmd, now, makeId) ?? applyCovers(s, ctx, cmd, now, makeId) ?? applyInstructors(s, ctx, cmd, now, makeId) ?? applyCollections(s, ctx, cmd, now, makeId) ?? applyPurposeCommand(s, ctx, cmd, now, makeId);
     if (purposeResult) {
         message = purposeResult.message;
         objectId = purposeResult.objectId;
@@ -444,4 +446,4 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
     }
     return { workspace: s, message, objectId };
 }
-export const commandsForReference: Command['type'][] = ['notification.preferences.save','cover.library.add','track.instructor.add','track.instructor.remove','track.cover.set','project.cover.set','quiz.attempt.submit','quiz.attempt.review','lesson.draft.create','lesson.draft.save','lesson.draft.publish','lesson.draft.archive','lesson.draft.restore','track.lessons.reorder','task.create','task.edit','task.claim','task.release','task.move','task.archive','task.submit','task.note','task.note.hide', 'member.status', 'member.role', 'space.access', 'post.create', 'post.comment', 'post.react', 'post.bookmark', 'post.report', 'post.moderate', 'track.enrol', 'lesson.complete', 'mission.submit', 'submission.review', 'project.join', 'project.create', 'project.update', 'event.rsvp', 'profile.update', 'notification.read', 'organisation.update', 'space.create', 'track.create', 'lesson.create', 'mission.create', 'event.create', 'purpose.save', 'path.create', 'path.publish', 'path.enrol', 'milestone.create', 'goal.set', 'goal.status', 'project.purpose', 'contribution.submit', 'contribution.resubmit', 'contribution.review', 'outcome.submit', 'outcome.resubmit', 'outcome.review', 'output.publish'];
+export const commandsForReference: Command['type'][] = ['collection.save','collection.publish','collection.feature','collection.delete','collection.item.add','collection.item.note','collection.item.remove','collection.items.reorder','notification.preferences.save','cover.library.add','track.instructor.add','track.instructor.remove','track.cover.set','project.cover.set','quiz.attempt.submit','quiz.attempt.review','lesson.draft.create','lesson.draft.save','lesson.draft.publish','lesson.draft.archive','lesson.draft.restore','track.lessons.reorder','task.create','task.edit','task.claim','task.release','task.move','task.archive','task.submit','task.note','task.note.hide', 'member.status', 'member.role', 'space.access', 'post.create', 'post.comment', 'post.react', 'post.bookmark', 'post.report', 'post.moderate', 'track.enrol', 'lesson.complete', 'mission.submit', 'submission.review', 'project.join', 'project.create', 'project.update', 'event.rsvp', 'profile.update', 'notification.read', 'organisation.update', 'space.create', 'track.create', 'lesson.create', 'mission.create', 'event.create', 'purpose.save', 'path.create', 'path.publish', 'path.enrol', 'milestone.create', 'goal.set', 'goal.status', 'project.purpose', 'contribution.submit', 'contribution.resubmit', 'contribution.review', 'outcome.submit', 'outcome.resubmit', 'outcome.review', 'output.publish'];
