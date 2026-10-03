@@ -30,12 +30,12 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | UNITCOUNT passed, 0 failed (UNITNEW new in `tests/instructor-tracks.test.ts` and `tests/instructor-tracks-database.test.ts`) |
+| `npm test` | 757 passed, 0 failed (7 new in `tests/instructor-tracks.test.ts` and `tests/instructor-tracks-database.test.ts`) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
-| Demo-browser suites | DEMOCOUNT passed, including INSTRCOUNT instructor checks (1 new: an instructor starts a track, members see it only after an administrator publishes it) |
-| Connected-browser suites | CONNCOUNT passed (unchanged) |
-| `npm run test:postgres` | Passed on PostgreSQL 16 |
+| Demo-browser suites | 299 passed across 17 suites, including 13 instructor checks (1 new: an instructor starts a track, members see it only after an administrator publishes it) |
+| Connected-browser suites | 64 passed (unchanged) |
+| `npm run test:postgres` | 24 passed on PostgreSQL 16 |
 | Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
 
 ## Not verified, and why
