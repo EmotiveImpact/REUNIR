@@ -31,6 +31,10 @@ On base `b24095a` (by the building agent): typecheck, builds, `npm test` 644 pas
 
 On this branch, on top of Alpha 27 and main `fab9510`: typecheck, build and bundle passed; `npm test` 697 passed, 0 failed (after main `fab9510`); `test:postgres` passed on a fresh PostgreSQL 16 loopback cluster with no leftover `reunir_*` roles; `curation` 9, `groups` 11, `states` 12, `v4` 20 and `monochrome` 16 passed.
 
+## Review fix
+
+The Codex review of PR #25 found that a mission on an unpublished track was offered to curators as live, although members lose it with the track. Missions now follow their track's publication like lessons do; `tests/collections.test.ts` refuses adding such a mission (failed before the fix, passes after). `npm test` 697 passed and `curation` 9 passed after the fix.
+
 ## Not verified, and why
 
 - PostgreSQL 17 runs in CI only. No hosted deployment.

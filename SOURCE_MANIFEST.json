@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 28 collections of useful content",
   "version": "0.28.0-alpha.1",
   "sourceBaseline": "f9f32d6db2d9a028e33395ce540114af683364ad",
-  "generatedAt": "2026-10-03T13:58:10.075430+00:00",
+  "generatedAt": "2026-10-03T14:13:33.870346+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "1704944d02b9d78e728ede501fbe0490e7aa98b176485b72411c5bfdc39d995c",
-      "bytes": 35079
+      "sha256": "c10ead81e8cc9c769a9c342d46baf4107ada74b6c72a9d9f8d8ea6ce2377a9b5",
+      "bytes": 35115
     },
     {
       "path": "README.md",
@@ -596,8 +596,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "c0cbf85728f0aa97900d5a782be6d62e1b4f62f788bbc393aa71efcd8578d52b",
-      "bytes": 141680
+      "sha256": "ed0e8c31c5b8c76761728fd5701aea4f4d6e26280817be75f0e6acfe7430388d",
+      "bytes": 142063
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -1416,8 +1416,8 @@
     },
     {
       "path": "platform/packages/domain/src/collections.ts",
-      "sha256": "bd5cde3883168c041e379496bfb30f17d9091b3720f8d5b1773e062fb6487892",
-      "bytes": 12535
+      "sha256": "2931789caadd6be4ed7bfa4a469aa2b5194ce77eb2a9548beee9e6d8485b70c4",
+      "bytes": 12680
     },
     {
       "path": "platform/packages/domain/src/covers.ts",
@@ -1726,8 +1726,8 @@
     },
     {
       "path": "platform/tests/collections.test.ts",
-      "sha256": "efdc60b4bb6b732bf6168134ef6a87c75cf2dbdc40cbbefaf538a907d77f1181",
-      "bytes": 16153
+      "sha256": "a230e48b8e31666c3f50bea3274182c7ff7688f094d349f0f402245c2171a492",
+      "bytes": 16221
     },
     {
       "path": "platform/tests/contributor-roles-database.test.ts",
