@@ -1750,3 +1750,10 @@ tables.push({key:'notificationPreferences',table:'notification_preferences',fiel
     {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
     {property:'userId',column:'user_id',type:'text'},{property:'muted',column:'muted',type:'jsonb'},{property:'digest',column:'digest',type:'text'},
     {property:'updatedAt',column:'updated_at',type:'timestamptz'},{property:'lastDigestAt',column:'last_digest_at',type:'timestamptz'}]});
+
+// Credits on a contribution, with the credited person's consent. Only the answer and a withdrawal change a credit.
+tables.push({key:'contributionCredits',table:'contribution_credits',mutable:['status','respondedAt','withdrawnBy','withdrawnAt'],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'contributionId',column:'contribution_id',type:'text'},{property:'projectId',column:'project_id',type:'text'},{property:'userId',column:'user_id',type:'text'},
+    {property:'invitedBy',column:'invited_by',type:'text'},{property:'role',column:'role',type:'text'},{property:'status',column:'status',type:'text'},
+    {property:'respondedAt',column:'responded_at',type:'timestamptz'},{property:'withdrawnBy',column:'withdrawn_by',type:'text'},{property:'withdrawnAt',column:'withdrawn_at',type:'timestamptz'}]});

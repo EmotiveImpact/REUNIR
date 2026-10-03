@@ -24,7 +24,7 @@ const asRuntime = <T>(organizationId: string, userId: string, fn: (sql: SQL) => 
 const count = async (query: string, params: unknown[] = []) => (await db.query<{ n: number }>(query, params)).rows[0].n;
 const mine = (table: string, column = 'user_id', user = DEMO_USER) => count(`SELECT count(*)::int AS n FROM ${table} WHERE ${column}=$1`, [user]);
 const run = (user: string, cmd: unknown, slug = 'code-black') => runtime.execute(slug, user, cmd, randomUUID(), 'account-deletion-test');
-const PERSONAL = ['notification_preferences', 'member_goals', 'bookmarks', 'notifications', 'reactions', 'rsvps', 'enrolments', 'completions', 'path_enrolments', 'quiz_attempts', 'reputation', 'space_members', 'track_instructors', 'message_receipts', 'member_blocks', 'command_receipts'];
+const PERSONAL = ['notification_preferences', 'member_goals', 'bookmarks', 'notifications', 'reactions', 'rsvps', 'enrolments', 'completions', 'path_enrolments', 'quiz_attempts', 'reputation', 'space_members', 'track_instructors', 'contribution_credits', 'message_receipts', 'member_blocks', 'command_receipts'];
 
 async function person(id: string, name: string, email: string) {
     const now = new Date().toISOString();
@@ -59,6 +59,10 @@ before(async () => {
     const version = async (id: string) => (await runtime.snapshot('code-black', DEMO_USER)).projectTasks.find(t => t.id === id)!.version;
     await run(DEMO_USER, { type: 'task.move', taskId: 'task_test', expectedVersion: await version('task_test'), workState: 'doing' });
     await run(DEMO_USER, { type: 'task.submit', taskId: 'task_test', expectedVersion: await version('task_test'), body: 'Observed three first-run sessions and recorded where people hesitated.' });
+    // Idris credits Alex on his contribution, and Alex accepts.
+    const idrisWork = (await run(IDRIS, { type: 'contribution.submit', projectId: 'project_common', title: 'Built the profile flow', body: 'Built and tested the discovery flow with Alex.' })).objectId!;
+    const creditId = (await run(IDRIS, { type: 'credit.invite', contributionId: idrisWork, userId: DEMO_USER, role: 'co-author' })).objectId!;
+    await run(DEMO_USER, { type: 'credit.respond', creditId, decision: 'accepted' });
     thread = (await messaging.start('code-black', DEMO_USER, DEMO_ADMIN)).id;
     await messaging.send('code-black', DEMO_USER, thread, 'Thanks for the welcome. I am working towards a first release.', 'alex-message-1');
     const reply = await messaging.send('code-black', DEMO_ADMIN, thread, 'Lovely. Tell me what would help.', 'amina-message-1');
@@ -133,7 +137,9 @@ test('deleting an account scrubs every membership, keeps shared work as Former m
     assert.equal(summary.communities, 2);
     assert.deepEqual(files, [privateFile], 'the private file is returned for removal from storage after commit');
     assert.equal(summary.releasedTasks, 3, 'one where Alex is active, and both where Alex was suspended');
-    assert.equal(summary.rewordedNotices, 3, 'the reply notice, and the contribution notices to the owner and the project lead');
+    assert.equal(summary.rewordedNotices, 4, 'the reply notice, the contribution notices to the owner and the project lead, and the accepted credit');
+    assert.equal(summary.removed.contributionCredits, 1, 'the credit naming Alex goes with the account');
+    assert.equal(await count("SELECT count(*)::int AS n FROM contributions WHERE user_id=$1 AND title='Built the profile flow'", [IDRIS]), 1, 'Idris’s contribution stays');
     assert.deepEqual([summary.removed.quizAttempts, summary.removed.trackInstructors, summary.removed.privateFiles, summary.removed.invitations, summary.removed.queuedMail, summary.removed.sessions, summary.removed.signInTokens], [1, 1, 1, 2, 1, 2, 1]);
     // Every membership, the suspended one included, is the same scrubbed record.
     const members = await db.query('SELECT organization_id,name,headline,bio,skills,colour,avatar,role,status FROM members WHERE user_id=$1 ORDER BY organization_id', [DEMO_USER]);
