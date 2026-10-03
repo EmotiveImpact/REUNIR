@@ -8,6 +8,19 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
+### 0.30.0-alpha.1 (Alpha 30): every form on the shared shadcn components, 3 October 2026
+
+On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass. The package version stays at 0.31.0-alpha.1, set by Alpha 31.
+
+**In plain language:** every form in the app now uses the same set of shared components for text boxes, labels, drop-down lists, tick boxes, choice buttons and on/off switches. Nothing looks different and nothing moves; keyboard and screen-reader behaviour is now consistent everywhere.
+
+Details:
+
+- Seven more adapted shadcn new-york-v4 components (Input, Textarea, Label, Native Select, Checkbox, Radio Group, Switch) over four exactly pinned Radix packages; notices, licences and register entries added.
+- Field names, ids, labels, validation and submit handlers are unchanged. Show archive and showing answers after a knowledge check became switches.
+- The dialogue keeps its native modal `dialog` with shadcn slots and a shadcn close button. File pickers and focal-point sliders stay native.
+- New `test:browser:forms` in CI and a Python contract check (`scripts/test_forms_contract.py`). FORMS.md and decision 030 explain the choices.
+
 ### 0.29.0-alpha.1 (Alpha 29): files on project tasks and live project work, 3 October 2026
 
 On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass. The package version stays at 0.31.0-alpha.1, set by Alpha 31.

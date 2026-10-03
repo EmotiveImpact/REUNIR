@@ -4,6 +4,11 @@ import type { QuizAttempt } from '../../../../packages/contracts/src/index';
 import {
     MAX_SHORT_ANSWER, MAX_WRITTEN_ANSWER, quizMaxScore, quizPercentage, type LessonQuiz, type QuizAnswer, type QuizQuestion, type QuizResult,
 } from '../../../../packages/contracts/src/assessments';
+import { Checkbox } from './ui/checkbox';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { OptionalRadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Textarea } from './ui/textarea';
 
 /** Presentational knowledge-check views. No data access, so the same markup renders in tests and in every mode. */
 export const pointsLabel = (n: number) => `${n} ${n === 1 ? 'point' : 'points'}`;
@@ -46,14 +51,14 @@ export function QuizQuestions({ quiz, name, answers, onAnswer, disabled = false 
         return <li key={q.id}><fieldset className="quiz-question" disabled={disabled || !onAnswer}>
             <legend><span className="quiz-question-number">Question {i + 1} · {pointsLabel(q.points)}</span><span id={prompt} className="quiz-question-prompt">{q.prompt}</span></legend>
             {q.kind === 'multiple' && <p className="quiz-hint">Choose every answer that applies.</p>}
-            {(q.kind === 'single' || q.kind === 'multiple') && <div className="quiz-choices">{q.options.map(o => <label key={o.id} className="quiz-choice">
-                <input type={q.kind === 'single' ? 'radio' : 'checkbox'} name={`${name}-${q.id}`} checked={given.optionIds.includes(o.id)}
-                    onChange={e => set({ optionIds: q.kind === 'single' ? [o.id] : e.target.checked ? [...given.optionIds, o.id] : given.optionIds.filter(id => id !== o.id) })}/>
+            {(q.kind === 'single' || q.kind === 'multiple') && <OptionalRadioGroup when={q.kind === 'single'} name={`${name}-${q.id}`} aria-labelledby={prompt} value={given.optionIds[0] ?? ''} onValueChange={id => set({ optionIds: [id] })}><div className="quiz-choices">{q.options.map(o => <Label key={o.id} className="quiz-choice">
+                {q.kind === 'single' ? <RadioGroupItem value={o.id}/> : <Checkbox checked={given.optionIds.includes(o.id)}
+                    onCheckedChange={on => set({ optionIds: on === true ? [...given.optionIds, o.id] : given.optionIds.filter(id => id !== o.id) })}/>}
                 <span>{o.text}</span>
-            </label>)}</div>}
-            {q.kind === 'short' && <input className="quiz-text" aria-labelledby={prompt} maxLength={MAX_SHORT_ANSWER} value={given.text} placeholder="A word or short phrase" onChange={e => set({ text: e.target.value })}/>}
+            </Label>)}</div></OptionalRadioGroup>}
+            {q.kind === 'short' && <Input className="quiz-text" aria-labelledby={prompt} maxLength={MAX_SHORT_ANSWER} value={given.text} placeholder="A word or short phrase" onChange={e => set({ text: e.target.value })}/>}
             {q.kind === 'written' && <>
-                <textarea className="quiz-text" rows={4} aria-labelledby={prompt} maxLength={MAX_WRITTEN_ANSWER} value={given.text} placeholder="Write your answer" onChange={e => set({ text: e.target.value })}/>
+                <Textarea className="quiz-text" rows={4} aria-labelledby={prompt} maxLength={MAX_WRITTEN_ANSWER} value={given.text} placeholder="Write your answer" onChange={e => set({ text: e.target.value })}/>
                 <small className="quiz-count">{given.text.length} of {MAX_WRITTEN_ANSWER} characters · marked by a reviewer</small>
             </>}
         </fieldset></li>;

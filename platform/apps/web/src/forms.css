@@ -1,0 +1,16 @@
+/* Shared shadcn form components on REUNIR's existing, unlayered stylesheet. See docs/FORMS.md.
+   The element rules in styles.css still set field padding, type and colour; these rules only fill
+   the gaps where a Radix control is a <button> that the global button reset would otherwise blank. */
+.button[data-slot=button],.icon-button[data-slot=button]{height:auto}
+.icon-button[data-slot=button]{width:auto}
+[data-slot=checkbox],[data-slot=radio-group-item]{display:inline-grid;place-items:center;width:16px;height:16px;min-width:16px;min-height:16px;padding:0;flex:none;border:1px solid #707070;background:#131313;color:#0b0b0b}
+[data-slot=checkbox]{border-radius:4px}
+[data-slot=radio-group-item]{border-radius:50%;color:#f1f1f1}
+[data-slot=checkbox][data-state=checked]{border-color:#f1f1f1;background:#f1f1f1}
+[data-slot=radio-group-item][data-state=checked]{border-color:#f1f1f1}
+[data-slot=radio-group-indicator] svg{fill:currentColor}
+[data-slot=switch]{padding:0;border:1px solid #707070;background:#262626}
+[data-slot=switch][data-state=checked]{border-color:#f1f1f1;background:#f1f1f1}
+[data-slot=switch-thumb]{background:#d6d6d6}
+[data-slot=switch][data-state=checked] [data-slot=switch-thumb]{background:#0b0b0b}
+[data-slot=checkbox]:disabled,[data-slot=radio-group-item]:disabled,[data-slot=switch]:disabled{opacity:.5}

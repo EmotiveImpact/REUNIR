@@ -12,6 +12,9 @@ import { signInWithPassword } from './two-factor';
 import { SecondStepForm } from '../components/second-step';
 import { ErrorState, ShellLoading } from '../components/states';
 import { CircleAlert } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 // Declared after the imports: Vite's development server turns React's named imports into constants in place.
 const AccountAccessPage = lazy(()=>import('../pages/access').then(m=>({default:m.AccountAccessPage})));
 interface Ctx {
@@ -124,7 +127,7 @@ export function WorkspaceProvider({ children }: {
     // Nothing loaded yet. Once a workspace has loaded, a failed refresh keeps it on screen and says so instead.
     if (!query.data)
         return <main className="loading-page"><ErrorState error={query.error} level={1} home={false} saved={mode === 'demo'} onRetry={() => query.refetch()}/>
-            {ident.data.memberships.length > 1 && <div className="empty-actions">{ident.data.memberships.filter(m => m.slug !== activeSlug).map(m => <button key={m.slug} type="button" className="button secondary" onClick={() => setSlug(m.slug)}>Open {m.name}</button>)}</div>}
+            {ident.data.memberships.length > 1 && <div className="empty-actions">{ident.data.memberships.filter(m => m.slug !== activeSlug).map(m => <Button variant="secondary" key={m.slug} type="button" className="button secondary" onClick={() => setSlug(m.slug)}>Open {m.name}</Button>)}</div>}
             {mode === 'live' && <small>No demo data has been substituted.</small>}</main>;
     const me = query.data.members.find(m => m.userId === userId)!;
     return <Context.Provider value={{ data: query.data, me, slug: activeSlug, setSlug, userId, setUserId: (id) => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); setDemoUser(id); }, busy, command, uploadResource, discardUpload, downloadResource, toast, reload: () => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); query.refetch(); }, mode, identity: ident.data, accountDeleted, refreshError: query.error }}>{children}<div className={`toast ${notice.text ? 'visible' : ''} ${notice.tone === 'error' ? 'error' : ''}`} role="status" aria-live="polite" data-tone={notice.tone}>{notice.tone === 'error' && <CircleAlert size={16} aria-hidden="true"/>}<span>{notice.text}</span></div></Context.Provider>;
@@ -145,10 +148,10 @@ catch (e) {
 }
 finally {
     B(false);
-} }}>{farewell&&<p className="account-deleted-notice" role="status">Your account has been deleted. Thank you for being part of the community.</p>}<h2>{recover?'Find your way back.':'Good to see you.'}</h2><p>{recover?'We’ll send a reset link if the account exists.':'Sign in to your community.'}</p>{sent&&<p role="status">If there is an account with that email, a reset link has been queued. Check your inbox.</p>}<label>Email<input type="email" autoComplete="email" required value={email} onChange={e => E(e.target.value)}/></label>{!recover&&<label>Password<input type="password" autoComplete="current-password" required value={password} onChange={e => P(e.target.value)}/></label>}{error && <p className="form-error" role="alert">{error}</p>}<button className="button primary" disabled={busy}>{busy ? 'Working…' : recover?'Send reset link':'Sign in'}</button><button type="button" className="button secondary" onClick={()=>{R(!recover);Sent(false);Err('');}}>{recover?'Back to sign in':'Forgot your password?'}</button><small>Invitation-only pilot. New here? Open the personal invitation from your community owner.</small></form></main>; }
+} }}>{farewell&&<p className="account-deleted-notice" role="status">Your account has been deleted. Thank you for being part of the community.</p>}<h2>{recover?'Find your way back.':'Good to see you.'}</h2><p>{recover?'We’ll send a reset link if the account exists.':'Sign in to your community.'}</p>{sent&&<p role="status">If there is an account with that email, a reset link has been queued. Check your inbox.</p>}<Label>Email<Input type="email" autoComplete="email" required value={email} onChange={e => E(e.target.value)}/></Label>{!recover&&<Label>Password<Input type="password" autoComplete="current-password" required value={password} onChange={e => P(e.target.value)}/></Label>}{error && <p className="form-error" role="alert">{error}</p>}<Button variant="default" className="button primary" disabled={busy}>{busy ? 'Working…' : recover?'Send reset link':'Sign in'}</Button><Button variant="secondary" type="button" className="button secondary" onClick={()=>{R(!recover);Sent(false);Err('');}}>{recover?'Back to sign in':'Forgot your password?'}</Button><small>Invitation-only pilot. New here? Open the personal invitation from your community owner.</small></form></main>; }
 /** The demo after its persona deleted their account: what a connected community would keep, and where to go next. */
 function DemoFarewell({ owner, onSee, onRestart }: { owner: string; onSee: () => void; onRestart: () => void }) {
     return <main className="loading-page account-farewell"><div className="loading-mark" aria-hidden="true">R</div><h1>Your fictional account has been deleted.</h1>
         <p>In a connected community your posts, comments and project work would stay, shown as Former member, while your profile, private goals, learning record and sign-in would be gone. This demo did the same in your browser.</p>
-        <div className="farewell-actions"><button type="button" className="button primary" onClick={onSee}>See the community as {owner}</button><button type="button" className="button secondary" onClick={onRestart}>Restart the demo</button></div></main>;
+        <div className="farewell-actions"><Button variant="default" type="button" className="button primary" onClick={onSee}>See the community as {owner}</Button><Button variant="secondary" type="button" className="button secondary" onClick={onRestart}>Restart the demo</Button></div></main>;
 }

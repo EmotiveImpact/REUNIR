@@ -1,4 +1,39 @@
-# Alpha 29 files on project tasks and live project work
+# Alpha 30 every form on the shared shadcn components
+
+3 October 2026. Release 0.30.0-alpha.1; the package version stays at 0.31.0-alpha.1, set by Alpha 31 on main. Every form in the web app uses the shared shadcn Input, Textarea, Label, Native Select, Checkbox, Radio Group, Switch and Button. See decisions/030-shared-form-components.md and FORMS.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of Alpha 29 |
+| Verified locally | Yes, the checks below |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. Nothing was provisioned |
+| Operated with real members | No |
+
+## What changed
+
+- Seven adapted shadcn new-york-v4 components in `apps/web/src/components/ui`, pinned by registry blob in THIRD_PARTY_NOTICES.md and `research/reuse-register.json`. Four Radix packages at exact versions: `react-checkbox` 1.3.3, `react-label` 2.1.7, `react-radio-group` 1.3.8, `react-switch` 1.2.6; the only new transitive package is `react-use-previous` 1.1.1.
+- A mechanical swap across every page and component with a form, including collections, group conversations, task files, email address change, teaching roles and the loading, error and empty states. Names, ids, labels, validation and handlers are unchanged; legacy button classes are kept on Button so sizes and phone layouts stay.
+- `forms.css` gives the Radix controls a neutral, monochrome border and fill. Modal keeps its native modal `dialog` with shadcn slots.
+- No migration, no API change, no grant change.
+
+## Local verification, 3 October 2026
+
+Recorded in the pull request with the exact commands and counts.
+
+## Not verified, and why
+
+- Real screen readers; the axe checks and keyboard paths in `test:browser:forms` stand in.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. When upload scanning (Alpha 23) lands, confirm task files go through it, as decision 029 says.
+
+## Historical evidence: Alpha 29 files on project tasks and live project work
 
 3 October 2026. Release 0.29.0-alpha.1; the package version stays at 0.31.0-alpha.1, set by Alpha 31 on main. Project teams attach files to tasks through the shared verified upload path, boards and open tasks refresh when teammates change something, and concurrent edits are caught and explained. See decisions/029-task-files-and-live-project-work.md and PROJECT_WORK.md.
 
