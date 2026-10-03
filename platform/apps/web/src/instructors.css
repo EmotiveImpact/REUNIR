@@ -18,3 +18,8 @@
 .teaching-track h3 a:hover{text-decoration:underline}
 .teaching-track p{font-size:12px;color:var(--muted);margin:0}
 @media(max-width:560px){.teaching-track{flex-wrap:wrap}.teaching-track>.button{width:100%;justify-content:center}}
+.instructor-invite{display:grid;gap:8px;border-top:1px solid var(--border);padding-top:18px}
+.instructor-invite>div{display:flex;flex-wrap:wrap;gap:8px}
+.instructor-invite input[type=email]{flex:1;min-width:180px}
+.instructor-invite small{color:var(--muted)}
+.instructor-invite p[role=status]{font-size:13px}

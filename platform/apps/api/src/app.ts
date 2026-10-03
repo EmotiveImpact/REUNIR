@@ -138,7 +138,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     app.post('/api/organisations/:slug/invitations',async c=>{
         if(!invitations)throw new DomainError('UNAVAILABLE','Invitations not configured.',503);
         if(!await repository.consumeRateLimit('invite-admin:'+c.get('identity').id,10))throw new DomainError('RATE_LIMITED','Please wait before sending more invitations.',429);
-        const {email}=z.object({email:invitationEmail}).strict().parse(await c.req.json());return c.json(await invitations.create(c.req.param('slug'),c.get('identity').id,email),201);
+        const {email,trackId}=z.object({email:invitationEmail,trackId:id.optional()}).strict().parse(await c.req.json());return c.json(await invitations.create(c.req.param('slug'),c.get('identity').id,email,trackId),201);
     });
     app.post('/api/organisations/:slug/invitations/:inviteId/revoke',async c=>{if(!invitations)throw new DomainError('UNAVAILABLE','Invitations not configured.',503);return c.json(await invitations.revoke(c.req.param('slug'),c.get('identity').id,id.parse(c.req.param('inviteId'))));});
     app.get('/api/organisations/:slug/conversations',async c=>c.json(await messaging.list(c.req.param('slug'),c.get('identity').id,c.req.query('before'))));

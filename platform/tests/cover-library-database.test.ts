@@ -52,7 +52,7 @@ test('0013 upgrade keeps tracks, projects, covers and uploads exactly as they we
         await migrate(old); await migrate(old);
         for (const table of ['tracks', 'projects', 'upload_intents', 'members'] as const) assert.deepEqual(await read(table), before[table], table);
         assert.deepEqual(await read('cover_library'), []);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 19);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 20);
     } finally { await old.close(); }
 });
 

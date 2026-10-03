@@ -1,8 +1,10 @@
 import { useId, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { GraduationCap, UserMinus, UserPlus } from 'lucide-react';
+import { GraduationCap, Mail, UserMinus, UserPlus } from 'lucide-react';
 import { Avatar, Modal } from './ui';
 import { useWorkspace } from '../lib/context';
+import { displayError } from '../lib/data';
+import { createInvitation } from '../lib/invitations';
 import { isAdmin } from '../../../../packages/domain/src/access';
 import type { Track } from '../../../../packages/contracts/src/index';
 
@@ -45,8 +47,36 @@ function InstructorsDialog({ track, onClose }: { track: Track; onClose: () => vo
                 </select>
                 <button type="button" className="button primary" disabled={busy || !choice} onClick={() => void add()}><UserPlus size={15} aria-hidden="true"/>Add</button></div>
             </div>
+            <InviteToTeach track={track}/>
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="modal-actions"><button type="button" className="button secondary" onClick={onClose}>Done</button></div>
         </div>
     </Modal>;
+}
+
+/**
+ * Someone who is not yet a member can be invited by email to teach this track. Accepting makes them a member and an
+ * instructor of this track only, recorded in the inviting administrator's name.
+ */
+function InviteToTeach({ track }: { track: Track }) {
+    const { data, slug, mode, toast } = useWorkspace();
+    const [email, setEmail] = useState(''), [link, setLink] = useState<string | null>(null), [sent, setSent] = useState(''), [working, setWorking] = useState(false), [error, setError] = useState('');
+    const field = useId(), note = useId();
+    const send = async () => {
+        setWorking(true); setError('');
+        try {
+            const r = await createInvitation(slug, email, { id: track.id, title: track.title });
+            setSent(email); setLink(r.url); setEmail('');
+            if (r.url) toast(r.emailConfigured ? 'Invitation queued for email delivery.' : 'Invitation created. Email delivery needs configuration.');
+        } catch (e) { setError(displayError(e)); } finally { setWorking(false); }
+    };
+    return <form className="instructor-invite" onSubmit={e => { e.preventDefault(); void send(); }}>
+        <label htmlFor={field}>Invite someone new to teach</label>
+        <div><input id={field} type="email" required autoComplete="off" value={email} aria-describedby={note} onChange={e => setEmail(e.target.value.trim().toLowerCase())} placeholder="name@example.com"/>
+        <button type="submit" className="button secondary" disabled={working || !email}><Mail size={15} aria-hidden="true"/>{working ? 'Inviting…' : 'Invite'}</button></div>
+        <small id={note}>They join {data.organisation.name} as a member and teach {track.title} only. Invite people who are expecting to hear from you.</small>
+        {sent && <p role="status">{mode === 'demo' ? `A fictional invitation for ${sent} was recorded. The preview never sends email.` : `Invitation created for ${sent}. This personal link is shown once:`}</p>}
+        {link && <input readOnly aria-label="Personal invitation link" value={link} onFocus={e => e.target.select()}/>}
+        {error && <p className="form-error" role="alert">{error}</p>}
+    </form>;
 }
