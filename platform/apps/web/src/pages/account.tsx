@@ -7,6 +7,7 @@ import { deleteAccount, ownedCommunities, DEMO_COMMUNITIES } from '../lib/accoun
 import { Modal, PageHeading, Pill } from '../components/ui';
 import { TwoStepPanel } from '../components/two-step';
 import { EmailAddressPanel } from '../components/email-address';
+import { RetentionPanel } from '../components/retention';
 import { ACCOUNT_DELETION_PHRASE, FORMER_MEMBER, listNames, ownerRefusal } from '../../../../packages/contracts/src/account';
 
 const KEPT = ['Posts and comments, so conversations still make sense', 'Projects, updates, task notes and the proof you submitted', 'Lessons, files and covers you added for a community', 'Messages you sent, for the people you wrote to'];
@@ -31,6 +32,7 @@ export function AccountPage() {
             </section>
             <EmailAddressPanel/>
             <TwoStepPanel roles={communities.map(c => c.role)}/>
+            <RetentionPanel/>
             <section className="panel account-delete" aria-labelledby={heading}>
                 <h2 id={heading}>Delete your account</h2>
                 <p>Deleting your account applies to every community you belong to, and it cannot be undone.</p>
