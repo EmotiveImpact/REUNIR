@@ -1,9 +1,11 @@
 import { seedPurpose } from './purpose-seed';
 import { DEMO_WORKSHEET_FILE, demoWorksheetPdf } from './demo-files';
 import { normaliseQuiz } from './assessments';
-import type { Workspace, Member, Space, Track, Lesson, Mission, Project, CommunityEvent, Upload, QuizAttempt } from '../../contracts/src/index';
+import type { Workspace, Member, Space, Track, Lesson, Mission, Project, CommunityEvent, Upload, QuizAttempt, TrackInstructor } from '../../contracts/src/index';
 export const DEMO_USER = 'member_alex';
 export const DEMO_ADMIN = 'member_amina';
+/** Fictional instructor of the product track, for previewing the teaching view. */
+export const DEMO_INSTRUCTOR = 'member_idris';
 export function createSeed(slug = 'code-black'): Workspace {
     const org = slug === 'code-black' ? 'org_code_black' : 'org_studio_north';
     const isCode = slug === 'code-black';
@@ -97,7 +99,9 @@ export function createSeed(slug = 'code-black'): Workspace {
     // A fictional attempt waiting for feedback, so the review queue has something real to show.
     const lesson6 = lessons.find(l => l.id === 'lesson_6')!;
     const quizAttempts: QuizAttempt[] = isCode ? [{ ...base('attempt_sofia', '2026-09-25T10:30:00.000Z'), lessonId: 'lesson_6', trackId: 'track_product', userId: 'member_sofia', attemptNumber: 1, quiz: normaliseQuiz(lesson6.quiz)!, answers: [{ questionId: 'q6_watch', optionIds: ['a'], text: '' }, { questionId: 'q6_change', optionIds: [], text: 'They looked for a way to save before finishing the form, so I would save progress automatically and say so on screen. Three of the five steps were lost when they navigated away.' }], results: [{ questionId: 'q6_watch', correct: true, points: 1, maxPoints: 1 }, { questionId: 'q6_change', correct: null, points: null, maxPoints: 3 }], score: 1, maxScore: 4, status: 'awaiting_review', passed: null, feedback: '', reviewerId: null, reviewedAt: null, version: 1 }] : [];
-    return seedPurpose({ quizAttempts, uploads, lessonDrafts: [], lessonRevisions: [], projectTasks: [], taskNotes: [], purposes: [], paths: [], milestones: [], pathEnrolments: [], contributions: [], outcomes: [], communityOutputs: [], memberGoals: [], organisation: { id: org, slug, name: isCode ? 'Code Black' : 'Studio North', tagline: isCode ? 'Good people. Remarkable things.' : 'A small space for thoughtful work.', accent: isCode ? 'violet' : 'mint', createdAt: '2026-09-01T09:00:00.000Z' }, revision: 0, members, spaces, spaceMembers: [{ ...base('sm_admin'), spaceId: 'space_studio', userId: DEMO_ADMIN }], posts, comments: [
+    // Idris teaches the product track in the demo, so the instructor view can be previewed. Being named author grants nothing.
+    const trackInstructors: TrackInstructor[] = isCode ? [{ ...base('instructor_idris_product', '2026-09-20T09:00:00.000Z'), trackId: 'track_product', userId: 'member_idris', grantedBy: DEMO_ADMIN }] : [];
+    return seedPurpose({ trackInstructors, quizAttempts, uploads, lessonDrafts: [], lessonRevisions: [], projectTasks: [], taskNotes: [], purposes: [], paths: [], milestones: [], pathEnrolments: [], contributions: [], outcomes: [], communityOutputs: [], memberGoals: [], organisation: { id: org, slug, name: isCode ? 'Code Black' : 'Studio North', tagline: isCode ? 'Good people. Remarkable things.' : 'A small space for thoughtful work.', accent: isCode ? 'violet' : 'mint', createdAt: '2026-09-01T09:00:00.000Z' }, revision: 0, members, spaces, spaceMembers: [{ ...base('sm_admin'), spaceId: 'space_studio', userId: DEMO_ADMIN }], posts, comments: [
             { ...base('comment_1'), postId: 'post_common', authorId: 'member_jordan', body: 'Love the intention. I would want to see one piece of their work and what sort of collaboration they are open to.' },
             { ...base('comment_2'), postId: 'post_common', authorId: 'member_alex', body: 'Happy to take a look at the first-run experience. The problem is very familiar.' },
             { ...base('comment_3'), postId: 'post_maya', authorId: 'member_theo', body: 'Try building the sound first, then choosing the images. It can completely change the rhythm.' },

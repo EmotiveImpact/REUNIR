@@ -150,6 +150,15 @@ export interface Enrolment extends TenantRecord {
     trackId: Id;
     userId: Id;
 }
+/**
+ * An explicit grant, made by an active owner or administrator, to author and review one track. It never follows from
+ * being named as a track's author, and it ends while the member is inactive.
+ */
+export interface TrackInstructor extends TenantRecord {
+    trackId: Id;
+    userId: Id;
+    grantedBy: Id;
+}
 export interface Completion extends TenantRecord {
     trackId: Id;
     lessonId: Id;
@@ -293,6 +302,7 @@ export interface MemberGoal extends TenantRecord {
     visibility: 'private' | 'members'; status: 'active' | 'paused' | 'completed'; completedAt: string | null;
 }
 export interface Workspace {
+    trackInstructors: TrackInstructor[];
     quizAttempts: QuizAttempt[];
     uploads: Upload[];
     lessonDrafts: LessonDraft[];
@@ -367,6 +377,8 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({type:z.literal('track.lessons.reorder'),trackId:id,
         expectedOrder:z.array(id).max(200),lessonIds:z.array(id).max(200)}).strict(),
     z.object({type:z.literal('track.cover.set'),trackId:id,...coverChange}).strict(),
+    z.object({type:z.literal('track.instructor.add'),trackId:id,userId:id}).strict(),
+    z.object({type:z.literal('track.instructor.remove'),trackId:id,userId:id}).strict(),
     z.object({type:z.literal('project.cover.set'),projectId:id,...coverChange}).strict(),
     z.object({type:z.literal('task.create'),projectId:id,...taskFields}).strict(),
     z.object({type:z.literal('task.edit'),taskId:id,expectedVersion,...taskFields}).strict(),

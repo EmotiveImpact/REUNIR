@@ -6,6 +6,7 @@ import { applyAuthoring, filterAuthoring } from './authoring';
 import { normalisePurposeState, filterPurposeWorkspace, applyPurposeCommand } from './purpose';
 import { visibleUploads } from './resources';
 import { applyCovers } from './covers';
+import { applyInstructors, filterInstructors } from './instructors';
 import { applyAssessment, filterAssessments } from './assessments';
 export function visibleWorkspace(state: Workspace, ctx: TenantContext): Workspace {
     const actor = actorFor(state, ctx);
@@ -44,7 +45,7 @@ export function visibleWorkspace(state: Workspace, ctx: TenantContext): Workspac
     // Do not expose suspended members as active directory entries. Retain authors already visible.
     s.members = s.members.filter(x => x.status === 'active' || isAdmin(actor));
     s.uploads = visibleUploads(s, actor);
-    return filterAssessments(filterAuthoring(filterProjectWork(filterPurposeWorkspace(s, ctx, actor), actor), actor), actor);
+    return filterAssessments(filterAuthoring(filterInstructors(filterProjectWork(filterPurposeWorkspace(s, ctx, actor), actor), actor), actor), actor);
 }
 export function progress(state: Workspace, userId: string, trackId: string) {
     const lessons = state.lessons.filter(l => l.trackId === trackId && l.published);
@@ -89,7 +90,7 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
     let message = 'Saved.';
     let objectId: string | undefined;
     let changed = true;
-    const purposeResult = applyAuthoring(s, ctx, cmd, now, makeId) ?? applyAssessment(s, ctx, cmd, now, makeId) ?? applyProjectWork(s, ctx, cmd, now, makeId) ?? applyCovers(s, ctx, cmd) ?? applyPurposeCommand(s, ctx, cmd, now, makeId);
+    const purposeResult = applyAuthoring(s, ctx, cmd, now, makeId) ?? applyAssessment(s, ctx, cmd, now, makeId) ?? applyProjectWork(s, ctx, cmd, now, makeId) ?? applyCovers(s, ctx, cmd) ?? applyInstructors(s, ctx, cmd, now, makeId) ?? applyPurposeCommand(s, ctx, cmd, now, makeId);
     if (purposeResult) {
         message = purposeResult.message;
         objectId = purposeResult.objectId;
@@ -427,4 +428,4 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
     }
     return { workspace: s, message, objectId };
 }
-export const commandsForReference: Command['type'][] = ['track.cover.set','project.cover.set','quiz.attempt.submit','quiz.attempt.review','lesson.draft.create','lesson.draft.save','lesson.draft.publish','lesson.draft.archive','lesson.draft.restore','track.lessons.reorder','task.create','task.edit','task.claim','task.release','task.move','task.archive','task.submit','task.note','task.note.hide', 'member.status', 'member.role', 'space.access', 'post.create', 'post.comment', 'post.react', 'post.bookmark', 'post.report', 'post.moderate', 'track.enrol', 'lesson.complete', 'mission.submit', 'submission.review', 'project.join', 'project.create', 'project.update', 'event.rsvp', 'profile.update', 'notification.read', 'organisation.update', 'space.create', 'track.create', 'lesson.create', 'mission.create', 'event.create', 'purpose.save', 'path.create', 'path.publish', 'path.enrol', 'milestone.create', 'goal.set', 'goal.status', 'project.purpose', 'contribution.submit', 'contribution.resubmit', 'contribution.review', 'outcome.submit', 'outcome.resubmit', 'outcome.review', 'output.publish'];
+export const commandsForReference: Command['type'][] = ['track.instructor.add','track.instructor.remove','track.cover.set','project.cover.set','quiz.attempt.submit','quiz.attempt.review','lesson.draft.create','lesson.draft.save','lesson.draft.publish','lesson.draft.archive','lesson.draft.restore','track.lessons.reorder','task.create','task.edit','task.claim','task.release','task.move','task.archive','task.submit','task.note','task.note.hide', 'member.status', 'member.role', 'space.access', 'post.create', 'post.comment', 'post.react', 'post.bookmark', 'post.report', 'post.moderate', 'track.enrol', 'lesson.complete', 'mission.submit', 'submission.review', 'project.join', 'project.create', 'project.update', 'event.rsvp', 'profile.update', 'notification.read', 'organisation.update', 'space.create', 'track.create', 'lesson.create', 'mission.create', 'event.create', 'purpose.save', 'path.create', 'path.publish', 'path.enrol', 'milestone.create', 'goal.set', 'goal.status', 'project.purpose', 'contribution.submit', 'contribution.resubmit', 'contribution.review', 'outcome.submit', 'outcome.resubmit', 'outcome.review', 'output.publish'];

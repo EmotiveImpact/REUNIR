@@ -210,7 +210,8 @@ test('written answers wait for a reviewer and block another attempt until review
     const attempt = r.workspace.quizAttempts.at(-1)!;
     assert.deepEqual([attempt.status, attempt.score, attempt.passed], ['awaiting_review', 0, null]);
     const note = r.workspace.notifications.filter(n => !s.notifications.some(o => o.id === n.id));
-    assert.deepEqual(note.map(n => [n.userId, n.href]), [[DEMO_ADMIN, '/admin/knowledge-checks']], 'only active owners and administrators are told');
+    // Alpha 12: the track's instructor (seeded for the product track) is told as well, and goes to their teaching page.
+    assert.deepEqual(note.map(n => [n.userId, n.href]), [[DEMO_ADMIN, '/admin/knowledge-checks'], ['member_idris', '/teaching']], 'only active owners, administrators and the track’s instructors are told');
     throwsCode(() => submit(r.workspace, 'lesson_6', lesson6Answers), 'AWAITING_REVIEW');
 });
 

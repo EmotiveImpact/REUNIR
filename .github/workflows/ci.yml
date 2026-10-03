@@ -39,12 +39,14 @@ jobs:
       - run: npm run test:browser:resources
       - run: npm run test:browser:assessments
       - run: npm run test:browser:covers
+      - run: npm run test:browser:instructors
       - run: npm run test:browser:monochrome
       - run: npm run test:browser:v4
       - run: npm run test:browser:connected
       - run: npm run test:browser:resources-connected
       - run: npm run test:browser:assessments-connected
       - run: npm run test:browser:covers-connected
+      - run: npm run test:browser:instructors-connected
       - run: python3 -m unittest discover -s ../scripts -p 'test_*.py' -v
       - uses: actions/upload-artifact@v4
         if: always()

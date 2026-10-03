@@ -1,6 +1,7 @@
 import { lessonDocumentText } from '../../contracts/src/lesson-document';
 import { DomainError, type Command, type Workspace, type TenantContext, type Member, type Lesson, type LessonDraft, type LessonContent } from '../../contracts/src/index';
-import { actorFor, isAdmin, canSeeSpace } from './access';
+import { actorFor, canSeeSpace } from './access';
+import { taughtTracks, teaches, teachesAny } from './instructors';
 import { assertResourcesAvailable, normaliseResources, resolveResources } from './resources';
 import type { LessonResource } from '../../contracts/src/lesson-resources';
 import type { AuthoredQuiz } from '../../contracts/src/assessments';
@@ -13,17 +14,19 @@ export function lessonContent(value: LessonContent): EditableLessonContent {
     return {title:value.title, summary:value.summary, body:value.richBody?lessonDocumentText(value.richBody):value.body, minutes:value.minutes, resourceUrl:value.resourceUrl, richBody:value.richBody?structuredClone(value.richBody):null, resources:normaliseResources(value.resources), quiz:normaliseQuiz(value.quiz)};
 }
 export function filterAuthoring(state: Workspace, actor: Member): Workspace {
-    const tracks=new Set(state.tracks.map(t=>t.id));
-    state.lessonDrafts=isAdmin(actor)?state.lessonDrafts.filter(d=>d.organizationId===actor.organizationId&&tracks.has(d.trackId)):[];
-    state.lessonRevisions=isAdmin(actor)?state.lessonRevisions.filter(d=>d.organizationId===actor.organizationId&&tracks.has(d.trackId)):[];
+    // Drafts and history are private to the people who teach the track: its instructors and the community's administrators.
+    const tracks=taughtTracks(state,actor);
+    state.lessonDrafts=state.lessonDrafts.filter(d=>d.organizationId===actor.organizationId&&tracks.has(d.trackId));
+    state.lessonRevisions=state.lessonRevisions.filter(d=>d.organizationId===actor.organizationId&&tracks.has(d.trackId));
     return state;
 }
 export function applyAuthoring(s: Workspace, ctx: TenantContext, cmd: Command, now: string, makeId:()=>string) {
     if(!cmd.type.startsWith('lesson.draft.')&&cmd.type!=='track.lessons.reorder')return undefined;
     const actor=actorFor(s,ctx);
-    if(!isAdmin(actor))throw new DomainError('AUTHOR_REQUIRED','Only a community owner or administrator can manage lesson drafts.',403);
+    if(!teachesAny(s,actor))throw new DomainError('AUTHOR_REQUIRED','Only a track instructor or a community owner or administrator can manage lesson drafts.',403);
     const missing=():never=>{throw new DomainError('NOT_FOUND','That learning material is not available.',404);};
-    const track=(id:string)=>{const t=s.tracks.find(t=>t.id===id&&t.organizationId===ctx.organizationId);if(!t||!canSeeSpace(s,actor,t.spaceId))return missing();return t;};
+    // An instructor of another track is told nothing about this one.
+    const track=(id:string)=>{const t=s.tracks.find(t=>t.id===id&&t.organizationId===ctx.organizationId);if(!t||!canSeeSpace(s,actor,t.spaceId)||!teaches(s,actor,t.id))return missing();return t;};
     const base=()=>({id:makeId(),organizationId:ctx.organizationId,createdAt:now});
     const result=(objectId:string,message:string,changed=true)=>({objectId,message,changed,audit:changed});
     const snapshot=(lesson:Lesson,draft:LessonDraft,kind:'captured'|'published')=>{

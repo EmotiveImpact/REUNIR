@@ -386,6 +386,71 @@
       "lesson": "Incidental text in photographs and logotypes is exempt, but a course or project title is neither; real titles belong outside the picture.",
       "url": "https://github.com/w3c/wcag/blob/30720782e8d4c065d7a99adf28e7e3199167962c/understanding/20/contrast-minimum.html",
       "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "frappe-course-instructor",
+      "project": "Frappe Learning",
+      "repository": "frappe/lms",
+      "revision": "071266699d3ed984eeff7f3e3658d259fd946a97",
+      "file": "lms/lms/doctype/course_instructor/course_instructor.json",
+      "blob": "8eae73d0a0e0f7fc308e2d45c921738d17d1f625",
+      "reviewedRange": "complete file, 32 lines",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "Instructors are an explicit per-course child table, one row per person.",
+      "url": "https://github.com/frappe/lms/blob/071266699d3ed984eeff7f3e3658d259fd946a97/lms/lms/doctype/course_instructor/course_instructor.json",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "frappe-course-modify-rules",
+      "project": "Frappe Learning",
+      "repository": "frappe/lms",
+      "revision": "071266699d3ed984eeff7f3e3658d259fd946a97",
+      "file": "lms/lms/utils.py",
+      "blob": "b6a70306243323dd1032a3d61eb756899c373d57",
+      "reviewedRange": "lines 315\u2013329, 405\u2013418 and 3539\u20133560 of 3670",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "Modifying a course needs a site-wide moderator role or an instructor row for that course; creating courses is a separate role.",
+      "url": "https://github.com/frappe/lms/blob/071266699d3ed984eeff7f3e3658d259fd946a97/lms/lms/utils.py",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "learnhouse-resource-authors",
+      "project": "LearnHouse",
+      "repository": "learnhouse/learnhouse",
+      "revision": "5e28b0723176b34ba8777b9980db352268aa8234",
+      "file": "apps/api/src/db/resource_authors.py",
+      "blob": "294d0dfc3d2f43b52fdb8db86c039933a3af9c88",
+      "reviewedRange": "complete file, 31 lines",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "Every person on a course has an explicit authorship record with a role and an active, pending or inactive status.",
+      "url": "https://github.com/learnhouse/learnhouse/blob/5e28b0723176b34ba8777b9980db352268aa8234/apps/api/src/db/resource_authors.py",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "learnhouse-course-contributors",
+      "project": "LearnHouse",
+      "repository": "learnhouse/learnhouse",
+      "revision": "5e28b0723176b34ba8777b9980db352268aa8234",
+      "file": "apps/api/src/services/courses/contributors.py",
+      "blob": "592ce38ce5491ee31f879630987c3fe759f829a5",
+      "reviewedRange": "lines 15\u2013147 and 385\u2013427 read in full; lines 148\u2013384 searched for status and permission rules (427 lines)",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "Only the creator, maintainers or administrators manage contributors; the creator cannot be removed. REUNIR keeps management with administrators, so no maintainer tier is needed.",
+      "url": "https://github.com/learnhouse/learnhouse/blob/5e28b0723176b34ba8777b9980db352268aa8234/apps/api/src/services/courses/contributors.py",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "classroomio-course-team-middleware",
+      "project": "ClassroomIO",
+      "repository": "classroomio/classroomio",
+      "revision": "72791608774f6fb65fbc33ddbb1d52d8a2a11045",
+      "file": "apps/api/src/middlewares/course-team-member.ts",
+      "blob": "ffce06623ef2f0a5cd124778ae07be4da1ff3685",
+      "reviewedRange": "complete file, 63 lines",
+      "licence": "Root AGPL-3.0; root package metadata says MIT; conflict unresolved, reference only",
+      "lesson": "Course routes allow the course team or an organisation administrator, decided for the course named in the request.",
+      "url": "https://github.com/classroomio/classroomio/blob/72791608774f6fb65fbc33ddbb1d52d8a2a11045/apps/api/src/middlewares/course-team-member.ts",
+      "reviewedOn": "2026-10-03"
     }
   ],
   "decisions": [
@@ -671,6 +736,37 @@
         "platform/scripts/covers-connected-check.ts",
         "platform/scripts/monochrome-browser-check.ts",
         "scripts/test_design_contract.py"
+      ]
+    },
+    {
+      "id": "track-instructors",
+      "status": "implemented",
+      "mode": "behaviour_reference",
+      "sources": [
+        "frappe-course-instructor",
+        "frappe-course-modify-rules",
+        "learnhouse-resource-authors",
+        "learnhouse-course-contributors",
+        "classroomio-course-team-middleware"
+      ],
+      "decision": "Let explicit, administrator-granted track instructors author and review one track. A grant row names one active member for one track and is never inferred from being shown as the author. One per-track rule decides drafts, history, lesson files, knowledge-check keys, attempts, reviews and the cover, in the domain and in row policies, and suspension ends it at once. Instructors work from a teaching page; Community studio stays for owners, administrators and moderators. No donor source copied; the AGPL projects are behavioural references only.",
+      "implementation": [
+        "platform/packages/domain/src/instructors.ts",
+        "platform/packages/domain/src/authoring.ts",
+        "platform/packages/domain/src/assessments.ts",
+        "platform/packages/domain/src/resources.ts",
+        "platform/packages/db/migrations/0012_track_instructors.sql",
+        "platform/packages/db/src/runtime-role.ts",
+        "platform/apps/web/src/pages/teaching.tsx",
+        "platform/apps/web/src/components/instructors.tsx"
+      ],
+      "tests": [
+        "platform/tests/instructors.test.ts",
+        "platform/tests/instructors-database.test.ts",
+        "platform/tests/instructors-http.test.ts",
+        "platform/scripts/instructors-browser-check.ts",
+        "platform/scripts/instructors-connected-check.ts",
+        "platform/scripts/postgres-check.ts"
       ]
     }
   ],

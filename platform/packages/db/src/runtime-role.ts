@@ -20,4 +20,6 @@ export async function grantRuntimeTables(sql: SQL): Promise<void> {
     // Knowledge-check attempts are evidence: never deleted, and only review columns can change after submission.
     await sql.query(`REVOKE UPDATE,DELETE ON quiz_attempts FROM ${role}`);
     await sql.query(`GRANT UPDATE (results,score,passed,status,feedback,reviewer_id,reviewed_at,version) ON quiz_attempts TO ${role}`);
+    // Instructor grants are added or revoked, never rewritten.
+    await sql.query(`REVOKE UPDATE ON track_instructors FROM ${role}`);
 }

@@ -1733,3 +1733,8 @@ tables.push({key:'quizAttempts',table:'quiz_attempts',mutable:['results','score'
 
 // Alpha 11: uploaded covers replace the decorative art. NULL keeps the plain panel.
 for (const key of ['tracks','projects']) tables.find(t=>t.key===key)!.fields.push({property:'coverImage',column:'cover_image',type:'jsonb'});
+
+// Alpha 12: explicit track instructors. Grants are never updated in place; revoking deletes the row.
+tables.push({key:'trackInstructors',table:'track_instructors',mutable:[],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'trackId',column:'track_id',type:'text'},{property:'userId',column:'user_id',type:'text'},{property:'grantedBy',column:'granted_by',type:'text'}]});

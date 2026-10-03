@@ -4,6 +4,7 @@ import {
     type CoverImage, type CoverSubject, type CoverUploadRequest,
 } from '../../contracts/src/covers';
 import { actorFor, canSeeSpace, isAdmin } from './access';
+import { teaches } from './instructors';
 import { normalisePurposeState } from './purpose';
 
 /**
@@ -26,14 +27,14 @@ export function visibleSubject(s: Workspace, actor: Member, kind: CoverSubject, 
     if (kind === 'track') return s.tracks.find(t => t.id === id && t.organizationId === actor.organizationId && canSeeSpace(s, actor, t.spaceId) && (t.published || isAdmin(actor)));
     return s.projects.find(p => p.id === id && p.organizationId === actor.organizationId && canSeeSpace(s, actor, p.spaceId));
 }
-/** Tracks are edited by owners and administrators; a project also by its own owner. */
-export function canEditCover(actor: Member, kind: CoverSubject, subject: Subject): boolean {
-    return isAdmin(actor) || (kind === 'project' && (subject as Project).ownerId === actor.userId);
+/** A track cover follows the right to teach the track; a project cover, its owner or an administrator. */
+export function canEditCover(s: Workspace, actor: Member, kind: CoverSubject, subject: Subject): boolean {
+    return kind === 'track' ? teaches(s, actor, subject.id) : isAdmin(actor) || (subject as Project).ownerId === actor.userId;
 }
 function requireEditor(s: Workspace, ctx: TenantContext, kind: CoverSubject, id: string): { actor: Member; subject: Subject } {
     const actor = actorFor(s, ctx);
     const subject = visibleSubject(s, actor, kind, id) ?? gone(kind === 'track' ? 'That learning track is not available.' : 'That project is not available.');
-    if (!canEditCover(actor, kind, subject)) throw new DomainError('COVER_EDITOR_REQUIRED', kind === 'track' ? 'Only a community owner or administrator can change a track cover.' : 'Only the project owner or a community administrator can change this cover.', 403);
+    if (!canEditCover(s, actor, kind, subject)) throw new DomainError('COVER_EDITOR_REQUIRED', kind === 'track' ? 'Only a track instructor or a community owner or administrator can change a track cover.' : 'Only the project owner or a community administrator can change this cover.', 403);
     return { actor, subject };
 }
 export function isCoverReferenced(s: Workspace, organizationId: string, uploadId: string): boolean {

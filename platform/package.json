@@ -39,7 +39,9 @@
     "test:browser:assessments": "tsx scripts/assessments-browser-check.ts",
     "test:browser:assessments-connected": "tsx scripts/assessments-connected-check.ts",
     "test:browser:covers": "tsx scripts/covers-browser-check.ts",
-    "test:browser:covers-connected": "tsx scripts/covers-connected-check.ts"
+    "test:browser:covers-connected": "tsx scripts/covers-connected-check.ts",
+    "test:browser:instructors": "tsx scripts/instructors-browser-check.ts",
+    "test:browser:instructors-connected": "tsx scripts/instructors-connected-check.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.13.0",

@@ -6,16 +6,19 @@ import { Avatar, Empty } from './ui';
 import { AttemptView, attemptStatus } from './quiz-view';
 import { useWorkspace } from '../lib/context';
 import type { QuizAttempt } from '../../../../packages/contracts/src/index';
+import { teaches } from '../../../../packages/domain/src/instructors';
 
 const oldestFirst = (a: QuizAttempt, b: QuizAttempt) => a.createdAt.localeCompare(b.createdAt);
 const newestFirst = (a: QuizAttempt, b: QuizAttempt) => b.createdAt.localeCompare(a.createdAt);
 
-/** Community studio queue: mark written answers and send feedback. Owners and administrators only. */
+/** Mark written answers and send feedback: for owners and administrators in Community studio, and for instructors on their teaching page. */
 export function QuizReviewQueue() {
-    const { data } = useWorkspace();
-    const waiting = data.quizAttempts.filter(a => a.status === 'awaiting_review').sort(oldestFirst);
-    const scored = data.quizAttempts.filter(a => a.status === 'scored').sort(newestFirst).slice(0, 30);
-    const reviewed = data.quizAttempts.filter(a => a.status === 'reviewed').sort(newestFirst).slice(0, 30);
+    const { data, me } = useWorkspace();
+    // Only attempts on tracks this person teaches, and never their own.
+    const reviewable = data.quizAttempts.filter(a => teaches(data, me, a.trackId) && a.userId !== me.userId);
+    const waiting = reviewable.filter(a => a.status === 'awaiting_review').sort(oldestFirst);
+    const scored = reviewable.filter(a => a.status === 'scored').sort(newestFirst).slice(0, 30);
+    const reviewed = reviewable.filter(a => a.status === 'reviewed').sort(newestFirst).slice(0, 30);
     const name = (id: string | null) => data.members.find(m => m.userId === id)?.name;
     return <div className="quiz-review">
         <p className="quiz-review-intro">Written answers wait here for marks and feedback. You can also send feedback on an attempt that was scored automatically. Scores are private feedback for the learner, not points, completion or a credential.</p>

@@ -22,6 +22,8 @@ async function putRow(sql: SQL, spec: TableSpec, row: Record<string, unknown>, e
             return;
         }
         const fields = spec.fields.filter(f => spec.mutable!.includes(f.property));
+        // A record with no mutable properties is added or deleted, never changed in place.
+        if (!fields.length) throw new Error(`${spec.table} rows cannot be changed in place.`);
         const values = fields.map(f => f.type === 'jsonb' && row[f.property] != null ? JSON.stringify(row[f.property]) : row[f.property] ?? null);
         await sql.query(`UPDATE ${spec.table} SET ${fields.map((f, i) => `${f.column}=$${i + 3}`).join(',')} WHERE organization_id=$1 AND id=$2`, [row.organizationId, row.id, ...values]);
         return;

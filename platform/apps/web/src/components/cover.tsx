@@ -41,11 +41,11 @@ export function Cover({ kind, subject, small = false }: { kind: CoverSubject; su
     </div>;
 }
 
-/** Only people who may change this cover see the button: administrators, and a project's own owner. */
+/** Only people who may change this cover see the button: administrators, a track's instructors and a project's own owner. */
 export function CoverButton({ kind, subject }: { kind: CoverSubject; subject: Subject }) {
-    const { me } = useWorkspace();
+    const { data, me } = useWorkspace();
     const [open, setOpen] = useState(false);
-    if (!canEditCover(me, kind, subject)) return null;
+    if (!canEditCover(data, me, kind, subject)) return null;
     return <>
         <button type="button" className="button secondary" onClick={() => setOpen(true)}><ImagePlus size={16} aria-hidden="true"/>{subject.coverImage ? 'Change cover' : 'Add a cover'}</button>
         {/* Rendered at the document root so heading and toolbar styles do not reach into the dialogue. */}

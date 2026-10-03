@@ -94,5 +94,20 @@ try{
         await repo.execute('code-black',DEMO_ADMIN,{type:'track.cover.set',trackId:'track_story',fileId:null},randomUUID(),'covers-postgres');
         assert(!(await covers('org_code_black',DEMO_USER)).includes(upload.id),'a removed cover is private again');
     });
+    await check('track instructors author and review only their own track through a restricted PostgreSQL connection',async()=>{
+        const repo=new WorkspaceRepository(runtime!),IDRIS='member_idris';
+        const exec=(cmd:unknown,user:string)=>repo.execute('code-black',user,cmd,randomUUID(),'instructors-postgres');
+        const rows=(user:string,sql:string)=>runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',user);return (await tx.query<Record<string,unknown>>(sql)).rows;});
+        await exec({type:'lesson.draft.create',trackId:'track_product'},IDRIS);
+        await assert.rejects(()=>exec({type:'lesson.draft.create',trackId:'track_story'},IDRIS),{code:'NOT_FOUND'});
+        assert.deepEqual((await rows(IDRIS,'SELECT DISTINCT track_id FROM lesson_drafts')).map(r=>r.track_id),['track_product']);
+        assert.deepEqual(await rows(DEMO_USER,'SELECT id FROM lesson_drafts'),[]);
+        const seen=(await repo.snapshot('code-black',DEMO_USER)).lessons.find(l=>l.id==='lesson_6')!.quiz!;
+        const attempt=(await exec({type:'quiz.attempt.submit',lessonId:'lesson_6',fingerprint:quizFingerprint(seen),answers:[{questionId:'q6_watch',optionIds:['a']},{questionId:'q6_change',text:'Autosave, because people lost their work.'}]},DEMO_USER)).objectId!;
+        await exec({type:'quiz.attempt.review',attemptId:attempt,expectedVersion:1,marks:[{questionId:'q6_change',points:2}],feedback:'Observed and specific.'},IDRIS);
+        assert.deepEqual(await rows(IDRIS,`SELECT status,reviewer_id FROM quiz_attempts WHERE id='${attempt}'`),[{status:'reviewed',reviewer_id:IDRIS}]);
+        await assert.rejects(()=>rows(IDRIS,"INSERT INTO track_instructors(id,organization_id,created_at,track_id,user_id,granted_by) VALUES('g_pg','org_code_black',now(),'track_story','member_idris','member_idris')"),/row-level security/);
+        await assert.rejects(()=>rows(DEMO_ADMIN,"UPDATE track_instructors SET track_id='track_story'"),/permission denied/);
+    });
     await mkdir('evidence/alpha04',{recursive:true});await writeFile('evidence/alpha04/postgres-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Disposable local PostgreSQL service, not Neon.',results},null,2));
 }finally{await runtime?.close();await admin.close();}
