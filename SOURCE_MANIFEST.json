@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 12 track instructors",
   "version": "0.12.0-alpha.1",
   "sourceBaseline": "365e1c9a822297ce471083d891eea1f1256e0c63",
-  "generatedAt": "2026-10-03T04:17:15.838078+00:00",
+  "generatedAt": "2026-10-03T04:27:46.583849+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "a2ad942b8ace282cfc7f94eaec06d530acb273cbb162d966b5ea3a5b48e900e8",
-      "bytes": 22513
+      "sha256": "c8cd53df27739dd909cb15d497309664afe551be7468f2ff11b2c70b8889a82f",
+      "bytes": 22557
     },
     {
       "path": "platform/.dockerignore",
@@ -451,8 +451,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "0741b9751887cc9a795a970caa5b126cbd3a497fdfe5ed0b9b5ef8d94e2d795c",
-      "bytes": 43709
+      "sha256": "7f1ae2a5a39a19c85ea6a4943a426e1d6126f9640f5e40afe60a18242048a081",
+      "bytes": 44716
     },
     {
       "path": "platform/docs/COVERS.md",

@@ -7,8 +7,8 @@
 | Item | State |
 | --- | --- |
 | Implemented | Yes, on `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)), after Alpha 11 cover images on the same branch |
-| Verified locally | Partly at this commit; see below. The full clean-worktree run is recorded in the publication receipt |
-| Verified remotely (GitHub Actions) | See the publication receipt below |
+| Verified locally | Yes: every suite, from a clean worktree of tested commit `75e89f6` after `npm ci` (see below) |
+| Verified remotely (GitHub Actions) | Yes: both jobs passed on `a941245` in the push and pull request runs (publication receipt below) |
 | Merged | No. Merging into main needs the owner's approval |
 | Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
 | Operated with real members | No |
@@ -33,7 +33,7 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium 141 at `/opt/pw-browsers/chro
 | `npm run test:postgres` | 11 passed, including the new restricted-role instructor check |
 | Python helpers, `scripts/check_research.py` | 34 passed; 35 pinned sources, 14 decisions |
 
-A full run from a clean worktree of `75e89f6`, after `npm ci`, was in progress when this was committed. By then `npm run test:http` (17), both builds and the regression (85), operations (17), project work (29), authoring (27), rich lessons (11), resources (19) and knowledge-check (14) demo suites had passed. The covers, instructor, monochrome and v4 demo suites and every connected suite were still running; their results are recorded in the publication receipt below and are not claimed for Alpha 12 until then.
+The full run from a clean worktree of `75e89f6`, after `npm ci` from the committed lockfile, finished after that commit and passed all 24 steps: the research checker, typecheck, `npm test` (507), `npm run test:http` (17), both builds, 258 demo-browser checks (85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 14 knowledge checks, 11 covers, 9 instructors, 16 monochrome, 20 v4), 44 connected-browser checks (12 connected, 9 resources, 8 knowledge checks, 9 covers, 6 instructors) and 34 Python helpers.
 
 Tests changed rather than added: six migration-count assertions moved from 11 to 12, the old-schema fixture skips the new table, and the knowledge-check notification test now expects the seeded product-track instructor to be told as well as the owner, on their teaching page. No business assertion was weakened.
 
@@ -53,7 +53,11 @@ The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `h
 
 ## Publication receipt
 
-Pending: the push, the remote read-back and the GitHub Actions runs are recorded here after they happen.
+Pushed to `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)). The remote ref was fetched back and matched the local commit and tree: head `a94124599ef821836618f56cc0d41547010db6f7` (tree `1c128d48ac69b2661ac0f8c52313b22003158eed`), which is tested commit `75e89f6` plus documentation and the source manifest.
+
+Both jobs passed on that head in [run 37096048793](https://github.com/EmotiveImpact/REUNIR/actions/runs/37096048793) (push) and [run 37096051607](https://github.com/EmotiveImpact/REUNIR/actions/runs/37096051607) (pull request). The application job ran the research checker, typecheck, all application tests, 17 HTTP checks, both builds, every demo-browser suite including instructors, every connected-browser suite including instructors, and the Python helpers; the PostgreSQL 17 job ran the 11 restricted-role checks, including instructors.
+
+This receipt commit changes only documentation and source hashes. Merging into main needs the owner's approval.
 
 ## Next actions
 

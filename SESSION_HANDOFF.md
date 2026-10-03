@@ -5,7 +5,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, COVERS.md, ROADMA
 ## Where the source is
 
 - Base: main `365e1c9a822297ce471083d891eea1f1256e0c63`, the merge of PR #4 (Alpha 10 knowledge checks). Main had not moved when this slice was pushed.
-- This slice and the one before it: branch `claude/laughing-goodall-2p7z0v`, [PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5). Alpha 11 cover images was verified, pushed and recorded first (receipt commit `bffa3b7`, CI runs 37094420188 and 37094422988 green on `108f0ce`); Alpha 12 track instructors follows on the same branch. The publication receipt in BUILD_STATUS.md records the pushed commit and CI runs. Merging into main needs the owner's approval.
+- This slice and the one before it: branch `claude/laughing-goodall-2p7z0v`, [PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5). Alpha 11 cover images was verified, pushed and recorded first (receipt commit `bffa3b7`, CI runs 37094420188 and 37094422988 green on `108f0ce`); Alpha 12 track instructors follows on the same branch; its head `a941245` passed CI runs 37096048793 (push) and 37096051607 (pull request), recorded in the BUILD_STATUS.md receipt. Merging into main needs the owner's approval.
 
 ## What is done
 
