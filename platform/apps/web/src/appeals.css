@@ -1,0 +1,13 @@
+/* Moderation appeals and the note on a member's own hidden post. Neutral surfaces only. */
+.hidden-post-note{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:8px 0 12px;padding:10px 12px;border:1px dashed var(--border);border-radius:8px;font-size:13px;color:var(--muted)}
+.hidden-post-note>span{flex:1;min-width:200px}
+.appeals-page .empty-state{padding:30px 20px}
+.appeals-page h2{font-size:16px;margin:0 0 12px}
+.appeals-page h3{font-size:14px;margin:20px 0 8px}
+.appeal-row{display:grid;gap:8px;padding:12px 0;border-top:1px solid var(--border)}
+.appeal-row p{margin:4px 0 0;font-size:12px}
+.appeal-card{display:grid;gap:8px;padding:14px 0;border-top:1px solid var(--border)}
+.appeal-card p{margin:0}
+.appeal-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.appeal-quote{margin:0;padding:8px 12px;border-left:2px solid var(--border);font-size:13px;color:var(--muted)}
+.appeal-response{display:grid;gap:4px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px}

@@ -23,9 +23,28 @@ Details:
 - Additive migration 0029 adds `upload_intents.task_id`, `project_tasks.updated_by` and four restrictive row-security policies; no grant change (decision 029). Task files go through Alpha 23 upload scanning on the shared upload path.
 - New demo browser suite `npm run test:browser:task-files`. No new dependency.
 
-### Alpha 35: teaching grants for chosen lessons (no version change), 3 October 2026
+### Alpha 32: appealing a hidden post (no version change), 3 October 2026
 
-On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass. The coordinator allocated Alpha 35 to 38 to courses and teaching, so this release is Alpha 35 with decision 035 and migration 0034. Alpha 39 reached main first, so the version stays 0.39.0-alpha.1 rather than going backwards.
+On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. This thread holds Alpha 31 to 34 and migrations 0030 to 0033, so this is Alpha 32 with decision 032 and migration 0031. Alpha 39 (PR #21) reached main first, so the application version stays 0.39.0-alpha.1.
+
+**In plain language:** when a moderator hides your post, you are now told, you can still see it, and you can ask for it to be looked at again. An owner or administrator who did not hide it decides, writes you a reply, and either restores the post or keeps it hidden. Appeals are private to you and the people who decide them.
+
+Details:
+
+- New **Appeals** page: your hidden posts, your appeals and their outcomes, and for owners and administrators the appeals waiting for a decision. The Moderation tab in the community studio lists open appeals.
+- The person who hid the post, and the appellant, can never decide the appeal. If nobody else can, the appeal waits and both sides are told why.
+- One open appeal per hiding; withdrawing allows another; a decided appeal closes that hiding.
+- Additive migration 0031: `posts.moderated_by` and `posts.moderated_at`, and `moderation_appeals` under forced row security, with column-level updates on the decision fields only. Existing posts are not backfilled.
+- Deleting your account removes your appeals; the decisions stay in the audit trail.
+- Suspension, task-note removal and message reports are not appealable here (decision 032).
+
+### Planned
+
+- A correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+
+## Alpha 35: teaching grants for chosen lessons (no version change), 3 October 2026
+
+On main through [PR #24](https://github.com/EmotiveImpact/REUNIR/pull/24), merged as `3c770b5`. The coordinator allocated Alpha 35 to 38 to courses and teaching, so this release is Alpha 35 with decision 035 and migration 0034. Alpha 39 reached main first, so the version stays 0.39.0-alpha.1 rather than going backwards.
 
 **In plain language:** when you add someone to teach a track you can now give them only the lessons you choose instead of the whole track. They can write, publish and mark answers on those lessons and nothing else. New lessons, the lesson order and the track cover stay with people who have the whole track.
 
@@ -34,10 +53,6 @@ Details:
 - **What they work on** in a track's Instructors dialogue: the whole track (the default) or chosen lessons, with a checkbox per lesson. The list names the lessons.
 - Drafts, history, draft files, publishing and knowledge-check answers follow the chosen lessons; other drafts are not found (decision 035).
 - Additive migration 0034 adds `track_instructors.lesson_ids` and scopes the draft, history, publishing and attempt policies to the listed lessons. Every existing grant keeps the whole track. No grant change.
-
-### Planned
-
-- Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
 
 ## 0.28.0-alpha.1 (Alpha 28): collections of useful content, 3 October 2026
 
@@ -70,7 +85,7 @@ Details:
 
 ## Alpha 23: virus scanning of uploads (no version change), 3 October 2026
 
-On main through [PR #16](https://github.com/EmotiveImpact/REUNIR/pull/16), merged as `16b2768`. Alpha 23 was allocated to this slice before it was built; it reaches main after Alpha 31, so the version stays 0.31.0-alpha.1 rather than going backwards.
+On main through [PR #16](https://github.com/EmotiveImpact/REUNIR/pull/16), merged as `16b2768`.
 
 **In plain language:** once a virus scanner is connected, every file people upload (lesson files, cover pictures, library pictures and attachments) is checked before anyone can use it. A flagged file is deleted straight away and the uploader is told why. If the scanner is briefly unavailable, the upload simply waits and can be tried again.
 
@@ -84,7 +99,7 @@ Details:
 
 ## 0.31.0-alpha.1 (Alpha 31): data retention rules, 3 October 2026
 
-On main through [PR #23](https://github.com/EmotiveImpact/REUNIR/pull/23), merged as `b80fc04`. Numbering follows the project's allocation of 3 October 2026: this thread holds Alpha 31 to 34, decision records 031 to 034 and migrations 0030 to 0033, so data retention is Alpha 31, decision 031 and migration 0030 (first opened as Alpha 27 with migration 0023).
+On main through [PR #23](https://github.com/EmotiveImpact/REUNIR/pull/23), merged as `b80fc04`.
 
 **In plain language:** REUNIR now clears its own housekeeping on a schedule: expired sign-in sessions and links, old rate counters, technical receipts, records of email already sent and notices people read long ago. What people make, reviewed evidence and the audit trail are never cleared by it. Your account has a new **How long things are kept** panel that says what is kept and for how long.
 
