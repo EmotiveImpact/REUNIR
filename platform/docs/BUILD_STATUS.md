@@ -31,13 +31,13 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | RET_TESTS (4 new in `tests/retention-database.test.ts`: one list of rules, the worker-only community listing, an exact dry run then a real run that clears only what the rules name, and the scheduled route) |
-| `npm run test:http` | RET_HTTP |
+| `npm test` | 670 passed, 0 failed (4 new in `tests/retention-database.test.ts`: one list of rules, the worker-only community listing, an exact dry run then a real run that clears only what the rules name, and the scheduled route) |
+| `npm run test:http` | 19 passed |
 | `npm run build`, `npm run bundle:preview` | Passed |
-| Demo-browser suites | `accounts` RET_ACCOUNTS (1 new: the retention panel, at phone width too), `monochrome` RET_MONO, `v4` RET_V4 |
-| Connected-browser suites | `accounts-connected` RET_CONNECTED |
-| `npm run test:postgres` | RET_PG passed on PostgreSQL 16 (1 new: the worker policy and a dry and real run through the restricted runtime role) |
-| Python helpers | RET_PY |
+| Demo-browser suites | `accounts` 13 (1 new: the retention panel, at phone width too), `monochrome` 16, `v4` 20 |
+| Connected-browser suites | `accounts-connected` 13 |
+| `npm run test:postgres` | 22 passed on PostgreSQL 16 (1 new: the worker policy and a dry and real run through the restricted runtime role) |
+| Python helpers | 35 passed; research register valid |
 
 ## Not verified, and why
 
