@@ -1,4 +1,54 @@
-# Alpha 25 contributor roles for teaching
+# Alpha 35 teaching grants for chosen lessons
+
+3 October 2026. Application 0.35.0-alpha.1. An owner or administrator gives a teaching grant for the whole track or only for lessons they choose. A lesson grant reaches those lessons' drafts, history, draft files, publishing and learners' answers, and nothing else. See decisions/035-lesson-grants.md and INSTRUCTORS.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `fab9510` (the merge of PR #20, Alpha 25) |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+Numbering: the coordinator allocated Alpha 35 to 38, decisions 035 to 038 and migrations 0034 to 0037 to courses and teaching, so parallel threads stop colliding. 0024 to 0033 are left to other releases; the migration runner applies whatever files are missing, in order.
+
+## What changed
+
+- **What they work on** in a track's Instructors dialogue: the whole track, including new lessons (the default), or only chosen lessons, with a checkbox per lesson. The list names the lessons, and the Teaching page says "for N lessons".
+- `track.instructor.add` takes `lessonIds` (1 to 200 of the track's own lessons, or null for the whole track). Lessons from elsewhere are refused with 409 `LESSON_UNAVAILABLE`. Changing a grant's lessons replaces it in the acting administrator's name.
+- Drafts, history, draft files, publishing and archiving drafts, answer keys, attempts and review follow the chosen lessons. Other lessons' drafts are not found (404) and show as "Not one of your lessons" in the studio. Starting a lesson, reordering and the cover need a whole-track grant (403 `LESSON_NOT_GRANTED` or `INSTRUCTOR_REQUIRED`).
+- Additive migration `0034_lesson_grants.sql`: `track_instructors.lesson_ids` (NULL or a JSON array of 1 to 200 ids) and lesson-scoped replacements for the draft, history read, published-revision, attempt read, attempt review and invitation policies. 0001 to 0023 are byte-identical; no grant change.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). The run was on this branch's tree on top of main `fab9510`.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 685 passed, 0 failed (main's 676 plus 5 lesson grant domain and 4 lesson grant database tests) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 273 passed across 15 suites, including 12 instructor checks (1 new: an administrator grants chosen lessons only, and the list names them) |
+| Connected-browser suites | 62 passed (unchanged) |
+| `npm run test:postgres` | Passed on PostgreSQL 16 |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
+
+## Not verified, and why
+
+- No test accepts an invitation against the 0034 invitation policy; the domain only ever creates whole-track invitations.
+- Lesson grants by email invitation are not built: an administrator narrows a grant once the person has joined.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Instructors starting their own tracks (Alpha 36), then uploaded lesson video (Alpha 37).
+3. When deployment resumes: follow LAUNCH_RUNBOOK.md and run `npm run db:migrate`.
+
+## Historical Alpha 25 evidence: contributor roles for teaching
 
 3 October 2026. Alpha 26 (PR #18) reached main first, so the application version stays 0.26.0-alpha.1. An owner or administrator adds someone to a track as an instructor or a contributor. Contributors write the track's lesson drafts and files; instructors publish them, and only instructors see and review learners' knowledge-check answers. See decisions/025-contributor-roles.md and INSTRUCTORS.md.
 
@@ -8,8 +58,8 @@
 | --- | --- |
 | Implemented | Yes, on `claude/courses-teaching-6hum2q`, from main `ec4285d` (the merge of PR #15, Alpha 22), with main `f5ec8d3` (PR #17, the launch kit) main `d62424d` (PR #19, Alpha 24) and main `9b34cac` (PR #18, Alpha 26) merged in |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Passed on `919b352` (run 37125616557) before main moved again; the merge with Alpha 26 is recorded on the pull request |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Verified remotely (GitHub Actions) | Passed on `919b352` (run 37125616557) and on the merge with Alpha 26, `518bc06` (runs 37126085213 and 37126087981) |
+| Merged | Yes: PR #20 as `fab9510`, whose tree equals the tested head `518bc06`. Every local suite also passed on `518bc06` (676 unit tests) |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 

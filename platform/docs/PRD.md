@@ -523,3 +523,18 @@ An owner or administrator adds someone to a track as an instructor or a contribu
 | R06 | An invitation to teach is accepted only as an instructor | Migration 0023 policy, invitation tests |
 
 Contributor invitations, asking an instructor to publish, per-lesson grants and instructor-created tracks are outside this release.
+
+## Alpha 35: per-lesson teaching grants
+
+An owner or administrator gives a teaching grant for the whole track or for lessons they choose. See `INSTRUCTORS.md` and `decisions/035-lesson-grants.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| L01 | A grant covers the whole track by default, or 1 to 200 of the track's own lessons; lessons from elsewhere are refused (409 `LESSON_UNAVAILABLE`) | Contract and domain tests |
+| L02 | A lesson grant reaches only those lessons' drafts, history and draft files; other drafts are not found | Domain and database (restricted role) tests, demo browser check |
+| L03 | An instructor with a lesson grant publishes and archives those lessons' drafts and sees and reviews answers on those lessons only | Domain and database tests |
+| L04 | Starting a lesson, reordering and the cover need a whole-track grant (403 `LESSON_NOT_GRANTED` or `INSTRUCTOR_REQUIRED`) | Domain tests |
+| L05 | Changing a grant's lessons replaces it in the acting administrator's name; every existing grant stays whole-track on upgrade | Domain and database tests |
+| L06 | An invitation to teach is accepted only for a whole track | Migration 0034 policy; the domain only ever creates whole-track invitations. No dedicated test |
+
+Lesson grants by invitation, and grants that follow a lesson into another track, are outside this release.

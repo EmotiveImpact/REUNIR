@@ -8,6 +8,18 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
+### 0.35.0-alpha.1 (Alpha 35): teaching grants for chosen lessons, 3 October 2026
+
+On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass. Alpha numbers 27 to 34 are allocated to other work in progress, so this release is Alpha 35 with decision 035 and migration 0034.
+
+**In plain language:** when you add someone to teach a track you can now give them only the lessons you choose instead of the whole track. They can write, publish and mark answers on those lessons and nothing else. New lessons, the lesson order and the track cover stay with people who have the whole track.
+
+Details:
+
+- **What they work on** in a track's Instructors dialogue: the whole track (the default) or chosen lessons, with a checkbox per lesson. The list names the lessons.
+- Drafts, history, draft files, publishing and knowledge-check answers follow the chosen lessons; other drafts are not found (decision 035).
+- Additive migration 0034 adds `track_instructors.lesson_ids` and scopes the draft, history, publishing and attempt policies to the listed lessons. Every existing grant keeps the whole track. No grant change.
+
 ### 0.26.0-alpha.1 (Alpha 26): confirming and changing your email address, 3 October 2026
 
 On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. Alpha 23 is claimed by open pull requests (#16, #21), Alpha 24 (group conversations, PR #19) reached main first, and Alpha 25 is on PR #20, so this release is Alpha 26 with decision 026.
@@ -23,9 +35,13 @@ Details:
 - The launch preflight also checks `EMAIL_VERIFICATION`.
 - No migration and no new runtime dependency: Better Auth's own email verification and change-email flows, through the encrypted outbox.
 
-### 0.25.0-alpha.1 (Alpha 25): contributor roles for teaching, 3 October 2026
+### Planned
 
-On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass. Alpha 26 (PR #18) reached main first, so the application version stays 0.26.0-alpha.1 when this release merges.
+- Data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+
+## 0.25.0-alpha.1 (Alpha 25): contributor roles for teaching, 3 October 2026
+
+On main through [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20), merged as `fab9510`. Alpha 26 (PR #18) reached main first, so the application version stayed 0.26.0-alpha.1.
 
 **In plain language:** when you add someone to teach a track you can now make them a contributor instead of an instructor. Contributors write and save lesson drafts and attach files; the track's instructors decide when to publish them. Contributors do not see learners' quiz answers.
 
@@ -35,10 +51,6 @@ Details:
 - Publishing, archiving, reordering, the track cover and knowledge-check review need an instructor or administrator (`INSTRUCTOR_REQUIRED`, decision 025).
 - Additive migration 0023 adds `track_instructors.role` and role-aware policies for published revisions, attempts and invitations. Every existing grant stays an instructor's. No grant change.
 - Database upgrade tests now count the migration files instead of a fixed number.
-
-### Planned
-
-- Data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
 
 ## 0.24.0-alpha.1 (Alpha 24): group conversations, 3 October 2026
 

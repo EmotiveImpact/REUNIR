@@ -1,18 +1,54 @@
-# Current continuation: Alpha 25 contributor roles, then the rest of the teaching roadmap
+# Current continuation: Alpha 35 teaching grants for chosen lessons, then the rest of the teaching roadmap
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, decisions/025-contributor-roles.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, decisions/025-contributor-roles.md, decisions/035-lesson-grants.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `ec4285d`, the merge of PR #15 (Alpha 22), with main `f5ec8d3` (PR #17, the launch kit) main `d62424d` (PR #19, Alpha 24 group conversations) and main `9b34cac` (PR #18, Alpha 26 email confirmation and change) merged in. The application version is main's 0.26.0-alpha.1.
-- This slice: branch `claude/courses-teaching-6hum2q`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
-- Parallel slices: Alpha 23 (upload scanning) is on PR #16; Alpha 24 (group conversations, migration 0022) and Alpha 26 (email change, no migration) are on main. Take the next free alpha and migration numbers from main when opening a pull request, and renumber if main moves.
+- Base: main `fab9510`, the merge of PR #20 (Alpha 25 contributor roles).
+- This slice: branch `claude/courses-teaching-6hum2q`, restarted from that main. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- Numbering: courses and teaching uses Alpha 35 to 38, decisions 035 to 038 and migrations 0034 to 0037, as allocated by the project coordinator on 3 October 2026. Other threads hold Alpha 27 to 34 and 39 to 40. Alpha 23 (upload scanning) is still on PR #16.
 
 ## What is done
 
-A teaching grant names a role. Instructors keep everything they had; contributors write a track's drafts and files, and its instructors publish them. Contributors never see or review learners' knowledge-check attempts. Changing a role replaces the grant. Additive migration 0023 adds `track_instructors.role` and role-aware policies.
+Contributor roles (Alpha 25) are on main. This slice lets a teaching grant cover only chosen lessons: those lessons' drafts, history, draft files, publishing and answers, nothing else. New lessons, the order and the cover stay with whole-track grants. Additive migration 0034 adds `track_instructors.lesson_ids` and lesson-scoped policies.
 
 ## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Preview as admin, open a track, choose **Instructors**, pick a member, choose **Only the lessons I choose**, tick lessons and **Add**. For PostgreSQL: `npm run db:migrate` (applies 0034; no grant changes).
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+## Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Authority is granted explicitly and must be current when it takes effect; teaching is a per-track grant with a role and an optional set of lessons, not a community role, and publishing stays with instructors. Owner and administrator authority may require two-step sign-in. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+## Next
+
+1. Instructors starting their own tracks, published by an administrator (Alpha 36, migration 0035), then uploaded lesson video (Alpha 37, migration 0036). Both are built locally in this thread. Question banks, timers and partial marks wait for pilot needs.
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 25 handover: contributor roles
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, decisions/025-contributor-roles.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `ec4285d`, the merge of PR #15 (Alpha 22), with main `f5ec8d3` (PR #17, the launch kit) main `d62424d` (PR #19, Alpha 24 group conversations) and main `9b34cac` (PR #18, Alpha 26 email confirmation and change) merged in. The application version is main's 0.26.0-alpha.1.
+- This slice: branch `claude/courses-teaching-6hum2q`, merged as PR #20 (`fab9510`). BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- Parallel slices: Alpha 23 (upload scanning) is on PR #16; Alpha 24 (group conversations, migration 0022) and Alpha 26 (email change, no migration) are on main. Take the next free alpha and migration numbers from main when opening a pull request, and renumber if main moves.
+
+### What is done
+
+A teaching grant names a role. Instructors keep everything they had; contributors write a track's drafts and files, and its instructors publish them. Contributors never see or review learners' knowledge-check attempts. Changing a role replaces the grant. Additive migration 0023 adds `track_instructors.role` and role-aware policies.
+
+### Run it
 
 ```sh
 cd platform
@@ -24,11 +60,11 @@ Preview as admin, open a track, choose **Instructors**, pick a member and **Cont
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Authority is granted explicitly and must be current when it takes effect; teaching is a per-track grant with a role, not a community role, and publishing stays with instructors. Owner and administrator authority may require two-step sign-in. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
 
-## Next
+### Next
 
 1. Per-lesson grants, instructors starting their own tracks (published by an administrator) and uploaded lesson video, each its own release. Question banks, timers and partial marks wait for pilot needs.
 2. Email verification and change, then the remaining account and trust items in ROADMAP.md.

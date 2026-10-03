@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "release": "0.26.0-alpha.1",
+  "release": "0.35.0-alpha.1",
   "reviewedOn": "2026-10-03",
   "scope": "Targeted source/document review, not a fresh whole-repository audit, full runtime comparison or a legal opinion. Previously captured commit snapshots were deliberately re-read; no claim that all are current HEAD.",
   "donorApplicationFilesImported": 0,

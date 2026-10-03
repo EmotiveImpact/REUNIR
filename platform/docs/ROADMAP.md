@@ -33,6 +33,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 24 | Members start named group conversations of up to 20 people; anyone in a group adds people and renames it, the starter removes people, anyone leaves; people added later read only what follows | No join or leave lines, mentions, attachments or new-message notices; blocks stop adding but never pause a group |
 | Alpha 25 | Teaching grants name a role: instructors publish and review, contributors write a track's drafts and files for them | No contributor invitations, per-lesson grants or instructor-created tracks yet |
 | Alpha 26 | People confirm their email address by a link, and invitations confirm it; when the server requires it (the production default) an unconfirmed address cannot sign in; anyone changes their address with their password and a link to the new one | Needs a mail sender; no confirmation step at the old address; invitations already sent stay with the old address; real delivery unverified |
+| Alpha 35 | A teaching grant covers the whole track or lessons an administrator chooses; drafts, publishing and answer review follow the chosen lessons | No lesson grants by invitation; new lessons, order and cover stay with whole-track grants |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 
