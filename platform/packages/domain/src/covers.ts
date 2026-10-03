@@ -59,6 +59,16 @@ function record(s: Workspace, ctx: TenantContext, now: string, makeId: () => str
 }
 
 /**
+ * Cover and library uploads that nothing shows or lists and that were rejected or started over an hour ago. Uploads
+ * prune these lazily; the operator procedure removes them on demand, with their stored files.
+ */
+export function staleCoverUploads(s: Workspace, organizationId: string, now: string): Upload[] {
+    const nowMs = Date.parse(now), old = (u: Upload) => nowMs - Date.parse(u.createdAt) > COVER_UPLOAD_TTL_MS;
+    const unused = (u: Upload) => (coverFile(u, organizationId) && !isCoverReferenced(s, organizationId, u.id)) || (libraryFile(u, organizationId) && !inLibrary(s, organizationId, u.id));
+    return s.uploads.filter(u => unused(u) && (u.status === 'rejected' || old(u)));
+}
+
+/**
  * Record an authorised cover upload before any storage capability is minted. Rejected uploads, stale pending ones and
  * replaced covers nobody references any more are pruned, and their keys are returned for best-effort deletion.
  */

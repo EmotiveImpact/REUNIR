@@ -130,5 +130,19 @@ try{
         assert.deepEqual(await repo.removeCoverLibraryItem('code-black',DEMO_ADMIN,item,'library-postgres'),{id:item,objectKey:key('org_code_black',upload.id)});
         assert.deepEqual(await rows(DEMO_ADMIN,`SELECT id FROM upload_intents WHERE id='${upload.id}'`),[]);
     });
+    await check('an owner-authorised erasure removes one member\u2019s answers through a role without row-security bypass',async()=>{
+        // A stand-in for a hosted migration role: table privileges, but no superuser and no BYPASSRLS.
+        await admin.query('CREATE ROLE reunir_operator NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS');
+        await admin.query('GRANT USAGE ON SCHEMA public TO reunir_operator');await admin.query('GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO reunir_operator');
+        const scoped=Object.create(admin) as typeof admin;scoped.transaction=fn=>admin.transaction(async tx=>{await tx.query('SET LOCAL ROLE reunir_operator');return fn(tx);});
+        const operator=new WorkspaceRepository(scoped),left=async()=>(await admin.query<{n:number}>("SELECT count(*)::int AS n FROM quiz_attempts WHERE organization_id='org_code_black' AND user_id='member_sofia'")).rows[0].n;
+        const planned=await operator.eraseLearnerAnswers('code-black',DEMO_ADMIN,'member_sofia','request pg-1',false);
+        assert(planned.attempts>=1);assert.equal(await left(),planned.attempts,'a dry run changes nothing');
+        await assert.rejects(()=>operator.eraseLearnerAnswers('code-black',DEMO_USER,'member_sofia','request pg-1',true),{code:'OWNER_REQUIRED'});
+        assert.deepEqual(await operator.eraseLearnerAnswers('code-black',DEMO_ADMIN,'member_sofia','request pg-1',true),{...planned,applied:true});
+        assert.equal(await left(),0);
+        assert.deepEqual((await admin.query("SELECT metadata FROM audit WHERE action='learner.answers.erased' AND object_id='member_sofia'")).rows,[{metadata:{reference:'request pg-1',attempts:planned.attempts,notifications:planned.notifications}}]);
+        await assert.rejects(()=>runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',DEMO_ADMIN);await tx.query("SELECT set_config('app.erasure_subject','member_alex',true)");await tx.query("DELETE FROM quiz_attempts WHERE user_id='member_alex'");}),/permission denied/);
+    });
     await mkdir('evidence/alpha04',{recursive:true});await writeFile('evidence/alpha04/postgres-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Disposable local PostgreSQL service, not Neon.',results},null,2));
 }finally{await runtime?.close();await admin.close();}

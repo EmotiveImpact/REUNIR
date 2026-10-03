@@ -21,6 +21,8 @@
     "db:runtime-role": "tsx scripts/database.ts runtime-role",
     "db:check": "tsx scripts/database.ts check",
     "db:grant-runtime": "tsx scripts/database.ts grant-runtime",
+    "db:erase-learner": "tsx scripts/database.ts erase-learner",
+    "db:prune-covers": "tsx scripts/database.ts prune-covers",
     "test:browser:purpose": "tsx scripts/purpose-browser-check.ts",
     "mail:drain": "tsx scripts/drain-mail.ts",
     "test:browser:pilot": "tsx scripts/pilot-browser-check.ts",

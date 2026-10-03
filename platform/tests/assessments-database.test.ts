@@ -56,7 +56,7 @@ test('0010 upgrade keeps lessons, drafts and history exactly as they were and ad
         }
         assert.deepEqual(await read('completions'), before.completions);
         assert.equal((await old.query('SELECT count(*)::int AS n FROM quiz_attempts')).rows[0].n, 0);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 13);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 14);
     } finally { await old.close(); }
 });
 

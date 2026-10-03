@@ -42,7 +42,7 @@ test('0012 upgrade keeps every track, draft and attempt as it was and grants nob
         await migrate(old); await migrate(old);
         for (const table of ['tracks', 'lessons', 'members'] as const) assert.deepEqual(await read(table), before[table], table);
         assert.deepEqual(await read('track_instructors'), []);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 13);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 14);
     } finally { await old.close(); }
 });
 

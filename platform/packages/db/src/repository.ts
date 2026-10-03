@@ -3,7 +3,7 @@ import { applyCommand, visibleWorkspace, actorFor } from '../../domain/src/engin
 import { DomainError, commandSchema, type Workspace, type TenantContext, type MutationResult } from '../../contracts/src/index';
 import type { ResourceRef, ResourceUploadRequest } from '../../contracts/src/lesson-resources';
 import { beginResourceUpload, completeResourceUpload, discardResourceUpload, resolveResourceDownload, type StoredObservation } from '../../domain/src/resources';
-import { beginCoverLibraryUpload, beginCoverUpload, completeCoverUpload, removeCoverLibraryItem, resolveCoverImage, resolveLibraryPicture, type CoverObservation } from '../../domain/src/covers';
+import { beginCoverLibraryUpload, beginCoverUpload, completeCoverUpload, removeCoverLibraryItem, resolveCoverImage, resolveLibraryPicture, staleCoverUploads, type CoverObservation } from '../../domain/src/covers';
 import type { CoverLibraryUploadRequest, CoverSubject, CoverUploadRequest } from '../../contracts/src/covers';
 import { learningRecord } from '../../domain/src/learning-record';
 import { tables, type TableSpec, type CollectionKey } from './tables';
@@ -239,6 +239,56 @@ export class WorkspaceRepository {
         return this.within(slug, userId, false, async (sql, org) => {
             const { upload } = resolveCoverImage(await readAll(sql, org), context(String(org.id), userId), kind, subjectId, fileId);
             return { objectKey: upload.objectKey, generation: upload.generation!, contentType: upload.contentType, sizeBytes: upload.sizeBytes };
+        });
+    }
+    /**
+     * Operator procedures, for the migration connection only. Each runs inside the tenant transaction of an active owner
+     * who authorised it, so forced row security still applies; the runtime role cannot delete attempts at all.
+     */
+    private async requireOwner(sql: SQL, organizationId: string, userId: string) {
+        const found = await sql.query("SELECT 1 FROM members WHERE organization_id=$1 AND user_id=$2 AND status='active' AND role='owner'", [organizationId, userId]);
+        if (!found.rows[0]) throw new DomainError('OWNER_REQUIRED', 'An active owner of this community must authorise this.', 403);
+    }
+    /** Erase one member's knowledge-check attempts and the feedback notices about them. Counts only unless `apply`. */
+    async eraseLearnerAnswers(slug: string, authorisedBy: string, subjectUserId: string, reference: string, apply: boolean) {
+        if (!/^[\w .:#/-]{3,80}$/.test(reference)) throw new DomainError('VALIDATION', 'Give the request a short reference, such as a ticket number.', 400);
+        return this.within(slug, authorisedBy, apply, async (sql, org) => {
+            const orgId = String(org.id);
+            await this.requireOwner(sql, orgId, authorisedBy);
+            if (!(await sql.query('SELECT 1 FROM members WHERE organization_id=$1 AND user_id=$2', [orgId, subjectUserId])).rows[0])
+                throw new DomainError('NOT_FOUND', 'That person has no membership record in this community.', 404);
+            await sql.query("SELECT set_config('app.erasure_subject',$1,true)", [subjectUserId]);
+            const count = async (query: string) => (await sql.query<{ n: number }>(query, [orgId, subjectUserId])).rows[0].n;
+            const feedback = "title='Feedback on your knowledge check'";
+            const planned = { attempts: await count('SELECT count(*)::int AS n FROM quiz_attempts WHERE organization_id=$1 AND user_id=$2'), notifications: await count(`SELECT count(*)::int AS n FROM notifications WHERE organization_id=$1 AND user_id=$2 AND ${feedback}`) };
+            if (!apply) return { ...planned, applied: false };
+            const attempts = (await sql.query('DELETE FROM quiz_attempts WHERE organization_id=$1 AND user_id=$2 RETURNING id', [orgId, subjectUserId])).rows.length;
+            // Row security would silently skip rows it does not admit; a partial erasure is refused and rolled back.
+            if (attempts !== planned.attempts) throw new Error('Row security admitted only part of the erasure, so nothing was changed. Check the migration role and owner.');
+            const notifications = (await sql.query(`DELETE FROM notifications WHERE organization_id=$1 AND user_id=$2 AND ${feedback} RETURNING id`, [orgId, subjectUserId])).rows.length;
+            await sql.query('INSERT INTO audit(id,organization_id,created_at,actor_id,action,object_id,metadata) VALUES($1,$2,now(),$3,$4,$5,$6)', [randomUUID(), orgId, authorisedBy, 'learner.answers.erased', subjectUserId, JSON.stringify({ reference, attempts, notifications })]);
+            await sql.query('UPDATE organisations SET revision=revision+1 WHERE id=$1', [orgId]);
+            return { attempts, notifications, applied: true };
+        });
+    }
+    /** Cover and library uploads nothing shows or lists, rejected or over an hour old, with their storage keys. */
+    async staleCoverUploads(slug: string, authorisedBy: string) {
+        return this.within(slug, authorisedBy, false, async (sql, org) => {
+            await this.requireOwner(sql, String(org.id), authorisedBy);
+            return staleCoverUploads(await readAll(sql, org), String(org.id), new Date().toISOString()).map(u => ({ id: u.id, objectKey: u.objectKey, purpose: u.purpose, status: u.status, createdAt: u.createdAt }));
+        });
+    }
+    /** Delete the records of uploads whose stored files are gone, if they are still unused. Returns the IDs removed. */
+    async removeStaleCoverUploads(slug: string, authorisedBy: string, ids: string[]) {
+        return this.within(slug, authorisedBy, true, async (sql, org) => {
+            const orgId = String(org.id);
+            await this.requireOwner(sql, orgId, authorisedBy);
+            const stale = new Set(staleCoverUploads(await readAll(sql, org), orgId, new Date().toISOString()).map(u => u.id));
+            const removable = ids.filter(id => stale.has(id));
+            if (!removable.length) return [];
+            const removed = (await sql.query<{ id: string }>('DELETE FROM upload_intents WHERE organization_id=$1 AND id = ANY($2::text[]) RETURNING id', [orgId, removable])).rows.map(r => r.id);
+            await sql.query('INSERT INTO audit(id,organization_id,created_at,actor_id,action,object_id,metadata) VALUES($1,$2,now(),$3,$4,$5,$6)', [randomUUID(), orgId, authorisedBy, 'cover.uploads.pruned', orgId, JSON.stringify({ removed: removed.length })]);
+            return removed;
         });
     }
     /** The acting member's own learning record, read inside their own tenant transaction. */
