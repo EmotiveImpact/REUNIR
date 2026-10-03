@@ -32,13 +32,13 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 832 passed, 0 failed on top of main `99e919a` after the review fixes (7 new in `tests/lesson-video.test.ts`, 1 new in `tests/launch-preflight.test.ts`, which also checks the clamd stream warning, 1 new in `tests/scanner.test.ts` for the scan allowance) |
+| `npm test` | 866 passed, 0 failed with main `ec9181d` merged in, after the review fixes (7 new in `tests/lesson-video.test.ts`, 1 new in `tests/launch-preflight.test.ts`, which also checks the clamd stream warning, 1 new in `tests/scanner.test.ts` for the scan allowance) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
-| Demo-browser suites | 300 passed across 17 suites, including 20 lesson resource checks (1 new: a creator uploads a WebM clip and a learner plays it) |
+| Demo-browser suites | 322 passed across 19 suites (Alpha 29 and 30 brought 12 task files and 10 form checks), including 20 lesson resource checks (1 new: a creator uploads a WebM clip and a learner plays it) |
 | Connected-browser suites | 64 passed (unchanged) |
-| `npm run test:postgres` | 28 passed on PostgreSQL 16 |
-| Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
+| `npm run test:postgres` | 29 passed on PostgreSQL 16 |
+| Python helpers, `scripts/check_research.py` | 40 passed; the register validates |
 
 ## Not verified, and why
 
