@@ -1744,3 +1744,9 @@ tables.push({key:'coverLibrary',table:'cover_library',mutable:[],fields:[
     {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
     {property:'fileId',column:'file_id',type:'text'},{property:'label',column:'label',type:'text'},{property:'contentType',column:'content_type',type:'text'},
     {property:'sizeBytes',column:'size_bytes',type:'integer'},{property:'addedBy',column:'added_by',type:'text'}]});
+
+// Alpha 19: a member's notice settings. One row per member; only the member changes it, the digest job stamps lastDigestAt.
+tables.push({key:'notificationPreferences',table:'notification_preferences',fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'userId',column:'user_id',type:'text'},{property:'muted',column:'muted',type:'jsonb'},{property:'digest',column:'digest',type:'text'},
+    {property:'updatedAt',column:'updated_at',type:'timestamptz'},{property:'lastDigestAt',column:'last_digest_at',type:'timestamptz'}]});

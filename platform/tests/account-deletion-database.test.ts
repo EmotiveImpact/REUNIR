@@ -24,7 +24,7 @@ const asRuntime = <T>(organizationId: string, userId: string, fn: (sql: SQL) => 
 const count = async (query: string, params: unknown[] = []) => (await db.query<{ n: number }>(query, params)).rows[0].n;
 const mine = (table: string, column = 'user_id', user = DEMO_USER) => count(`SELECT count(*)::int AS n FROM ${table} WHERE ${column}=$1`, [user]);
 const run = (user: string, cmd: unknown, slug = 'code-black') => runtime.execute(slug, user, cmd, randomUUID(), 'account-deletion-test');
-const PERSONAL = ['member_goals', 'bookmarks', 'notifications', 'reactions', 'rsvps', 'enrolments', 'completions', 'path_enrolments', 'quiz_attempts', 'reputation', 'space_members', 'track_instructors', 'message_receipts', 'member_blocks', 'command_receipts'];
+const PERSONAL = ['notification_preferences', 'member_goals', 'bookmarks', 'notifications', 'reactions', 'rsvps', 'enrolments', 'completions', 'path_enrolments', 'quiz_attempts', 'reputation', 'space_members', 'track_instructors', 'message_receipts', 'member_blocks', 'command_receipts'];
 
 async function person(id: string, name: string, email: string) {
     const now = new Date().toISOString();
@@ -49,6 +49,7 @@ before(async () => {
     const seen = (await runtime.snapshot('code-black', DEMO_USER)).lessons.find(l => l.id === 'lesson_5')!.quiz!;
     await run(DEMO_USER, { type: 'quiz.attempt.submit', lessonId: 'lesson_5', fingerprint: quizFingerprint(seen), answers: [{ questionId: 'q5_feedback', optionIds: ['a'] }, { questionId: 'q5_essentials', optionIds: ['a'] }, { questionId: 'q5_outcome', text: 'useful' }] });
     await run(DEMO_USER, { type: 'post.bookmark', postId: 'post_welcome' });
+    await run(DEMO_USER, { type: 'notification.preferences.save', muted: ['events'], digest: 'weekly' });
     const eventId = (await run(DEMO_ADMIN, { type: 'event.create', title: 'Open studio, November', summary: 'Bring what you are working on.', startsAt: new Date(Date.now() + 14 * 864e5).toISOString(), duration: 60, format: 'critique', location: 'Online' })).objectId!;
     await run(DEMO_USER, { type: 'event.rsvp', eventId });
     await run(DEMO_USER, { type: 'post.comment', postId: 'post_welcome', body: 'Thank you. Glad to be here.' });

@@ -4,6 +4,7 @@ import { lessonQuizSchema, quizAnswersInput, quizFingerprintInput, quizMarksInpu
 import { coverChange, coverLibraryLabel, type CoverImage, type CoverImageType } from './covers';
 import { z } from 'zod';
 import type { WorkspaceSummary } from './pages';
+import { notificationPreferencesInput, type DigestFrequency, type MutableTopic } from './notifications';
 export type Id = string;
 export type Role = 'owner' | 'admin' | 'moderator' | 'member';
 export interface TenantContext {
@@ -310,7 +311,17 @@ export interface CoverLibraryItem extends TenantRecord {
     sizeBytes: number;
     addedBy: Id;
 }
+/** One member's notice settings in one community. Absent means every topic on and no digest. */
+export interface NotificationPreference extends TenantRecord {
+    userId: Id;
+    muted: MutableTopic[];
+    digest: DigestFrequency;
+    updatedAt: string;
+    /** When the last digest email was queued, by the digest job only. */
+    lastDigestAt: string | null;
+}
 export interface Workspace {
+    notificationPreferences: NotificationPreference[];
     /** Exact totals for lists the snapshot shortens (see pages.ts). Absent on stored state. */
     summary?: WorkspaceSummary;
     coverLibrary: CoverLibraryItem[];
@@ -437,6 +448,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('event.rsvp'), eventId: id }).strict(),
     z.object({ type: z.literal('profile.update'), name: text(80), headline: z.string().trim().max(160), bio: z.string().trim().max(2000), skills: z.array(text(40)).max(12) }).strict(),
     z.object({ type: z.literal('notification.read'), notificationId: id.optional() }).strict(),
+    z.object({ type: z.literal('notification.preferences.save'), ...notificationPreferencesInput }).strict(),
     z.object({ type: z.literal('organisation.update'), name: text(80), tagline: text(180), accent: z.enum(['violet', 'mint', 'blue', 'amber']) }).strict(),
     z.object({ type: z.literal('space.create'), name: text(60), description: text(500), visibility: z.enum(['members', 'private']), kind: z.enum(['discussion', 'learning', 'project']) }).strict(),
     z.object({ type: z.literal('track.create'), title: text(120), summary: text(240), description: text(4000), category: text(40), spaceId: optionalSpace.default(null) }).strict(),

@@ -5,6 +5,7 @@ import { MessagingRepository } from '../../../packages/db/src/messaging';
 import { startConversation, sendMessage, reportMessage } from '../../../packages/contracts/src/messaging';
 import { id } from '../../../packages/contracts/src/index';
 import type { MailQueue } from './mail';
+import type { DigestService } from './digests';
 import { Hono, type Context } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
@@ -37,8 +38,9 @@ interface Dependencies {
     registerInvited?: (name:string,email:string,password:string)=>Promise<{id:string}>;
     /** Checks the signed-in person's current password. False only for a wrong password. */
     verifyPassword?: (headers: Headers, password: string) => Promise<boolean>;
+    digests?: DigestService;
 }
-export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, invitations, mail, cronSecret, registerInvited, verifyPassword }: Dependencies) {
+export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, invitations, mail, cronSecret, registerInvited, verifyPassword, digests }: Dependencies) {
     const messaging=new MessagingRepository(repository);
     const canonical = new URL(origin).origin;
     const app = new Hono<{
@@ -61,17 +63,25 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     });
     app.get('/api/health', async (c) => { await repository.db.query('SELECT 1'); return c.json({ status: 'ok', version: RELEASE_VERSION, mode: 'live', database: repository.db.kind, storage: storage ? 'configured' : 'not-configured' }); });
     app.get('/api/health/live', c=>c.json({status:'ok',version:RELEASE_VERSION}));
-    app.get('/api/account/capabilities', c=>c.json({invitations:!!invitations,passwordRecovery:!!mail?.transport,resourceUploads:!!storage,coverUploads:!!storage}));
+    app.get('/api/account/capabilities', c=>c.json({emailDigests:!!digests&&!!mail?.transport,invitations:!!invitations,passwordRecovery:!!mail?.transport,resourceUploads:!!storage,coverUploads:!!storage}));
     // Best effort after commit: an orphaned object is private and unreferenced, never served.
     const removeQuietly = async (requestId: string, keys: string[]) => { for (const key of keys) {
         try { await storage?.remove(key); }
         catch { console.error(JSON.stringify({ event: 'storage.remove.failed', requestId })); }
     } };
-    app.get('/api/internal/mail',async c=>{
+    const scheduled = (c: Context) => {
         const provided=c.req.header('authorization')||'';
         const expected=cronSecret ? 'Bearer '+cronSecret : '';
-        if(!expected||!timingSafeEqual(createHash('sha256').update(provided).digest(),createHash('sha256').update(expected).digest()))return c.json({error:{code:'FORBIDDEN',message:'Not authorised.'}},403);
+        return !!expected && timingSafeEqual(createHash('sha256').update(provided).digest(),createHash('sha256').update(expected).digest());
+    };
+    app.get('/api/internal/mail',async c=>{
+        if(!scheduled(c))return c.json({error:{code:'FORBIDDEN',message:'Not authorised.'}},403);
         return c.json(mail ? await mail.drain(2) : {configured:false,sent:0,failed:0});
+    });
+    // Queues notice digests for members who asked for them; the mail route above sends them. Same scheduler secret.
+    app.get('/api/internal/digests',async c=>{
+        if(!scheduled(c))return c.json({error:{code:'FORBIDDEN',message:'Not authorised.'}},403);
+        return c.json(digests ? {configured:true,...await digests.run()} : {configured:false,due:0,queued:0,quiet:0,skipped:0});
     });
     app.use('/api/auth/request-password-reset',async(c,next)=>{if(!mail?.transport)return c.json({error:{code:'EMAIL_UNAVAILABLE',message:'Password recovery is not configured. Contact the community owner.'}},503);await next();});
     app.use('/api/invitations/*',async(c,next)=>{
