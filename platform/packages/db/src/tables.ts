@@ -1765,6 +1765,9 @@ tables.push({key:'moderationAppeals',table:'moderation_appeals',mutable:['status
     {property:'hiddenBy',column:'hidden_by',type:'text'},{property:'hiddenAt',column:'hidden_at',type:'timestamptz'},
     {property:'reason',column:'reason',type:'text'},{property:'status',column:'status',type:'text'},{property:'decidedBy',column:'decided_by',type:'text'},
     {property:'decidedAt',column:'decided_at',type:'timestamptz'},{property:'response',column:'response',type:'text'}]});
+
+// Alpha 35: a grant may cover only some of a track's lessons. NULL keeps the whole track.
+tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'lessonIds',column:'lesson_ids',type:'jsonb'});
 // Collections of useful content. Items follow every record they can point at, so they are inserted after them. Only the
 // listed properties change in place: who created a collection, and what an item points at, are fixed.
 tables.push({key:'collections',table:'collections',mutable:['title','description','status','featured','updatedBy','updatedAt','publishedAt'],fields:[

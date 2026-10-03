@@ -27,9 +27,21 @@ Details:
 
 - A correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
 
+## Alpha 35: teaching grants for chosen lessons (no version change), 3 October 2026
+
+On main through [PR #24](https://github.com/EmotiveImpact/REUNIR/pull/24), merged as `3c770b5`. The coordinator allocated Alpha 35 to 38 to courses and teaching, so this release is Alpha 35 with decision 035 and migration 0034. Alpha 39 reached main first, so the version stays 0.39.0-alpha.1 rather than going backwards.
+
+**In plain language:** when you add someone to teach a track you can now give them only the lessons you choose instead of the whole track. They can write, publish and mark answers on those lessons and nothing else. New lessons, the lesson order and the track cover stay with people who have the whole track.
+
+Details:
+
+- **What they work on** in a track's Instructors dialogue: the whole track (the default) or chosen lessons, with a checkbox per lesson. The list names the lessons.
+- Drafts, history, draft files, publishing and knowledge-check answers follow the chosen lessons; other drafts are not found (decision 035).
+- Additive migration 0034 adds `track_instructors.lesson_ids` and scopes the draft, history, publishing and attempt policies to the listed lessons. Every existing grant keeps the whole track. No grant change.
+
 ## 0.28.0-alpha.1 (Alpha 28): collections of useful content, 3 October 2026
 
-On main through [PR #25](https://github.com/EmotiveImpact/REUNIR/pull/25), merged as `94b130b`. Alpha 39 reached main first, so the version stayed 0.39.0-alpha.1.
+On main through [PR #25](https://github.com/EmotiveImpact/REUNIR/pull/25), merged as `94b130b`. Alpha 31 and Alpha 39 reached main first, so the package version stays at 0.39.0-alpha.1.
 
 **In plain language:** communities can now gather useful material into collections such as "Start here". Owners, administrators and moderators pick posts, lessons, tracks, paths, projects, events, missions and community outputs, add short notes and choose the order, keeping a collection private until they publish it. Everyone sees only the items they already have access to, and one featured collection appears on Home.
 
@@ -114,7 +126,7 @@ Details:
 
 ## 0.25.0-alpha.1 (Alpha 25): contributor roles for teaching, 3 October 2026
 
-On main through [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20), merged as `fab9510`. Alpha 26 reached main first.
+On main through [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20), merged as `fab9510`. Alpha 26 (PR #18) reached main first, so the application version stayed 0.26.0-alpha.1.
 
 **In plain language:** when you add someone to teach a track you can now make them a contributor instead of an instructor. Contributors write and save lesson drafts and attach files; the track's instructors decide when to publish them. Contributors do not see learners' quiz answers.
 
