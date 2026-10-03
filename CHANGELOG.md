@@ -8,8 +8,23 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-- Ownership transfer, so that community owners can hand a community over and then delete their own account, is being built on a separate branch.
-- Server-side pagination for review queues and other long lists is planned.
+### 0.16.0-alpha.1 (Alpha 16): ownership transfer, 3 October 2026
+
+On [PR #8](https://github.com/EmotiveImpact/REUNIR/pull/8), awaiting review and the owner's approval to merge.
+
+**In plain language:** a community owner can now hand their community to one of its administrators. The previous owner stays on as an administrator, and once they own no community they can delete their account.
+
+Details:
+
+- Hand over ownership: in **Members and access**, the owner opens an administrator's access settings and chooses **Hand over ownership…**, then re-enters their password and types the community's name. Five attempts in fifteen minutes are allowed.
+- Ownership goes only to an active administrator of the same community; for anyone else the settings say to make them an administrator first. The previous owner becomes an administrator, which only the new owner can change.
+- The new owner is told, and the audit records `member.owner.transferred` with both memberships. **Your account** now points owners to the handover instead of saying it is unavailable.
+- The handover is its own route, not a workspace command, so it always needs the password. The fictional demo runs the same rules in the browser.
+- Additive migration 0017: a unique index so a community can never hold two owners. Migrations 0001 to 0016 are unchanged and no new grants are needed.
+
+### Planned
+
+- Server-side pagination for review queues and other long lists.
 
 ## 0.15.0-alpha.1 (Alpha 15): account deletion, 3 October 2026
 

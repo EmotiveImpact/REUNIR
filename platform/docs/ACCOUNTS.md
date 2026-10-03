@@ -6,7 +6,7 @@ Version 0.15.0-alpha.1. Built on Alpha 14 (learner records), merged to main with
 
 **Your account** in the account menu (top right) lists the communities you belong to and your role in each. One sign-in serves all of them, so deleting the account applies to every one at once. The page says plainly what stays and what goes, and suggests downloading your learning record from your profile first.
 
-Owners see why deletion is unavailable: "You own Code Black. A community needs its owner, so this account cannot be deleted while you own one." Handing ownership to someone else is not available yet.
+Owners see why deletion is unavailable: "You own Code Black. A community needs its owner, so this account cannot be deleted while you own one. Hand each one to an administrator first, from that person's access settings." A link opens Members and access. Once they have handed over every community they own, the delete button appears.
 
 ## Deleting it
 
@@ -53,9 +53,20 @@ Migration 0015 is additive: one policy lets a person see all their own membershi
 
 Every `left` membership reaches the browser as Former member, whatever its stored details, so a membership that left before account deletion existed exposes nothing about the person either.
 
+## Handing a community over (Alpha 16)
+
+Version 0.16.0-alpha.1. In **Members and access**, the owner opens an administrator's access settings and chooses **Hand over ownership…**. The dialogue explains what changes and asks for:
+
+- the owner's current password, checked by Better Auth (live mode only), and
+- the community's name, typed in full (case and outer spaces do not matter).
+
+On success the administrator becomes the owner, the previous owner becomes an administrator, the new owner gets a notice, and the audit records `member.owner.transferred` with both memberships. Ownership goes only to an active administrator; for anyone else the access settings say to make them an administrator first. Only the owner can hand over, five attempts in fifteen minutes are allowed, and a community can never hold two owners (migration 0017's unique index). The decision is in `decisions/016-ownership-transfer.md` and the upstream review in `research/notes/21_OWNERSHIP_TRANSFER.md`.
+
+`POST /api/organisations/:slug/ownership` takes `{ memberId, password, confirmation }`, checks the rate limit and the password, then calls `WorkspaceRepository.transferOwnership`, which runs under the community lock with the restricted runtime role: it applies the domain rules (`transferOwnership` in `packages/domain/src/ownership.ts`, shared with the demo), demotes the previous owner and then promotes the new one. It is not a workspace command.
+
 ## Known limits
 
-- Owners cannot delete their account until ownership transfer exists.
+- Owners cannot delete their account while they own a community; they hand it to an administrator first (Alpha 16). The new owner is told, not asked.
 - Mentions of the person inside other people's posts and comments stay as their authors wrote them.
 - In a community where the person was suspended, suspension had already closed that project's work to them, so tasks they had claimed stay assigned until an administrator reassigns them.
 - Hosted Better Auth, real email delivery and real Google Cloud Storage removal are unverified, as for every connected feature.
@@ -63,3 +74,5 @@ Every `left` membership reaches the browser as Former member, whatever its store
 ## Running it
 
 Apply migrations 0015 and 0016 with `npm run db:migrate`, then re-run `npm run db:grant-runtime`: the runtime role's grant on knowledge-check attempts now keeps the delete privilege that the new policies bound. Checks: `tests/account-deletion.test.ts` (domain), `tests/account-deletion-database.test.ts` (runtime role and row security), `tests/account-deletion-http.test.ts` (the route), two real Better Auth checks in `npm run test:http`, `npm run test:browser:accounts` (demo), `npm run test:browser:accounts-connected` (live build, Better Auth, restricted role) and the two account deletion checks in `npm run test:postgres` (deletion itself, and an invitation accepted while a deletion is under way).
+
+For ownership transfer, apply migration 0017 with `npm run db:migrate` (no new grants are needed). Checks: `tests/ownership.test.ts` (domain), `tests/ownership-database.test.ts` (runtime role, the unique index, tenancy and inactive roles), `tests/ownership-http.test.ts` (the route), the handover in `npm run test:browser:accounts` and `npm run test:browser:accounts-connected`, and the concurrent handover check in `npm run test:postgres`.

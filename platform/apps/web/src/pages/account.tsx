@@ -37,7 +37,7 @@ export function AccountPage() {
                 <p>Want a copy of your learning first? Download your learning record from your profile in each community.</p>
                 <Link className="text-link" to="/profile">Open your profile <ArrowRight size={14} aria-hidden="true"/></Link>
                 {owned.length
-                    ? <p className="account-owner-note">{ownerRefusal(owned)} Handing ownership to someone else is not available yet.</p>
+                    ? <><p className="account-owner-note">{ownerRefusal(owned)} Hand each one to an administrator first, from that person’s access settings.</p><Link className="text-link" to="/access">Open members and access <ArrowRight size={14} aria-hidden="true"/></Link></>
                     : <div><button type="button" className="button secondary" onClick={() => setConfirming(true)}><Trash2 size={15} aria-hidden="true"/>Delete your account…</button></div>}
             </section>
         </div>

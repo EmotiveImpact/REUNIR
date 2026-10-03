@@ -8,7 +8,7 @@ export const FORMER_MEMBER = 'Former member';
 export const confirmsAccountDeletion = (value: string) => value.trim().toLowerCase() === ACCOUNT_DELETION_PHRASE;
 /** "A", "A and B", "A, B and C". */
 export const listNames = (names: string[]) => names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
-/** Why an owner cannot delete their account. Ownership cannot be handed over yet, so this is the whole answer. */
+/** Why an owner cannot delete their account. They hand each community to an administrator first. */
 export const ownerRefusal = (communities: string[]) => `You own ${listNames(communities)}. A community needs its owner, so this account cannot be deleted while you own one.`;
 
 export const accountDeletionRequest = z.object({
