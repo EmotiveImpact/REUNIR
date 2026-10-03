@@ -56,7 +56,7 @@ Checks: `tests/task-files.test.ts` (domain), `tests/task-files-database.test.ts`
 
 ## Limits and not yet done
 
-- No virus scanning yet (Alpha 23 adds it to the shared upload path; decision 029 names where its verdict gates download). Signature checks confirm the container, not that a file is harmless. Files are always downloads, never previews.
+- Task files are scanned for viruses on the shared upload path when a scanner is configured (Alpha 23, decision 029); a flagged file is deleted and never attached. Signature checks confirm the container, not that a file is harmless. Files are always downloads, never previews.
 - No files on individual notes, no versions of a file, no renaming.
 - No presence ("who else is looking"), by choice; see decision 029.
 - Live updates cover project workboards only, by polling every five seconds; there is no server push.

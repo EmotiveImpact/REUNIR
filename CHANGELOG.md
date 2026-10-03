@@ -29,12 +29,26 @@ On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its check
 
 Details:
 
-- **Task files:** up to 12 per task and 200 per project, the same types and 10 MB limit as lesson files. Only people who can currently work on the project can download them; suspension ends access at once. The uploader, the project lead or an active owner or administrator can remove a file, and its stored copy is deleted once the change commits.
+- **Task files:** up to 12 per task and 200 per project, the same types and 10 MB limit as lesson files, and the same virus scanning (Alpha 23) when a scanner is configured. Only people who can currently work on the project can download them; suspension ends access at once. The uploader, the project lead or an active owner or administrator can remove a file, and its stored copy is deleted once the change commits.
 - Account deletion keeps attached files as Former member work and removes the person's unfinished uploads; `db:prune-covers` also clears stale task uploads.
 - **Live project work:** the browser checks a small per-project change endpoint every 5 seconds while the tab is visible (304 when nothing changed), pauses when hidden and backs off on errors. No new infrastructure; server-sent events could replace it later behind the same hook.
 - **Edit conflicts:** a task changed by someone else while you edit shows who changed it and when, keeps your text and waits for you to load theirs or keep yours. No presence indicator, by choice.
-- Additive migration 0029 adds `upload_intents.task_id`, `project_tasks.updated_by` and four restrictive row-security policies; no grant change (decision 029). When upload scanning (Alpha 23) lands, task files go through it on the shared upload path.
+- Additive migration 0029 adds `upload_intents.task_id`, `project_tasks.updated_by` and four restrictive row-security policies; no grant change (decision 029). Task files go through Alpha 23 upload scanning on the shared upload path.
 - New demo browser suite `npm run test:browser:task-files`. No new dependency.
+
+### Alpha 23: virus scanning of uploads (no version change), 3 October 2026
+
+On a pull request from `claude/upload-scanning-1p9o9m`, to be merged once its checks pass. Alpha 23 was allocated to this slice before it was built; it reaches main after Alpha 31, so the version stays 0.31.0-alpha.1 rather than going backwards.
+
+**In plain language:** once a virus scanner is connected, every file people upload (lesson files, cover pictures, library pictures and attachments) is checked before anyone can use it. A flagged file is deleted straight away and the uploader is told why. If the scanner is briefly unavailable, the upload simply waits and can be tried again.
+
+Details:
+
+- ClamAV's clamd is reached over TCP with its `INSTREAM` command (`CLAMAV_HOST`, `CLAMAV_PORT`); no new runtime dependency and no paid service.
+- The whole stored file is scanned at the exact generation that is then recorded and served. Flagged files return 422 `FILE_FLAGGED` and are deleted; no verdict returns 503 `SCAN_UNAVAILABLE` and the upload stays pending.
+- `UPLOAD_SCANNING` (`required` or `optional`, required by default in production): with a bucket and no scanner, a production server will not start. `npm run scan:check` tests a configured clamd with the EICAR test file (decision 023).
+- `npm run launch:preflight` and LAUNCH_RUNBOOK.md cover the scanner: clamd runs on a private network beside the API, since Vercel functions cannot run it.
+- A rejected member attachment can no longer be completed again. No database migration.
 
 ### 0.31.0-alpha.1 (Alpha 31): data retention rules, 3 October 2026
 
