@@ -33,3 +33,4 @@ import './learning-record.css';
 import './account.css';
 import './states.css';
 import './evidence-history.css';
+import './collections.css';

@@ -13,7 +13,7 @@ const oldest = (a: Dated, b: Dated) => -newest(a, b);
 function reviewable(view: Workspace, ctx: TenantContext): QuizAttempt[] {
     const me = view.members.find(m => m.userId === ctx.userId && m.organizationId === ctx.organizationId);
     if (!me) return [];
-    return view.quizAttempts.filter(a => a.userId !== ctx.userId && teaches(view, me, a.trackId));
+    return view.quizAttempts.filter(a => a.userId !== ctx.userId && teaches(view, me, a.trackId, a.lessonId));
 }
 
 /** Every item of a list, in display order, from a workspace that `visibleWorkspace` has already filtered for this person. */

@@ -1,12 +1,12 @@
 import { useId, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { GraduationCap, Mail, UserMinus, UserPlus } from 'lucide-react';
+import { GraduationCap, ListChecks, Mail, UserMinus, UserPlus } from 'lucide-react';
 import { Avatar, Modal } from './ui';
 import { useWorkspace } from '../lib/context';
 import { displayError } from '../lib/data';
 import { createInvitation } from '../lib/invitations';
 import { isAdmin } from '../../../../packages/domain/src/access';
-import type { TeachingRole, Track } from '../../../../packages/contracts/src/index';
+import type { Lesson, TeachingRole, Track } from '../../../../packages/contracts/src/index';
 import { teachingRole } from '../../../../packages/domain/src/instructors';
 
 /** Owners and administrators choose who teaches a track. Instructors author and review that track only. */
@@ -23,7 +23,13 @@ export function InstructorsButton({ track }: { track: Track }) {
 function InstructorsDialog({ track, onClose }: { track: Track; onClose: () => void }) {
     const { data, command, busy } = useWorkspace();
     const [choice, setChoice] = useState(''), [role, setRole] = useState<TeachingRole>('instructor'), [error, setError] = useState('');
+    // Empty means the whole track; otherwise the grant covers only the chosen lessons.
+    const [some, setSome] = useState(false), [chosen, setChosen] = useState<string[]>([]);
+    // The grant whose lessons are being changed, if any.
+    const [editing, setEditing] = useState<{ userId: string; some: boolean; chosen: string[] } | null>(null);
     const select = useId(), roleSelect = useId(), intro = useId();
+    const lessons = data.lessons.filter(l => l.trackId === track.id).sort((a, b) => a.position - b.position);
+    const lessonTitle = (id: string) => lessons.find(l => l.id === id)?.title ?? 'A lesson';
     const grants = data.trackInstructors.filter(i => i.trackId === track.id);
     const name = (userId: string) => data.members.find(m => m.userId === userId)?.name ?? 'Former member';
     // Administrators already teach every track, so only other active members are offered.
@@ -31,16 +37,22 @@ function InstructorsDialog({ track, onClose }: { track: Track; onClose: () => vo
     const add = async () => {
         if (!choice) return;
         setError('');
-        if (await command({ type: 'track.instructor.add', trackId: track.id, userId: choice, role }, { onError: setError })) setChoice('');
+        if (await command({ type: 'track.instructor.add', trackId: track.id, userId: choice, role, lessonIds: some ? chosen : null }, { onError: setError })) { setChoice(''); setSome(false); setChosen([]); }
     };
-    const change = (userId: string, next: TeachingRole) => { setError(''); void command({ type: 'track.instructor.add', trackId: track.id, userId, role: next }, { onError: setError }); };
+    const change = async (userId: string, next: TeachingRole, lessonIds: string[] | null) => { setError(''); return command({ type: 'track.instructor.add', trackId: track.id, userId, role: next, lessonIds }, { onError: setError }); };
     return <Modal title="Track instructors" onClose={onClose}>
         <div className="form-stack instructors-editor">
             <p id={intro}>Instructors author, publish and order lessons, files and knowledge checks for <strong>{track.title}</strong> and give feedback on its knowledge checks. Contributors write drafts and attach files for the instructors to publish. Neither can change other tracks or community settings. Owners and administrators can already do all of this.</p>
             {grants.length ? <ul className="instructor-list" aria-label="Current instructors and contributors">{grants.map(g => <li key={g.id}>
-                <Avatar member={data.members.find(m => m.userId === g.userId)} size="sm"/><span className="instructor-name"><strong>{name(g.userId)}</strong><small>{teachingRole(g) === 'instructor' ? 'Instructor' : 'Contributor'} · added by {name(g.grantedBy)}</small></span>
-                <select aria-label={`Role for ${name(g.userId)}`} value={teachingRole(g)} disabled={busy} onChange={e => change(g.userId, e.target.value as TeachingRole)}><option value="instructor">Instructor</option><option value="contributor">Contributor</option></select>
+                <Avatar member={data.members.find(m => m.userId === g.userId)} size="sm"/><span className="instructor-name"><strong>{name(g.userId)}</strong><small>{teachingRole(g) === 'instructor' ? 'Instructor' : 'Contributor'}{g.lessonIds ? ` for ${g.lessonIds.map(lessonTitle).join(', ')}` : ', whole track'} · added by {name(g.grantedBy)}</small></span>
+                <select aria-label={`Role for ${name(g.userId)}`} value={teachingRole(g)} disabled={busy} onChange={e => void change(g.userId, e.target.value as TeachingRole, g.lessonIds ?? null)}><option value="instructor">Instructor</option><option value="contributor">Contributor</option></select>
+                <button type="button" className="button secondary" disabled={busy || !lessons.length} aria-expanded={editing?.userId === g.userId} aria-label={`Change lessons for ${name(g.userId)}`} onClick={() => setEditing(e => e?.userId === g.userId ? null : { userId: g.userId, some: !!g.lessonIds, chosen: g.lessonIds ?? [] })}><ListChecks size={15} aria-hidden="true"/>Lessons</button>
                 <button type="button" className="button secondary" disabled={busy} aria-label={`Remove ${name(g.userId)} from this track`} onClick={() => { setError(''); void command({ type: 'track.instructor.remove', trackId: track.id, userId: g.userId }, { onError: setError }); }}><UserMinus size={15} aria-hidden="true"/>Remove</button>
+                {editing?.userId === g.userId && <div className="instructor-grant-scope">
+                    <LessonScope legend={`What ${name(g.userId)} works on`} lessons={lessons} some={editing.some} chosen={editing.chosen} onSome={v => setEditing({ ...editing, some: v })} onChosen={c => setEditing({ ...editing, chosen: c })}/>
+                    <div><button type="button" className="button primary" disabled={busy || (editing.some && !editing.chosen.length)} onClick={async () => { if (await change(g.userId, teachingRole(g), editing.some ? editing.chosen : null)) setEditing(null); }}>Save lessons</button>
+                    <button type="button" className="button secondary" onClick={() => setEditing(null)}>Cancel</button></div>
+                </div>}
             </li>)}</ul> : <p className="muted">No instructors yet. Owners and administrators author this track.</p>}
             <div className="instructor-add">
                 <label htmlFor={select}>Add someone to teach</label>
@@ -49,13 +61,24 @@ function InstructorsDialog({ track, onClose }: { track: Track; onClose: () => vo
                     {candidates.map(m => <option key={m.userId} value={m.userId}>{m.name}</option>)}
                 </select>
                 <select id={roleSelect} aria-label="Role" value={role} onChange={e => setRole(e.target.value as TeachingRole)}><option value="instructor">Instructor</option><option value="contributor">Contributor</option></select>
-                <button type="button" className="button primary" disabled={busy || !choice} onClick={() => void add()}><UserPlus size={15} aria-hidden="true"/>Add</button></div>
+                <button type="button" className="button primary" disabled={busy || !choice || (some && !chosen.length)} onClick={() => void add()}><UserPlus size={15} aria-hidden="true"/>Add</button></div>
+                <LessonScope legend="What they work on" lessons={lessons} some={some} chosen={chosen} onSome={setSome} onChosen={setChosen}/>
             </div>
             <InviteToTeach track={track}/>
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="modal-actions"><button type="button" className="button secondary" onClick={onClose}>Done</button></div>
         </div>
     </Modal>;
+}
+
+/** The whole track, or only the chosen lessons. Used when adding someone and when changing an existing grant. */
+function LessonScope({ legend, lessons, some, chosen, onSome, onChosen }: { legend: string; lessons: Lesson[]; some: boolean; chosen: string[]; onSome: (some: boolean) => void; onChosen: (chosen: string[]) => void }) {
+    const scopeName = useId();
+    return <fieldset className="instructor-scope"><legend>{legend}</legend>
+        <label><input type="radio" name={scopeName} checked={!some} onChange={() => onSome(false)}/>The whole track, including new lessons</label>
+        <label><input type="radio" name={scopeName} checked={some} disabled={!lessons.length} onChange={() => onSome(true)}/>Only the lessons I choose</label>
+        {some && <div className="instructor-lessons">{lessons.map(l => <label key={l.id}><input type="checkbox" checked={chosen.includes(l.id)} onChange={e => onChosen(e.target.checked ? [...chosen, l.id] : chosen.filter(x => x !== l.id))}/>{l.title}</label>)}</div>}
+    </fieldset>;
 }
 
 /**

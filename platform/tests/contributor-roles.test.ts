@@ -81,7 +81,7 @@ test('changing a role replaces the grant in the acting administrator’s name, a
     assert.equal(after.length, 1);
     assert.notEqual(after[0].id, before.id, 'a new grant, not an edited one');
     assert.equal(after[0].role, 'instructor');
-    assert.match(promoted.message, /earlier role is replaced/);
+    assert.match(promoted.message, /earlier grant is replaced/);
     assert.equal(teaches(promoted.workspace, member(promoted.workspace, MAYA), 'track_product'), true);
     const again = exec(promoted.workspace, { type: 'track.instructor.add', trackId: 'track_product', userId: MAYA, role: 'instructor' }, DEMO_ADMIN);
     assert.equal(again.workspace.revision, promoted.workspace.revision);

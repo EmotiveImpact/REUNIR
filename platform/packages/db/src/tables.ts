@@ -1773,3 +1773,20 @@ tables.push({key:'evidenceChanges',table:'evidence_changes',mutable:['status','d
     {property:'previous',column:'previous',type:'jsonb'},{property:'proposed',column:'proposed',type:'jsonb'},{property:'previousStatus',column:'previous_status',type:'text'},
     {property:'status',column:'status',type:'text'},{property:'decidedBy',column:'decided_by',type:'text'},{property:'decidedAt',column:'decided_at',type:'timestamptz'},
     {property:'response',column:'response',type:'text'}]});
+
+// Alpha 35: a grant may cover only some of a track's lessons. NULL keeps the whole track.
+tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'lessonIds',column:'lesson_ids',type:'jsonb'});
+// Collections of useful content. Items follow every record they can point at, so they are inserted after them. Only the
+// listed properties change in place: who created a collection, and what an item points at, are fixed.
+tables.push({key:'collections',table:'collections',mutable:['title','description','status','featured','updatedBy','updatedAt','publishedAt'],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'title',column:'title',type:'text'},{property:'description',column:'description',type:'text'},{property:'status',column:'status',type:'text'},
+    {property:'featured',column:'featured',type:'boolean'},{property:'createdBy',column:'created_by',type:'text'},{property:'updatedBy',column:'updated_by',type:'text'},
+    {property:'updatedAt',column:'updated_at',type:'timestamptz'},{property:'publishedAt',column:'published_at',type:'timestamptz'}]});
+tables.push({key:'collectionItems',table:'collection_items',mutable:['position','note'],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'collectionId',column:'collection_id',type:'text'},{property:'kind',column:'kind',type:'text'},{property:'position',column:'position',type:'integer'},
+    {property:'note',column:'note',type:'text'},{property:'addedBy',column:'added_by',type:'text'},
+    {property:'postId',column:'post_id',type:'text'},{property:'trackId',column:'track_id',type:'text'},{property:'lessonId',column:'lesson_id',type:'text'},
+    {property:'projectId',column:'project_id',type:'text'},{property:'eventId',column:'event_id',type:'text'},{property:'pathId',column:'path_id',type:'text'},
+    {property:'missionId',column:'mission_id',type:'text'},{property:'outputId',column:'output_id',type:'text'}]});

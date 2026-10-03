@@ -1,7 +1,7 @@
 import { DomainError, type Command, type Member, type QuizAttempt, type TenantContext, type Workspace } from '../../contracts/src/index';
 import { MAX_SHORT_ANSWER, learnerQuiz, quizFingerprint, quizPercentage, scoreQuiz, type AuthoredQuiz, type LessonQuiz, type QuizAnswer } from '../../contracts/src/assessments';
 import { actorFor, canSeeSpace, isAdmin, isFormer } from './access';
-import { taughtTracks, teaches, teachesAny } from './instructors';
+import { teaches, teachesAny } from './instructors';
 
 /** A learner's records per lesson are bounded even when a quiz allows unlimited attempts. */
 export const MAX_ATTEMPT_RECORDS = 50;
@@ -30,12 +30,13 @@ export function answersUnlocked(attempts: QuizAttempt[], attempt: QuizAttempt): 
  * a track (its instructors and the community's administrators) see its keys and every attempt on its lessons.
  */
 export function filterAssessments(state: Workspace, actor: Member): Workspace {
-    const taught = taughtTracks(state, actor);
-    for (const lesson of state.lessons) if (lesson.quiz && !taught.has(lesson.trackId)) lesson.quiz = learnerQuiz(lesson.quiz);
+    // An instructor of some lessons sees keys and attempts for those lessons only.
+    const taught = (trackId: string, lessonId: string) => teaches(state, actor, trackId, lessonId);
+    for (const lesson of state.lessons) if (lesson.quiz && !taught(lesson.trackId, lesson.id)) lesson.quiz = learnerQuiz(lesson.quiz);
     const lessons = new Set(state.lessons.map(l => l.id));
     const tenant = state.quizAttempts.filter(a => a.organizationId === actor.organizationId && lessons.has(a.lessonId));
-    state.quizAttempts = tenant.filter(a => taught.has(a.trackId) || a.userId === actor.userId)
-        .map(a => taught.has(a.trackId) || answersUnlocked(tenant, a) ? a : { ...a, quiz: learnerQuiz(a.quiz) });
+    state.quizAttempts = tenant.filter(a => taught(a.trackId, a.lessonId) || a.userId === actor.userId)
+        .map(a => taught(a.trackId, a.lessonId) || answersUnlocked(tenant, a) ? a : { ...a, quiz: learnerQuiz(a.quiz) });
     return state;
 }
 
@@ -77,7 +78,7 @@ export function applyAssessment(s: Workspace, ctx: TenantContext, cmd: Command, 
         const passed = status === 'scored' && quiz.passPercentage !== null ? percentage >= quiz.passPercentage : null;
         const attempt: QuizAttempt = { id: makeId(), organizationId: org, createdAt: now, lessonId: lesson.id, trackId: track.id, userId: ctx.userId, attemptNumber: mine.length + 1, quiz: normaliseQuiz(quiz)!, answers, results: scored.results, score: scored.autoScore, maxScore: scored.maxScore, status, passed, feedback: '', reviewerId: null, reviewedAt: null, version: 1 };
         s.quizAttempts.push(attempt);
-        if (status === 'awaiting_review') for (const m of s.members.filter(m => m.organizationId === org && m.status === 'active' && teaches(s, m, track.id))) notify(m.userId, 'A knowledge check needs feedback', `${actor.name} answered the check in ${lesson.title}.`, isAdmin(m) ? '/admin/knowledge-checks' : '/teaching');
+        if (status === 'awaiting_review') for (const m of s.members.filter(m => m.organizationId === org && m.status === 'active' && teaches(s, m, track.id, lesson.id))) notify(m.userId, 'A knowledge check needs feedback', `${actor.name} answered the check in ${lesson.title}.`, isAdmin(m) ? '/admin/knowledge-checks' : '/teaching');
         const message = status === 'awaiting_review' ? 'Submitted. A reviewer will mark your written answers and send feedback.'
             : `You scored ${scored.autoScore} of ${scored.maxScore} (${percentage}%).${passed === true ? ' You passed.' : passed === false ? ` The pass mark is ${quiz.passPercentage}%.` : ''}`;
         return { objectId: attempt.id, message, changed: true, audit: false };
@@ -85,7 +86,7 @@ export function applyAssessment(s: Workspace, ctx: TenantContext, cmd: Command, 
     if (!teachesAny(s, actor)) throw new DomainError('REVIEWER_REQUIRED', 'Only a track instructor or a community owner or administrator can review knowledge checks.', 403);
     const attempt = s.quizAttempts.find(a => a.id === cmd.attemptId && a.organizationId === org) ?? gone();
     // An instructor of another track is told nothing about this attempt.
-    if (!teaches(s, actor, attempt.trackId)) gone();
+    if (!teaches(s, actor, attempt.trackId, attempt.lessonId)) gone();
     open(attempt.lessonId);
     if (attempt.userId === ctx.userId) throw new DomainError('SELF_REVIEW', 'You cannot review your own knowledge check.', 403);
     if (attempt.version !== cmd.expectedVersion) throw new DomainError('STALE_ATTEMPT', 'This attempt changed. Reload it before reviewing.', 409);
