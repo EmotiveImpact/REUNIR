@@ -1,6 +1,6 @@
 import { DomainError, newId, type Command, type Member, type Project, type TenantContext, type Track, type Upload, type Workspace } from '../../contracts/src/index';
 import {
-    COVER_UPLOAD_TTL_MS, MAX_COVER_LIBRARY_ITEMS, MAX_COVER_UPLOADS, MAX_PENDING_COVER_UPLOADS, coverLibraryUploadRequest, coverUploadRequest, isCoverImageType,
+    COVER_UPLOAD_TTL_MS, MAX_COVER_DESCRIPTION, MAX_COVER_LIBRARY_ITEMS, MAX_COVER_UPLOADS, MAX_PENDING_COVER_UPLOADS, coverLibraryUploadRequest, coverUploadRequest, isCoverImageType,
     type CoverImage, type CoverLibraryUploadRequest, type CoverSubject, type CoverUploadRequest,
 } from '../../contracts/src/covers';
 import { actorFor, canSeeSpace, isAdmin } from './access';
@@ -26,7 +26,9 @@ const belongsTo = (u: Upload, kind: CoverSubject, id: string) => (kind === 'trac
 
 /** Whitelist the stored fields so extras never travel with a track or project. */
 export function normaliseCover(value: CoverImage | null | undefined): CoverImage | null {
-    return value ? { fileId: value.fileId, contentType: value.contentType, sizeBytes: value.sizeBytes, focusX: value.focusX, focusY: value.focusY } : null;
+    if (!value) return null;
+    const description = typeof value.description === 'string' ? value.description.trim().slice(0, MAX_COVER_DESCRIPTION) : '';
+    return { fileId: value.fileId, contentType: value.contentType, sizeBytes: value.sizeBytes, focusX: value.focusX, focusY: value.focusY, ...(description ? { description } : {}) };
 }
 /** The same visibility the workspace applies: space access, and unpublished tracks only for administrators. */
 export function visibleSubject(s: Workspace, actor: Member, kind: CoverSubject, id: string): Subject | undefined {
@@ -205,9 +207,10 @@ export function applyCovers(s: Workspace, ctx: TenantContext, cmd: Command, now:
     const upload = coverSource(s, ctx.organizationId, kind, id, cmd.fileId);
     if (!upload) throw new DomainError('COVER_UNAVAILABLE', 'This image is not available for this cover. Upload it again.', 409);
     if (upload.status !== 'ready' || !isCoverImageType(upload.contentType)) throw new DomainError('COVER_NOT_READY', 'This image has not passed verification yet. Upload it again.', 409);
-    subject.coverImage = { fileId: upload.id, contentType: upload.contentType, sizeBytes: upload.sizeBytes, focusX: cmd.focusX, focusY: cmd.focusY };
+    const description = cmd.description ?? (previous === upload.id ? normaliseCover(subject.coverImage)?.description ?? '' : '');
+    subject.coverImage = { fileId: upload.id, contentType: upload.contentType, sizeBytes: upload.sizeBytes, focusX: cmd.focusX, focusY: cmd.focusY, ...(description ? { description } : {}) };
     releaseReplacedCover(s, ctx.organizationId, previous);
-    return { message: 'Cover saved.', objectId: subject.id, changed: before !== JSON.stringify(subject.coverImage), audit: true };
+    return { message: description ? 'Cover and its description saved.' : 'Cover saved.', objectId: subject.id, changed: before !== JSON.stringify(subject.coverImage), audit: true };
 }
 
 /** Single gate for serving cover bytes. Mirrors the visibility of the track or project that shows it. */
