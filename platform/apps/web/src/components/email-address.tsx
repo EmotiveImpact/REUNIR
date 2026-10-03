@@ -6,6 +6,9 @@ import { useWorkspace } from '../lib/context';
 import { displayError } from '../lib/data';
 import { emailCapabilities, requestEmailChange, sendConfirmation } from '../lib/email';
 import { Modal, Pill } from './ui';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 
 /** Your account: the sign-in address, whether it is confirmed, a fresh confirmation link and changing the address. */
 export function EmailAddressPanel() {
@@ -37,8 +40,8 @@ export function EmailAddressPanel() {
             ? 'You sign in with this address, and password resets and invitations go to it.'
             : caps.data?.verification === 'required' ? 'Confirm this address so you can keep signing in. The link goes to the address above.' : 'Confirm this address so password resets and notices reach you. The link goes to the address above.'}</p>
         <div className="two-step-actions">
-            {!confirmed && caps.data?.confirmation && <button type="button" className="button primary" onClick={resend} disabled={working}>{working ? <LoaderCircle size={15} className="spin" aria-hidden="true"/> : <Mail size={15} aria-hidden="true"/>}Send a confirmation link</button>}
-            {caps.data?.change && <button type="button" className="button secondary" onClick={() => setChanging(true)}>Change email address…</button>}
+            {!confirmed && caps.data?.confirmation && <Button variant="default" type="button" className="button primary" onClick={resend} disabled={working}>{working ? <LoaderCircle size={15} className="spin" aria-hidden="true"/> : <Mail size={15} aria-hidden="true"/>}Send a confirmation link</Button>}
+            {caps.data?.change && <Button variant="secondary" type="button" className="button secondary" onClick={() => setChanging(true)}>Change email address…</Button>}
         </div>
         {caps.data && !caps.data.change && <p className="sample-note">Changing your address needs email to be set up on this server. Ask the community owner.</p>}
         {sent && <p role="status" className="two-step-copied">{sent}</p>}
@@ -59,20 +62,20 @@ function ChangeEmailDialogue({ onClose }: { onClose: () => void }) {
         catch (err) { setError(displayError(err)); }
         finally { setWorking(false); }
     };
-    if (done) return <Modal title="Check the new address" onClose={onClose}><div className="form-stack"><p className="account-warning">{done}</p><p className="account-warning">We have also told your current address about the change.</p><div className="modal-actions"><button type="button" className="button primary" onClick={onClose}>Done</button></div></div></Modal>;
+    if (done) return <Modal title="Check the new address" onClose={onClose}><div className="form-stack"><p className="account-warning">{done}</p><p className="account-warning">We have also told your current address about the change.</p><div className="modal-actions"><Button variant="default" type="button" className="button primary" onClick={onClose}>Done</Button></div></div></Modal>;
     return <Modal title="Change your email address" onClose={() => { if (!working) onClose(); }}>
         <form className="form-stack" onSubmit={submit} noValidate>
             <p className="account-warning">We will send a confirmation link to the new address. Your address changes only when you open it, and until then your current address still signs you in.</p>
             <div className="account-field">
-                <label htmlFor={emailField}>New email address</label>
-                <input id={emailField} type="email" autoComplete="email" aria-describedby={hint} required value={email} onChange={e => setEmail(e.target.value)} disabled={working}/>
+                <Label htmlFor={emailField}>New email address</Label>
+                <Input id={emailField} type="email" autoComplete="email" aria-describedby={hint} required value={email} onChange={e => setEmail(e.target.value)} disabled={working}/>
                 <small id={hint}>Invitations already sent to your current address still need it.</small>
             </div>
-            <div className="account-field"><label htmlFor={passwordField}>Your password</label><input id={passwordField} type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} disabled={working}/></div>
+            <div className="account-field"><Label htmlFor={passwordField}>Your password</Label><Input id={passwordField} type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} disabled={working}/></div>
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="modal-actions">
-                <button type="button" className="button secondary" onClick={onClose} disabled={working}>Cancel</button>
-                <button type="submit" className="button primary" disabled={working}>{working && <LoaderCircle size={15} className="spin" aria-hidden="true"/>}Send confirmation link</button>
+                <Button variant="secondary" type="button" className="button secondary" onClick={onClose} disabled={working}>Cancel</Button>
+                <Button variant="default" type="submit" className="button primary" disabled={working}>{working && <LoaderCircle size={15} className="spin" aria-hidden="true"/>}Send confirmation link</Button>
             </div>
         </form>
     </Modal>;

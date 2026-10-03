@@ -7,6 +7,7 @@ import { Empty, PageHeading, Pill } from '../components/ui';
 import { ErrorState, Loading } from '../components/states';
 import { manualPilotGates, RELEASE_VERSION, type PilotCheck, type PilotStatus } from '../../../../packages/contracts/src/operations';
 import type { Workspace } from '../../../../packages/contracts/src/index';
+import { Button } from '../components/ui/button';
 /** Demo observations never impersonate a configured server. */
 export function demoPilotStatus(data:Workspace):PilotStatus {
     const checks: PilotCheck[]=[
@@ -47,7 +48,7 @@ export function PilotOperationsPage() {
         a.href=url;a.download=`reunir-${slug}-pilot-checks.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
     }
     return <div className="pilot-console">
-        <PageHeading eyebrow="A SMALL PILOT. A STRONG FOUNDATION." title="Ready for your people?" body="A clear view of what is configured, what is working, and what still needs a human check." action={<div className="pilot-actions"><button className="button secondary compact" disabled={q.isFetching} onClick={()=>setRefresh(x=>x+1)}><RefreshCw size={15}/>Refresh checks</button><button className="button secondary compact" onClick={download}><Download size={15}/>Export report</button></div>}/>
+        <PageHeading eyebrow="A SMALL PILOT. A STRONG FOUNDATION." title="Ready for your people?" body="A clear view of what is configured, what is working, and what still needs a human check." action={<div className="pilot-actions"><Button variant="secondary" size="sm" className="button secondary compact" disabled={q.isFetching} onClick={()=>setRefresh(x=>x+1)}><RefreshCw size={15}/>Refresh checks</Button><Button variant="secondary" size="sm" className="button secondary compact" onClick={download}><Download size={15}/>Export report</Button></div>}/>
         <div className="pilot-banner"><div className="pilot-banner-icon"><ShieldCheck size={27}/></div><div><Pill tone="amber">{status.source==='demo'?'DEMONSTRATION · NOT A LIVE STATUS':'OWNER-ONLY OPERATIONS'}</Pill><h2>{blocked?'Not cleared for the pilot yet.':'Configuration is only the beginning.'}</h2><p>{status.source==='demo'?'Explore the console without creating accounts, sending emails or changing infrastructure.':'These are observations, not a launch certificate. Hosting, delivery and restore tests still require recorded verification.'}</p></div></div>
         <div className="pilot-stats" aria-label="Pilot check summary">
             <div><small>Observed checks</small><strong>{observed}<span> / {status.checks.length}</span></strong><p>Configuration or scoped data</p></div>

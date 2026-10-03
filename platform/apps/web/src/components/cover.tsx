@@ -9,6 +9,10 @@ import { coverUploadsAvailable, demoCoverUrl, liveCoverUrl, liveLibraryUrl, peek
 import { MAX_COVER_DESCRIPTION, coverPosition, type CoverSubject } from '../../../../packages/contracts/src/covers';
 import { canEditCover } from '../../../../packages/domain/src/covers';
 import type { CoverLibraryItem, Project, Track } from '../../../../packages/contracts/src/index';
+import { Button } from './ui/button';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Label } from './ui/label';
+import { Input } from './ui/input';
 
 type Subject = Track | Project;
 const clamp = (value: number) => Math.min(100, Math.max(0, Math.round(value)));
@@ -70,7 +74,7 @@ export function CoverButton({ kind, subject }: { kind: CoverSubject; subject: Su
     const [open, setOpen] = useState(false);
     if (!canEditCover(data, me, kind, subject)) return null;
     return <>
-        <button type="button" className="button secondary" onClick={() => setOpen(true)}><ImagePlus size={16} aria-hidden="true"/>{subject.coverImage ? 'Change cover' : 'Add a cover'}</button>
+        <Button variant="secondary" type="button" className="button secondary" onClick={() => setOpen(true)}><ImagePlus size={16} aria-hidden="true"/>{subject.coverImage ? 'Change cover' : 'Add a cover'}</Button>
         {/* Rendered at the document root so heading and toolbar styles do not reach into the dialogue. */}
         {open && createPortal(<CoverDialog kind={kind} subject={subject} onClose={() => setOpen(false)}/>, document.body)}
     </>;
@@ -146,11 +150,11 @@ function CoverDialog({ kind, subject, onClose }: { kind: CoverSubject; subject: 
     return <Modal title={kind === 'track' ? 'Track cover' : 'Project cover'} onClose={onClose} wide>
         <div className="form-stack cover-editor">
             <p className="cover-editor-intro" id={help}>Use a JPEG, PNG or WebP picture. Your browser resizes it to 1,600 pixels on the longest side before upload, which also removes photo details such as location. Titles stay below the picture, so it needs no words of its own.</p>
-            {library.length > 0 && <fieldset className="cover-source" disabled={!!working}>
+            {library.length > 0 && <RadioGroup asChild name={choice} value={source} onValueChange={v => setSource(v as 'upload' | 'library')}><fieldset className="cover-source" disabled={!!working}>
                 <legend>Picture</legend>
-                <label><input type="radio" name={choice} checked={source === 'upload'} onChange={() => setSource('upload')}/>Upload your own</label>
-                <label><input type="radio" name={choice} checked={source === 'library'} onChange={() => setSource('library')}/>Community library</label>
-            </fieldset>}
+                <Label><RadioGroupItem value="upload"/>Upload your own</Label>
+                <Label><RadioGroupItem value="library"/>Community library</Label>
+            </fieldset></RadioGroup>}
             {source === 'upload' && (uploads.isError ? <p className="resource-warning" role="note">Upload availability could not be checked, so new pictures cannot be uploaded right now. Close this and try again shortly.</p>
                 : uploads.isFetched && !canUpload && <p className="resource-warning" role="note">Private file storage is not configured for this community, so new pictures cannot be uploaded. You can still move the focal point or remove the current cover.</p>)}
             <div className="cover-stage" onDragOver={e => { if (canUpload) e.preventDefault(); }} onDrop={e => { e.preventDefault(); void choose(e.dataTransfer.files[0]); }}>
@@ -160,28 +164,28 @@ function CoverDialog({ kind, subject, onClose }: { kind: CoverSubject; subject: 
                 </div> : <div className="cover-stage-empty"><ImagePlus size={28} strokeWidth={1.5} aria-hidden="true"/><span>{empty}</span></div>}
             </div>
             {source === 'upload' ? <div className="cover-editor-pick">
-                <button type="button" className="button secondary" aria-describedby={help} disabled={!!working || !canUpload} onClick={() => picker.current?.click()}>{working === 'reading' ? <LoaderCircle size={15} className="spin" aria-hidden="true"/> : <Upload size={15} aria-hidden="true"/>}{src ? 'Choose another image' : 'Choose an image'}</button>
+                <Button variant="secondary" type="button" className="button secondary" aria-describedby={help} disabled={!!working || !canUpload} onClick={() => picker.current?.click()}>{working === 'reading' ? <LoaderCircle size={15} className="spin" aria-hidden="true"/> : <Upload size={15} aria-hidden="true"/>}{src ? 'Choose another image' : 'Choose an image'}</Button>
                 <input ref={picker} type="file" accept="image/*" hidden onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; void choose(file); }}/>
-            </div> : <fieldset className="cover-library-picker" disabled={!!working}>
+            </div> : <RadioGroup asChild name={`${choice}-picture`} value={selected ?? ''} onValueChange={id => { const item = library.find(x => x.id === id); if (item) pick(item); }}><fieldset className="cover-library-picker" disabled={!!working}>
                 <legend>Community library</legend>
                 <p>Pictures your community’s owners and administrators have added. Choosing one does not copy it.</p>
                 <div className="cover-library-grid">
-                    {library.map(item => <label key={item.id} className="cover-library-option">
-                        <input type="radio" name={`${choice}-picture`} value={item.id} checked={selected === item.id} onChange={() => pick(item)}/>
+                    {library.map(item => <Label key={item.id} className="cover-library-option">
+                        <RadioGroupItem value={item.id}/>
                         <LibraryThumb item={item}/>
                         <span className="cover-library-label">{item.label}</span>
-                    </label>)}
+                    </Label>)}
                 </div>
-            </fieldset>}
+            </fieldset></RadioGroup>}
             {src && <fieldset className="cover-focus-controls" disabled={!!working}>
                 <legend>Focal point</legend>
                 <p>Click or drag on the picture, or use the sliders. Every card keeps this point in view.</p>
-                <div className="cover-slider"><label htmlFor={across}>Left to right</label><input id={across} type="range" min={0} max={100} step={1} value={focus.x} onChange={e => setFocus(f => ({ ...f, x: clamp(Number(e.target.value)) }))}/><span className="cover-slider-value" aria-hidden="true">{focus.x}%</span></div>
-                <div className="cover-slider"><label htmlFor={down}>Top to bottom</label><input id={down} type="range" min={0} max={100} step={1} value={focus.y} onChange={e => setFocus(f => ({ ...f, y: clamp(Number(e.target.value)) }))}/><span className="cover-slider-value" aria-hidden="true">{focus.y}%</span></div>
+                <div className="cover-slider"><Label htmlFor={across}>Left to right</Label><input id={across} type="range" min={0} max={100} step={1} value={focus.x} onChange={e => setFocus(f => ({ ...f, x: clamp(Number(e.target.value)) }))}/><span className="cover-slider-value" aria-hidden="true">{focus.x}%</span></div>
+                <div className="cover-slider"><Label htmlFor={down}>Top to bottom</Label><input id={down} type="range" min={0} max={100} step={1} value={focus.y} onChange={e => setFocus(f => ({ ...f, y: clamp(Number(e.target.value)) }))}/><span className="cover-slider-value" aria-hidden="true">{focus.y}%</span></div>
             </fieldset>}
             {src && <div className="cover-description">
-                <label htmlFor={describe}>Describe the picture <span className="muted">(optional)</span></label>
-                <input id={describe} type="text" value={description} disabled={!!working} aria-describedby={describeHelp} onChange={e => setDescription(e.target.value)} placeholder="For example: hands sketching on a notebook beside a laptop"/>
+                <Label htmlFor={describe}>Describe the picture <span className="muted">(optional)</span></Label>
+                <Input id={describe} type="text" value={description} disabled={!!working} aria-describedby={describeHelp} onChange={e => setDescription(e.target.value)} placeholder="For example: hands sketching on a notebook beside a laptop"/>
                 <small id={describeHelp}>Read aloud on the {kind === 'track' ? 'track' : 'project'} page for people who cannot see it. Say what it shows, not that it is a picture. Leave empty if it is only decoration. {MAX_COVER_DESCRIPTION - Array.from(description.trim()).length} characters left.</small>
             </div>}
             {src && <div className="cover-previews" aria-hidden="true">
@@ -190,9 +194,9 @@ function CoverDialog({ kind, subject, onClose }: { kind: CoverSubject; subject: 
             <p className="cover-editor-status" role="status" aria-live="polite">{status}</p>
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="modal-actions">
-                {current && <button type="button" className="button secondary cover-remove" disabled={!!working} onClick={() => void remove()}><Trash2 size={15} aria-hidden="true"/>Remove cover</button>}
-                <button type="button" className="button secondary" disabled={working === 'saving'} onClick={onClose}>Cancel</button>
-                <button type="button" className="button primary" disabled={!!working || !changed} onClick={() => void save()}>{working === 'saving' ? 'Saving…' : 'Save cover'}</button>
+                {current && <Button variant="secondary" type="button" className="button secondary cover-remove" disabled={!!working} onClick={() => void remove()}><Trash2 size={15} aria-hidden="true"/>Remove cover</Button>}
+                <Button variant="secondary" type="button" className="button secondary" disabled={working === 'saving'} onClick={onClose}>Cancel</Button>
+                <Button variant="default" type="button" className="button primary" disabled={!!working || !changed} onClick={() => void save()}>{working === 'saving' ? 'Saving…' : 'Save cover'}</Button>
             </div>
         </div>
     </Modal>;

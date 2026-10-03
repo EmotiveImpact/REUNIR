@@ -4,6 +4,10 @@ import { Modal } from './ui';
 import { useWorkspace } from '../lib/context';
 import { api, mode } from '../lib/data';
 import { DIGESTS, MUTABLE_TOPICS, TOPIC_LABELS, type DigestFrequency, type MutableTopic } from '../../../../packages/contracts/src/notifications';
+import { Button } from './ui/button';
+import { Checkbox } from './ui/checkbox';
+import { Label } from './ui/label';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 
 const DIGEST_LABELS: Record<DigestFrequency, string> = { off: 'No email digest', daily: 'Daily digest', weekly: 'Weekly digest' };
 
@@ -30,24 +34,24 @@ export function NotificationSettings({ onClose }: { onClose: () => void }) {
         <form className="form-stack notification-settings" onSubmit={e => { e.preventDefault(); void save(); }}>
             <fieldset>
                 <legend>Notices in {data.organisation.name}</legend>
-                {MUTABLE_TOPICS.map(t => <label className="access-checkbox" key={t}>
-                    <input type="checkbox" checked={!muted.includes(t)} disabled={busy} onChange={e => toggle(t, e.target.checked)}/>
+                {MUTABLE_TOPICS.map(t => <Label className="access-checkbox" key={t}>
+                    <Checkbox checked={!muted.includes(t)} disabled={busy} onCheckedChange={on => toggle(t, on === true)}/>
                     <span><strong>{TOPIC_LABELS[t].title}</strong><small>{TOPIC_LABELS[t].detail}</small></span>
-                </label>)}
+                </Label>)}
                 <p className="sample-note"><BellOff size={14}/> {TOPIC_LABELS.community.detail} Turning a topic off stops new notices; ones you already have stay.</p>
             </fieldset>
-            <fieldset>
+            <RadioGroup asChild name="digest" value={digest} disabled={busy} onValueChange={v => setDigest(v as DigestFrequency)}><fieldset>
                 <legend>Email digest</legend>
-                {DIGESTS.map(d => <label className="access-checkbox" key={d}>
-                    <input type="radio" name="digest" value={d} checked={digest === d} disabled={busy} onChange={() => setDigest(d)}/>
+                {DIGESTS.map(d => <Label className="access-checkbox" key={d}>
+                    <RadioGroupItem value={d}/>
                     <span><strong>{DIGEST_LABELS[d]}</strong></span>
-                </label>)}
+                </Label>)}
                 <p className="sample-note" role="status"><Mail size={14}/> {email === null ? 'Checking whether email is set up…'
                     : email ? 'A digest lists notices you have not read since the last one, and is skipped when there are none.'
                     : mode === 'demo' ? 'The browser demo never sends email. Your choice is saved for when email is set up.'
                     : 'Email is not set up for this community yet. Your choice is saved and takes effect once it is.'}</p>
-            </fieldset>
-            <button className="button primary" disabled={busy}>Save notification settings</button>
+            </fieldset></RadioGroup>
+            <Button variant="default" className="button primary" disabled={busy}>Save notification settings</Button>
         </form>
     </Modal>;
 }

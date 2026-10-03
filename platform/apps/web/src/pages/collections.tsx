@@ -6,6 +6,11 @@ import { Back, Empty, Modal, PageHeading, Pill } from '../components/ui';
 import { collectableContent, curates, itemTarget, resolveItem, type CollectedContent } from '../../../../packages/domain/src/collections';
 import { COLLECTION_ITEM_KINDS, COLLECTION_KIND_LABELS, type CollectionItemKind } from '../../../../packages/contracts/src/collections';
 import type { Collection, CollectionItem, Workspace } from '../../../../packages/contracts/src/index';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { NativeSelect } from '../components/ui/native-select';
+import { Textarea } from '../components/ui/textarea';
 
 /** Items this person can see, in the curator's order, with the content they point at. */
 export function collectionEntries(data: Workspace, c: Collection): { item: CollectionItem; content: CollectedContent }[] {
@@ -31,7 +36,7 @@ function Entry({ content, item, team }: { content: CollectedContent; item: Colle
 export function CollectionsPage() {
     const { data, me } = useWorkspace(); const [create, C] = useState(false); const team = curates(me);
     const list = ordered(data.collections ?? []);
-    return <><PageHeading eyebrow="CHOSEN BY YOUR COMMUNITY TEAM" title="Useful collections." body="Conversations, lessons, paths and work the community team thinks are worth your time. You see only what you already have access to." action={team ? <button className="button primary" onClick={() => C(true)}><Plus size={16}/>New collection</button> : undefined}/>
+    return <><PageHeading eyebrow="CHOSEN BY YOUR COMMUNITY TEAM" title="Useful collections." body="Conversations, lessons, paths and work the community team thinks are worth your time. You see only what you already have access to." action={team ? <Button variant="default" className="button primary" onClick={() => C(true)}><Plus size={16}/>New collection</Button> : undefined}/>
         <div className="collection-list">{list.map(c => { const entries = collectionEntries(data, c); return <section className="panel collection-card" key={c.id} aria-labelledby={`collection-${c.id}`}>
             <header><h2 id={`collection-${c.id}`}><Link to={`/collections/${c.id}`}>{c.title}</Link></h2><Status c={c}/></header>
             {c.description && <p>{c.description}</p>}
@@ -53,11 +58,11 @@ export function CollectionPage() {
     return <><Back to="/collections" label="All collections"/>
         <PageHeading eyebrow={c.status === 'draft' ? 'DRAFT · ONLY THE COMMUNITY TEAM SEES THIS' : c.featured ? 'COLLECTION · ON HOME' : 'COLLECTION'} title={c.title} body={c.description}/>
         {team && <div className="collection-actions" role="group" aria-label="Manage this collection">
-            <button className="button secondary compact" onClick={() => E(true)}><Pencil size={15}/>Edit details</button>
-            <button className="button secondary compact" onClick={() => A(true)}><Plus size={15}/>Add an item</button>
-            <button className="button primary compact" disabled={busy} onClick={() => command({ type: 'collection.publish', collectionId: c.id, published: c.status !== 'published' })}>{c.status === 'published' ? <><EyeOff size={15}/>Return to draft</> : <><Eye size={15}/>Publish</>}</button>
-            {c.status === 'published' && <button className="button secondary compact" disabled={busy} onClick={() => command({ type: 'collection.feature', collectionId: c.id, featured: !c.featured })}>{c.featured ? <><StarOff size={15}/>Remove from Home</> : <><Star size={15}/>Feature on Home</>}</button>}
-            <button className="button ghost compact" onClick={() => R(true)}><Trash2 size={15}/>Delete</button>
+            <Button variant="secondary" size="sm" className="button secondary compact" onClick={() => E(true)}><Pencil size={15}/>Edit details</Button>
+            <Button variant="secondary" size="sm" className="button secondary compact" onClick={() => A(true)}><Plus size={15}/>Add an item</Button>
+            <Button variant="default" size="sm" className="button primary compact" disabled={busy} onClick={() => command({ type: 'collection.publish', collectionId: c.id, published: c.status !== 'published' })}>{c.status === 'published' ? <><EyeOff size={15}/>Return to draft</> : <><Eye size={15}/>Publish</>}</Button>
+            {c.status === 'published' && <Button variant="secondary" size="sm" className="button secondary compact" disabled={busy} onClick={() => command({ type: 'collection.feature', collectionId: c.id, featured: !c.featured })}>{c.featured ? <><StarOff size={15}/>Remove from Home</> : <><Star size={15}/>Feature on Home</>}</Button>}
+            <Button variant="ghost" size="sm" className="button ghost compact" onClick={() => R(true)}><Trash2 size={15}/>Delete</Button>
         </div>}
         {team && <p className="sample-note collection-help">Each person sees only the items they already have access to. Drafts stay with the community team until you publish them.</p>}
         <ol className="collection-entries collection-detail">{entries.map((e, i) => <li key={e.item.id}><Entry {...e} team={team}/>
@@ -84,10 +89,10 @@ function DetailsModal({ collection, onClose }: { collection?: Collection; onClos
         if (r) { onClose(); if (!collection && r.objectId) navigate(`/collections/${r.objectId}`); }
     };
     return <Modal title={collection ? 'Edit collection' : 'New collection'} onClose={onClose}><form className="form-stack" onSubmit={submit}>
-        <label>Title<input name="title" required maxLength={80} defaultValue={collection?.title ?? ''} placeholder="Start here"/></label>
-        <label>Short description<textarea name="description" maxLength={280} defaultValue={collection?.description ?? ''} placeholder="What people will find here, in a sentence."/></label>
+        <Label>Title<Input name="title" required maxLength={80} defaultValue={collection?.title ?? ''} placeholder="Start here"/></Label>
+        <Label>Short description<Textarea name="description" maxLength={280} defaultValue={collection?.description ?? ''} placeholder="What people will find here, in a sentence."/></Label>
         {!collection && <p className="sample-note">A new collection is a draft. Only owners, administrators and moderators see it until it is published.</p>}
-        <button className="button primary" disabled={busy}>{collection ? 'Save collection' : 'Create draft collection'}</button>
+        <Button variant="default" className="button primary" disabled={busy}>{collection ? 'Save collection' : 'Create draft collection'}</Button>
     </form></Modal>;
 }
 
@@ -101,12 +106,12 @@ function AddItemModal({ collection, onClose }: { collection: Collection; onClose
         if (r) onClose();
     };
     return <Modal title={`Add to ${collection.title}`} onClose={onClose}><form className="form-stack" onSubmit={submit}>
-        <label>Kind of content<select value={kind} onChange={e => K(e.target.value as CollectionItemKind)}>{COLLECTION_ITEM_KINDS.map(k => <option key={k} value={k}>{COLLECTION_KIND_LABELS[k]}</option>)}</select></label>
-        <label>Item<select name="targetId" required key={kind} disabled={!options.length}>{options.map(o => <option key={o.id} value={o.id}>{o.title}{o.restricted ? ` (private: ${o.restricted})` : ''}</option>)}</select></label>
+        <Label>Kind of content<NativeSelect value={kind} onChange={e => K(e.target.value as CollectionItemKind)}>{COLLECTION_ITEM_KINDS.map(k => <option key={k} value={k}>{COLLECTION_KIND_LABELS[k]}</option>)}</NativeSelect></Label>
+        <Label>Item<NativeSelect name="targetId" required key={kind} disabled={!options.length}>{options.map(o => <option key={o.id} value={o.id}>{o.title}{o.restricted ? ` (private: ${o.restricted})` : ''}</option>)}</NativeSelect></Label>
         {!options.length && <p className="sample-note" role="status">Nothing of this kind is available to add.</p>}
-        <label>Note for members (optional)<textarea name="note" maxLength={280} placeholder="Why it is worth their time."/></label>
+        <Label>Note for members (optional)<Textarea name="note" maxLength={280} placeholder="Why it is worth their time."/></Label>
         <p className="sample-note">Only live content you can see can be added. Members see an item only if they already have access to it.</p>
-        <button className="button primary" disabled={busy || !options.length}>Add to collection</button>
+        <Button variant="default" className="button primary" disabled={busy || !options.length}>Add to collection</Button>
     </form></Modal>;
 }
 
@@ -114,8 +119,8 @@ function NoteModal({ item, title, onClose }: { item: CollectionItem; title: stri
     const { command, busy } = useWorkspace();
     const submit = async (e: FormEvent<HTMLFormElement>) => { e.preventDefault(); const r = await command({ type: 'collection.item.note', itemId: item.id, note: String(new FormData(e.currentTarget).get('note') || '') }); if (r) onClose(); };
     return <Modal title="Curator’s note" onClose={onClose}><form className="form-stack" onSubmit={submit}>
-        <label>Note for {title}<textarea name="note" maxLength={280} defaultValue={item.note}/></label>
-        <button className="button primary" disabled={busy}>Save note</button>
+        <Label>Note for {title}<Textarea name="note" maxLength={280} defaultValue={item.note}/></Label>
+        <Button variant="default" className="button primary" disabled={busy}>Save note</Button>
     </form></Modal>;
 }
 
@@ -124,6 +129,6 @@ function DeleteModal({ collection, onClose }: { collection: Collection; onClose:
     const confirm = async () => { const r = await command({ type: 'collection.delete', collectionId: collection.id }); if (r) { onClose(); navigate('/collections'); } };
     return <Modal title="Delete this collection?" onClose={onClose}><div className="form-stack">
         <p>{collection.title} and its notes will be removed. The conversations, lessons and other content stay exactly where they are.</p>
-        <div className="modal-actions"><button className="button secondary" onClick={onClose}>Keep it</button><button className="button primary" disabled={busy} onClick={confirm}>Delete collection</button></div>
+        <div className="modal-actions"><Button variant="secondary" className="button secondary" onClick={onClose}>Keep it</Button><Button variant="default" className="button primary" disabled={busy} onClick={confirm}>Delete collection</Button></div>
     </div></Modal>;
 }

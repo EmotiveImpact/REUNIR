@@ -8,6 +8,9 @@ import { Modal, PageHeading, Pill } from '../components/ui';
 import { TwoStepPanel } from '../components/two-step';
 import { EmailAddressPanel } from '../components/email-address';
 import { ACCOUNT_DELETION_PHRASE, FORMER_MEMBER, listNames, ownerRefusal } from '../../../../packages/contracts/src/account';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 
 const KEPT = ['Posts and comments, so conversations still make sense', 'Projects, updates, task notes and the proof you submitted', 'Lessons, files and covers you added for a community', 'Messages you sent, for the people you wrote to'];
 const GONE = ['Your name, photo, headline, bio and skills', 'Private goals, saved posts, notifications, reactions and event replies', 'Your learning record: tracks, completed lessons, knowledge-check answers and points', 'Your sign-in, sessions and email address'];
@@ -42,7 +45,7 @@ export function AccountPage() {
                 <Link className="text-link" to="/profile">Open your profile <ArrowRight size={14} aria-hidden="true"/></Link>
                 {owned.length
                     ? <><p className="account-owner-note">{ownerRefusal(owned)} Hand each one to an administrator first, from that person’s access settings.</p><Link className="text-link" to="/access">Open members and access <ArrowRight size={14} aria-hidden="true"/></Link></>
-                    : <div><button type="button" className="button secondary" onClick={() => setConfirming(true)}><Trash2 size={15} aria-hidden="true"/>Delete your account…</button></div>}
+                    : <div><Button variant="secondary" type="button" className="button secondary" onClick={() => setConfirming(true)}><Trash2 size={15} aria-hidden="true"/>Delete your account…</Button></div>}
             </section>
         </div>
         {confirming && <DeleteAccountDialogue communities={communities.map(c => c.name)} onClose={() => setConfirming(false)}/>}
@@ -62,17 +65,17 @@ function DeleteAccountDialogue({ communities, onClose }: { communities: string[]
         <form className="form-stack" onSubmit={submit} noValidate>
             <p className="account-warning">This deletes your account in every community you belong to{communities.length ? `, including ${listNames(communities)},` : ''} and cannot be undone. Your posts, comments and project work stay, shown as {FORMER_MEMBER}.</p>
             {mode === 'live'
-                ? <div className="account-field"><label htmlFor={passwordField}>Your password</label><input id={passwordField} type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} disabled={working}/></div>
+                ? <div className="account-field"><Label htmlFor={passwordField}>Your password</Label><Input id={passwordField} type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} disabled={working}/></div>
                 : <p className="sample-note">This fictional demo has no passwords. A connected community asks for yours here.</p>}
             <div className="account-field">
-                <label htmlFor={phraseField}>Type <strong>{ACCOUNT_DELETION_PHRASE}</strong> to confirm</label>
-                <input id={phraseField} aria-describedby={phraseHint} autoComplete="off" autoCapitalize="none" spellCheck={false} required value={phrase} onChange={e => setPhrase(e.target.value)} disabled={working}/>
+                <Label htmlFor={phraseField}>Type <strong>{ACCOUNT_DELETION_PHRASE}</strong> to confirm</Label>
+                <Input id={phraseField} aria-describedby={phraseHint} autoComplete="off" autoCapitalize="none" spellCheck={false} required value={phrase} onChange={e => setPhrase(e.target.value)} disabled={working}/>
                 <small id={phraseHint}>Typing it guards against deleting by accident.</small>
             </div>
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="modal-actions">
-                <button type="button" className="button secondary" onClick={onClose} disabled={working}>Keep my account</button>
-                <button type="submit" className="button primary" disabled={working}>{working ? <LoaderCircle size={15} className="spin" aria-hidden="true"/> : <Trash2 size={15} aria-hidden="true"/>}Delete my account</button>
+                <Button variant="secondary" type="button" className="button secondary" onClick={onClose} disabled={working}>Keep my account</Button>
+                <Button variant="default" type="submit" className="button primary" disabled={working}>{working ? <LoaderCircle size={15} className="spin" aria-hidden="true"/> : <Trash2 size={15} aria-hidden="true"/>}Delete my account</Button>
             </div>
         </form>
     </Modal>;

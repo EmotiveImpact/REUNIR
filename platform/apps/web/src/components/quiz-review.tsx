@@ -10,6 +10,9 @@ import type { QuizAttempt } from '../../../../packages/contracts/src/index';
 import { PAGE_SIZE } from '../../../../packages/contracts/src/pages';
 import { usePagedList } from '../lib/pages';
 import { displayError } from '../lib/data';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
 
 /** Long lists open a page at a time from the server. The counts beside each heading are always the full totals. */
 export const REVIEW_PAGE = PAGE_SIZE;
@@ -36,7 +39,7 @@ export function Paged({ list, noun, empty, children }: { list: ReturnType<typeof
         {children(shown)}
         {list.hasMore && <div className="review-more">
             <span>Showing {shown.length} of {list.total} {noun}.</span>
-            <button type="button" className="button secondary" disabled={list.loadingMore} aria-busy={list.loadingMore || undefined} onClick={() => void more()}>{list.loadingMore ? 'Loading…' : `Show ${Math.min(REVIEW_PAGE, Math.max(rest, 0))} more`}</button>
+            <Button variant="secondary" type="button" className="button secondary" disabled={list.loadingMore} aria-busy={list.loadingMore || undefined} onClick={() => void more()}>{list.loadingMore ? 'Loading…' : `Show ${Math.min(REVIEW_PAGE, Math.max(rest, 0))} more`}</Button>
         </div>}
     </>;
 }
@@ -80,12 +83,12 @@ function ReviewCard({ attempt }: { attempt: QuizAttempt }) {
     return <section className="panel review-card quiz-review-card" aria-labelledby={heading}>
         <div className="teacher-row"><Avatar member={learner}/><span><strong>{learner?.name ?? 'Former member'}</strong><small>{track?.title ?? 'Learning track'} · Attempt {attempt.attemptNumber}</small></span><span className="quiz-status">{attemptStatus(attempt)}</span></div>
         <h2 id={heading} tabIndex={-1}><Link to={`/learn/${attempt.trackId}/${attempt.lessonId}`}>{lesson?.title ?? 'Lesson'}</Link></h2>
-        <AttemptView attempt={attempt} revealed chosenLabel="Chosen" renderMark={q => q.kind === 'written' ? <label className="quiz-mark">
+        <AttemptView attempt={attempt} revealed chosenLabel="Chosen" renderMark={q => q.kind === 'written' ? <Label className="quiz-mark">
             <span>Points for this answer (0 to {q.points})</span>
-            <input type="number" inputMode="numeric" min={0} max={q.points} step={1} value={marks[q.id] ?? ''} disabled={own || busy} onChange={e => { const value = e.target.value; setMarks(current => ({ ...current, [q.id]: value })); }}/>
+            <Input type="number" inputMode="numeric" min={0} max={q.points} step={1} value={marks[q.id] ?? ''} disabled={own || busy} onChange={e => { const value = e.target.value; setMarks(current => ({ ...current, [q.id]: value })); }}/>
             {marks[q.id] !== undefined && marks[q.id] !== '' && !marked(q.id, q.points) && <small role="alert">Enter a whole number from 0 to {q.points}.</small>}
-        </label> : null}/>
-        <label className="quiz-review-feedback">Feedback for {learner?.name ?? 'the learner'}<textarea rows={3} maxLength={2000} value={feedback} disabled={own || busy} placeholder="What is strong? What would make the answer stronger?" onChange={e => setFeedback(e.target.value)}/></label>
+        </Label> : null}/>
+        <Label className="quiz-review-feedback">Feedback for {learner?.name ?? 'the learner'}<Textarea rows={3} maxLength={2000} value={feedback} disabled={own || busy} placeholder="What is strong? What would make the answer stronger?" onChange={e => setFeedback(e.target.value)}/></Label>
         <div className="review-actions"><Button type="button" disabled={busy || !ready} onClick={() => void send()}><Send size={15} aria-hidden="true"/>{written.length ? 'Send marks and feedback' : 'Send feedback'}</Button></div>
         {own && <p className="sample-note">Another owner or administrator must review your own answers.</p>}
     </section>;

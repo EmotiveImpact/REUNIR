@@ -82,3 +82,29 @@ No new runtime dependency and no donor application source. Lesson files extend R
 ## Alpha 10: knowledge checks
 
 No new runtime dependency and no donor application source. Knowledge checks are local application code built on REUNIR's existing lesson draft, publication and review model, Zod schemas and shadcn Button. Frappe Learning, LearnHouse and ClassroomIO were read at pinned commits as behavioural references only; all three are AGPL at their repository roots. Exact files, blobs and what was learned are in `../research/reuse-register.json` and `../research/notes/15_ASSESSMENTS.md`. The demo's questions and Sofia Chen's sample answer are fictional and written for REUNIR.
+
+## Alpha 30: shared shadcn form components
+
+Seven more component files adapt the official `new-york-v4` registry source, under the same retained MIT notice (`legal/shadcn-MIT.txt`). Each blob is the Git object id of the file fetched from the `main` branch on 3 October 2026 (the same method gives Alpha 07's recorded button.tsx blob, which is unchanged upstream):
+
+| File | Upstream blob | Local adaptation |
+| --- | --- | --- |
+| input.tsx | ddb9b315e34245addded54b1848bb32c80c418cc | No fixed `h-9` and no `dark:` variants: REUNIR's field padding sets the height and the interface is always dark |
+| textarea.tsx | bf23f6c255978311c3069f5da3fa10c1d896e8cf | No `field-sizing-content` or `flex`, so each form's `rows` still sets the starting height |
+| label.tsx | 5aff7469c384001a3f1b49cc5cf8871b10f10386 | Radix Label kept; the row layout, `leading-none` and `select-none` classes dropped so labels keep REUNIR's text, hint and field column |
+| native-select.tsx | 9ddba6b7fcddda52d9c4fc969cd910b929e7aec7 | The `select` element and its classes only: no wrapper or drawn chevron, so the field keeps its place in existing grid and flex rows; options stay plain `option` elements |
+| checkbox.tsx | 9aaa1baace43e42aba6ee7c3b04adb8ff7e99ea2 | Unchanged apart from the `cn` path, the dropped `dark:` variants and `aria-hidden` on the icon |
+| radio-group.tsx | 2dc7ec59fa0af08a9274410db47b03cb78f629eb | No `grid gap-3` on the group; an arrow key checks the choice it moves to even when released at once; `OptionalRadioGroup` helper |
+| switch.tsx | c45932afe4e484c900aa916e81d0e0d67137bedc | Unchanged apart from the `cn` path and the dropped `dark:` variants |
+
+The upstream `radix-ui` unified import is replaced by the individual pinned packages below. `forms.css` restores borders and fills that the global `button` reset would otherwise remove from the Radix controls, in neutral greys. The shadcn Dialog (blob ccadf4a85bf6398d52314b112600f796fc97db97) was read but not adopted: `Modal` stays a native modal `dialog` (see `docs/FORMS.md`).
+
+### Added dependency notices
+
+- `@radix-ui/react-checkbox` 1.3.3: MIT. legal/dependencies/radix-ui__react-checkbox-LICENSE.txt
+- `@radix-ui/react-label` 2.1.7: MIT. legal/dependencies/radix-ui__react-label-LICENSE.txt
+- `@radix-ui/react-radio-group` 1.3.8: MIT. legal/dependencies/radix-ui__react-radio-group-LICENSE.txt
+- `@radix-ui/react-switch` 1.2.6: MIT. legal/dependencies/radix-ui__react-switch-LICENSE.txt
+- `@radix-ui/react-use-previous` 1.1.1 (transitive, new to the lockfile): MIT declared in its package metadata; the package ships no licence file, and the Radix licence text above covers the same repository.
+
+Every other transitive Radix package these need was already in the lockfile at the same version.
