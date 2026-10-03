@@ -31,11 +31,11 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | V_UNIT passed, 0 failed (7 new in `tests/lesson-video.test.ts`, 1 new in `tests/launch-preflight.test.ts`, which also checks the clamd stream warning) |
+| `npm test` | 765 passed, 0 failed (7 new in `tests/lesson-video.test.ts`, 1 new in `tests/launch-preflight.test.ts`, which also checks the clamd stream warning) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
-| Demo-browser suites | V_DEMO passed, including V_RES lesson resource checks (1 new: a creator uploads a WebM clip and a learner plays it) |
-| Connected-browser suites | V_CONN passed (unchanged) |
+| Demo-browser suites | 300 passed across 17 suites, including 20 lesson resource checks (1 new: a creator uploads a WebM clip and a learner plays it) |
+| Connected-browser suites | 64 passed (unchanged) |
 | `npm run test:postgres` | Passed on PostgreSQL 16 |
 | Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
 
