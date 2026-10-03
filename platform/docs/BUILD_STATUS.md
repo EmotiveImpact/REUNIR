@@ -26,21 +26,22 @@ Alpha 23 (upload scanning, PR #16) was still open when this slice started, and A
 
 ## Local verification, 3 October 2026
 
-Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). Every step ran on this branch's tree on top of main `ec4285d`.
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). The final run was on `5882bb6`, this branch with main `d62424d` (Alpha 24 group conversations) merged in.
 
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 637 passed, 0 failed (627 existing plus 6 contributor domain and 4 contributor database tests) |
+| `npm test` | 664 passed, 0 failed (main's 654 plus 6 contributor domain and 4 contributor database tests) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
-| Demo-browser suites | 284 passed: as Alpha 22, with 11 instructor checks (1 new: adding a contributor and changing their role) |
+| Demo-browser suites | 271 passed across 15 suites, including 11 group conversation checks from main and 11 instructor checks (1 new: adding a contributor and changing their role) |
 | Connected-browser suites | 60 passed (unchanged; the instructor suite follows the renamed controls) |
-| `npm run test:postgres` | 20 passed on PostgreSQL 16 |
+| `npm run test:postgres` | Passed on PostgreSQL 16 |
 | Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
 
 ## Corrections made while verifying
 
+- Merging main brought group conversations in as migration 0022, so this slice's migration was renamed from 0022 to 0023 before it reached main. The upgrade test now starts from 0022.
 - The first full `npm test` run failed one test, the 0014 upgrade, because it seeded the current fixture (with a teaching role) into a 0013 schema. The test now seeds without grants; the rerun passed.
 
 ## Not verified, and why
