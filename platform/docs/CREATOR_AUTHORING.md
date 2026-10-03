@@ -1,6 +1,6 @@
 # Current authoring continuation
 
-Alpha 08 implements rich lesson editing and safe external media (RICH_LESSONS.md). Alpha 09 adds private lesson files that follow the same draft, preview, publication and revision workflow (LESSON_RESOURCES.md). The Alpha 06 text below documents the preserved publication foundation; its plaintext-only and no-attachment limitations are historical.
+Alpha 08 implements rich lesson editing and safe external media (RICH_LESSONS.md). Alpha 09 adds private lesson files that follow the same draft, preview, publication and revision workflow (LESSON_RESOURCES.md). Alpha 10 adds an optional knowledge check per lesson, authored in the same draft (ASSESSMENTS.md). The Alpha 06 text below documents the preserved publication foundation; its plaintext-only and no-attachment limitations are historical.
 
 # Creator authoring: recovered Alpha 06 slice
 

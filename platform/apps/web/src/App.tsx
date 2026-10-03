@@ -1,7 +1,6 @@
 import { Button } from './components/ui/button';
 import { DropdownMenu,DropdownMenuTrigger,DropdownMenuContent,DropdownMenuItem,DropdownMenuLabel,DropdownMenuSeparator } from './components/ui/dropdown-menu';
 import { useState, useEffect, lazy, Suspense, useRef } from 'react';
-const AuthoringPage=lazy(()=>import('./pages/authoring').then(m=>({default:m.AuthoringPage})));
 import { Routes, Route, NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, Bell, Bookmark, BookOpen, Calendar, Check, ChevronDown, ChevronRight, Command, Compass, Folder, HelpCircle, Home, Layers, Lock, Menu, MessageCircle, Mail, Plus, Search, Settings, Shield, Sparkles, Target, Users, X, LogOut, UserRound, SlidersHorizontal } from 'lucide-react';
 import { useWorkspace } from './lib/context';
@@ -10,6 +9,7 @@ import { CreateModal, type CreateKind } from './components/forms';
 import { isAdmin, isModerator } from '../../../packages/domain/src/engine';
 import { resetDemo } from './lib/data';
 import { DEMO_USER, DEMO_ADMIN } from '../../../packages/domain/src/seed';
+const AuthoringPage=lazy(()=>import('./pages/authoring').then(m=>({default:m.AuthoringPage})));
 const MessagesPage=lazy(()=>import('./pages/messages').then(m=>({default:m.MessagesPage})));
 const MemberAccessPage=lazy(()=>import('./pages/access').then(m=>({default:m.MemberAccessPage})));
 const PurposeHome=lazy(()=>import('./pages/purpose').then(m=>({default:m.PurposeHome})));

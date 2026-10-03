@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "release": "0.9.0-alpha.1",
+  "release": "0.10.0-alpha.1",
   "reviewedOn": "2026-10-02",
   "scope": "Targeted source/document review, not a fresh whole-repository audit, full runtime comparison or a legal opinion. Previously captured commit snapshots were deliberately re-read; no claim that all are current HEAD.",
   "donorApplicationFilesImported": 0,
@@ -230,6 +230,58 @@
       "lesson": "An ordered file list with separate view and edit modes, reorder and delete. Adapted as accessible up/down controls in the React studio, not copied.",
       "url": "https://github.com/classroomio/classroomio/blob/72791608774f6fb65fbc33ddbb1d52d8a2a11045/packages/ui/src/custom/attachment-list/attachment-list.svelte",
       "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "frappe-lms-quiz",
+      "project": "Frappe Learning",
+      "repository": "frappe/lms",
+      "revision": "071266699d3ed984eeff7f3e3658d259fd946a97",
+      "file": "lms/lms/doctype/lms_quiz/lms_quiz.py",
+      "blob": "42bb706233aa3bf2f2c21b19111dad8eff700f7a",
+      "reviewedRange": "lines 61\u2013112, 165\u2013245, 539\u2013618 and 702\u2013760 of 918",
+      "licence": "AGPL-3.0; behavioural reference only",
+      "lesson": "Score only on the server against the stored key, reject answers naming questions outside the quiz, require the exact set for multi-answer questions, compute score and percentage in one place, and refuse live answer checking unless the author enables it.",
+      "url": "https://github.com/frappe/lms/blob/071266699d3ed984eeff7f3e3658d259fd946a97/lms/lms/doctype/lms_quiz/lms_quiz.py",
+      "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "learnhouse-quiz-modes",
+      "project": "LearnHouse",
+      "repository": "learnhouse/learnhouse",
+      "revision": "5e28b0723176b34ba8777b9980db352268aa8234",
+      "file": "apps/api/src/services/courses/activities/quiz_modes.py",
+      "blob": "d323417b0479cdc663717e4c0689ed0f3898f007",
+      "reviewedRange": "complete file, 118 lines",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "Declare single or multiple response per question and infer it in one place; all-or-nothing by default; a key with no correct option scores zero; the server stores the real grade whatever the client previews.",
+      "url": "https://github.com/learnhouse/learnhouse/blob/5e28b0723176b34ba8777b9980db352268aa8234/apps/api/src/services/courses/activities/quiz_modes.py",
+      "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "classroomio-submission-service",
+      "project": "ClassroomIO",
+      "repository": "classroomio/classroomio",
+      "revision": "72791608774f6fb65fbc33ddbb1d52d8a2a11045",
+      "file": "apps/api/src/services/submission/submission.ts",
+      "blob": "0f4cc76b3b00ca1b16b6d62008c350cfeda84c06",
+      "reviewedRange": "lines 1\u2013160 and 756\u2013912 of 1082",
+      "licence": "Root AGPL-3.0; root package metadata says MIT; conflict unresolved, reference only",
+      "lesson": "Derive the submission state from its question mix and allow only explicit grading transitions. Its update service loads a submission by ID alone; REUNIR loads attempts inside the tenant and rechecks lesson visibility.",
+      "url": "https://github.com/classroomio/classroomio/blob/72791608774f6fb65fbc33ddbb1d52d8a2a11045/apps/api/src/services/submission/submission.ts",
+      "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "classroomio-submission-routes",
+      "project": "ClassroomIO",
+      "repository": "classroomio/classroomio",
+      "revision": "72791608774f6fb65fbc33ddbb1d52d8a2a11045",
+      "file": "apps/api/src/routes/course/submission.ts",
+      "blob": "bc40813406cdaa437474cf73fa352c3d811c5769",
+      "reviewedRange": "complete file, 94 lines",
+      "licence": "Root AGPL-3.0; root package metadata says MIT; conflict unresolved, reference only",
+      "lesson": "Grading routes require course-team membership. REUNIR requires an active owner or administrator who is not the learner, in the domain and in row policies.",
+      "url": "https://github.com/classroomio/classroomio/blob/72791608774f6fb65fbc33ddbb1d52d8a2a11045/apps/api/src/routes/course/submission.ts",
+      "reviewedOn": "2026-10-02"
     }
   ],
   "decisions": [
@@ -317,7 +369,7 @@
         "classroomio-layers",
         "frappe-submissions"
       ],
-      "decision": "Draft/publish authoring (Alpha 06), structured lesson content (Alpha 08) and private lesson resources (Alpha 09) are implemented. Assessments remain queued: inspect actual quiz, attempt and grading files and licences before choosing an approach. Do not transplant whole LMS applications.",
+      "decision": "Draft/publish authoring (Alpha 06), structured lesson content (Alpha 08), private lesson resources (Alpha 09) and knowledge checks (Alpha 10) are implemented. Question banks, partial credit, timed checks and file answers stay queued until real community needs justify them: inspect actual files and licences before choosing an approach. Do not transplant whole LMS applications.",
       "implementation": [],
       "tests": []
     },
@@ -449,6 +501,38 @@
         "platform/scripts/resources-connected-check.ts",
         "platform/scripts/postgres-check.ts"
       ]
+    },
+    {
+      "id": "knowledge-checks",
+      "status": "implemented",
+      "mode": "behaviour_reference",
+      "sources": [
+        "frappe-lms-quiz",
+        "learnhouse-quiz-modes",
+        "classroomio-submission-service",
+        "classroomio-submission-routes"
+      ],
+      "decision": "Keep one optional knowledge check inside lesson content so it follows the existing draft, preview, publication and revision model. Score on the server, never send answer keys to learners before the author's reveal rule allows it, refuse answers to a changed check by fingerprint, store each attempt with the quiz it answered as immutable evidence apart from one review by an active owner or administrator who is not the learner, and keep scores out of reputation, completion and credentials. No donor source copied; the AGPL projects are behavioural references only.",
+      "implementation": [
+        "platform/packages/contracts/src/assessments.ts",
+        "platform/packages/domain/src/assessments.ts",
+        "platform/packages/db/migrations/0010_assessments.sql",
+        "platform/packages/db/src/runtime-role.ts",
+        "platform/apps/web/src/components/quiz-editor.tsx",
+        "platform/apps/web/src/components/quiz-view.tsx",
+        "platform/apps/web/src/components/knowledge-check.tsx",
+        "platform/apps/web/src/components/quiz-review.tsx"
+      ],
+      "tests": [
+        "platform/tests/assessments.test.ts",
+        "platform/tests/assessments-database.test.ts",
+        "platform/tests/assessments-http.test.ts",
+        "platform/tests/assessments-ui.test.ts",
+        "platform/scripts/assessments-browser-check.ts",
+        "platform/scripts/assessments-connected-check.ts",
+        "platform/scripts/postgres-check.ts"
+      ],
+      "reviewedOn": "2026-10-02"
     }
   ],
   "libraryReuse": "Alpha 09 adds no runtime dependency: lesson files extend the existing @google-cloud/storage 8.2.0 adapter, Hono routes and shadcn Button. Alpha 08 added pinned MIT Tiptap 3.31.4 packages. No donor LMS application source imported.",

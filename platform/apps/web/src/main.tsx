@@ -22,3 +22,4 @@ createRoot(document.getElementById('root')!).render(<React.StrictMode><ErrorBoun
 import './v4.css';
 import './lesson-editor.css';
 import './lesson-resources.css';
+import './knowledge-checks.css';

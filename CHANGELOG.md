@@ -1,3 +1,15 @@
+# 0.10.0-alpha.1: knowledge checks
+
+- Add one optional knowledge check per lesson: single choice, multiple choice, short answer and written response, with an optional pass mark, attempt limit and answer-reveal rule.
+- Checks follow the existing private draft, preview, publication, capture and restore; revision history records them.
+- Score on the server only; learners never receive answer keys before the author's rule allows it; answers to a check that changed meanwhile are refused.
+- Attempts keep the quiz they answered and are immutable apart from one review. Owners and administrators who are not the learner mark written answers and send feedback from a Knowledge checks tab in Community studio.
+- Scores are private feedback: no reputation points, no automatic completion, no credentials.
+- Additive migration 0010 with forced RLS, column-level review grants and no DELETE for the application role; migrations 0001 to 0009 unchanged. No new runtime dependency.
+- Fix: `npm run dev` showed a blank page because a lazy page was declared above its React import; a static test now guards module order.
+- Custom covers on tracks and projects created in the app keep AA text contrast at every width. The connected resources check scans the whole learner page again, and the monochrome suite now checks a newly created track.
+- Deployment remains deferred by the user.
+
 # 0.9.0-alpha.1: private lesson resources
 
 - Attach ordered, named and described files to lesson drafts; replace and remove them; release them only on publication.
@@ -6,7 +18,6 @@
 - One download rule for lessons, drafts and revisions, with a restrictive RLS policy in depth.
 - Additive migration 0009; migrations 0001–0008 unchanged. No new runtime dependency.
 - The fictional demo keeps file bytes in the browser and includes a generated sample worksheet.
-- Custom covers on tracks and projects created in the app keep AA text contrast at every width. The connected resources check scans the whole learner page again, and the monochrome suite now checks a newly created track.
 - Deployment remains deferred by the user; no bucket has been configured.
 
 # 0.8.0-alpha.1: rich lesson authoring

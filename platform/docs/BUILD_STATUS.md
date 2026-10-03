@@ -1,4 +1,95 @@
-# Alpha 09 private lesson resources
+# Alpha 10 knowledge checks
+
+2 October 2026. Application 0.10.0-alpha.1. Creators add an optional knowledge check to a lesson in the private draft; learners answer it and the server scores it; owners and administrators mark written answers and send feedback. Scores are private feedback, not reputation, completion or credentials. See ASSESSMENTS.md and decisions/010-knowledge-checks.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/stoic-euler-lx2zk7`, restarted from main `788e5d7` after PR #3 merged |
+| Verified locally | Yes, every suite below, in this cloud workspace |
+| Verified remotely (GitHub Actions) | See the publication receipt below |
+| Merged | Yes: main `365e1c9` merges PR #4, and its tree is identical to `abbb51f` (read back 3 October 2026) |
+| Follow-up | Cover contrast on `claude/laughing-goodall-2p7z0v`, not yet merged; see "Follow-up: cover contrast" |
+| Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- Migration `0010_assessments.sql` (additive): a nullable `quiz` object on lessons, drafts and revisions, and a `quiz_attempts` table with forced RLS, constraints that tie status to review fields and forbid self-review, and a uniqueness rule per learner, lesson and attempt number. `npm run db:grant-runtime` revokes UPDATE and DELETE on attempts and grants UPDATE only on the review columns. Migrations 0001 to 0009 are byte-identical.
+- Commands `quiz.attempt.submit` and `quiz.attempt.review` on the existing commands route; `lesson.draft.save` carries the quiz. Answer keys are stripped for non-authors; stale answers are refused by fingerprint.
+- Creator Studio gains a knowledge-check editor and preview; lessons gain the learner check; Community studio gains a Knowledge checks review tab reached from the notification.
+- The fictional Code Black demo has two checks and one attempt waiting for review.
+- Fixed a pre-existing bug: `npm run dev` rendered a blank page ("Cannot access 'lazy' before initialization") because `lib/context.tsx` declared a lazy page above its React import, which Vite's development server rewrites in place. Builds and the preview bundle were unaffected, so no browser check had caught it. `tests/web-modules.test.ts` now guards module order.
+- No new runtime dependency. Release constant and package version are 0.10.0-alpha.1.
+
+## Local verification, 2 October 2026
+
+Environment as for Alpha 09: Node 22.22.0, npm 10.9.4, `npm ci` from the committed lockfile, Playwright Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16.14 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 466 passed, 0 failed (425 existing plus 20 domain, 8 database, 6 HTTP, 6 rendering and 1 module-order test) |
+| `npm run test:http` | 17 passed |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Existing demo-browser suites | 223 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 15 monochrome, 20 v4 |
+| `npm run test:browser:assessments` (new) | 14 passed: creator, learner and reviewer journey, axe scans, neutral-colour checks, overflow at 390px and 360px |
+| Existing connected-browser suites | 21 passed: 12 connected, 9 resources |
+| `npm run test:browser:assessments-connected` (new) | 8 passed: live build, Better Auth sessions, PGlite, owner review and a concurrent edit refused then re-answered |
+| `npm run test:postgres` | 9 passed, including the new restricted-role knowledge-check check |
+| Python helpers, `scripts/check_research.py` | 32 passed; 22 pinned sources, 12 decisions |
+| `VITE_DATA_MODE=demo npm run dev` | Renders in Chromium after the module-order fix; learner, reviewer and studio screens inspected |
+
+Tests changed rather than added: the old-schema fixture skips the new collection and column (its documented rule), four migration-count assertions moved from 9 to 10, the 0008 and 0009 upgrade tests also strip the new nullable column, and one enrolment assertion now counts the acting member's own enrolments, because the seed adds a fictional enrolment for Sofia Chen. No business assertion was weakened.
+
+## Corrections made while verifying
+
+- Global form styles stretched radio buttons and checkboxes to full width, hiding the option text fields in the studio editor. Choice inputs now keep their natural size.
+- A blank choice question reported "Each option needs different text" alongside "Give every option some text". Duplicate checks now consider only filled-in options.
+- Database assertions written with `rowCount` were vacuous because the SQL wrapper does not expose it. They now use `RETURNING` counts, and a rolled-back positive control proves the same statement succeeds for an active owner.
+- The automated Codex review on PR #4 found that the `attempt_review` row policy still matched attempts that were already reviewed, so SQL bypassing the domain could rewrite a finished review. Migration 0010 (not yet merged or applied anywhere outside test databases) now requires an unreviewed row before the update and a reviewed row at version 2 after, and inserts must start at version 1. New database and PostgreSQL assertions failed before the change and pass after it.
+
+## Not verified, and why
+
+- Hosted behaviour on Neon and Vercel, real sessions over the internet, email and backups remain deferred by the user.
+- Very large review queues: attempts load with the bounded workspace snapshot; pagination is a follow-up.
+
+## Preview
+
+The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `http://127.0.0.1:5173`, reachable only from inside the container. This environment does not publish a public preview URL. Clone the branch (or main after merge) and run `npm ci && npm run dev` from `platform/`.
+
+## Publication receipt
+
+Pushed to `claude/stoic-euler-lx2zk7` and opened as [EmotiveImpact/REUNIR#4](https://github.com/EmotiveImpact/REUNIR/pull/4). After each push the remote ref was fetched back and matched the local commit and tree.
+
+- First head `51dd503bccd18935a8935c692da0a8a4b5d919cc` (tree `df74f75c3b7f8d77c1c4af462092921f671b2c78`) passed both jobs in [run 37066181651](https://github.com/EmotiveImpact/REUNIR/actions/runs/37066181651) (push) and [run 37066222452](https://github.com/EmotiveImpact/REUNIR/actions/runs/37066222452) (pull request).
+- The automated Codex review then found the review-policy gap described under corrections. The fix, `ea40ab917433382f3a40b48c57a7fcbe3e26e986` (tree `001f2a3e74a01b7a09115099edd71a648a7e0604`), passed both jobs in [run 37067079371](https://github.com/EmotiveImpact/REUNIR/actions/runs/37067079371) (push) and [run 37067083907](https://github.com/EmotiveImpact/REUNIR/actions/runs/37067083907) (pull request). The application job ran the research checker, typecheck, all application tests, 17 HTTP checks, both builds, every demo-browser suite including knowledge checks, every connected-browser suite including knowledge checks, and the Python helpers; the PostgreSQL 17 job ran the 9 restricted-role checks. The review thread was answered and resolved.
+
+This receipt commit changes only documentation and source hashes; the merge into main is recorded in the pull request and in the next status update.
+
+## Next actions
+
+1. Done: merged as main `365e1c9`. Next, merge the cover contrast follow-up on `claude/laughing-goodall-2p7z0v`, then read back main.
+2. Instructor-scoped authoring and review permissions, a paginated review queue and a learner export of their own attempts.
+3. When deployment resumes: Neon staging with ten migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests.
+
+## Follow-up: cover contrast
+
+Branch `claude/laughing-goodall-2p7z0v`, built from main `788e5d7` and merged with main `365e1c9`. It resolves the decorative cover finding recorded under Alpha 09.
+
+Tracks and projects created in the app get the `custom` cover. It has no art rule of its own, so it uses the default translucent shapes, and these cross the text on narrow covers, above all the track detail cover (285px wide above 1080px, 190px at or below, hidden at 760px and below). axe measured the 6px footer at 4.25:1 (`#ececec` on `#6f6f6f`) at every detail width, and the 9px label too at 1080px and below. axe approximates the rotated shape by its bounding box, so the rendered pixels behind the glyphs were also sampled: the footer fell to 3.44:1, the label to 2.77:1 and the large title to 2.77:1, where large text needs 3:1. Seeded tracks use named covers, which is why the demo suites passed.
+
+- `styles.css`, `.art-custom` only: white lettering; the label and footer sit on the cover's own ground (`#5d5d5d`) with a 3px knockout and 2px radius, and the label hugs its text so the knockout stays local. Named covers and layout are unchanged. Neutral colours only, with no gradient and no recolouring of images.
+- `resources-connected-check.ts`: the axe scan is no longer limited to `.lesson-content`, and the check is renamed "the connected learner page with files passes automated accessibility checks".
+- `monochrome-browser-check.ts`: a new check creates a track through the real form, then runs the neutral colour check and full-page axe scans on its page at 1512px and 1000px.
+
+Before the merge with main, tested commit `43bdf4a` passed every local suite in a clean worktree (425 application tests, 224 demo-browser and 21 connected-browser checks, 32 helper tests), both negative controls (the full-page scans fail on `.cover-foot > span:nth-child(2)` at 4.25:1 with main's `styles.css`) and GitHub Actions [run 37062824183](https://github.com/EmotiveImpact/REUNIR/actions/runs/37062824183). A scratch contrast sweep of every cover type at 35 widths from 360px to 1640px found 63 failing text samples and 51 axe violation nodes on custom covers before the change and none after; named covers measured identically.
+
+Still open: `assessments-connected-check.ts`, added in Alpha 10, limits its axe scan to `.lesson-content` for the same reason, and the seeded `notes` cover pairs `#eaeaea` with `#8c8c8c` at 2.79:1, so full-page scans of the demo `/projects` page and of that project fail.
+
+---
+## Historical Alpha 09 evidence: private lesson resources
 
 2 October 2026. Application 0.9.0-alpha.1. Creators attach ordered, named and described files to lesson drafts, replace and remove them, preview them privately and release them by explicit publication. Learners download files only while they can open the lesson. See LESSON_RESOURCES.md and decisions/009-private-lesson-resources.md.
 
@@ -9,8 +100,6 @@
 | Implemented | Yes, on `claude/stoic-euler-lx2zk7`, built from main `016c16e` |
 | Verified locally | Yes, every suite below, in this cloud workspace |
 | Verified remotely (GitHub Actions) | Yes: runs 37060579827 (push) and 37060617081 (pull request) passed on `16f3071` |
-| Merged | Yes: main `788e5d7` merges PR #3, and its tree is identical to `a6d4adb` (read back 2 October 2026) |
-| Follow-up | Custom cover contrast on `claude/laughing-goodall-2p7z0v`, not yet merged; see "Follow-up: custom cover contrast" |
 | Deployed | No. No bucket, Neon database, Vercel project, sender or scheduler was created |
 | Operated with real members | No |
 
@@ -47,37 +136,7 @@ Tests changed rather than added: the old-schema fixture now skips the new collec
 - The database run showed that restricted-role RLS already hides a pending file from members, returning 404 before the role check. The domain now checks the author role first, so members get the same clear 403 in every mode.
 - An object overwritten between the metadata read and the pinned signature read surfaced as a 500. It now returns a retryable 409 `UPLOAD_CHANGED` and leaves the intent pending.
 - The connected harness navigated to the same hash URL without reloading, so the learner saw a cached workspace. The harness now reloads. Live mode refreshes every 30 seconds in normal use.
-- A full-page axe scan of a newly created connected track flagged 6px decorative cover text at 4.25:1. The cover is `aria-hidden` and outside this slice, so the connected scan covers the lesson article, and the cover fix is queued as a separate task. The demo learner page with files passes a full-page scan. Resolved by the follow-up below: the connected scan covers the whole learner page again.
-
-## Follow-up: custom cover contrast
-
-Branch `claude/laughing-goodall-2p7z0v`, built from main `788e5d7`; tested commit `43bdf4a`. It resolves the cover finding above.
-
-Tracks and projects created in the app get the `custom` cover. It has no art rule of its own, so it uses the default translucent shapes, and these cross the text on narrow covers, above all the track detail cover (285px wide above 1080px, 190px at or below, hidden at 760px and below). axe measured the 6px footer at 4.25:1 (`#ececec` on `#6f6f6f`) at every detail width, and the 9px label too at 1080px and below. axe approximates the rotated shape by its bounding box, so the rendered pixels behind the glyphs were also sampled: the footer fell to 3.44:1, the label to 2.77:1 and the large title to 2.77:1, where large text needs 3:1. Seeded tracks use named covers, which is why the demo suites passed.
-
-- `styles.css`, `.art-custom` only: white lettering; the label and footer sit on the cover's own ground (`#5d5d5d`) with a 3px knockout and 2px radius, and the label hugs its text so the knockout stays local. Named covers and layout are unchanged. Neutral colours only, with no gradient and no recolouring of images.
-- `resources-connected-check.ts`: the axe scan is no longer limited to `.lesson-content`, and the check is renamed "the connected learner page with files passes automated accessibility checks".
-- `monochrome-browser-check.ts`: a new check creates a track through the real form, then runs the neutral colour check and full-page axe scans on its page at 1512px and 1000px.
-
-Unless stated, every check below ran on `43bdf4a` in a clean worktree after its own `npm ci`, with Chromium 1194 through `CHROMIUM_PATH`.
-
-| Check (from `platform/` unless stated) | Result |
-| --- | --- |
-| `npm ci`, `npm run typecheck`, `npm run bundle:preview`, `npm run build` | Passed |
-| `npm test` | 425 passed, 0 failed |
-| `npm run test:browser:monochrome` | 16 passed: the 15 existing checks plus the custom cover check |
-| `npm run test:browser:v4` | 20 passed |
-| `npm run test:browser:resources-connected` | 9 passed; the full-page scan reports no violations |
-| Other demo-browser suites | 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons and 19 resources passed; 224 demo-browser checks in all |
-| `npm run test:browser:connected` | 12 passed; 21 connected-browser checks in all |
-| Negative controls: the same commit's tests with main's `styles.css` swapped in | The connected full-page scan and the new monochrome check both failed on `.cover-foot > span:nth-child(2)` at 4.25:1, as expected |
-| Python helpers and `scripts/check_research.py`, from the repository root | 32 passed; 18 pinned sources, 11 decisions |
-| `scripts/publish_source.py`, verify only, on this receipt commit | Every manifest hash matches |
-| Contrast sweep: a scratch probe, not committed, run on the standalone build | Every cover type at 35 widths from 360px to 1640px on the track list, track detail, project list and project detail, with axe and with pixels sampled behind the glyphs. Custom covers before: 63 failing text samples and 51 axe violation nodes. After: none; worst footer and label 6.58:1, worst title 3.28:1. Named covers measured identically before and after |
-
-Not rerun locally: `npm run test:http` and `npm run test:postgres`, because no server, database or migration file changed; GitHub Actions ran both. GitHub Actions [run 37062824183](https://github.com/EmotiveImpact/REUNIR/actions/runs/37062824183) passed on `43bdf4a`: the application job (typecheck, application tests, HTTP checks, both builds, 224 demo-browser checks including the new monochrome check, 21 connected-browser checks including the full-page learner scan, 32 helper tests, research checker) and the PostgreSQL job.
-
-Outside this fix, and unchanged by it: the seeded `notes` cover (project "Notes from the process") pairs `#eaeaea` with `#8c8c8c` at 2.79:1, so full-page axe scans of the demo `/projects` page and of that project fail on its label, title and footer. No suite scans those pages. Pixel sampling also found named covers whose shapes lower text contrast in places without an axe violation: the `story` label and title, the `business` title, and the `still` title where it crosses the dark bar. These would change seeded artwork, so they are left for a separate decision.
+- A full-page axe scan of a newly created connected track flagged 6px decorative cover text at 4.25:1. The cover is `aria-hidden` and outside this slice, so the connected scan covers the lesson article, and the cover fix is queued as a separate task. The demo learner page with files passes a full-page scan. Resolved by the cover contrast follow-up above.
 
 ## Not verified, and why
 
@@ -95,12 +154,13 @@ Pushed to `claude/stoic-euler-lx2zk7` at `16f3071d645f6bae54fd5c42716e562ccd72e1
 
 GitHub Actions passed every job on that commit: [run 37060579827](https://github.com/EmotiveImpact/REUNIR/actions/runs/37060579827) (push) and [run 37060617081](https://github.com/EmotiveImpact/REUNIR/actions/runs/37060617081) (pull request), each with the application job (typecheck, all application tests, 17 HTTP checks, both builds, 223 demo-browser checks, 21 connected-browser checks, 32 helper tests, research checker) and the PostgreSQL 17 job (8 checks, including the restricted-role resource check). This receipt commit changes only documentation and source hashes; the merge into main is recorded in the pull request and in the next status update.
 
-## Next actions
+**Merged.** The receipt commit `a6d4adb8edce9a1eec652a25fe2f944575cadad4` passed both jobs again in [run 37061204163](https://github.com/EmotiveImpact/REUNIR/actions/runs/37061204163) (push) and [run 37061210244](https://github.com/EmotiveImpact/REUNIR/actions/runs/37061210244) (pull request). PR #3 was then merged with a merge commit: main is `788e5d70df7083a07c6a254b315e7aa97965fd5a` (parents `016c16e` and `a6d4adb`). Main was fetched back; its tree `ae626acb8109f8afd65d01c05a3d8ced1a78c4f9` is identical to the tested PR head's tree.
 
-1. Done: this slice was merged as main `788e5d7`. Next, merge the custom cover follow-up on `claude/laughing-goodall-2p7z0v` (GitHub Actions passed on `43bdf4a`), then read back main.
-2. Decide a treatment for the seeded `notes` cover (2.79:1) and add a demo scan of `/projects` and that project.
-3. Build assessments: quizzes, learner attempts, scoring and instructor feedback, on the same draft, publication and revision model.
-4. When deployment resumes: configure the private bucket (SETUP.md section 6), verify real signed uploads and downloads, then add scanning and an orphaned-object sweep.
+## Next actions recorded at the time
+
+1. Merge this slice once GitHub Actions passes, then read back main (done; see above).
+2. Build assessments (done in Alpha 10).
+3. When deployment resumes: configure the private bucket (SETUP.md section 6), verify real signed uploads and downloads, then add scanning and an orphaned-object sweep.
 
 ---
 ## Historical Alpha 08 evidence: rich lesson authoring

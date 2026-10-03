@@ -18,4 +18,4 @@ Tests: `npm test`, `npm run test:browser:authoring`, `npm run test:browser:rich-
 
 ## Remaining Creator Studio work
 
-Private lesson resources with lesson/space access inheritance are implemented in Alpha 09; see LESSON_RESOURCES.md. Remaining: assessments and assignments, and instructor-specific authoring permissions. No collaboration server, autosave or assessment engine is included.
+Private lesson resources with lesson/space access inheritance are implemented in Alpha 09 (LESSON_RESOURCES.md), and knowledge checks with reviewed feedback in Alpha 10 (ASSESSMENTS.md). Remaining: instructor-specific authoring and review permissions. No collaboration server or autosave is included.

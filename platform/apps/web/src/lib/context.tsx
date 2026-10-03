@@ -1,4 +1,3 @@
-const AccountAccessPage = lazy(()=>import('../pages/access').then(m=>({default:m.AccountAccessPage})));
 import {useLocation} from 'react-router-dom';
 import {api} from './data';
 import { createContext, useContext, useState, useCallback, lazy, Suspense, type ReactNode } from 'react';
@@ -8,6 +7,8 @@ import type { ResourceRef } from '../../../../packages/contracts/src/lesson-reso
 import { discardLessonUpload, downloadLessonResource, uploadLessonResource } from './resources';
 import { DEMO_USER } from '../../../../packages/domain/src/seed';
 import { loadWorkspace, sendCommand, displayError, mode, identity, type Identity } from './data';
+// Declared after the imports: Vite's development server turns React's named imports into constants in place.
+const AccountAccessPage = lazy(()=>import('../pages/access').then(m=>({default:m.AccountAccessPage})));
 interface Ctx {
     data: Workspace;
     me: Member;

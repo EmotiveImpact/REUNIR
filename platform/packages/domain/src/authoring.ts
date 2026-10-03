@@ -3,12 +3,14 @@ import { DomainError, type Command, type Workspace, type TenantContext, type Mem
 import { actorFor, isAdmin, canSeeSpace } from './access';
 import { assertResourcesAvailable, normaliseResources, resolveResources } from './resources';
 import type { LessonResource } from '../../contracts/src/lesson-resources';
+import type { AuthoredQuiz } from '../../contracts/src/assessments';
+import { normaliseQuiz } from './assessments';
 
 /** Content as edited and published. Resources are always an ordered array here, never NULL. */
-export type EditableLessonContent = LessonContent & { resources: LessonResource[] };
+export type EditableLessonContent = LessonContent & { resources: LessonResource[]; quiz: AuthoredQuiz | null };
 /** Whitelist learner-facing content. Internal draft state never crosses the publication boundary. */
 export function lessonContent(value: LessonContent): EditableLessonContent {
-    return {title:value.title, summary:value.summary, body:value.richBody?lessonDocumentText(value.richBody):value.body, minutes:value.minutes, resourceUrl:value.resourceUrl, richBody:value.richBody?structuredClone(value.richBody):null, resources:normaliseResources(value.resources)};
+    return {title:value.title, summary:value.summary, body:value.richBody?lessonDocumentText(value.richBody):value.body, minutes:value.minutes, resourceUrl:value.resourceUrl, richBody:value.richBody?structuredClone(value.richBody):null, resources:normaliseResources(value.resources), quiz:normaliseQuiz(value.quiz)};
 }
 export function filterAuthoring(state: Workspace, actor: Member): Workspace {
     const tracks=new Set(state.tracks.map(t=>t.id));
@@ -64,7 +66,8 @@ export function applyAuthoring(s: Workspace, ctx: TenantContext, cmd: Command, n
         if(draft.richBody && cmd.richBody===undefined)throw new DomainError('RICH_CONTENT_REQUIRED','Reload the updated editor before saving this formatted lesson.',409);
         // An editor that predates lesson files must not silently drop them by omission.
         if(draft.resources?.length && cmd.resources===undefined)throw new DomainError('RESOURCES_REQUIRED','Reload the updated editor before saving this lesson’s files.',409);
-        const content=lessonContent({...cmd,resources:resolveResources(s,ctx,draft.trackId,cmd.resources??[])});
+        if(draft.quiz && cmd.quiz===undefined)throw new DomainError('QUIZ_REQUIRED','Reload the updated editor before saving this lesson’s knowledge check.',409);
+        const content=lessonContent({...cmd,resources:resolveResources(s,ctx,draft.trackId,cmd.resources??[]),quiz:cmd.quiz??null});
         if(JSON.stringify(content)===JSON.stringify(lessonContent(draft)))return result(draft.id,'The draft is already saved.',false);
         Object.assign(draft,content,{version:draft.version+1,updatedAt:now,updatedBy:ctx.userId});
         return result(draft.id,'Draft saved privately. No live content changed.');
