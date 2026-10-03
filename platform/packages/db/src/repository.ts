@@ -8,6 +8,8 @@ import type { CoverLibraryUploadRequest, CoverSubject, CoverUploadRequest } from
 import { learningRecord } from '../../domain/src/learning-record';
 import { eraseFromCommunity, PERSONAL_COLLECTIONS } from '../../domain/src/account-deletion';
 import { ownerRefusal, type AccountDeletionSummary } from '../../contracts/src/account';
+import type { OwnershipTransferResult } from '../../contracts/src/ownership';
+import { transferOwnership } from '../../domain/src/ownership';
 import { tables, type TableSpec, type CollectionKey } from './tables';
 import type { Database, SQL } from './connection';
 const slugPattern = /^[a-z0-9][a-z0-9-]{0,99}$/;
@@ -363,6 +365,23 @@ export class WorkspaceRepository {
             // Sessions and the stored password hash go with the account (ON DELETE CASCADE).
             if ((await sql.query('DELETE FROM auth_user WHERE id=$1 RETURNING id', [userId])).rows.length !== 1) throw new Error('The account could not be deleted, so nothing was changed.');
             return { summary: { communities: memberships.length, removed, releasedTasks, rewordedNotices }, files };
+        });
+    }
+    /**
+     * Hand the community to one of its active administrators, under the community lock. The caller has checked the
+     * owner's password. The previous owner is demoted first and the new owner promoted second, so the single-owner index
+     * from migration 0017 never sees two owners at once.
+     */
+    async transferOwnership(slug: string, userId: string, memberId: string, confirmation: string, requestId: string): Promise<OwnershipTransferResult & { workspace: Workspace }> {
+        return this.within(slug, userId, true, async (sql, org) => {
+            const ctx = context(String(org.id), userId, requestId), before = await readAll(sql, org);
+            const t = transferOwnership(before, ctx, memberId, confirmation, new Date().toISOString());
+            const demoted = (await sql.query("UPDATE members SET role='admin' WHERE organization_id=$1 AND id=$2 AND role='owner' RETURNING id", [ctx.organizationId, t.previousOwner.id])).rows;
+            if (demoted.length !== 1) throw new DomainError('OWNERSHIP_CONFLICT', 'This community’s ownership needs attention before it can change hands.', 409);
+            const step = structuredClone(before);
+            step.members = step.members.map(m => m.id === t.previousOwner.id ? { ...m, role: 'admin' } : m);
+            await saveChanges(sql, step, t.workspace);
+            return { message: t.message, ownerMemberId: t.owner.id, previousOwnerMemberId: t.previousOwner.id, workspace: visibleWorkspace(t.workspace, ctx) };
         });
     }
     /** The acting member's own learning record, read inside their own tenant transaction. */

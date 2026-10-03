@@ -17,6 +17,7 @@ import { clientUpload, type StoredObservation } from '../../../packages/domain/s
 import { learningRecordFilename } from '../../../packages/domain/src/learning-record';
 import { SIGNATURE_BYTES, fileSignatureMatches, resourceUploadRequest, type ResourceContext } from '../../../packages/contracts/src/lesson-resources';
 import { accountDeletionRequest } from '../../../packages/contracts/src/account';
+import { ownershipTransferRequest } from '../../../packages/contracts/src/ownership';
 import { COVER_HEAD_BYTES, coverBytesAcceptable, coverLibraryUploadRequest, coverSubject, coverUploadRequest } from '../../../packages/contracts/src/covers';
 export interface SessionIdentity {
     id: string;
@@ -146,6 +147,16 @@ export function createApp({ repository, operations, origin, resolveSession, auth
             throw new DomainError('KEY_REQUIRED', 'An Idempotency-Key header is required.');
         const input = await c.req.json();
         return c.json(await repository.execute(c.req.param('slug'), c.get('identity').id, input, key, c.get('requestId')));
+    });
+    // Handing a community to one of its administrators: the owner's password re-entered and the community's name typed.
+    // It is not a workspace command, so it can never be sent without the password check.
+    app.post('/api/organisations/:slug/ownership', async c => {
+        if (!verifyPassword) throw new DomainError('UNAVAILABLE', 'Ownership transfer is not configured.', 503);
+        const who = c.get('identity');
+        if (!await repository.consumeRateLimit('ownership:' + who.id, 5, 900)) throw new DomainError('RATE_LIMITED', 'Too many attempts. Wait a few minutes before trying again.', 429);
+        const body = ownershipTransferRequest.parse(await c.req.json());
+        if (!await verifyPassword(c.req.raw.headers, body.password)) throw new DomainError('WRONG_PASSWORD', 'That password is not right.', 403);
+        return c.json(await repository.transferOwnership(c.req.param('slug'), who.id, body.memberId, body.confirmation, c.get('requestId')));
     });
     app.post('/api/organisations/:slug/uploads', async (c) => {
         if (!storage)
