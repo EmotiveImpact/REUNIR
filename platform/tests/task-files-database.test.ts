@@ -52,7 +52,9 @@ test('0029 upgrade keeps every task and upload as it was and adds only empty col
         await migrate(old); await migrate(old);
         const tasks = await read('project_tasks'), uploads = await read('upload_intents');
         assert.deepEqual(tasks.map(({ updated_by, ...row }) => { assert.equal(updated_by, null); return row; }), before.project_tasks);
-        assert.deepEqual(uploads.map(({ task_id, ...row }) => { assert.equal(task_id, null); return row; }), before.upload_intents);
+        // Migration 0038 also adds empty small-copy columns to every upload.
+        const thumbnail = ['thumbnail_object_key', 'thumbnail_content_type', 'thumbnail_size_bytes', 'thumbnail_generation'];
+        assert.deepEqual(uploads.map(({ task_id, ...row }) => { assert.equal(task_id, null); for (const k of thumbnail) { assert.equal(row[k], null); delete row[k]; } return row; }), before.upload_intents);
         assert.deepEqual((await old.query("SELECT policyname,permissive,cmd FROM pg_policies WHERE tablename='upload_intents' AND policyname LIKE 'task_file_%' ORDER BY policyname")).rows, [
             { policyname: 'task_file_delete', permissive: 'RESTRICTIVE', cmd: 'DELETE' }, { policyname: 'task_file_insert', permissive: 'RESTRICTIVE', cmd: 'INSERT' },
             { policyname: 'task_file_read', permissive: 'RESTRICTIVE', cmd: 'SELECT' }, { policyname: 'task_file_update', permissive: 'RESTRICTIVE', cmd: 'UPDATE' }]);

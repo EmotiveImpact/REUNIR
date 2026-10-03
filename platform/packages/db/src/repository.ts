@@ -5,8 +5,8 @@ import { cursorFor, pageQuery, readCursor, type Page, type PagedItems, type Page
 import { DomainError, commandSchema, type Workspace, type TenantContext, type MutationResult } from '../../contracts/src/index';
 import type { ResourceRef, ResourceUploadRequest } from '../../contracts/src/lesson-resources';
 import { beginResourceUpload, completeResourceUpload, discardResourceUpload, resolveResourceDownload, type StoredObservation } from '../../domain/src/resources';
-import { releasedCoverKeys, beginCoverLibraryUpload, beginCoverUpload, completeCoverUpload, removeCoverLibraryItem, resolveCoverImage, resolveLibraryPicture, staleCoverUploads, type CoverObservation } from '../../domain/src/covers';
-import type { CoverLibraryUploadRequest, CoverSubject, CoverUploadRequest } from '../../contracts/src/covers';
+import { releasedCoverKeys, beginCoverLibraryUpload, beginCoverUpload, completeCoverUpload, removeCoverLibraryItem, resolveCoverImage, resolveLibraryPicture, servedObject, staleCoverUploads, updateCoverLibraryItem, type CoverObservation } from '../../domain/src/covers';
+import type { CoverLibraryDetails, CoverLibraryUploadRequest, CoverSubject, CoverUploadRequest, CoverVariant } from '../../contracts/src/covers';
 import { learningRecord } from '../../domain/src/learning-record';
 import { beginTaskFileUpload, completeTaskFileUpload, projectWorkVersion, releasedTaskFileKeys, resolveTaskFileDownload, staleTaskUploads } from '../../domain/src/task-files';
 import type { TaskFileUploadRequest } from '../../contracts/src/task-files';
@@ -269,11 +269,14 @@ export class WorkspaceRepository {
     async projectWorkVersion(slug: string, userId: string, projectId: string) {
         return this.within(slug, userId, false, async (sql, org) => projectWorkVersion(await readAll(sql, org, userId, WORK_COLLECTIONS), context(String(org.id), userId), projectId));
     }
-    /** Cover images follow the same split: domain rules inside the tenant transaction, storage calls outside it. */
-    async beginCoverUpload(slug: string, userId: string, request: CoverUploadRequest, key: (organizationId: string, id: string) => string, requestId: string) {
+    /**
+     * Cover images follow the same split: domain rules inside the tenant transaction, storage calls outside it.
+     * `thumbnailKey` names the stored small copy when the request declares one.
+     */
+    async beginCoverUpload(slug: string, userId: string, request: CoverUploadRequest, key: (organizationId: string, id: string) => string, requestId: string, thumbnailKey?: (organizationId: string, id: string) => string) {
         return this.within(slug, userId, true, async (sql, org) => {
             const before = await readAll(sql, org, userId), orgId = String(org.id), id = randomUUID();
-            const result = beginCoverUpload(before, context(orgId, userId, requestId), request, { id, objectKey: key(orgId, id) }, new Date().toISOString());
+            const result = beginCoverUpload(before, context(orgId, userId, requestId), request, { id, objectKey: key(orgId, id), ...(request.thumbnail && thumbnailKey ? { thumbnailObjectKey: thumbnailKey(orgId, id) } : {}) }, new Date().toISOString());
             await saveChanges(sql, before, result.workspace);
             return { upload: result.upload, expired: result.expired };
         });
@@ -283,14 +286,14 @@ export class WorkspaceRepository {
             const before = await readAll(sql, org, userId);
             const result = completeCoverUpload(before, context(String(org.id), userId, requestId), id, observed, new Date().toISOString());
             if (result.outcome !== 'unchanged') await saveChanges(sql, before, result.workspace);
-            return { upload: result.upload, outcome: result.outcome };
+            return { upload: result.upload, outcome: result.outcome, discarded: result.discarded };
         });
     }
     /** Library pictures: only active owners and administrators add or remove them; every member may show one. */
-    async beginCoverLibraryUpload(slug: string, userId: string, request: CoverLibraryUploadRequest, key: (organizationId: string, id: string) => string, requestId: string) {
+    async beginCoverLibraryUpload(slug: string, userId: string, request: CoverLibraryUploadRequest, key: (organizationId: string, id: string) => string, requestId: string, thumbnailKey?: (organizationId: string, id: string) => string) {
         return this.within(slug, userId, true, async (sql, org) => {
             const before = await readAll(sql, org, userId), orgId = String(org.id), id = randomUUID();
-            const result = beginCoverLibraryUpload(before, context(orgId, userId, requestId), request, { id, objectKey: key(orgId, id) }, new Date().toISOString());
+            const result = beginCoverLibraryUpload(before, context(orgId, userId, requestId), request, { id, objectKey: key(orgId, id), ...(request.thumbnail && thumbnailKey ? { thumbnailObjectKey: thumbnailKey(orgId, id) } : {}) }, new Date().toISOString());
             await saveChanges(sql, before, result.workspace);
             return { upload: result.upload, expired: result.expired };
         });
@@ -300,19 +303,29 @@ export class WorkspaceRepository {
             const before = await readAll(sql, org, userId);
             const result = removeCoverLibraryItem(before, context(String(org.id), userId, requestId), itemId, new Date().toISOString());
             await saveChanges(sql, before, result.workspace);
-            return { id: result.item.id, objectKey: result.objectKey };
+            return { id: result.item.id, objectKey: result.objectKey, thumbnailObjectKey: result.thumbnailObjectKey };
         });
     }
-    async coverLibraryPicture(slug: string, userId: string, itemId: string) {
+    /** Rename a library picture or change its tags: active owners and administrators only, audited, the picture untouched. */
+    async updateCoverLibraryItem(slug: string, userId: string, itemId: string, details: CoverLibraryDetails, requestId: string) {
+        return this.within(slug, userId, true, async (sql, org) => {
+            const before = await readAll(sql, org, userId);
+            const result = updateCoverLibraryItem(before, context(String(org.id), userId, requestId), itemId, details, new Date().toISOString());
+            if (result.changed) await saveChanges(sql, before, result.workspace);
+            const { id, label, tags } = result.item;
+            return { id, label, tags, changed: result.changed };
+        });
+    }
+    async coverLibraryPicture(slug: string, userId: string, itemId: string, variant: CoverVariant = 'full') {
         return this.within(slug, userId, false, async (sql, org) => {
             const { upload } = resolveLibraryPicture(await readAll(sql, org, userId), context(String(org.id), userId), itemId);
-            return { objectKey: upload.objectKey, generation: upload.generation!, contentType: upload.contentType, sizeBytes: upload.sizeBytes };
+            return servedObject(upload, variant);
         });
     }
-    async coverImage(slug: string, userId: string, kind: CoverSubject, subjectId: string, fileId: string) {
+    async coverImage(slug: string, userId: string, kind: CoverSubject, subjectId: string, fileId: string, variant: CoverVariant = 'full') {
         return this.within(slug, userId, false, async (sql, org) => {
             const { upload } = resolveCoverImage(await readAll(sql, org, userId), context(String(org.id), userId), kind, subjectId, fileId);
-            return { objectKey: upload.objectKey, generation: upload.generation!, contentType: upload.contentType, sizeBytes: upload.sizeBytes };
+            return servedObject(upload, variant);
         });
     }
     /**
@@ -350,7 +363,7 @@ export class WorkspaceRepository {
         return this.within(slug, authorisedBy, false, async (sql, org) => {
             await this.requireOwner(sql, String(org.id), authorisedBy);
             const state = await readAll(sql, org, authorisedBy), now = new Date().toISOString();
-            return [...staleCoverUploads(state, String(org.id), now), ...staleTaskUploads(state, String(org.id), now)].map(u => ({ id: u.id, objectKey: u.objectKey, purpose: u.purpose, status: u.status, createdAt: u.createdAt }));
+            return [...staleCoverUploads(state, String(org.id), now), ...staleTaskUploads(state, String(org.id), now)].map(u => ({ id: u.id, objectKey: u.objectKey, thumbnailObjectKey: u.thumbnailObjectKey ?? null, purpose: u.purpose, status: u.status, createdAt: u.createdAt }));
         });
     }
     /** Delete the records of uploads whose stored files are gone, if they are still unused. Returns the IDs removed. */

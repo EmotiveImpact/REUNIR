@@ -38,6 +38,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 28 | Owners, administrators and moderators curate collections such as "Start here" from posts, tracks, lessons, paths, projects, events, missions and outputs, with notes and order; one is featured on Home | Items show only to people who can already see them; no notifications, tags or cross-community collections |
 | Alpha 29 | Project teams attach files to tasks through the verified private upload path; boards and open tasks refresh within seconds, and edit conflicts name who changed the task | Polling, not push; no presence; real bucket and a real scanner on task files unverified |
 | Alpha 31 | Housekeeping is cleared on a schedule by one list of rules (sessions, links, rate counters, request receipts, change events, finished mail, read notices); Your account says how long everything is kept | The same periods for every community; the audit trail is kept for the life of the community; nothing is scheduled until the operator chooses |
+| Alpha 39 | Administrators rename and tag cover library pictures (up to 60); the picker filters by name or tag; cards and lists load a 480-pixel copy checked by the server | No stock search or backfilled copies for existing covers; real bucket signing for the second policy unverified |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 

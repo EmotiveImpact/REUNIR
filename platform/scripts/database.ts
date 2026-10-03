@@ -83,15 +83,20 @@ try {
         const stale = await repo.staleCoverUploads(slug, owner);
         if (process.env.PRUNE !== 'yes') {
             console.log(`Dry run: ${stale.length} cover, library or task uploads in ${slug} are unused and rejected or over an hour old. Nothing was changed. Set PRUNE=yes to delete them and their stored files.`);
-            for (const u of stale) console.log(`  ${u.purpose} ${u.status} ${u.createdAt} ${u.objectKey}`);
+            for (const u of stale) console.log(`  ${u.purpose} ${u.status} ${u.createdAt} ${u.objectKey}${u.thumbnailObjectKey ? ` and ${u.thumbnailObjectKey}` : ''}`);
         }
         else {
             const storage = googleStorage(required('GCS_BUCKET'), process.env.GCS_CREDENTIALS_JSON);
             const gone: string[] = [], kept: string[] = [];
             // Files first: a record is removed only once its stored file is gone, so nothing is left untracked.
+            // A cover's small copy goes with its picture; the record stays until both are gone.
             for (const u of stale) {
-                try { await storage.remove(u.objectKey); gone.push(u.id); }
-                catch (e) { if (isMissingObject(e)) gone.push(u.id); else kept.push(u.objectKey); }
+                let removed = true;
+                for (const key of [u.objectKey, ...(u.thumbnailObjectKey ? [u.thumbnailObjectKey] : [])]) {
+                    try { await storage.remove(key); }
+                    catch (e) { if (!isMissingObject(e)) { removed = false; kept.push(key); } }
+                }
+                if (removed) gone.push(u.id);
             }
             const removed = await repo.removeStaleCoverUploads(slug, owner, gone);
             console.log(`Removed ${removed.length} unused cover, library or task uploads and their stored files.` + (kept.length ? ` ${kept.length} files could not be deleted, so their records were kept:\n  ${kept.join('\n  ')}` : ''));
