@@ -1719,7 +1719,10 @@ tables.push({key:'uploads',table:'upload_intents',where:"purpose IN ('lesson_res
     {property:'status',column:'status',type:'text'},{property:'objectKey',column:'object_key',type:'text'},{property:'completedAt',column:'completed_at',type:'timestamptz'},
     {property:'generation',column:'generation',type:'text'},
     // Alpha 11: cover uploads name exactly one track or project.
-    {property:'coverTrackId',column:'cover_track_id',type:'text'},{property:'coverProjectId',column:'cover_project_id',type:'text'}]});
+    {property:'coverTrackId',column:'cover_track_id',type:'text'},{property:'coverProjectId',column:'cover_project_id',type:'text'},
+    // Migration 0038: a cover's smaller copy for cards, tied to the same record.
+    {property:'thumbnailObjectKey',column:'thumbnail_object_key',type:'text'},{property:'thumbnailContentType',column:'thumbnail_content_type',type:'text'},
+    {property:'thumbnailSizeBytes',column:'thumbnail_size_bytes',type:'integer'},{property:'thumbnailGeneration',column:'thumbnail_generation',type:'text'}]});
 
 // Alpha 10: knowledge checks live in lesson content; attempts are immutable apart from review fields.
 for (const key of ['lessons','lessonDrafts','lessonRevisions']) tables.find(t=>t.key===key)!.fields.push({property:'quiz',column:'quiz',type:'jsonb'});
@@ -1739,11 +1742,12 @@ tables.push({key:'trackInstructors',table:'track_instructors',mutable:[],fields:
     {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
     {property:'trackId',column:'track_id',type:'text'},{property:'userId',column:'user_id',type:'text'},{property:'grantedBy',column:'granted_by',type:'text'}]});
 
-// Alpha 13: the community cover library. Pictures are added or removed, never rewritten in place.
-tables.push({key:'coverLibrary',table:'cover_library',mutable:[],fields:[
+// Alpha 13: the community cover library. Pictures are added or removed; since migration 0038 only the name and tags change in place.
+tables.push({key:'coverLibrary',table:'cover_library',mutable:['label','tags'],fields:[
     {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
     {property:'fileId',column:'file_id',type:'text'},{property:'label',column:'label',type:'text'},{property:'contentType',column:'content_type',type:'text'},
-    {property:'sizeBytes',column:'size_bytes',type:'integer'},{property:'addedBy',column:'added_by',type:'text'}]});
+    {property:'sizeBytes',column:'size_bytes',type:'integer'},{property:'addedBy',column:'added_by',type:'text'},
+    {property:'tags',column:'tags',type:'jsonb'}]});
 
 // Alpha 19: a member's notice settings. One row per member; only the member changes it, the digest job stamps lastDigestAt.
 tables.push({key:'notificationPreferences',table:'notification_preferences',fields:[

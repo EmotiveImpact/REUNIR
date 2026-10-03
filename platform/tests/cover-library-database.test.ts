@@ -51,7 +51,12 @@ test('0013 upgrade keeps tracks, projects, covers and uploads exactly as they we
         const read = async (table: string) => (await old.query(`SELECT * FROM ${table} ORDER BY organization_id,id`)).rows;
         const before = { tracks: await read('tracks'), projects: await read('projects'), upload_intents: await read('upload_intents'), members: await read('members') };
         await migrate(old); await migrate(old);
-        for (const table of ['tracks', 'projects', 'upload_intents', 'members'] as const) assert.deepEqual(await read(table), before[table], table);
+        for (const table of ['tracks', 'projects', 'members'] as const) assert.deepEqual(await read(table), before[table], table);
+        // Migration 0038 adds empty small-copy columns to uploads; every earlier column is unchanged.
+        const thumbnail = ['thumbnail_object_key', 'thumbnail_content_type', 'thumbnail_size_bytes', 'thumbnail_generation'];
+        const uploads = await read('upload_intents');
+        assert.deepEqual(uploads.map(r => Object.fromEntries(Object.entries(r).filter(([k]) => !thumbnail.includes(k)))), before.upload_intents, 'upload_intents');
+        assert(uploads.every(r => thumbnail.every(k => r[k] === null)));
         assert.deepEqual(await read('cover_library'), []);
         assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, MIGRATION_COUNT);
     } finally { await old.close(); }
@@ -73,7 +78,7 @@ test('through the restricted role, an administrator lists a picture, a member us
     await assert.rejects(() => repo.removeCoverLibraryItem('code-black', DEMO_USER, itemId, 'cover-library-db'), { code: 'ADMIN_REQUIRED' });
     await assert.rejects(() => repo.beginCoverLibraryUpload('code-black', DEMO_USER, { purpose: 'cover_library', contentType: 'image/png', sizeBytes: 4096 }, key, 'cover-library-db'), { code: 'ADMIN_REQUIRED' });
     await exec({ type: 'project.cover.set', projectId: 'project_still', fileId: null }, 'member_jordan');
-    assert.deepEqual(await repo.removeCoverLibraryItem('code-black', DEMO_ADMIN, itemId, 'cover-library-db'), { id: itemId, objectKey: key(ORG, fileId) });
+    assert.deepEqual(await repo.removeCoverLibraryItem('code-black', DEMO_ADMIN, itemId, 'cover-library-db'), { id: itemId, objectKey: key(ORG, fileId), thumbnailObjectKey: null });
     assert.equal((await db.query('SELECT id FROM cover_library WHERE id=$1', [itemId])).rows.length, 0);
     assert.equal((await db.query('SELECT id FROM upload_intents WHERE id=$1', [fileId])).rows.length, 0, 'the upload record goes with it');
     assert((await db.query<{ action: string }>('SELECT action FROM audit WHERE object_id=$1', [itemId])).rows.some(r => r.action === 'cover.library.removed'));
@@ -124,7 +129,9 @@ test('database constraints keep library pictures unscoped, verified, bounded and
     await assert.rejects(() => list('svg', ORG, DEMO_COVER_LIBRARY_FILE, 'Vector', 'image/svg+xml'), /check constraint/);
 });
 
-test('runtime grants allow listing and removing pictures, never rewriting them', async () => {
+test('runtime grants allow listing, renaming and removing pictures, never rewriting the picture', async () => {
     const can = async (privilege: string) => (await db.query<{ ok: boolean }>("SELECT has_table_privilege('reunir_app','cover_library',$1) AS ok", [privilege])).rows[0].ok;
     assert.deepEqual([await can('SELECT'), await can('INSERT'), await can('DELETE'), await can('UPDATE')], [true, true, true, false]);
+    const column = async (name: string) => (await db.query<{ ok: boolean }>("SELECT has_column_privilege('reunir_app','cover_library',$1,'UPDATE') AS ok", [name])).rows[0].ok;
+    assert.deepEqual(await Promise.all(['label', 'tags', 'file_id', 'content_type', 'size_bytes', 'added_by', 'organization_id', 'id', 'created_at'].map(column)), [true, true, false, false, false, false, false, false, false]);
 });
