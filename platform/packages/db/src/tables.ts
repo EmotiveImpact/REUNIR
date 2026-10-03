@@ -1754,3 +1754,6 @@ tables.push({key:'notificationPreferences',table:'notification_preferences',fiel
     {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
     {property:'userId',column:'user_id',type:'text'},{property:'muted',column:'muted',type:'jsonb'},{property:'digest',column:'digest',type:'text'},
     {property:'updatedAt',column:'updated_at',type:'timestamptz'},{property:'lastDigestAt',column:'last_digest_at',type:'timestamptz'}]});
+
+// Alpha 25: a teaching grant names its role. Changing a role replaces the grant; it is never rewritten in place.
+tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'role',column:'role',type:'text'});

@@ -4,7 +4,7 @@ import {
     type LessonResource, type ResourceRef, type ResourceUploadRequest,
 } from '../../contracts/src/lesson-resources';
 import { actorFor, canSeeSpace, isAdmin } from './access';
-import { taughtTracks, teaches, teachesAny } from './instructors';
+import { contributedTracks, contributes, contributesAny } from './instructors';
 import { normalisePurposeState } from './purpose';
 
 /**
@@ -22,8 +22,8 @@ export function normaliseResources(value: readonly LessonResource[] | null | und
 /** Storage keys and generations are server-only. */
 export const clientUpload = (u: Upload): Upload => ({ ...u, objectKey: '', generation: null, ...(u.thumbnailObjectKey !== undefined ? { thumbnailObjectKey: u.thumbnailObjectKey ? '' : null, thumbnailGeneration: null } : {}) });
 export function visibleUploads(s: Workspace, actor: Member): Upload[] {
-    // Upload records reach only the people who teach the track: its instructors and the community's administrators.
-    const tracks = taughtTracks(s, actor);
+    // Upload records reach only the people who teach the track: its instructors, its contributors and the community's administrators.
+    const tracks = contributedTracks(s, actor);
     return s.uploads.filter(u => lessonFile(u, actor.organizationId) && !!u.trackId && tracks.has(u.trackId)).map(clientUpload);
 }
 export function isUploadReferenced(s: Workspace, organizationId: string, uploadId: string): boolean {
@@ -45,13 +45,13 @@ export function assertResourcesAvailable(s: Workspace, ctx: TenantContext, track
 
 function requireAuthor(s: Workspace, ctx: TenantContext): Member {
     const actor = actorFor(s, ctx);
-    if (!teachesAny(s, actor)) throw new DomainError('AUTHOR_REQUIRED', 'Only a track instructor or a community owner or administrator can manage lesson files.', 403);
+    if (!contributesAny(s, actor)) throw new DomainError('AUTHOR_REQUIRED', 'Only a track instructor or contributor, or a community owner or administrator, can manage lesson files.', 403);
     return actor;
 }
 function authorTrack(s: Workspace, ctx: TenantContext, trackId: string | null): { actor: Member; track: Track } {
     const actor = requireAuthor(s, ctx);
     const track = s.tracks.find(t => t.id === trackId && t.organizationId === ctx.organizationId);
-    if (!track || !canSeeSpace(s, actor, track.spaceId) || !teaches(s, actor, track.id)) gone('That learning material is not available.');
+    if (!track || !canSeeSpace(s, actor, track.spaceId) || !contributes(s, actor, track.id)) gone('That learning material is not available.');
     return { actor, track: track! };
 }
 function record(s: Workspace, ctx: TenantContext, now: string, makeId: () => string, type: string, objectId: string, audit: boolean) {
@@ -112,7 +112,7 @@ export function resolveResourceDownload(s: Workspace, ctx: TenantContext, ref: R
     const track = (id: string) => s.tracks.find(t => t.id === id && t.organizationId === org && canSeeSpace(s, actor, t.spaceId) && (t.published || isAdmin(actor)));
     let holder: { trackId: string; resources?: LessonResource[] | null } | undefined;
     if (ref.context === 'lesson') holder = s.lessons.find(l => l.id === ref.recordId && l.organizationId === org && (l.published || isAdmin(actor)) && !!track(l.trackId));
-    else holder = (ref.context === 'draft' ? s.lessonDrafts : s.lessonRevisions).find(r => r.id === ref.recordId && r.organizationId === org && !!track(r.trackId) && teaches(s, actor, r.trackId));
+    else holder = (ref.context === 'draft' ? s.lessonDrafts : s.lessonRevisions).find(r => r.id === ref.recordId && r.organizationId === org && !!track(r.trackId) && contributes(s, actor, r.trackId));
     const resource = holder?.resources?.find(r => r.id === ref.resourceId) ?? gone();
     const upload = s.uploads.find(u => u.id === resource.fileId && lessonFile(u, org) && u.trackId === holder!.trackId) ?? gone();
     if (upload.status !== 'ready' || !upload.generation || !isLessonResourceType(upload.contentType)) throw new DomainError('FILE_NOT_READY', 'This file is not ready to download.', 409);

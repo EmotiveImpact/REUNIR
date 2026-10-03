@@ -19,7 +19,7 @@ Details:
 - Up to five tags per library picture; renaming and tagging are audited and need two-step sign-in when the server requires it.
 - New covers wider than 480 pixels get a 480-pixel copy made in the browser and checked by the server; covers without one fall back to the full picture (decision 039).
 - Additive migration 0038; run `npm run db:grant-runtime` after migrating. No new runtime dependency.
-- Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 39 before the blocks were agreed; gaps in the sequence on main are expected.
+- Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 27 before the blocks were agreed; gaps in the sequence on main are expected.
 
 ### Planned
 
@@ -39,6 +39,19 @@ Details:
 - Changing or resetting the password cancels any change link asked for before it.
 - The launch preflight also checks `EMAIL_VERIFICATION`.
 - No migration and no new runtime dependency: Better Auth's own email verification and change-email flows, through the encrypted outbox.
+
+## 0.25.0-alpha.1 (Alpha 25): contributor roles for teaching, 3 October 2026
+
+On main through [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20), merged as `fab9510`. Alpha 26 (PR #18) reached main first, so the application version stays 0.26.0-alpha.1 when this release merges.
+
+**In plain language:** when you add someone to teach a track you can now make them a contributor instead of an instructor. Contributors write and save lesson drafts and attach files; the track's instructors decide when to publish them. Contributors do not see learners' quiz answers.
+
+Details:
+
+- **Instructor or Contributor** in a track's Instructors dialogue, with a role menu for each person. Instructor stays the default.
+- Publishing, archiving, reordering, the track cover and knowledge-check review need an instructor or administrator (`INSTRUCTOR_REQUIRED`, decision 025).
+- Additive migration 0023 adds `track_instructors.role` and role-aware policies for published revisions, attempts and invitations. Every existing grant stays an instructor's. No grant change.
+- Database upgrade tests now count the migration files instead of a fixed number.
 
 ## 0.24.0-alpha.1 (Alpha 24): group conversations, 3 October 2026
 

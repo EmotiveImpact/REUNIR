@@ -4,7 +4,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, decisions/039-cover-li
 
 ## Where the source is
 
-- Base: main `9b34cac`, the merge of PR #18 (Alpha 26 email confirmation and change), tree identical to its tested head `a427140`. This slice was first opened as Alpha 23 on main `f5ec8d3`. Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 39 before the blocks were agreed; gaps in the sequence on main are expected.
+- Base: main `fab9510`, the merge of PR #20 (Alpha 25 contributor roles for teaching), on top of main `9b34cac` (PR #18, Alpha 26 email confirmation and change). This slice was first opened as Alpha 23 on main `f5ec8d3`. Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 27 before the blocks were agreed; gaps in the sequence on main are expected.
 - This slice: branch `claude/build-out-tvzn40`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Since 3 October 2026 the remaining work is split across threads in the project. This thread owns covers and launch preparation. Each pull request takes the next free alpha, migration and decision numbers from main when it is opened, and renumbers if another lands first.
 
@@ -32,6 +32,43 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 
 1. Covers are complete for now; stock search and backfilling small copies for existing covers are not planned.
 2. Launch: LAUNCH_RUNBOOK.md and `npm run launch:preflight` are ready; the owner decides when. Provision nothing until then.
+
+---
+## Historical Alpha 25 handover: contributor roles for teaching
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, decisions/025-contributor-roles.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+## Where the source is
+
+- Base: main `ec4285d`, the merge of PR #15 (Alpha 22), with main `f5ec8d3` (PR #17, the launch kit) main `d62424d` (PR #19, Alpha 24 group conversations) and main `9b34cac` (PR #18, Alpha 26 email confirmation and change) merged in. The application version is main's 0.26.0-alpha.1.
+- This slice: [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20), merged into main as `fab9510`. BUILD_STATUS.md records the local runs; the pull request records CI.
+- Parallel slices: Alpha 23 (upload scanning) is on PR #16; Alpha 24 (group conversations, migration 0022) and Alpha 26 (email change, no migration) are on main. Take the next free alpha and migration numbers from main when opening a pull request, and renumber if main moves.
+
+## What is done
+
+A teaching grant names a role. Instructors keep everything they had; contributors write a track's drafts and files, and its instructors publish them. Contributors never see or review learners' knowledge-check attempts. Changing a role replaces the grant. Additive migration 0023 adds `track_instructors.role` and role-aware policies.
+
+## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Preview as admin, open a track, choose **Instructors**, pick a member and **Contributor**, then **Add**. For PostgreSQL: `npm run db:migrate` (applies 0023; no grant changes).
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+## Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Authority is granted explicitly and must be current when it takes effect; teaching is a per-track grant with a role, not a community role, and publishing stays with instructors. Owner and administrator authority may require two-step sign-in. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+## Next
+
+1. Per-lesson grants, instructors starting their own tracks (published by an administrator) and uploaded lesson video, each its own release. Question banks, timers and partial marks wait for pilot needs.
+2. Email verification and change, then the remaining account and trust items in ROADMAP.md.
+3. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
 
 ---
 ## Historical Alpha 26 handover: email confirmation and change

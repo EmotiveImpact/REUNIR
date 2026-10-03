@@ -9,6 +9,7 @@ import { DEMO_COVER_LIBRARY_FILE } from '../packages/domain/src/demo-files';
 import { coverBytesAcceptable, coverThumbnailAcceptable } from '../packages/contracts/src/covers';
 import { pngHeader, webpHeader } from './helpers/images';
 import { seedBeforeProjectWork } from './helpers/legacy-fixture';
+import { MIGRATION_COUNT } from './helpers/migrations';
 
 const ORG = 'org_code_black', STUDIO = 'org_studio_north';
 let db: Database, repo: WorkspaceRepository;
@@ -55,7 +56,7 @@ test('0038 upgrade keeps every library picture and upload as it was, with no tag
         assert(uploadsNow.every(r => thumbnail.every(k => r[k] === null)), 'no existing upload gains a small copy');
         assert.deepEqual(await read('tracks'), before.tracks);
         assert.deepEqual((await old.query("SELECT version,digest FROM schema_migrations WHERE version<='0022' ORDER BY version")).rows, versions, 'earlier migrations are unchanged');
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 23);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, MIGRATION_COUNT);
     } finally { await old.close(); }
 });
 

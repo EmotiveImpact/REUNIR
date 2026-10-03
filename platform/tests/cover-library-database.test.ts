@@ -10,6 +10,7 @@ import { DEMO_COVER_LIBRARY_FILE } from '../packages/domain/src/demo-files';
 import { coverBytesAcceptable } from '../packages/contracts/src/covers';
 import { seedBeforeProjectWork } from './helpers/legacy-fixture';
 import { pngHeader } from './helpers/images';
+import { MIGRATION_COUNT } from './helpers/migrations';
 
 const ORG = 'org_code_black';
 let db: Database, repo: WorkspaceRepository;
@@ -57,7 +58,7 @@ test('0013 upgrade keeps tracks, projects, covers and uploads exactly as they we
         assert.deepEqual(uploads.map(r => Object.fromEntries(Object.entries(r).filter(([k]) => !thumbnail.includes(k)))), before.upload_intents, 'upload_intents');
         assert(uploads.every(r => thumbnail.every(k => r[k] === null)));
         assert.deepEqual(await read('cover_library'), []);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 23);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, MIGRATION_COUNT);
     } finally { await old.close(); }
 });
 

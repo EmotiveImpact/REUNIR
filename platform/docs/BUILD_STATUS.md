@@ -6,18 +6,18 @@
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/build-out-tvzn40` ([PR #21](https://github.com/EmotiveImpact/REUNIR/pull/21)), first opened on main `f5ec8d3` and brought up to main `9b34cac` (the merge of PR #18, Alpha 26) |
+| Implemented | Yes, on `claude/build-out-tvzn40` ([PR #21](https://github.com/EmotiveImpact/REUNIR/pull/21)), first opened on main `f5ec8d3` and brought up to main `fab9510` (the merge of PR #20, Alpha 25) |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 
-## PR #19 and PR #18 merged into main
+## PR #19, PR #18 and PR #20 merged into main
 
-Two other threads' releases reached main while this slice was open. Alpha 24 (group conversations) was merged as `d62424dc5b68cf9386757173a89464211f5b7021` on top of `f5ec8d3`, its tree `85e91e8022d87830336918d8765392698795b48d` identical to its tested head `5c97bb4` (CI runs 37123762116 and 37123778756). Alpha 26 (email confirmation and change) was then merged as `9b34cac`, its tree `2e61a0a1ea8f287c3fe3e8dc6a2f455f57a7e3b5` identical to its tested head `a427140` (CI runs 37124821464 and 37124825018). This slice merged both in.
+Three other threads' releases reached main while this slice was open. Alpha 24 (group conversations) was merged as `d62424dc5b68cf9386757173a89464211f5b7021` on top of `f5ec8d3`, its tree `85e91e8022d87830336918d8765392698795b48d` identical to its tested head `5c97bb4` (CI runs 37123762116 and 37123778756). Alpha 26 (email confirmation and change) was then merged as `9b34cac`, its tree `2e61a0a1ea8f287c3fe3e8dc6a2f455f57a7e3b5` identical to its tested head `a427140` (CI runs 37124821464 and 37124825018). Alpha 25 (contributor roles for teaching, migration 0023) was merged as `fab9510`, its tree `b07530cedae56e6c312e45318a4797e395889069` identical to its tested head `518bc06` (CI runs 37126085213 and 37126087981); it also replaced the fixed migration counts in upgrade tests with a count of the migration files. This slice merged all three in.
 
-Numbering: Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 39 before the blocks were agreed; gaps in the sequence on main are expected.
+Numbering: Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 27 before the blocks were agreed; gaps in the sequence on main are expected.
 
 ## What changed
 
@@ -29,12 +29,12 @@ Numbering: Parallel threads now take numbers from agreed blocks, and this one ho
 
 ## Local verification, 3 October 2026
 
-Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). Every step ran on this branch's tree on top of main `9b34cac`. The full run used the earlier Alpha 27 numbering; after renaming the migration to 0038, the decision to 039 and the version to 0.39.0-alpha.1, `check_research.py`, `npm run typecheck`, `npm test` (691), `npm run test:postgres` (22) and the Python helpers were run again and passed.
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). The full run below ran on this branch's tree on top of main `9b34cac`, using the earlier Alpha 27 numbering; after renaming the migration to 0038, the decision to 039 and the version to 0.39.0-alpha.1, `check_research.py`, `npm run typecheck`, `npm test` (691), `npm run test:postgres` (22) and the Python helpers were run again and passed.
 
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 691 passed, 0 failed (666 on main `9b34cac` plus 25: 6 library management, 6 small copies, 6 database tests under the restricted role including cross-tenant and inactive-role refusals, 7 HTTP) |
+| `npm test` | 701 passed, 0 failed (676 on main `fab9510` plus 25: 6 library management, 6 small copies, 6 database tests under the restricted role including cross-tenant and inactive-role refusals, 7 HTTP) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
 | Demo-browser suites | 298 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 20 covers (3 new), 10 instructors, 12 accounts, 16 monochrome, 20 v4, 5 notifications, 11 groups |
@@ -42,7 +42,7 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | `npm run test:postgres` | 22 passed on PostgreSQL 16 (1 new for renaming and tagging through the restricted role; the existing library case now checks that changing the picture itself is refused) |
 | Python helpers, `scripts/check_research.py` | 35 passed; the register validates with 55 pinned sources and 18 register decisions |
 
-Tests changed rather than added: migration-count assertions moved from 22 to 23, and the 0038 upgrade test starts from a database at 0022; the 0009, 0011 and 0013 upgrade tests strip the four new upload columns and assert they are empty; the operator-erasure test seeds its 0013-era database without uploads; the library grant test also asserts the two updatable columns; the two-step sign-in HTTP test lists the new route among those that refuse.
+Tests changed rather than added: upgrade tests count the migration files (from PR #20), and the 0038 upgrade test starts from a database at 0022; the 0009, 0011 and 0013 upgrade tests strip the four new upload columns and assert they are empty; the operator-erasure test seeds its 0013-era database without uploads or library pictures; the library grant test also asserts the two updatable columns; the two-step sign-in HTTP test lists the new route among those that refuse.
 
 ## Corrections made while verifying
 
@@ -57,6 +57,62 @@ Tests changed rather than added: migration-count assertions moved from 22 to 23,
 
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. When deployment resumes: follow LAUNCH_RUNBOOK.md, and run `npm run db:grant-runtime` after migrating.
+
+## Historical Alpha 25 evidence: contributor roles for teaching
+
+3 October 2026. Alpha 26 (PR #18) reached main first, so the application version stays 0.26.0-alpha.1. An owner or administrator adds someone to a track as an instructor or a contributor. Contributors write the track's lesson drafts and files; instructors publish them, and only instructors see and review learners' knowledge-check answers. See decisions/025-contributor-roles.md and INSTRUCTORS.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/courses-teaching-6hum2q`, from main `ec4285d` (the merge of PR #15, Alpha 22), with main `f5ec8d3` (PR #17, the launch kit) main `d62424d` (PR #19, Alpha 24) and main `9b34cac` (PR #18, Alpha 26) merged in |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Yes: runs 37126085213 and 37126087981 on `518bc06` (application and postgres) |
+| Merged | Yes, [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20) as `fab9510`, under the owner's standing approval (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+Alpha 23 (upload scanning, PR #16) was still open when this slice started, and Alpha 24 was reserved for group conversations, so this slice took the next unreserved number. Group conversations then merged with migration 0022, so this slice's migration became 0023. Email change (PR #18) then merged as Alpha 26 with no migration.
+
+## What changed
+
+- **Instructor or Contributor** when adding someone in a track's Instructors dialogue, and a role menu beside each person. Instructor is the default for the command, the API and every existing grant.
+- Contributors open, save, preview and restore drafts, upload and attach lesson files, and see the track's drafts, history and upload records. Publishing, archiving, reordering, the cover and knowledge-check attempts need an instructor or administrator (`INSTRUCTOR_REQUIRED`, or the existing cover and reviewer refusals).
+- Changing a role replaces the grant in the acting administrator's name; grants are still never updated in place.
+- Additive migration `0023_contributor_roles.sql`: `track_instructors.role` (`instructor` or `contributor`, NOT NULL, default `instructor`), and role-aware replacements for the published-revision, attempt read, attempt review and invitation policies. 0001 to 0022 are byte-identical; no grant change.
+- Database upgrade tests count the migration files (`tests/helpers/migrations.ts`) instead of a fixed number, so additive migrations from parallel slices no longer edit nine tests.
+- The 0014 upgrade test now seeds without teaching grants, whose newer columns do not exist at 0013.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). The final run was on `5882bb6`, this branch with main `d62424d` (Alpha 24 group conversations) merged in.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 664 passed, 0 failed (main's 654 plus 6 contributor domain and 4 contributor database tests) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 271 passed across 15 suites, including 11 group conversation checks from main and 11 instructor checks (1 new: adding a contributor and changing their role) |
+| Connected-browser suites | 60 passed (unchanged; the instructor suite follows the renamed controls) |
+| `npm run test:postgres` | Passed on PostgreSQL 16 |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
+
+## Corrections made while verifying
+
+- Merging main brought group conversations in as migration 0022, so this slice's migration was renamed from 0022 to 0023 before it reached main. The upgrade test now starts from 0022.
+- The first full `npm test` run failed one test, the 0014 upgrade, because it seeded the current fixture (with a teaching role) into a 0013 schema. The test now seeds without grants; the rerun passed.
+
+## Not verified, and why
+
+- Contributor invitations by email are not built: an invitation still makes an instructor, and the 0023 policy refuses any other role on acceptance.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Per-lesson grants, instructor-started tracks and uploaded lesson video, each its own release.
+3. When deployment resumes: follow the launch runbook once it lands.
 
 ## Historical Alpha 26 evidence: confirming and changing your email address
 

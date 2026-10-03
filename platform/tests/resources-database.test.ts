@@ -10,6 +10,7 @@ import { lessonContent } from '../packages/domain/src/authoring';
 import { DEMO_WORKSHEET_FILE } from '../packages/domain/src/demo-files';
 import { fileSignatureMatches } from '../packages/contracts/src/lesson-resources';
 import { seedBeforeProjectWork } from './helpers/legacy-fixture';
+import { MIGRATION_COUNT } from './helpers/migrations';
 
 let db: Database, repo: WorkspaceRepository;
 const PDF = 'application/pdf' as const, bytes = new TextEncoder().encode('%PDF-1.4\n% fictional database test\n');
@@ -60,7 +61,7 @@ test('0009 upgrade keeps lessons, drafts, history, completions and member upload
         assert.deepEqual(strip(uploads, ['purpose', 'track_id', 'completed_at', 'generation', 'cover_track_id', 'cover_project_id', ...thumbnail]), before.uploads);
         assert.deepEqual(uploads.map(u => [u.purpose, u.track_id, u.completed_at, u.generation]), [['member', null, null, null]]);
         assert(uploads.every(u => thumbnail.every(k => u[k] === null)), 'member uploads gain no small copy');
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 23);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, MIGRATION_COUNT);
     } finally { await old.close(); }
 });
 test('the restricted runtime role records, verifies, attaches and publishes a lesson file', async () => {
