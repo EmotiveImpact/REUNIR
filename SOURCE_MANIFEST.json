@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 15 account deletion",
   "version": "0.15.0-alpha.1",
   "sourceBaseline": "661fac9d921292f4d7432c1df4c7b98827cf6211",
-  "generatedAt": "2026-10-03T07:33:08.171575+00:00",
+  "generatedAt": "2026-10-03T08:04:23.354677+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "911f83fe41a1f977ee28006260836fe9c237b10765df57c2ecdfc90ebd8ce0cd",
-      "bytes": 34356
+      "sha256": "b64aa55446533719544b35986738d3a59375c133429f76dce6a122305adcf73e",
+      "bytes": 34683
     },
     {
       "path": "platform/.dockerignore",
@@ -106,8 +106,8 @@
     },
     {
       "path": "platform/apps/api/src/invitations.ts",
-      "sha256": "97aa5c9b404a0e7fcd2acb15a175802782ff24c1ccb30fe47d06a02f4a17c9ba",
-      "bytes": 8078
+      "sha256": "452662568baa986aec712c0b9e2b9e9f1175e18850c70f883ffc9d369138bfed",
+      "bytes": 8229
     },
     {
       "path": "platform/apps/api/src/mail.ts",
@@ -476,8 +476,8 @@
     },
     {
       "path": "platform/docs/ACCOUNTS.md",
-      "sha256": "6e0c935fcca0d37341dc293c89b01942cc7ca74696e219c327c11408369f6ee8",
-      "bytes": 6788
+      "sha256": "2b01960b568e393a08784cf92102f44cb14d10732573c821dc9e75354b62f169",
+      "bytes": 7346
     },
     {
       "path": "platform/docs/ARCHITECTURE.md",
@@ -496,8 +496,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "cdb43d0eff6ef3aca3e56be69625e30bf29d011312a0b491e616aa9766d343d4",
-      "bytes": 73828
+      "sha256": "9be66805738696d30c1b74d17e8cba2c2c33914f2816ef486f95773dc128f189",
+      "bytes": 76578
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -641,8 +641,8 @@
     },
     {
       "path": "platform/docs/decisions/015-account-deletion.md",
-      "sha256": "28fba2ad5aba1b4dfbff3ce12747b65345365a86919f8bb9871433535f71d7a6",
-      "bytes": 5209
+      "sha256": "8a34fd7aa7bab7071fbc935be982a6d45af438a9acb2f221864e6ca33bc747f3",
+      "bytes": 5236
     },
     {
       "path": "platform/docs/history/ALPHA_05_BUILD_STATUS.md",
@@ -1080,6 +1080,11 @@
       "bytes": 1842
     },
     {
+      "path": "platform/packages/db/migrations/0016_account_invitations.sql",
+      "sha256": "7166dc7bb46b5ec2a4f782b33cb8de536e3b9510a850c03dc0b873d4820b0e06",
+      "bytes": 911
+    },
+    {
       "path": "platform/packages/db/package.json",
       "sha256": "91bb9ae1082d0fadee20bef76bb29d770acc5b29fe0b5cdfe8a65333af224748",
       "bytes": 119
@@ -1116,8 +1121,8 @@
     },
     {
       "path": "platform/packages/db/src/repository.ts",
-      "sha256": "fe543b26f6f8bda369856a950f5247a093e8ee6cfa08a9b88a2c541c9e4b0ca9",
-      "bytes": 33063
+      "sha256": "b0c01c82264ba0747de465124ac45a93922ae00b6b398a9724f3af322ca3769c",
+      "bytes": 33427
     },
     {
       "path": "platform/packages/db/src/runtime-role.ts",
@@ -1136,13 +1141,13 @@
     },
     {
       "path": "platform/packages/domain/src/access.ts",
-      "sha256": "2a3ec5a879bb686b6aa4a91f4403a248cc27b505a21be25d81e1de91803b2bfd",
-      "bytes": 1484
+      "sha256": "8c592357ccbcd19b957860032051b409faf30318211d147a11f9ad74428e4683",
+      "bytes": 1843
     },
     {
       "path": "platform/packages/domain/src/account-deletion.ts",
-      "sha256": "eb3ffffd8d6ad5ae3c8a65f220949baae9fb48cf7db79045f1ac44d52c67064c",
-      "bytes": 4415
+      "sha256": "f21cdfa7da553cbbc707a56400507a5d82816f593f3027b33ae0e6eab31d9c14",
+      "bytes": 4135
     },
     {
       "path": "platform/packages/domain/src/assessments.ts",
@@ -1166,8 +1171,8 @@
     },
     {
       "path": "platform/packages/domain/src/engine.ts",
-      "sha256": "c6727d26bf6bbfcd54a122462cdb452c7623a7879858fef16b00e740b65b2bd9",
-      "bytes": 25550
+      "sha256": "f0447ec8d3e980d7b052e25046481fbec152d7db1870fae4e9eabca41da53a4d",
+      "bytes": 25737
     },
     {
       "path": "platform/packages/domain/src/instructors.ts",
@@ -1316,8 +1321,8 @@
     },
     {
       "path": "platform/scripts/postgres-check.ts",
-      "sha256": "e5b1dc7a341f9e22c3a6bc1b2707309217a241295ce86d1057395044a9e579f7",
-      "bytes": 24328
+      "sha256": "0991fc9dc0568f98d4e93759313ea04711a829c820356088ebd4accb4eb75802",
+      "bytes": 26334
     },
     {
       "path": "platform/scripts/project-work-browser-check.ts",
@@ -1361,8 +1366,8 @@
     },
     {
       "path": "platform/tests/account-deletion-database.test.ts",
-      "sha256": "c3ae30cea9f3dfe89d0f71c34cb6e3d552751dad4081a5b046de7440a7673b56",
-      "bytes": 17201
+      "sha256": "1308aeb9e3fa304e23e84f440b0380bbe10f78d206d6aa554841e5c7a0453dc2",
+      "bytes": 18990
     },
     {
       "path": "platform/tests/account-deletion-http.test.ts",
@@ -1371,12 +1376,12 @@
     },
     {
       "path": "platform/tests/account-deletion.test.ts",
-      "sha256": "1cbaa581d3c1ca4a5200b5a23e5693a65d1967e3fef0e9d5feba0a3e11239346",
-      "bytes": 10374
+      "sha256": "ea270cd62b11243eb436971e0a39dc693b17f106891d871960c2888142036704",
+      "bytes": 11258
     },
     {
       "path": "platform/tests/assessments-database.test.ts",
-      "sha256": "0c4e44b58601f8ab36ec71607ffaacceb4fe7466934bd37ef6d9131e80844ac7",
+      "sha256": "70f39eb691ec7b157c1e68352e2cc4da5de6701041bde11a9aeb36e4979522f2",
       "bytes": 18147
     },
     {
@@ -1406,7 +1411,7 @@
     },
     {
       "path": "platform/tests/cover-library-database.test.ts",
-      "sha256": "e89decf7aa563990e2827cad9cee33d4030985f117466f77482a5ef330b1fea8",
+      "sha256": "647ea960dc37baefa1ddf686f5addf85276d7af2da952b379952fa2ab36d3525",
       "bytes": 12971
     },
     {
@@ -1421,7 +1426,7 @@
     },
     {
       "path": "platform/tests/covers-database.test.ts",
-      "sha256": "679a1929274758055cbe8572f553920dbee9b7c8af5f96de6b143539540b1185",
+      "sha256": "7384fd570a20d94e83fd1b2d9e326acb7d3909217667d6762325e995fed72ad1",
       "bytes": 10918
     },
     {
@@ -1436,7 +1441,7 @@
     },
     {
       "path": "platform/tests/database.test.ts",
-      "sha256": "e324f8a3b33e7b668b9971cf3ed299d9e4a302d5b3c1f1fa74309ecd00996a75",
+      "sha256": "930730573b12ff83306ee9b48e3a9bdb61bed04e2e8913fb24a12d655b77db68",
       "bytes": 7299
     },
     {
@@ -1466,7 +1471,7 @@
     },
     {
       "path": "platform/tests/instructors-database.test.ts",
-      "sha256": "585e45bb66ee95fc5458e94adc49ff4908c8a74d940610a099476d621fac01ac",
+      "sha256": "f7d6da545d3129c79d5b06732b19a1561c21b2605f3eb4f4febbb280dc49333e",
       "bytes": 10136
     },
     {
@@ -1491,12 +1496,12 @@
     },
     {
       "path": "platform/tests/operations.test.ts",
-      "sha256": "dd56de83b7450728d91e4bf7341250ba7d658bf1b4919d2f008bf6e3331cd64c",
+      "sha256": "7aaf33f298a75b48dee83f5d276e083af0f28072a421a7a78dc3d4a3585c45d6",
       "bytes": 16751
     },
     {
       "path": "platform/tests/operator-erasure-database.test.ts",
-      "sha256": "f333a94d8f32a427c4324bf840eec55c5b92471ff2c8c2f6c6b137d3215f0f47",
+      "sha256": "08bf9eb4508c72ed646212807130bb8a570e654c80d8258a40ae4b4512436d5c",
       "bytes": 11921
     },
     {
@@ -1516,7 +1521,7 @@
     },
     {
       "path": "platform/tests/purpose-database.test.ts",
-      "sha256": "8a1e17adabb2fd76b3f00001f3db17608a968cd5e3c1962ea06e6d3348a6c886",
+      "sha256": "08e300e47a4a5cdd938217fde2f44a230918add93ae2720c43aabc38d99724ba",
       "bytes": 11621
     },
     {
@@ -1526,7 +1531,7 @@
     },
     {
       "path": "platform/tests/resources-database.test.ts",
-      "sha256": "d796dabe5ce76a4042547b11e383767168f654b956910eb1ec9ae951e7a3515e",
+      "sha256": "9e6c927aa0043e9d8e8c45e01ce0a323443029d804bee0a83b93467e56e95805",
       "bytes": 14416
     },
     {

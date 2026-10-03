@@ -8,7 +8,7 @@
 | --- | --- |
 | Implemented | Yes, on `claude/laughing-goodall-2p7z0v`, restarted from main `661fac9` after PR #5 was merged ([PR EmotiveImpact/REUNIR#6](https://github.com/EmotiveImpact/REUNIR/pull/6)) |
 | Verified locally | Yes: every suite, from a clean worktree of tested commit `67623fb` after `npm ci` (see below) |
-| Verified remotely (GitHub Actions) | Pending: CI on the pushed head follows in the publication receipt |
+| Verified remotely (GitHub Actions) | Passed on `7343bcf`; the review fixes follow, with CI recorded on PR #6 |
 | Merged | No. Merging into main needs the owner's approval |
 | Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
 | Operated with real members | No |
@@ -54,10 +54,21 @@ Tests changed rather than added: eight migration-count assertions moved from 14 
 - A demo event in the fixture had already ended; the tests create a future one. The owner refusal on real PostgreSQL needed the owner's sign-in row; without it the account correctly reads as not found.
 - Reviewing the diff after a first clean run of release commit `d21fdbf` (every step passed) found four more things, fixed in `886f967` and `67623fb`: the project page linked a former teammate to an empty profile, and now shows them without a link; rewording notices would also have reworded one that begins with a longer member name ("Jo Smith replied…" when "Jo" leaves), and now skips those; the dialogue said the account would be deleted "in" the communities the session lists, which leaves out any where the person is suspended, and now says every community, including those named; and restarting the demo straight after deleting the first persona did not force the page to look again. Each has a test. A second run was stopped when the last fix landed, so the tested commit is `67623fb`.
 
+## Review fixes after PR #6 opened
+
+CI passed on `7343bcf` (runs 37106724144 and 37106726124, both jobs green). The Codex review on `3f29c0d` then raised three findings, each confirmed and fixed with a test:
+
+- **Invitations to communities the person never joined stayed.** Deletion removed invitations only in communities where the person had a membership, but a pending invitation is normally to a community they have not joined, and its queued mail was kept. Migration `0016_account_invitations.sql` (additive) lets the marked transaction see and delete invitations sent to the person's own account email in any community, and deletion now removes them account-wide after the community loop. The database test adds a pending invitation to a third community and another person's invitation there, which stays.
+- **Older `left` memberships reached the browser in full.** `left` has been a valid status since the foundation schema, and the snapshot now included every `left` row for ordinary members. `visibleWorkspace` now sends every `left` membership as the scrubbed Former member record (`formerMember`, shared with the deletion rules), whatever its stored details. A domain test covers a member and an administrator viewing an unscrubbed `left` row.
+- **An invitation accepted during a deletion could leave an active membership.** Acceptance now takes a share lock on the account row before locking the community, the same order as deletion, so it waits for a deletion under way and then finds no account. Deletion also rechecks the membership count before deleting the account. A new PostgreSQL check holds the deletion's account lock on one connection, starts an acceptance on another, and proves it waits, fails with `INVITE_ACCOUNT_MISMATCH` and adds no membership; with the share lock removed the same check fails (the acceptance completes at once).
+
+Local runs on the fix commit `928a0ee`, Node 22.22.0, `npm ci`, PostgreSQL 16 in a disposable loopback cluster: typecheck passed; `npm test` 562 passed (one new domain test; the database test gained invitation assertions); `npm run test:http` 19 passed; build and preview passed; `npm run test:postgres` 16 passed (one new); `test:browser:accounts` 9, `accounts-connected` 6, `monochrome` 16, `v4` 20 and `connected` 12 passed; Python helpers 35 passed; the research register validates. The other browser suites were not rerun locally and run in CI. Nine migration-count assertions moved from 15 to 16.
+
 ## Not verified, and why
 
 - Hosted Better Auth, real email delivery, a real bucket's object deletion and hosted PostgreSQL remain deferred by the user; deletion was exercised through PGlite and PostgreSQL 16 with the restricted role, a captured mail queue and an in-process storage stand-in.
-- Ownership transfer does not exist, so owners cannot delete their accounts. Mentions inside other people's posts stay as written. Claimed tasks in a community where the person was suspended stay assigned for an administrator.
+- Ownership transfer does not exist, so owners cannot delete their accounts. Mentions inside other people's posts stay as written.
+- A deletion that begins while an acceptance already holds the account lock waits for it and then deletes the new membership with the rest; that order relies on PostgreSQL's read-committed snapshots and is covered by reasoning and the membership recheck, not by a separate test. Claimed tasks in a community where the person was suspended stay assigned for an administrator.
 
 ## Preview
 
@@ -72,7 +83,7 @@ Pending. The documentation for the first clean run was pushed as `3f29c0d`; this
 1. Owner review of the account deletion pull request in the demo, then merge with the owner's approval and read back main.
 2. Ownership transfer, so owners can hand over a community and then delete their account.
 3. Server-side pagination for review queues and other long lists.
-4. When deployment resumes: Neon staging with fifteen migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests, including account deletion against hosted Better Auth.
+4. When deployment resumes: Neon staging with sixteen migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests, including account deletion against hosted Better Auth.
 
 ---
 ## Historical Alpha 14 evidence: learner records
