@@ -2,7 +2,7 @@ import { Avatar as AvatarRoot, AvatarImage, AvatarFallback } from './ui/avatar';
 import { mode } from '../lib/data';
 import { demoPortraits } from '../lib/portraits';
 import { useEffect, useRef, type ReactNode } from 'react';
-import { UserRound, X, ArrowUpRight, Lock, ArrowLeft, Check, BookOpen } from 'lucide-react';
+import { UserRound, X, Lock, ArrowLeft, Check, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Member, Track, Project } from '../../../../packages/contracts/src/index';
 export function Mark({size=27}:{size?:number}) {return <span className="brand-mark" style={{width:size,height:size,fontSize:size*.67}} aria-hidden="true">R</span>;}
@@ -49,12 +49,6 @@ export function Back({ to, label }: {
     to: string;
     label: string;
 }) { return <Link to={to} className="back-link"><ArrowLeft size={15}/>{label}</Link>; }
-export function Cover({ type, title, label, small = false }: {
-    type: string;
-    title?: string;
-    label?: string;
-    small?: boolean;
-}) { return <div className={`cover-art art-${type} ${small ? 'cover-small' : ''}`} aria-hidden="true"><div className="cover-grain"/><div className="cover-shape shape-one"/><div className="cover-shape shape-two"/>{!small && <><span className="cover-label">{label || 'REUNIR ORIGINALS'}</span><strong>{title || ({ story: 'MAKE IT\nFELT.', product: 'START\nSOMETHING.', brand: 'A POINT\nOF VIEW.', business: 'MAKE IT\nMATTER.', afterhours: 'AFTER\nHOURS.', common: 'Common\nGround.', still: 'Still /\nMoving', notes: 'Notes from\nthe process.' }[type] || 'What comes\nnext?')}</strong><span className="cover-foot"><Mark size={15}/><span>MADE TO MOVE YOU</span><ArrowUpRight size={17}/></span></>}</div>; }
 export function CheckList({ items }: {
     items: string[];
 }) { return <ul className="check-list">{items.map(x => <li key={x}><Check size={15}/><span>{x}</span></li>)}</ul>; }

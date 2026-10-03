@@ -122,8 +122,8 @@ try {
         const stored = (await db.query<{ prompt: string }>("SELECT quiz->'questions'->1->>'prompt' AS prompt FROM quiz_attempts WHERE attempt_number=2")).rows[0].prompt;
         expect(stored).toBe('Which single change would you make first, and how would you test it?');
     });
-    await check('the connected knowledge check passes automated accessibility checks', async () => {
-        const a = await new AxeBuilder({ page: learnerPage }).include('.lesson-content').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+    await check('the connected learner page with a knowledge check passes automated accessibility checks', async () => {
+        const a = await new AxeBuilder({ page: learnerPage }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
         await writeFile(dir + '/a11y-learner.json', JSON.stringify({ violations: a.violations }, null, 2)); expect(a.violations.map(v => v.id)).toEqual([]);
         await learnerPage.screenshot({ path: dir + '/connected-learner.png', fullPage: true });
     });

@@ -68,12 +68,14 @@ try {
  });
  await check('390px creator remains readable with visible controls', async () => { await page.setViewportSize({ width:390,height:844 }); await overflow(); await neutral(); await page.locator('.creator-editor').scrollIntoViewIfNeeded(); await a11y('creator-mobile'); await shot('creator-mobile'); });
  await check('360px home keeps navigation without horizontal overflow', async () => { await page.setViewportSize({ width:360,height:800 }); await nav('/'); await overflow(); await neutral(); await page.evaluate(() => scrollTo(0,0)); await shot('home-mobile'); });
- await check('a new track keeps its custom cover text legible at desktop and 1000px', async () => {
-  // Seeded tracks use named covers; tracks created in the app get the custom cover and its default shapes.
+ await check('a new track shows the plain cover panel, with no words on the art, at desktop and 1000px', async () => {
+  // Covers are uploaded pictures or a plain panel. Titles stay below the art, so nothing on it needs a contrast exception.
   await page.setViewportSize({ width:1512,height:1100 }); await nav('/paths'); await page.locator('a[href="/learn"]').first().click(); await page.getByRole('button',{ name:'Create a track',exact:true }).click();
-  const form = page.locator('dialog[open]'); await form.locator('[name="title"]').fill('Cover contrast check'); await form.locator('[name="summary"]').fill('A new track with the custom cover.'); await form.locator('[name="body"]').fill('Created to check the cover.'); await form.locator('[name="category"]').fill('Checks'); await form.getByRole('button',{ name:'Create track',exact:true }).click();
-  await expect(page.locator('h1')).toHaveText('Cover contrast check'); await expect(page.locator('.track-detail-cover .cover-art')).toHaveClass(/art-custom/); await neutral(); await a11y('custom-cover');
-  await page.setViewportSize({ width:1000,height:1100 }); await a11y('custom-cover-1000'); await shot('custom-cover-1000');
+  const form = page.locator('dialog[open]'); await form.locator('[name="title"]').fill('Cover panel check'); await form.locator('[name="summary"]').fill('A new track without a picture yet.'); await form.locator('[name="body"]').fill('Created to check the plain cover panel.'); await form.locator('[name="category"]').fill('Checks'); await form.getByRole('button',{ name:'Create track',exact:true }).click();
+  await expect(page.locator('h1')).toHaveText('Cover panel check'); await expect(page.locator('.track-detail-cover .cover-media')).toHaveClass(/cover-plain/);
+  expect((await page.locator('.track-detail-cover').innerText()).trim()).toBe(''); await expect(page.getByRole('button',{ name:'Add a cover',exact:true })).toBeVisible();
+  await neutral(); await a11y('new-track-cover');
+  await page.setViewportSize({ width:1000,height:1100 }); await neutral(); await overflow(); await a11y('new-track-cover-1000'); await shot('new-track-cover-1000');
  });
  await check('no unhandled errors in the monochrome journey', async () => { expect(errors).toEqual([]); });
  await writeFile(dir+'/browser-results.json',JSON.stringify({ method:'Bundled React in local Chromium, fictional state; not hosted acceptance.',results,errors },null,2)); console.log(results.length+' monochrome browser checks passed');

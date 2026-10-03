@@ -79,5 +79,20 @@ try{
         assert.equal((await rows('org_code_black',DEMO_USER,"UPDATE quiz_attempts SET feedback='Forged' WHERE id='attempt_sofia' RETURNING id")).length,0);
         assert.equal((await rows('org_code_black',DEMO_ADMIN,"UPDATE quiz_attempts SET feedback='Rewritten',score=0,version=2 WHERE id='attempt_sofia' RETURNING id")).length,0,'a finished review cannot be rewritten');
     });
+    await check('covers verify, display and stay tenant-scoped through a restricted PostgreSQL connection',async()=>{
+        const repo=new WorkspaceRepository(runtime!);
+        const {upload}=await repo.beginCoverUpload('code-black',DEMO_ADMIN,{purpose:'cover_image',subject:'track',subjectId:'track_story',contentType:'image/png',sizeBytes:4096},(org,id)=>`organisations/${org}/covers/tracks/track_story/${id}.png`,'covers-postgres');
+        assert.equal((await repo.completeCoverUpload('code-black',DEMO_ADMIN,upload.id,{sizeBytes:4096,contentType:'image/png',generation:'1712345678909999',bytesAcceptable:true},'covers-postgres')).outcome,'ready');
+        const covers=(org:string,user:string)=>runtime!.transaction(async tx=>{await setContext(tx,org,user);return (await tx.query<{id:string}>("SELECT id FROM upload_intents WHERE purpose='cover_image'")).rows.map(x=>x.id);});
+        assert(!(await covers('org_code_black',DEMO_USER)).includes(upload.id),'members cannot read a cover nothing displays');
+        await assert.rejects(()=>repo.coverImage('code-black',DEMO_USER,'track','track_story',upload.id),{code:'NOT_FOUND'});
+        await assert.rejects(()=>repo.execute('code-black',DEMO_USER,{type:'track.cover.set',trackId:'track_story',fileId:upload.id},randomUUID(),'covers-postgres'),{code:'COVER_EDITOR_REQUIRED'});
+        await repo.execute('code-black',DEMO_ADMIN,{type:'track.cover.set',trackId:'track_story',fileId:upload.id,focusX:40,focusY:60},randomUUID(),'covers-postgres');
+        assert((await covers('org_code_black',DEMO_USER)).includes(upload.id));assert.deepEqual(await covers('org_studio_north',DEMO_ADMIN),[]);
+        assert.deepEqual(await repo.coverImage('code-black',DEMO_USER,'track','track_story',upload.id),{objectKey:`organisations/org_code_black/covers/tracks/track_story/${upload.id}.png`,generation:'1712345678909999',contentType:'image/png',sizeBytes:4096});
+        await assert.rejects(()=>repo.coverImage('studio-north',DEMO_USER,'track','track_story',upload.id),{code:'NOT_FOUND'});
+        await repo.execute('code-black',DEMO_ADMIN,{type:'track.cover.set',trackId:'track_story',fileId:null},randomUUID(),'covers-postgres');
+        assert(!(await covers('org_code_black',DEMO_USER)).includes(upload.id),'a removed cover is private again');
+    });
     await mkdir('evidence/alpha04',{recursive:true});await writeFile('evidence/alpha04/postgres-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Disposable local PostgreSQL service, not Neon.',results},null,2));
 }finally{await runtime?.close();await admin.close();}

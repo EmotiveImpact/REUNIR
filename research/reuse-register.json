@@ -1,7 +1,7 @@
 {
   "version": 1,
   "release": "0.10.0-alpha.1",
-  "reviewedOn": "2026-10-02",
+  "reviewedOn": "2026-10-03",
   "scope": "Targeted source/document review, not a fresh whole-repository audit, full runtime comparison or a legal opinion. Previously captured commit snapshots were deliberately re-read; no claim that all are current HEAD.",
   "donorApplicationFilesImported": 0,
   "sources": [
@@ -282,6 +282,110 @@
       "lesson": "Grading routes require course-team membership. REUNIR requires an active owner or administrator who is not the learner, in the domain and in row policies.",
       "url": "https://github.com/classroomio/classroomio/blob/72791608774f6fb65fbc33ddbb1d52d8a2a11045/apps/api/src/routes/course/submission.ts",
       "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "frappe-course-card",
+      "project": "Frappe Learning",
+      "repository": "frappe/lms",
+      "revision": "071266699d3ed984eeff7f3e3658d259fd946a97",
+      "file": "frontend/src/components/CourseCard.vue",
+      "blob": "d8e620b16e313083ef2e7df7b4cc9833a0c04a5d",
+      "reviewedRange": "complete file, 186 lines",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "Uploaded image or generated dark gradient art with the title in large white type; the art is kept dark in both themes so the generated title keeps contrast. REUNIR keeps titles off covers entirely and uses a plain panel instead of generated art.",
+      "url": "https://github.com/frappe/lms/blob/071266699d3ed984eeff7f3e3658d259fd946a97/frontend/src/components/CourseCard.vue",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "learnhouse-course-thumbnail",
+      "project": "LearnHouse",
+      "repository": "learnhouse/learnhouse",
+      "revision": "5e28b0723176b34ba8777b9980db352268aa8234",
+      "file": "apps/web/components/Objects/Thumbnails/CourseThumbnail.tsx",
+      "blob": "fa03d29853a1dc8cb2f800bcc673407ead95b633",
+      "reviewedRange": "lines 151\u2013153, 186\u2013216 and 218\u2013232 of 393",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "The image area holds only the picture or one placeholder, marked decorative; name and description are text below it, and status badges on the image are small opaque pills.",
+      "url": "https://github.com/learnhouse/learnhouse/blob/5e28b0723176b34ba8777b9980db352268aa8234/apps/web/components/Objects/Thumbnails/CourseThumbnail.tsx",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "classroomio-course-card",
+      "project": "ClassroomIO",
+      "repository": "classroomio/classroomio",
+      "revision": "72791608774f6fb65fbc33ddbb1d52d8a2a11045",
+      "file": "packages/ui/src/custom/course-card/course-card.svelte",
+      "blob": "874c5eeb64ce41a35f5d180fc83b29c700a0df7e",
+      "reviewedRange": "complete file, 185 lines",
+      "licence": "Root AGPL-3.0; root package metadata says MIT; conflict unresolved, reference only",
+      "lesson": "Uploaded banner or a default banner, title below the picture, and type and visibility badges placed on the banner as opaque components.",
+      "url": "https://github.com/classroomio/classroomio/blob/72791608774f6fb65fbc33ddbb1d52d8a2a11045/packages/ui/src/custom/course-card/course-card.svelte",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "axe-core-own-background",
+      "project": "axe-core",
+      "repository": "dequelabs/axe-core",
+      "revision": "1cc54b900413660610180d631feb73c9e74f4dc9",
+      "file": "lib/commons/color/get-own-background-color.js",
+      "blob": "5d2de4168304d804a054440961236883359ac58b",
+      "reviewedRange": "complete file, 24 lines",
+      "licence": "MPL-2.0; installed test dependency, read to understand its results",
+      "lesson": "A layer contributes only background-color multiplied by opacity; borders, shadows, images and blend modes are not measured, so text over pictures needs a design that does not depend on the automated result.",
+      "url": "https://github.com/dequelabs/axe-core/blob/1cc54b900413660610180d631feb73c9e74f4dc9/lib/commons/color/get-own-background-color.js",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "axe-core-background-stack",
+      "project": "axe-core",
+      "repository": "dequelabs/axe-core",
+      "revision": "1cc54b900413660610180d631feb73c9e74f4dc9",
+      "file": "lib/commons/color/get-background-stack.js",
+      "blob": "652c1596de6cbf43e376a8deeada11efae88458b",
+      "reviewedRange": "complete file, 107 lines",
+      "licence": "MPL-2.0; installed test dependency, read to understand its results",
+      "lesson": "The background is assembled from the element stack behind the text; images in that stack make the result incomplete rather than a pass.",
+      "url": "https://github.com/dequelabs/axe-core/blob/1cc54b900413660610180d631feb73c9e74f4dc9/lib/commons/color/get-background-stack.js",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "axe-core-rect-stack",
+      "project": "axe-core",
+      "repository": "dequelabs/axe-core",
+      "revision": "1cc54b900413660610180d631feb73c9e74f4dc9",
+      "file": "lib/commons/dom/get-rect-stack.js",
+      "blob": "4c51bf3b385bd79622b75abc18a7894c062c8e34",
+      "reviewedRange": "complete file, 48 lines",
+      "licence": "MPL-2.0; installed test dependency, read to understand its results",
+      "lesson": "The stack is taken at the centre point of the text's bounding box, so shapes that cross other parts of the text are not seen.",
+      "url": "https://github.com/dequelabs/axe-core/blob/1cc54b900413660610180d631feb73c9e74f4dc9/lib/commons/dom/get-rect-stack.js",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "wcag-f83",
+      "project": "W3C WCAG",
+      "repository": "w3c/wcag",
+      "revision": "30720782e8d4c065d7a99adf28e7e3199167962c",
+      "file": "techniques/failures/F83.html",
+      "blob": "42334a3e04c0469dc118cfbb61dd12949a758ad3",
+      "reviewedRange": "complete file, 31 lines",
+      "licence": "W3C Document License; normative guidance, not code",
+      "lesson": "Text over a background image must contrast with the parts of the image most like it, letter by letter if the quick check fails. Keeping titles off pictures avoids the failure.",
+      "url": "https://github.com/w3c/wcag/blob/30720782e8d4c065d7a99adf28e7e3199167962c/techniques/failures/F83.html",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "wcag-contrast-understanding",
+      "project": "W3C WCAG",
+      "repository": "w3c/wcag",
+      "revision": "30720782e8d4c065d7a99adf28e7e3199167962c",
+      "file": "understanding/20/contrast-minimum.html",
+      "blob": "d044ee6ea61a8a9f6c20d6eb2f6a43430c61c524",
+      "reviewedRange": "lines 86\u2013106 and 140\u2013152 of 317",
+      "licence": "W3C Document License; normative guidance, not code",
+      "lesson": "Incidental text in photographs and logotypes is exempt, but a course or project title is neither; real titles belong outside the picture.",
+      "url": "https://github.com/w3c/wcag/blob/30720782e8d4c065d7a99adf28e7e3199167962c/understanding/20/contrast-minimum.html",
+      "reviewedOn": "2026-10-03"
     }
   ],
   "decisions": [
@@ -533,6 +637,41 @@
         "platform/scripts/postgres-check.ts"
       ],
       "reviewedOn": "2026-10-02"
+    },
+    {
+      "id": "cover-images",
+      "status": "implemented",
+      "mode": "behaviour_reference",
+      "sources": [
+        "frappe-course-card",
+        "learnhouse-course-thumbnail",
+        "classroomio-course-card",
+        "axe-core-own-background",
+        "axe-core-background-stack",
+        "axe-core-rect-stack",
+        "wcag-f83",
+        "wcag-contrast-understanding"
+      ],
+      "decision": "Replace decorative track and project art with uploaded covers and a plain neutral panel. Keep every title and detail outside the picture, with only opaque status labels on it. Bind each cover upload to one track or project, resize in the browser to 1,600 pixels (dropping metadata), verify signature and header dimensions on the pinned generation, store a focal point for every crop, and serve bytes through one access rule mirroring the record that displays them, with restrictive RLS in depth. No donor source copied; the AGPL projects are behavioural references only, and axe-core and WCAG were read to understand the checks.",
+      "implementation": [
+        "platform/packages/contracts/src/covers.ts",
+        "platform/packages/domain/src/covers.ts",
+        "platform/packages/db/migrations/0011_cover_images.sql",
+        "platform/apps/api/src/storage.ts",
+        "platform/apps/api/src/app.ts",
+        "platform/apps/web/src/components/cover.tsx",
+        "platform/apps/web/src/lib/covers.ts",
+        "platform/apps/web/src/covers.css"
+      ],
+      "tests": [
+        "platform/tests/covers.test.ts",
+        "platform/tests/covers-database.test.ts",
+        "platform/tests/covers-http.test.ts",
+        "platform/scripts/covers-browser-check.ts",
+        "platform/scripts/covers-connected-check.ts",
+        "platform/scripts/monochrome-browser-check.ts",
+        "scripts/test_design_contract.py"
+      ]
     }
   ],
   "libraryReuse": "Alpha 09 adds no runtime dependency: lesson files extend the existing @google-cloud/storage 8.2.0 adapter, Hono routes and shadcn Button. Alpha 08 added pinned MIT Tiptap 3.31.4 packages. No donor LMS application source imported.",

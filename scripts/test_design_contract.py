@@ -18,6 +18,28 @@ class MonochromeContract(unittest.TestCase):
             self.assertEqual(value[:2], value[2:4], value)
             self.assertEqual(value[:2], value[4:6], value)
 
+    def test_every_web_stylesheet_is_neutral(self):
+        sheets = sorted((ROOT / "platform/apps/web/src").glob("*.css"))
+        self.assertIn('covers.css', [p.name for p in sheets])
+        for sheet in sheets:
+            css = sheet.read_text()
+            # An alpha mask that fades a photograph is not a colour; any other gradient would be decoration.
+            colour = re.sub(r"mask-image:[^;}]*", "", css)
+            self.assertIsNone(re.search(r"(?:linear|radial)-gradient\(", colour), sheet.name)
+            self.assertNotIn('grayscale(', css, sheet.name)
+            for value in re.findall(r"#([0-9a-fA-F]{3,8})\b", css):
+                if len(value) in (3, 4): value = ''.join(c * 2 for c in value)
+                if len(value) not in (6, 8): continue
+                self.assertTrue(value[:2] == value[2:4] == value[4:6], f'{sheet.name}: #{value}')
+
+    def test_covers_carry_no_decorative_art(self):
+        css = ''.join(p.read_text() for p in (ROOT / "platform/apps/web/src").glob("*.css"))
+        for retired in ('.cover-art', '.cover-label', '.cover-foot', '.shape-one', '.shape-two', '.cover-grain', '.art-custom', 'mix-blend-mode'):
+            self.assertNotIn(retired, css)
+        ui = (ROOT / "platform/apps/web/src/components/cover.tsx").read_text()
+        self.assertIn('alt=""', ui)
+        self.assertIn('objectPosition', ui)
+
     def test_legacy_rgb_tokens_are_neutral(self):
         css = (ROOT / "platform/apps/web/src/styles.css").read_text()
         for val in re.findall(r"--accent-rgb:([^;}]+)", css):

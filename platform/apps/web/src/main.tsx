@@ -23,3 +23,4 @@ import './v4.css';
 import './lesson-editor.css';
 import './lesson-resources.css';
 import './knowledge-checks.css';
+import './covers.css';
