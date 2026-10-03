@@ -1,4 +1,76 @@
-# Alpha 13 cover library
+# Alpha 14 learner records
+
+3 October 2026. Application 0.14.0-alpha.1. Members download their own learning record from their profile. Operators can erase a learner's knowledge-check answers on a request an active owner authorised, and clear unused cover files. Review queues show 20 at a time with exact totals. See LEARNER_RECORDS.md and decisions/014-learner-records.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)), after Alpha 11 to 13 on the same branch |
+| Verified locally | Yes: every suite, from a clean worktree of tested commit `2252441` after `npm ci` (see below) |
+| Verified remotely (GitHub Actions) | See the publication receipt below |
+| Merged | No. Merging into main needs the owner's approval |
+| Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- **Your learning record.** A profile panel downloads a dated JSON file of the member's own tracks, completed lessons, knowledge-check attempts (answers, results, marks, feedback, reviewer) and mission work in that community, from `GET /api/organisations/:slug/me/learning-record` (attachment, `no-store`) or, in the demo, built in the browser. It includes every record that is the member's own, but titles, names and answer keys follow the member's own view.
+- **Owner-authorised erasure.** `npm run db:erase-learner` (migration connection, `AUTHORISED_BY` an active owner, `ERASURE_REFERENCE`, dry run unless `ERASE=yes`) erases one member's attempts and the feedback notices about them, refuses a partial erasure, bumps the revision and audits the reference and counts only. Migration `0014_operator_erasure.sql` (additive) adds one delete policy on attempts that admits only the member named in `app.erasure_subject` when the acting user is an active owner, so forced row security still applies to a migration role without bypass. The runtime role still has no DELETE on attempts. Migrations 0001 to 0013 are byte-identical.
+- **Unused cover files.** `npm run db:prune-covers` lists cover and library uploads nothing shows or lists that were rejected or are over an hour old; `PRUNE=yes` deletes stored files first, then only records still unused.
+- **Paged review queues.** 20 at a time, waiting answers oldest first, exact totals beside each heading, focus moved to the first new item. The scored and reviewed lists no longer stop at 30 or report 30 as their count.
+- No new runtime dependency. Release constant and package version are 0.14.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, `npm ci` from the committed lockfile in a clean worktree of tested commit `2252441`, Playwright with Chromium 141 at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16.14 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 544 passed, 0 failed (529 existing plus 6 learning-record domain, 3 learning-record HTTP and 6 erasure database tests) |
+| `npm run test:http` | 17 passed |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Existing demo-browser suites | 249 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 covers, 9 instructors, 16 monochrome, 20 v4 |
+| `npm run test:browser:assessments` | 16 passed (14 existing plus 2): the learner downloads their own record with every attempt, mark and piece of feedback, and keys only where unlocked; a queue of 45 fictional waiting answers opens 20 at a time, oldest first, with exact counts, and focus moves to the new answers |
+| Existing connected-browser suites | 40 passed: 12 connected, 9 resources, 13 covers, 6 instructors |
+| `npm run test:browser:assessments-connected` | 9 passed (8 existing plus 1): the learner downloads their own record through the live API with Better Auth cookies; other communities and visitors cannot |
+| `npm run test:postgres` | 13 passed on PostgreSQL 16.14, including the owner-authorised erasure through a role without row-security bypass. A 14th check, for clearing unused cover files, was added in the following test-only commit and passed on PostgreSQL 16.14 too |
+| Python helpers, `scripts/check_research.py` | 34 passed; the register validates with 47 pinned sources and 16 decisions at the documentation commit (42 and 15 at the tested commit, before the Alpha 14 review was recorded) |
+
+Tests changed rather than added: eight migration-count assertions moved from 13 to 14. No business assertion was weakened.
+
+## Corrections made while verifying
+
+- The first export built everything from the member's visible view, which silently dropped their own enrolments and attempts on a track that had since been unpublished. The record now takes every record that is the member's own from the full state of their community, and only titles, names and answer keys from their view.
+- Without migration 0014, an erasure run as a hosted migration role (no superuser, no row-security bypass) would have deleted nothing, because attempts have forced row security and had no delete policy. A throwaway database with the policy dropped confirmed the command now refuses rather than reporting success.
+- A test expected a non-member to get 403 for the record; the API answers 404 to non-members everywhere, so as not to reveal that a community exists, and the test now says so.
+- The queue paging check first injected its fictional state into the standalone preview's storage, which a loaded page replaced; the check now serves the same preview at a stand-in address inside the browser, where storage works normally.
+- Reviewing the diff before pushing showed the cover pruning methods were covered on PGlite only. A real PostgreSQL check was added after the clean run, in test-only commit `440c1b7`, and passed on PostgreSQL 16.14; CI runs it on PostgreSQL 17.
+
+## Not verified, and why
+
+- Hosted behaviour on Neon and Vercel, a real bucket's deletion permissions for `db:prune-covers`, email and backups remain deferred by the user. The operator commands were exercised through the repository methods and a PostgreSQL role without bypass, not against a hosted database.
+- Account deletion, identity scrubbing and reviewers' notices that name a learner are outside this slice.
+- Queue paging is in the interface; attempts still arrive in the bounded workspace snapshot.
+
+## Preview
+
+The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `http://127.0.0.1:5173`, reachable only from inside the container. Open your profile from the account menu and choose **Download your learning record**; Preview as admin and open Community studio → Knowledge checks for the queue. Clone the branch and run `npm ci && npm run dev` from `platform/`.
+
+## Publication receipt
+
+Pending: the push, the remote read-back and the GitHub Actions runs are recorded here after they happen.
+
+## Next actions
+
+1. Owner review of PR #5 (Alpha 11 to 14) in the demo; merge only with the owner's approval, then read back main.
+2. Account deletion and identity scrubbing across communities, designed for shared accounts.
+3. Server-side pagination for review queues and other long lists.
+4. When deployment resumes: Neon staging with fourteen migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests.
+
+---
+## Historical Alpha 13 evidence: cover library
 
 3 October 2026. Application 0.13.0-alpha.1. Covers can come from a community cover library as well as an upload. Owners and administrators keep up to 24 named pictures in Community settings; anyone who may change a track or project cover chooses one in the cover dialogue, with its own focal point, without copying it. A picture stays in the library while any cover shows it. See COVERS.md and decisions/013-cover-library.md.
 

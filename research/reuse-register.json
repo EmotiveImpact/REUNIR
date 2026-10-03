@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "release": "0.13.0-alpha.1",
+  "release": "0.14.0-alpha.1",
   "reviewedOn": "2026-10-03",
   "scope": "Targeted source/document review, not a fresh whole-repository audit, full runtime comparison or a legal opinion. Previously captured commit snapshots were deliberately re-read; no claim that all are current HEAD.",
   "donorApplicationFilesImported": 0,
@@ -542,6 +542,71 @@
       "lesson": "An organisation-wide media library with folders and access is offered for linking resources into activities, separately from course thumbnails.",
       "url": "https://github.com/learnhouse/learnhouse/blob/5e28b0723176b34ba8777b9980db352268aa8234/apps/web/components/Dashboard/Library/ResourcePicker.tsx",
       "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "learnhouse-gdpr-routes",
+      "project": "LearnHouse",
+      "repository": "learnhouse/learnhouse",
+      "revision": "5e28b0723176b34ba8777b9980db352268aa8234",
+      "file": "apps/api/src/routers/admin.py",
+      "blob": "9b9d4778fb1fa7563729c5174b9f272f542d148a",
+      "reviewedRange": "lines 1455\u20131500 of 1537",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "An administrator's token exports one user's data for the right of access and can anonymise them; both are scoped to the token's organisation.",
+      "url": "https://github.com/learnhouse/learnhouse/blob/5e28b0723176b34ba8777b9980db352268aa8234/apps/api/src/routers/admin.py",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "learnhouse-gdpr-service",
+      "project": "LearnHouse",
+      "repository": "learnhouse/learnhouse",
+      "revision": "5e28b0723176b34ba8777b9980db352268aa8234",
+      "file": "apps/api/src/services/admin/admin.py",
+      "blob": "610df4a759b31d4de237ff2b97bb1d8fc71d6f85",
+      "reviewedRange": "lines 2359\u20132470 of 2591",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "The export bundles profile, memberships, progress, certificates and groups for one organisation; anonymising scrubs identity but keeps progress and certificates, and the user row is shared across organisations.",
+      "url": "https://github.com/learnhouse/learnhouse/blob/5e28b0723176b34ba8777b9980db352268aa8234/apps/api/src/services/admin/admin.py",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "learnhouse-account-deletion",
+      "project": "LearnHouse",
+      "repository": "learnhouse/learnhouse",
+      "revision": "5e28b0723176b34ba8777b9980db352268aa8234",
+      "file": "apps/web/services/settings/deleteAccount.ts",
+      "blob": "ff1e9d72d08ad1f048a37afc6c1c3579bbf5281e",
+      "reviewedRange": "complete file, 27 lines",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "Self-service account deletion cascades to everything the user owns, including organisations where they are the only administrator.",
+      "url": "https://github.com/learnhouse/learnhouse/blob/5e28b0723176b34ba8777b9980db352268aa8234/apps/web/services/settings/deleteAccount.ts",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "learnhouse-delete-user-cascade",
+      "project": "LearnHouse",
+      "repository": "learnhouse/learnhouse",
+      "revision": "5e28b0723176b34ba8777b9980db352268aa8234",
+      "file": "apps/api/src/services/users/users.py",
+      "blob": "5f0eabe2a3fc5d5d64463891d8689691cf1713de",
+      "reviewedRange": "lines 891\u2013931 of 1043",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "Deleting a user first deletes organisations they alone administer, so no organisation is left without an administrator.",
+      "url": "https://github.com/learnhouse/learnhouse/blob/5e28b0723176b34ba8777b9980db352268aa8234/apps/api/src/services/users/users.py",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "frappe-quiz-submissions-list",
+      "project": "Frappe Learning",
+      "repository": "frappe/lms",
+      "revision": "071266699d3ed984eeff7f3e3658d259fd946a97",
+      "file": "frontend/src/pages/QuizSubmissions.vue",
+      "blob": "52956c18fbc85cb4bfe0caf70bae0e05ca23c7f2",
+      "reviewedRange": "lines 1\u201330 and 120\u2013140 of 232",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "Quiz submissions are listed newest first, 24 at a time, with load more and filters by quiz, member and course.",
+      "url": "https://github.com/frappe/lms/blob/071266699d3ed984eeff7f3e3658d259fd946a97/frontend/src/pages/QuizSubmissions.vue",
+      "reviewedOn": "2026-10-03"
     }
   ],
   "decisions": [
@@ -889,6 +954,36 @@
         "platform/tests/cover-library-http.test.ts",
         "platform/scripts/covers-browser-check.ts",
         "platform/scripts/covers-connected-check.ts",
+        "platform/scripts/postgres-check.ts"
+      ]
+    },
+    {
+      "id": "learner-records",
+      "status": "implemented",
+      "mode": "behaviour_reference",
+      "sources": [
+        "learnhouse-gdpr-routes",
+        "learnhouse-gdpr-service",
+        "learnhouse-account-deletion",
+        "learnhouse-delete-user-cascade",
+        "frappe-quiz-submissions-list"
+      ],
+      "decision": "Let a member download their own learning record for one community from their profile, built under their own view (titles, names and answer keys as on screen) yet including every record that is theirs. Give operators an owner-authorised, dry-run-first procedure that erases one member's knowledge-check answers and feedback notices with an audit entry of counts only, through a narrowly scoped delete policy the runtime role cannot use, and one that clears unused cover files before their records. Page long review queues 20 at a time with exact totals, waiting answers oldest first. Account deletion and identity scrubbing stay separate. No donor source copied; the AGPL projects are behavioural references only.",
+      "implementation": [
+        "platform/packages/domain/src/learning-record.ts",
+        "platform/apps/api/src/app.ts",
+        "platform/packages/db/src/repository.ts",
+        "platform/packages/db/migrations/0014_operator_erasure.sql",
+        "platform/scripts/database.ts",
+        "platform/apps/web/src/components/learning-record.tsx",
+        "platform/apps/web/src/components/quiz-review.tsx"
+      ],
+      "tests": [
+        "platform/tests/learning-record.test.ts",
+        "platform/tests/learning-record-http.test.ts",
+        "platform/tests/operator-erasure-database.test.ts",
+        "platform/scripts/assessments-browser-check.ts",
+        "platform/scripts/assessments-connected-check.ts",
         "platform/scripts/postgres-check.ts"
       ]
     }

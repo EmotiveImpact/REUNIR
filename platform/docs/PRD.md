@@ -391,7 +391,7 @@ Creators add one optional knowledge check to a lesson inside the existing privat
 | K09 | Existing lessons, drafts, revisions and completions upgrade unchanged | Migration 0010 upgrade test |
 | K10 | The fictional demo runs the same rules, including a seeded review queue | Demo browser journey |
 
-Question banks, timers, partial credit, file answers, exports and an erasure procedure for attempts are outside this release.
+Question banks, timers, partial credit, file answers, exports and an erasure procedure for attempts are outside this release. (Alpha 14 later added the learner's own export and an owner-authorised erasure procedure.)
 
 ## Alpha 11: cover images
 
@@ -445,3 +445,19 @@ People who may change a cover can upload their own picture or choose one from a 
 | L08 | The fictional demo offers one wordless library picture with the same rules | Demo browser journey and asset test |
 
 Stock photo search, remote image addresses, renaming, tagging or searching the library, and libraries for other kinds of picture are outside this release.
+
+## Alpha 14: learner records
+
+Members download their own learning record from their profile. Operators can erase a learner's knowledge-check answers on a request an active owner authorised, and clear unused cover files. Review queues show 20 at a time with exact totals. See `LEARNER_RECORDS.md` and `decisions/014-learner-records.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| R01 | A member downloads only their own record for one community; nobody else, no visitor and no other community can | Domain, HTTP under the restricted role, demo and connected browser tests |
+| R02 | The record includes every record that is the member's own, with titles, names and answer keys exactly as their screen shows them | Domain tests and the demo download check |
+| R03 | Erasure needs an active owner's authorisation and a request reference, is a dry run unless confirmed, refuses partial erasure and keeps an audit entry with counts only | Database and PostgreSQL tests |
+| R04 | Erasure works under forced row security without bypass; the runtime role can never delete attempts | Database tests with a role without bypass, migration 0014 test, PostgreSQL check |
+| R05 | Unused cover files are deleted before their records, and anything chosen again is kept | Database test |
+| R06 | Review queues page 20 at a time, waiting answers oldest first, with exact totals and focus moved to new items | Demo browser check with 45 waiting answers |
+| R07 | Existing rows upgrade unchanged | Migration 0014 upgrade test |
+
+Account deletion, identity scrubbing, administrator exports of someone else's data and server-side queue pagination are outside this release.

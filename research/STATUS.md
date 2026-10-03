@@ -1,4 +1,8 @@
-# Research status: Alpha 13
+# Research status: Alpha 14
+
+Alpha 14 (learner records) reviewed how LearnHouse exports, anonymises and deletes a user's data and how Frappe Learning pages quiz submissions, at the same pinned commits; ClassroomIO's account code was searched and offers workspace deletion only. See notes/19_LEARNER_RECORDS.md and the `learner-records` decision in reuse-register.json. Both cited projects are behavioural references only. Imported donor files: zero. New runtime dependencies: none.
+
+## Alpha 13 record
 
 Alpha 13 (cover library) reviewed how Frappe Learning (cover popover and stock photo requests), ClassroomIO (image dialogue, stock photo route and cover widget) and LearnHouse (course thumbnail editor and media library picker) let people choose a cover as well as upload one, at the same pinned commits; see notes/18_COVER_LIBRARY.md and the `cover-library` decision in reuse-register.json. All three are behavioural references only. Imported donor files: zero. New runtime dependencies: none.
 

@@ -100,6 +100,8 @@ Cookie-authenticated POSTs require the exact application `Origin` and JSON conte
 
 **Cover library (Alpha 13).** Apply migration 0013 and rerun `npm run db:grant-runtime`, which grants the new `cover_library` table without UPDATE. Library pictures use the same upload endpoints with `{purpose:'cover_library',contentType,sizeBytes}` (owners and administrators only), are listed with the `cover.library.add` command and are served from `/api/organisations/:slug/cover-library/:itemId`. Their objects live under `organisations/{organisation}/covers/library/`; no new bucket rule or environment variable is needed. The development seed lists one fictional picture whose object does not exist in a real bucket, as with the seeded lesson worksheet, so connected development shows a plain panel for it. See COVERS.md.
 
+**Learner records (Alpha 14).** Apply migration 0014; no runtime grant changes. Members download their record from `/api/organisations/:slug/me/learning-record`. The operator commands `npm run db:erase-learner` and `npm run db:prune-covers` use the migration connection and need an active owner's user ID in `AUTHORISED_BY`; both are dry runs unless `ERASE=yes` or `PRUNE=yes`. See LEARNER_RECORDS.md.
+
 Real Google credentials, CORS, IAM, billing, malware scanning, orphaned-object cleanup and member attachments for posts or missions remain staging/public-launch work.
 
 **Knowledge checks (Alpha 10).** No new environment variables or services. Apply migration 0010 with the administrative connection and rerun `npm run db:grant-runtime`, which revokes UPDATE and DELETE on `quiz_attempts` from the runtime role and grants UPDATE only on the review columns. Commands use the existing `/api/organisations/:slug/commands` route. See ASSESSMENTS.md.

@@ -1,17 +1,54 @@
-# Current continuation: Alpha 13 cover library
+# Current continuation: Alpha 14 learner records
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, INSTRUCTORS.md, ROADMAP.md and research/notes/18_COVER_LIBRARY.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, LEARNER_RECORDS.md, COVERS.md, ASSESSMENTS.md, ROADMAP.md and research/notes/19_LEARNER_RECORDS.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
 - Base: main `365e1c9a822297ce471083d891eea1f1256e0c63`, the merge of PR #4 (Alpha 10 knowledge checks). Main had not moved when this slice was pushed.
-- This slice and the two before it: branch `claude/laughing-goodall-2p7z0v`, [PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5). Alpha 11 cover images (receipt `bffa3b7`; CI runs 37094420188 and 37094422988 green on `108f0ce`) and Alpha 12 track instructors (receipt `98fcee5`; CI runs 37096048793 and 37096051607 green on `a941245`) were verified, pushed and recorded first. Alpha 13 cover library follows on the same branch; its head `be9c6c8` passed CI runs 37098543959 (push) and 37098546160 (pull request), recorded in the BUILD_STATUS.md receipt. Merging into main needs the owner's approval.
+- This slice and the three before it: branch `claude/laughing-goodall-2p7z0v`, [PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5). Alpha 11 (receipt `bffa3b7`), Alpha 12 (receipt `98fcee5`) and Alpha 13 (receipt `0fb6903`; CI runs 37098543959 and 37098546160 green on `be9c6c8`) were verified, pushed and recorded first. Alpha 14 learner records follows on the same branch; the publication receipt in BUILD_STATUS.md records its pushed commit and CI runs. Merging into main needs the owner's approval.
 
 ## What is done
 
-The cover library is implemented and verified locally (see BUILD_STATUS.md for exact counts). Owners and administrators keep up to 24 named pictures under Community settings → Cover library. Anyone who may change a track or project cover can upload their own picture or choose a library one, which keeps its own focal point and is not copied. A picture in use cannot be removed; removing an unused one deletes its stored file. Every active member sees library pictures; other communities, visitors and unlisted uploads do not. Migration 0013 is additive with forced RLS; 0001 to 0012 are unchanged. The connected cover check now runs the live API under the restricted runtime role.
+Learner records are implemented and verified locally (see BUILD_STATUS.md for exact counts). A member downloads their own learning record for one community from their profile: everything that is theirs, with titles, names and answer keys exactly as their screen shows them. Operators can erase one member's knowledge-check answers on a request an active owner authorised (`npm run db:erase-learner`, dry run unless `ERASE=yes`, audit of reference and counts only) and clear unused cover files (`npm run db:prune-covers`). Review queues show 20 at a time with exact totals. Migration 0014 adds one owner-scoped delete policy on attempts; 0001 to 0013 are unchanged; the runtime role still cannot delete attempts.
 
 ## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Open your profile from the account menu and choose Download your learning record. Preview as admin and open Community studio → Knowledge checks for the paged queue. The operator commands need a database; see LEARNER_RECORDS.md. For PostgreSQL: `npm run db:migrate`, then `npm run db:grant-runtime`.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (the `assessments` and `assessments-connected` suites include the record download and queue paging), and `npm run test:postgres` against a disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+## Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure, tenant isolation and role checks current, private goals, messages and scores private. Authority is granted, never inferred from attribution or engagement. Pictures keep their own colours and carry no words; the interface stays black, white and neutral grey. Community review is not accreditation.
+
+## Next
+
+1. Owner review of PR #5 (Alpha 11 to 14) in the demo, then merge with the owner's approval and read back main.
+2. Account deletion and identity scrubbing across communities, designed for shared accounts.
+3. Server-side pagination for review queues and other long lists, beyond the bounded workspace snapshot.
+4. Deployment remains deferred by the user: Neon, Vercel, bucket, sender and scheduler are all unprovisioned.
+
+---
+## Historical Alpha 13 handover: cover library
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, INSTRUCTORS.md, ROADMAP.md and research/notes/18_COVER_LIBRARY.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source was
+
+- Base: main `365e1c9a822297ce471083d891eea1f1256e0c63`, the merge of PR #4 (Alpha 10 knowledge checks). Main had not moved when this slice was pushed.
+- This slice and the two before it: branch `claude/laughing-goodall-2p7z0v`, [PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5). Alpha 11 cover images (receipt `bffa3b7`; CI runs 37094420188 and 37094422988 green on `108f0ce`) and Alpha 12 track instructors (receipt `98fcee5`; CI runs 37096048793 and 37096051607 green on `a941245`) were verified, pushed and recorded first. Alpha 13 cover library follows on the same branch; its head `be9c6c8` passed CI runs 37098543959 (push) and 37098546160 (pull request), recorded in the BUILD_STATUS.md receipt. Merging into main needs the owner's approval.
+
+### What is done
+
+The cover library is implemented and verified locally (see BUILD_STATUS.md for exact counts). Owners and administrators keep up to 24 named pictures under Community settings → Cover library. Anyone who may change a track or project cover can upload their own picture or choose a library one, which keeps its own focal point and is not copied. A picture in use cannot be removed; removing an unused one deletes its stored file. Every active member sees library pictures; other communities, visitors and unlisted uploads do not. Migration 0013 is additive with forced RLS; 0001 to 0012 are unchanged. The connected cover check now runs the live API under the restricted runtime role.
+
+### Run it
 
 ```sh
 cd platform
@@ -23,11 +60,11 @@ Use the account menu's Preview as admin, then Community settings → Cover libra
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (the `covers` and `covers-connected` suites include the library), and `npm run test:postgres` against a disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable, tenant isolation and role checks current, private goals, messages and scores private. Authority is granted, never inferred from attribution or engagement. Pictures keep their own colours and carry no words; the interface stays black, white and neutral grey. Community review is not accreditation.
 
-## Next
+### Next, as recorded then
 
 1. Owner review of PR #5 (Alpha 11, 12 and 13) in the demo, then merge with the owner's approval and read back main.
 2. A paginated review queue and a learner's export of their own attempts.
