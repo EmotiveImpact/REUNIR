@@ -30,7 +30,7 @@ Queued mail is never touched.
 
 `npm run retention:run` is a dry run: it prints counts per rule and changes nothing. `RETENTION=apply npm run retention:run` clears them. On a server, an authenticated `GET /api/internal/retention` with `Authorization: Bearer <CRON_SECRET>` applies the rules, and `?dry=1` only counts. Schedule it once a day; see [PILOT_OPERATIONS.md](PILOT_OPERATIONS.md). Nothing is scheduled by this release.
 
-The job uses the normal runtime role. It lists communities through one read-only policy that applies only when its own transaction says it is the retention worker (migration NNNN), then clears each community's records inside that community's tenant context.
+The job uses the normal runtime role. It lists communities through one read-only policy that applies only when its own transaction says it is the retention worker (migration 0023), then clears each community's records inside that community's tenant context.
 
 ## Known limits
 

@@ -17,6 +17,7 @@ import {InvitationService} from '../apps/api/src/invitations';
 import {MailQueue} from '../apps/api/src/mail';
 import {DigestService} from '../apps/api/src/digests';
 import {inspectMigrations} from '../packages/db/src/inspection';
+import {MessagingRepository} from '../packages/db/src/messaging';
 const url=new URL(process.env.POSTGRES_TEST_URL||'http://unconfigured');
 if(!['postgres:','postgresql:'].includes(url.protocol)||!['127.0.0.1','localhost','[::1]'].includes(url.hostname)||url.pathname!=='/reunir_ci')throw new Error('This test requires a disposable loopback database named reunir_ci. It cannot target remote or customer databases.');
 const admin=await openDatabase(url.toString());
@@ -31,7 +32,20 @@ try{
     await admin.transaction(grantRuntimeTables);url.username='reunir_app';url.password='LOCAL_CI_TEST_ONLY_12345678901234567890';runtime=await openDatabase(url.toString());
     await check('separate runtime connection is non-owner and cannot bypass RLS',async()=>{assert(await runtimeRoleIsSafe(runtime!));await assert.rejects(()=>runtime!.query('SELECT * FROM schema_migrations'));});
     await check('the runtime role is granted the two-step sign-in table (migration 0021)',async()=>{for(const action of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await admin.query<{ok:boolean}>("SELECT has_table_privilege('reunir_app','auth_two_factor',$1) AS ok",[action])).rows[0].ok,true,action);assert.equal((await runtime!.query<{n:number}>('SELECT count(*)::int AS n FROM auth_two_factor')).rows[0].n,0);});
-    await check('the retention job lists communities only as its own worker, then clears housekeeping as the runtime role (migration 0022)',async()=>{
+    await check('people added to a group later read only newer messages, and leaving works, under row security (migration 0022)',async()=>{
+        const m=new MessagingRepository(new WorkspaceRepository(runtime!));
+        const g=(await m.startGroup('code-black',DEMO_USER,{title:'Postgres crew',userIds:[DEMO_ADMIN,'member_theo']})).id;
+        await m.send('code-black',DEMO_USER,g,'Before Jordan joined.','pg-group-1');
+        await m.add('code-black','member_theo',g,{userIds:['member_jordan']});
+        await m.send('code-black','member_jordan',g,'After I joined.','pg-group-2');
+        assert.deepEqual((await m.messages('code-black','member_jordan',g)).items.map(x=>x.body),['After I joined.']);
+        await runtime!.transaction(async tx=>{await setContext(tx,'org_code_black','member_jordan');assert.equal((await tx.query('SELECT id FROM messages WHERE conversation_id=$1',[g])).rows.length,1);});
+        await m.leave('code-black',DEMO_ADMIN,g);
+        await assert.rejects(()=>m.messages('code-black',DEMO_ADMIN,g));
+        assert.equal((await m.messages('code-black',DEMO_USER,g)).items.length,2);
+        assert.equal((await admin.query<{ok:boolean}>("SELECT has_table_privilege('reunir_app','conversation_joins','INSERT') AS ok")).rows[0].ok,true);
+    });
+    await check('the retention job lists communities only as its own worker, then clears housekeeping as the runtime role (migration 0023)',async()=>{
         const listed=(worker:string)=>runtime!.transaction(async tx=>{await tx.query("SELECT set_config('app.worker',$1,true)",[worker]);return (await tx.query('SELECT id FROM organisations')).rows.length;});
         assert.equal(await listed(''),0);assert.ok(await listed('retention')>0);
         await admin.query("INSERT INTO request_limits(key,count,window_start) VALUES('retention-check',1,now()-interval '3 days')");

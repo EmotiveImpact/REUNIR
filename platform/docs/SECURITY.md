@@ -57,11 +57,11 @@ Community verification is not accreditation or independent validation of a real-
 
 Invitation tokens are hashed; reset handling uses Better Auth. Both kinds of outgoing links are stored only in encrypted mail payloads until delivery, then cleared from sent jobs. Invitation creation returns its personal link once to an authorised inviter. Do not log that response. Verify email sender ownership before launch, and schedule the retention job (RETENTION.md), which clears finished mail records after 90 days and undelivered mail contents after 30.
 
-Conversations and messages are participant scoped at both API and forced RLS layers. Moderators receive only a member-selected report excerpt, not inbox access. Message text is plaintext to the server/database operator and is NOT end-to-end encrypted. Browser-demo localStorage is untrusted fictional state, not a secure store for real conversations.
+Conversations and messages are participant scoped at both API and forced RLS layers. Group conversations (Alpha 24, decision 024) use the same participant list; someone added to a group later is kept from earlier messages by a restrictive select policy as well as the API, and leaving relies on a one-transaction mark (`app.leaving_conversation`) set only after the API confirms they are in the group. Moderators receive only a member-selected report excerpt, not inbox access. Message text is plaintext to the server/database operator and is NOT end-to-end encrypted. Browser-demo localStorage is untrusted fictional state, not a secure store for real conversations.
 
 Suspension preserves work and denies new requests. The transaction boundary rechecks active membership after lock acquisition. New roles cannot be self-granted. Private-space administrative access does not give application admins access to private goals or third-party inboxes.
 
-Blocking, input limits, sender-authority checks, throttling and duplicate-send keys are implemented. Group membership chat, export/deletion, sender-bounce webhooks, independent penetration testing and a staffed abuse escalation process remain unbuilt or unverified.
+Blocking, input limits, sender-authority checks, throttling and duplicate-send keys are implemented. Export/deletion of message history, sender-bounce webhooks, independent penetration testing and a staffed abuse escalation process remain unbuilt or unverified.
 
 
 ## Alpha 04 release and operations boundary

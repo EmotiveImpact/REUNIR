@@ -1,4 +1,106 @@
-# Alpha 22 cover picture descriptions
+# Alpha 24 group conversations
+
+3 October 2026. Application 0.24.0-alpha.1. Members start named group conversations of up to 20 people from Messages. People added later read only what is written after they join. See decisions/024-group-conversations.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/group-conversations-5arqv6`, from main `b24095a` with main `f5ec8d3` (PR #15 Alpha 22 and PR #17 launch kit) merged in |
+| Verified locally | Yes: every suite on the merged tree (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## PR #17 merged into main
+
+The launch kit was merged into main on 3 October 2026 as `f5ec8d3ebd1f937990ef8139657af3e718cf1301`, a merge commit whose parents are the previous main `ec4285d` (PR #15, Alpha 22) and the tested head `8e2fdfc`; its tree, `47a92acd740b5ecfdd79106f5c2941093ba1883c`, is identical to the tested head's tree. This slice merged that main in before its final local runs.
+
+## What changed
+
+- **Messages** has **New group**: a name of up to 80 characters and at least two other active members, up to 20 people in all. The inbox lists groups by name and finds them by name or by anyone in them; each message from someone else shows their name; **People** lists everyone, adds people, renames the group and leaves it. Only the person who started a group can remove others. Direct threads, blocking and reporting are unchanged.
+- **Privacy.** Only the people in a group can read it; there is no owner, administrator or moderator access. Someone added later reads only what is written after they join, enforced by a restrictive row-security policy on `messages` as well as the API. Leaving or removal ends access; their messages stay for the others.
+- **Blocks** stop two people adding each other to a group but never pause a group they share.
+- **Additive migration 0022** adds `kind`, `title` and `created_by` to `conversations` (existing rows become `direct`), replaces 0004's two-person column check with one shape check, adds `conversation_joins` with forced row security, and adds the late-joiner and leaving policies. `conversation_joins` is granted explicitly to the runtime role: run `npm run db:grant-runtime` after migrating.
+- Five routes under `/api/organisations/:slug/`: `conversation-groups`, and `conversations/:id/title`, `/participants`, `/participants/:userId/remove` and `/leave`. The browser demo runs the same rules.
+- Migrations 0001 to 0021 are byte-identical; no new runtime dependency. Release constant and package version are 0.24.0-alpha.1. Alpha 23 (PR #16) was still open, so this release skips 0.23.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). Every step below ran on this branch's tree after merging main `f5ec8d3`.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 654 passed, 0 failed (639 on main plus 11 database tests through the restricted runtime role and 4 HTTP tests for groups) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 270 passed across the 15 demo scripts in CI, including 11 in the new `test:browser:groups` (start, send, sender names, people, add, rename, remove, leave, direct threads unchanged, phone width, accessibility and monochrome) |
+| Connected-browser suites | 60 passed (unchanged) |
+| `npm run test:postgres` | 21 passed on PostgreSQL 16 on a fresh database (1 new: late joiners, leaving and the new grant under row security) |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
+
+Tests changed rather than added: migration-count assertions moved from 21 to 22. The groups browser check refreshes a thread after switching preview person, because the demo, like the live inbox between polls, keeps a thread it read under 30 seconds earlier.
+
+## Not verified, and why
+
+- Hosted PostgreSQL, Better Auth and polling under real load were not exercised. Nothing was deployed.
+- A first attempt to apply a group conversations patch prepared by another thread was refused by this session's safety checks, so this slice was written afresh from main rather than from that patch.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Alpha 23 (PR #16) and the email confirmation slice (PR #18) must take the next free alpha and migration numbers when they merge after this.
+3. When the owner decides to launch: follow LAUNCH_RUNBOOK.md, and run `npm run db:grant-runtime` after migrating to 0022.
+
+## Historical launch kit evidence: runbook and offline preflight (no version change)
+
+3 October 2026. Application still 0.22.0-alpha.1. Everything needed to switch the app on is written down and checkable offline. Nothing was provisioned, no account was created and nothing is live, by the owner's instruction. See LAUNCH_RUNBOOK.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/build-out-tvzn40`, from main `ec4285d` (the merge of PR #15, Alpha 22) |
+| Verified locally | Yes: typecheck, unit tests and the preflight against `.env.example` (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## PR #15 merged into main
+
+Alpha 22 was merged into main on 3 October 2026 as `ec4285d41f7107fb44bfcd9a6b419d5eb31a3cc1`, a merge commit whose parents are the previous main `b24095a` (PR #14) and the tested head `1645ab7`; its tree, `e7da8b1618bb48e903444b596f74d5a3abeb4af3`, is identical to the tested head's tree. CI runs 37121503128 and 37121505780 (application and postgres) passed on `1645ab7`. This slice started from that main.
+
+## What changed
+
+- **`platform/docs/LAUNCH_RUNBOOK.md`**: the launch in order, with checkboxes. Neon project with separate administrative and `reunir_app` roles; migrations and runtime grants; the first owner; every server variable and where it must never be; Google Cloud Storage; Resend sender verification; the Vercel project; hosted health and privacy checks with two people and two communities; the mail and digest scheduler (deliberately no `crons` entry until the owner chooses); backups with a restore rehearsal; monitoring; rollback; the evidence log and the written approvals before pilot members are invited.
+- **`npm run launch:preflight`** (`scripts/launch-preflight.ts`): checks the names and shapes of a production environment without printing any value, opening a connection or calling a provider. It fails on local or non-https origins, an owner role as the runtime database user, migration or provisioning credentials in the runtime, secret-like `VITE_` names, short, placeholder or reused secrets, a half-configured mail or storage pair and an invalid `ADMIN_TWO_FACTOR`; it warns on optional gaps.
+- `.env.example` and SETUP.md point to both. No migration, no runtime code change, no new dependency.
+
+## Local verification, 3 October 2026
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 639 passed, 0 failed (627 existing plus 12 for the preflight, including that no value ever appears in its output) |
+| `npm run launch:preflight -- --env-file .env.example` | Exits 1 with 5 failures and 5 warnings, as expected for the blank example file |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates with 55 pinned sources and 18 register decisions |
+
+The browser and PostgreSQL suites were not rerun locally: this slice changes no application code, and CI runs them on the pull request.
+
+## Not verified, and why
+
+- Every hosted step in the runbook is unverified until the owner decides to launch: Neon, Vercel, the bucket, Resend, the scheduler, backups and monitoring were deliberately not created.
+
+## Next actions
+
+1. Drive the pull request green and merge; read back main.
+2. Cover thumbnails, cover library renaming and tags, and a higher library limit.
+3. When the owner decides to launch: follow LAUNCH_RUNBOOK.md from section 0, running `npm run launch:preflight` against the staged values first.
+
+## Historical Alpha 22 evidence: cover picture descriptions
 
 3 October 2026. Application 0.22.0-alpha.1. Whoever may change a track or project cover can describe the picture, and a screen reader reads that description on the track's or project's own page. See decisions/022-cover-descriptions.md and COVERS.md.
 
@@ -8,8 +110,8 @@
 | --- | --- |
 | Implemented | Yes, on `claude/build-out-tvzn40`, from main `b24095a` (the merge of PR #14, Alpha 21) |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes: runs 37121503128 and 37121505780 on `1645ab7` (application and postgres) |
+| Merged | Yes, [PR #15](https://github.com/EmotiveImpact/REUNIR/pull/15) as `ec4285d`, under the owner's standing approval (3 October 2026) |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 

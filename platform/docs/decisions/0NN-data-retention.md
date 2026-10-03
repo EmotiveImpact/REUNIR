@@ -11,7 +11,7 @@ REUNIR kept every housekeeping record for ever: expired sign-in sessions and lin
 - One list of rules, `RETENTION_DAYS` in `packages/contracts/src/retention.ts`, serves the job, the **How long things are kept** panel on Your account and [RETENTION.md](../RETENTION.md). What people are told is what the job does.
 - The job clears housekeeping only. Accounts, profiles, posts, project work, lessons, messages, learning records, private goals, reviewed evidence and the audit trail are never cleared by it. They stay until the person deletes their account or the community removes them, as before.
 - Records not tied to a community (sessions, links, rate counters, mail) are cleared directly. Each community's own records (request receipts, change events, read notices) are cleared inside that community's tenant context, so row security applies as for any request.
-- Migration NNNN adds one read-only policy so the job can list communities when, and only when, its own transaction sets `app.worker` to `retention`, as the digest job does for notification settings. It also adds an index for clearing read notices.
+- Migration 0023 adds one read-only policy so the job can list communities when, and only when, its own transaction sets `app.worker` to `retention`, as the digest job does for notification settings. It also adds an index for clearing read notices.
 - A dry run does the same work inside transactions that are rolled back, so its counts are exact. The script is a dry run unless `RETENTION=apply`; the scheduled route applies unless `?dry=1`.
 - The job reports counts per rule, never contents, and records each run as `retention-job` in service observations.
 
