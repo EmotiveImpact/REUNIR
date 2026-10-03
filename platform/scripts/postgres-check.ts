@@ -175,6 +175,20 @@ try{
         assert.equal((await admin.query('SELECT count(*)::int AS n FROM project_members WHERE user_id=$1',[theo])).rows[0].n,2,'team places stay with the work');
         await assert.rejects(()=>repo.snapshot('code-black',theo),{code:'NOT_FOUND'});
     });
+    await check('an owner hands a community to one administrator at a time through the restricted runtime connection',async()=>{
+        const repo=new WorkspaceRepository(runtime!),owners=async()=>(await admin.query("SELECT user_id FROM members WHERE organization_id='org_studio_north' AND role='owner'")).rows.map(r=>r.user_id);
+        await assert.rejects(()=>admin.query("UPDATE members SET role='owner' WHERE organization_id='org_studio_north' AND user_id='member_maya'"),/members_single_owner_idx/);
+        for(const id of ['member_maya','member_sofia'])await repo.execute('studio-north',DEMO_ADMIN,{type:'member.role',memberId:id,role:'admin'},randomUUID(),'pg-ownership');
+        // Two handovers at once, on separate pooled connections: the community lock lets exactly one through.
+        const outcomes=await Promise.all(['member_maya','member_sofia'].map(id=>repo.transferOwnership('studio-north',DEMO_ADMIN,id,'Studio North','pg-ownership').then(()=>'handed',(e:{code?:string})=>e.code??'failed')));
+        assert.deepEqual([...outcomes].sort(),['OWNER_REQUIRED','handed']);
+        const now=await owners();assert.equal(now.length,1);assert(['member_maya','member_sofia'].includes(String(now[0])));
+        assert.equal((await admin.query("SELECT role FROM members WHERE organization_id='org_studio_north' AND user_id=$1",[DEMO_ADMIN])).rows[0].role,'admin');
+        assert.equal((await admin.query("SELECT count(*)::int AS n FROM audit WHERE organization_id='org_studio_north' AND action='member.owner.transferred'")).rows[0].n,1);
+        await repo.transferOwnership('code-black',DEMO_ADMIN,(await repo.execute('code-black',DEMO_ADMIN,{type:'member.role',memberId:'member_maya',role:'admin'},randomUUID(),'pg-ownership')).objectId!,'Code Black','pg-ownership');
+        const {summary}=await repo.deleteAccount(DEMO_ADMIN);
+        assert.equal(summary.communities,2,'once they own nothing, the previous owner can delete their account');
+    });
     await check('accepting an invitation waits for an account deletion under way, and adds no membership after it',async()=>{
         const person='pg_newcomer',now=new Date().toISOString(),token=randomBytes(32).toString('base64url');
         await admin.query("INSERT INTO auth_user(id,name,email,email_verified,created_at,updated_at) VALUES($1,'Noor Patel','noor@example.test',true,$2,$2)",[person,now]);

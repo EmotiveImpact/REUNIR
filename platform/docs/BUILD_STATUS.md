@@ -1,4 +1,72 @@
-# Alpha 15 account deletion
+# Alpha 16 ownership transfer
+
+3 October 2026. Application 0.16.0-alpha.1. A community's owner hands it to one of its administrators, after re-entering their password and typing the community's name. The previous owner stays as an administrator and, once they own no community, can delete their account. See ACCOUNTS.md and decisions/016-ownership-transfer.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/ownership-transfer-7kx603`, from main `cc806e7` with main `4bda5e7` (PR #7, the changelog) merged in |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once CI has run |
+| Merged | No. Merging into main needs the owner's approval |
+| Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- **Hand over ownership.** In Members and access, the owner opens an active administrator's access settings and chooses **Hand over ownership…**. The dialogue explains what changes and asks for the current password (live mode) and the community's name. For anyone who is not an administrator, the settings say to make them one first; the owner's own settings say how a handover works.
+- **The route.** `POST /api/organisations/:slug/ownership` is same-origin JSON for signed-in members, rate limited to five attempts in fifteen minutes, and checks the password with Better Auth before calling `WorkspaceRepository.transferOwnership`. It is not a workspace command: the command schema has no handover and still refuses `owner` as a role, so the generic route cannot skip the password.
+- **The rules** (`packages/domain/src/ownership.ts`, shared with the demo). Only the active owner, only to an active administrator of the same community, with the name typed (case and outer spaces ignored). The previous owner becomes an administrator; the audit entry `member.owner.transferred` names both memberships; the new owner gets a notice; the revision and outbox advance.
+- **One owner, always.** Migration `0017_single_owner.sql` (additive) adds a unique index on `members(organization_id) WHERE role='owner'`. The repository demotes the previous owner before promoting the new one, under the community lock, so concurrent handovers let exactly one through. Migrations 0001 to 0016 are byte-identical; no grant changes.
+- **Your account.** Owners now read "Hand each one to an administrator first, from that person's access settings", with a link to Members and access. After the last handover the delete button appears.
+- Upstream review: HumHub's change-owner form, controller rules and owner membership (research note 21); no code copied. Release constant and package version are 0.16.0-alpha.1. No new runtime dependency.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, `npm ci` from the committed lockfile, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 581 passed, 0 failed (562 existing plus 8 ownership domain, 5 database and 6 HTTP tests) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Existing demo-browser suites | 265 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 16 covers, 9 instructors, 16 monochrome, 20 v4 |
+| `npm run test:browser:accounts` | 10 passed (9 existing plus 1: the owner makes Maya an administrator, a mistyped name is refused, the handover succeeds, Maya's role can no longer be changed by the previous owner, and Your account lists only Studio North as owned; axe and neutral-colour checks) |
+| Existing connected-browser suites | 49 passed: 12 connected, 9 resources, 9 assessments, 13 covers, 6 instructors |
+| `npm run test:browser:accounts-connected` | 7 passed (6 existing plus 1, live build with Better Auth and the restricted runtime role: a wrong password is refused, the handover succeeds, Your account shows the previous owner as administrator with no refusal, and they delete their account; the steward remains the owner) |
+| `npm run test:postgres` | 17 passed on PostgreSQL 16 (16 existing plus 1: the unique index refuses a second owner, two handovers at once on separate connections let exactly one through, and the previous owner then deletes their account) |
+| Python helpers, `scripts/check_research.py` | 35 passed (unchanged); the register validates with 55 pinned sources and 18 decisions |
+
+Tests changed rather than added: nine migration-count assertions moved from 16 to 17. The demo account suite's new check runs after the restarts, so the earlier checks still see Amina Okafor owning both communities.
+
+## Corrections made while verifying
+
+- In the demo browser check, the standalone preview has no browser storage, so the toast carries the session-only note; the check now looks for the message within the toast.
+- The PostgreSQL check first failed typechecking on an untyped row value; it now compares the owner's ID as a string.
+
+## Not verified, and why
+
+- Hosted Better Auth and hosted PostgreSQL remain deferred by the user; the handover was exercised through PGlite and PostgreSQL 16 with the restricted role and real Better Auth password checks in a local build.
+- The new owner is told, not asked; an offer the recipient accepts is recorded as a possible later step in decision 016.
+
+## Preview
+
+The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `http://127.0.0.1:5173`, reachable only from inside the container. Preview as admin (Amina Okafor, the owner), open Your account → Open members and access → Manage Maya Bennett, make her an administrator, then Hand over ownership… and type "Code Black".
+
+## Publication receipt
+
+Pending: the pushed commit, the remote read-back and CI are recorded here once they exist.
+
+## Next actions
+
+1. Owner review of the ownership transfer pull request in the demo, then merge with the owner's approval and read back main.
+2. Server-side pagination for review queues and other long lists.
+3. When deployment resumes: Neon staging with seventeen migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests, including account deletion and ownership transfer against hosted Better Auth.
+
+---
+## Historical Alpha 15 evidence: account deletion
 
 3 October 2026. Application 0.15.0-alpha.1. People delete their own account from **Your account**. As the owner decided, posts, comments and project work stay so conversations still make sense, shown as "Former member"; name, photo and profile go; private things and the person's own learning record are deleted; direct messages stay for the other person. Owners are refused until ownership can be handed over. See ACCOUNTS.md and decisions/015-account-deletion.md.
 
@@ -9,7 +77,7 @@
 | Implemented | Yes, on `claude/laughing-goodall-2p7z0v`, restarted from main `661fac9` after PR #5 was merged ([PR EmotiveImpact/REUNIR#6](https://github.com/EmotiveImpact/REUNIR/pull/6)) |
 | Verified locally | Yes: every suite, from a clean worktree of tested commit `67623fb` after `npm ci` (see below) |
 | Verified remotely (GitHub Actions) | Passed on `7343bcf`; the review fixes follow, with CI recorded on PR #6 |
-| Merged | No. Merging into main needs the owner's approval |
+| Merged | Yes: approved by the owner on 3 October 2026 and merged into main as `cc806e7` |
 | Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
 | Operated with real members | No |
 
@@ -77,6 +145,8 @@ The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `h
 ## Publication receipt
 
 Pending. The documentation for the first clean run was pushed as `3f29c0d`; this status, with the final run of `67623fb`, follows on the same branch, and the remote read-back and CI are recorded in the receipt.
+
+Outcome, recorded in Alpha 16: PR #6 was merged into main as `cc806e7` with the owner's approval on 3 October 2026, a merge commit whose tree equals the tested head `b31b80a`.
 
 ## Next actions
 

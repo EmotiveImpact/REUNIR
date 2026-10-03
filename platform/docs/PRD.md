@@ -477,4 +477,19 @@ People delete their own account from **Your account**, after re-entering their p
 | D07 | Claimed tasks without proof return to their teams; notices naming the person are reworded unless the name is shared; the audit entry holds counts only | Domain and database tests |
 | D08 | The fictional demo runs the same rules in the browser and can be restarted | Demo browser check |
 
-Ownership transfer, administrator-run deletion of someone else's account, deleting a person's posts with their account and rewriting mentions inside other people's posts are outside this release.
+Ownership transfer, administrator-run deletion of someone else's account, deleting a person's posts with their account and rewriting mentions inside other people's posts are outside this release. (Alpha 16 later added ownership transfer.)
+
+## Alpha 16: ownership transfer
+
+A community's owner hands it to one of its administrators, after re-entering their password and typing the community's name. The previous owner stays as an administrator. Once an owner has handed over every community they own, they can delete their account. See `ACCOUNTS.md` and `decisions/016-ownership-transfer.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| O01 | Only the active owner hands a community over, from the same origin, with their current password and the community's name typed; attempts are rate limited; the workspace command route cannot do it | Domain and HTTP tests, connected browser check |
+| O02 | Ownership goes only to an active administrator of the same community; suspended, former, ordinary and other communities' members are refused and nothing changes | Domain, database (restricted role) and HTTP tests |
+| O03 | The previous owner becomes an administrator; a community never holds two owners, enforced by a unique index; concurrent handovers let exactly one through | Domain, database and PostgreSQL tests |
+| O04 | The audit entry names both memberships; the new owner is told | Domain and database tests |
+| O05 | After handing over every community they own, the previous owner can delete their account | Domain, database, PostgreSQL and connected browser checks |
+| O06 | The fictional demo runs the same rules in the browser | Demo browser check |
+
+Accepting or declining a handover, transferring to someone who is not yet an administrator, and deleting a community are outside this release.

@@ -130,6 +130,36 @@ try {
         await expect(page.locator('.account-menu strong').first()).toHaveText('Alex Morgan');
         await page.keyboard.press('Escape');
     });
+    await check('the owner hands Code Black to an administrator, and then owns only Studio North', async () => {
+        await switchPreviewRole(page, 'admin'); await account();
+        await page.getByRole('link', { name: 'Open members and access' }).click();
+        await page.getByRole('button', { name: 'Manage Maya Bennett', exact: true }).click();
+        await expect(dialog()).toContainText('To hand Maya Bennett ownership, make them an administrator first.');
+        await expect(dialog().getByRole('button', { name: 'Hand over ownership…' })).toHaveCount(0);
+        await dialog().getByLabel('Community role').selectOption('admin');
+        await dialog().getByRole('button', { name: 'Hand over ownership…', exact: true }).click();
+        await expect(dialog().getByRole('heading', { name: 'Hand Code Black to Maya Bennett?' })).toBeVisible();
+        await expect(dialog()).toContainText('This fictional demo has no passwords.');
+        await dialog().getByLabel('Type Code Black to confirm').fill('Code');
+        await dialog().getByRole('button', { name: 'Hand over ownership', exact: true }).click();
+        await expect(dialog().getByRole('alert')).toHaveText('Type “Code Black” to confirm.');
+        await neutral(); await a11y('handover-dialogue');
+        await page.screenshot({ path: dir + '/handover-dialogue.png' });
+        await dialog().getByLabel('Type Code Black to confirm').fill('code black');
+        await dialog().getByRole('button', { name: 'Hand over ownership', exact: true }).click();
+        await expect(dialog()).toHaveCount(0);
+        await expect(page.locator('.toast')).toContainText('Maya Bennett now owns Code Black. You are an administrator.');
+        const maya = page.locator('.access-member').filter({ hasText: 'Maya Bennett' }), amina = page.locator('.access-member').filter({ hasText: 'Amina Okafor' });
+        await expect(maya).toContainText('owner'); await expect(amina).toContainText('admin');
+        await page.getByRole('button', { name: 'Manage Maya Bennett', exact: true }).click();
+        await expect(dialog().getByLabel('Community role')).toBeDisabled();
+        await expect(dialog().getByRole('button', { name: 'Hand over ownership…' })).toHaveCount(0);
+        await dialog().getByRole('button', { name: 'Close dialogue' }).click();
+        await account();
+        await expect(page.locator('.account-owner-note')).toHaveText(/^You own Studio North\. A community needs its owner/);
+        await neutral(); await a11y('account-after-handover');
+        await switchPreviewRole(page, 'member');
+    });
     await check('the account page and dialogue fit a phone screen', async () => {
         await page.setViewportSize({ width: 390, height: 844 });
         await account(); await overflow();

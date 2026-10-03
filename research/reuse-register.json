@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "release": "0.15.0-alpha.1",
+  "release": "0.16.0-alpha.1",
   "reviewedOn": "2026-10-03",
   "scope": "Targeted source/document review, not a fresh whole-repository audit, full runtime comparison or a legal opinion. Previously captured commit snapshots were deliberately re-read; no claim that all are current HEAD.",
   "donorApplicationFilesImported": 0,
@@ -659,6 +659,58 @@
       "lesson": "An administrator chooses whether contributions stay (soft delete) or go, and owned spaces are either transferred to the administrator or deleted.",
       "url": "https://github.com/humhub/humhub/blob/c58fc49f5c99913fe126c4f622822398e194fdb2/protected/humhub/modules/admin/models/forms/UserDeleteForm.php",
       "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "humhub-space-change-owner-form",
+      "project": "HumHub",
+      "repository": "humhub/humhub",
+      "revision": "c58fc49f5c99913fe126c4f622822398e194fdb2",
+      "file": "protected/humhub/modules/space/modules/manage/models/ChangeOwnerForm.php",
+      "blob": "218aaa97eaceceecb723f406322822cd7eb497b9",
+      "reviewedRange": "complete file, 71 lines",
+      "licence": "AGPL-3.0-or-later or proprietary (dual licence) at repository root; behavioural reference only",
+      "lesson": "The new owner must be chosen from the space's existing administrators; nobody else is offered.",
+      "url": "https://github.com/humhub/humhub/blob/c58fc49f5c99913fe126c4f622822398e194fdb2/protected/humhub/modules/space/modules/manage/models/ChangeOwnerForm.php",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "humhub-space-member-controller",
+      "project": "HumHub",
+      "repository": "humhub/humhub",
+      "revision": "c58fc49f5c99913fe126c4f622822398e194fdb2",
+      "file": "protected/humhub/modules/space/modules/manage/controllers/MemberController.php",
+      "blob": "333287eee6eaba6b9baab4220de24e31b1b2fc41",
+      "reviewedRange": "access rules (lines 30\u201350) and actionChangeOwner (lines 193\u2013213) of 228",
+      "licence": "AGPL-3.0-or-later or proprietary (dual licence) at repository root; behavioural reference only",
+      "lesson": "Only the current owner may open the change-owner action; administrators manage members but cannot hand ownership on.",
+      "url": "https://github.com/humhub/humhub/blob/c58fc49f5c99913fe126c4f622822398e194fdb2/protected/humhub/modules/space/modules/manage/controllers/MemberController.php",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "humhub-space-owner-membership",
+      "project": "HumHub",
+      "repository": "humhub/humhub",
+      "revision": "c58fc49f5c99913fe126c4f622822398e194fdb2",
+      "file": "protected/humhub/modules/space/behaviors/SpaceModelMembership.php",
+      "blob": "8924d8492c4012c5134b3100d6a65b626a535ed5",
+      "reviewedRange": "setSpaceOwner and getSpaceOwner (lines 120\u2013160 of 604)",
+      "licence": "AGPL-3.0-or-later or proprietary (dual licence) at repository root; behavioural reference only",
+      "lesson": "Changing owner makes the new owner an administrator and records them as owner; the previous owner keeps their administrator membership.",
+      "url": "https://github.com/humhub/humhub/blob/c58fc49f5c99913fe126c4f622822398e194fdb2/protected/humhub/modules/space/behaviors/SpaceModelMembership.php",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "humhub-account-delete-spaceowner",
+      "project": "HumHub",
+      "repository": "humhub/humhub",
+      "revision": "c58fc49f5c99913fe126c4f622822398e194fdb2",
+      "file": "protected/humhub/modules/user/views/account/delete_spaceowner.php",
+      "blob": "3c14c9d004025d2d832d80dbd1f0637cb03bc704",
+      "reviewedRange": "complete file, 30 lines",
+      "licence": "AGPL-3.0-or-later or proprietary (dual licence) at repository root; behavioural reference only",
+      "lesson": "An owner who tries to delete their account sees the spaces they own and is told to transfer ownership or delete them first.",
+      "url": "https://github.com/humhub/humhub/blob/c58fc49f5c99913fe126c4f622822398e194fdb2/protected/humhub/modules/user/views/account/delete_spaceowner.php",
+      "reviewedOn": "2026-10-03"
     }
   ],
   "decisions": [
@@ -1071,6 +1123,37 @@
         "platform/scripts/accounts-connected-check.ts",
         "platform/scripts/postgres-check.ts",
         "platform/scripts/pilot-http-check.ts"
+      ]
+    },
+    {
+      "id": "ownership-transfer",
+      "status": "implemented",
+      "mode": "behaviour_reference",
+      "sources": [
+        "humhub-space-change-owner-form",
+        "humhub-space-member-controller",
+        "humhub-space-owner-membership",
+        "humhub-account-delete-spaceowner"
+      ],
+      "decision": "Let a community's active owner hand the community to one of its active administrators, after re-entering their password and typing the community's name, with a rate limit. The previous owner stays as an administrator, which only the new owner can change. Only an administrator can receive ownership, so ownership goes only to someone already trusted with running the community. The handover runs under the community lock, writes an audit entry naming both memberships and tells the new owner. A unique index keeps a community to one owner. Owners still cannot delete their account while they own a community; once they have handed each one over, they can. No donor source copied; HumHub is a behavioural reference only.",
+      "implementation": [
+        "platform/packages/domain/src/ownership.ts",
+        "platform/packages/contracts/src/ownership.ts",
+        "platform/packages/db/migrations/0017_single_owner.sql",
+        "platform/packages/db/src/repository.ts",
+        "platform/apps/api/src/app.ts",
+        "platform/apps/web/src/components/ownership.tsx",
+        "platform/apps/web/src/lib/ownership.ts",
+        "platform/apps/web/src/pages/access.tsx",
+        "platform/apps/web/src/pages/account.tsx"
+      ],
+      "tests": [
+        "platform/tests/ownership.test.ts",
+        "platform/tests/ownership-database.test.ts",
+        "platform/tests/ownership-http.test.ts",
+        "platform/scripts/accounts-browser-check.ts",
+        "platform/scripts/accounts-connected-check.ts",
+        "platform/scripts/postgres-check.ts"
       ]
     }
   ],

@@ -1,6 +1,7 @@
 /**
  * Live build, real HTTP, Better Auth cookies and password checks, and a local PGlite database, with the API under the
- * restricted runtime role and forced row security. A member deletes their own account; the owner sees what is kept.
+ * restricted runtime role and forced row security. A member deletes their own account; the owner sees what is kept, then
+ * hands the community to an administrator and deletes their own account too.
  */
 import { chromium, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
@@ -28,11 +29,13 @@ const origin = 'http://127.0.0.1:' + (server.address() as { port: number }).port
 
 const db = await openDatabase('pglite:memory'); await migrate(db); const setup = new WorkspaceRepository(db);
 const secret = 'accounts_connected_test_secret_3c2b1a09f8e7d6c5', registrar = createAuth(db, origin, secret, true);
-const PASSWORDS = { owner: 'Owner-account-password-123!', member: 'Member-account-password-456!' };
+const PASSWORDS = { owner: 'Owner-account-password-123!', member: 'Member-account-password-456!', steward: 'Steward-account-password-789!' };
 const owner = (await registrar.api.signUpEmail({ body: { name: 'Pilot Owner', email: 'owner@example.test', password: PASSWORDS.owner } })).user;
 const member = (await registrar.api.signUpEmail({ body: { name: 'Pilot Member', email: 'member@example.test', password: PASSWORDS.member } })).user;
 await setup.createCommunity({ id: owner.id, name: owner.name }, 'pilot', 'Code Black Pilot');
 await setup.addMembership('pilot', { id: member.id, name: member.name }, 'member');
+const steward = (await registrar.api.signUpEmail({ body: { name: 'Pilot Steward', email: 'steward@example.test', password: PASSWORDS.steward } })).user;
+await setup.addMembership('pilot', { id: steward.id, name: steward.name }, 'admin');
 // Everything the application does below runs as the restricted runtime role with forced row security.
 await db.query('CREATE ROLE reunir_app NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS');
 await db.transaction(grantRuntimeTables);
@@ -106,6 +109,32 @@ try {
         await expect(ownerPage.locator('textarea#message-body')).toHaveCount(0);
         await expect(ownerPage.getByRole('note')).toHaveText('You can read this conversation, but you cannot reply to a former member.');
         await a11y('former-thread-live', ownerPage);
+    });
+    await check('the owner hands the community to an administrator with their password, then deletes their own account', async () => {
+        await ownerPage.goto(`${origin}/#/access`); await ownerPage.reload();
+        await ownerPage.getByRole('button', { name: 'Manage Pilot Steward', exact: true }).click();
+        await dialog(ownerPage).getByRole('button', { name: 'Hand over ownership…', exact: true }).click();
+        const handOver = async (password: string) => {
+            await dialog(ownerPage).getByLabel('Your password', { exact: true }).fill(password);
+            await dialog(ownerPage).getByLabel('Type Code Black Pilot to confirm').fill('Code Black Pilot');
+            await dialog(ownerPage).getByRole('button', { name: 'Hand over ownership', exact: true }).click();
+        };
+        await handOver('Not-my-password-000!');
+        await expect(dialog(ownerPage).getByRole('alert')).toHaveText('That password is not right.');
+        await a11y('handover-wrong-password', ownerPage);
+        expect((await db.query("SELECT user_id FROM members WHERE role='owner'")).rows.map(r => r.user_id)).toEqual([owner.id]);
+        await handOver(PASSWORDS.owner);
+        await expect(dialog(ownerPage)).toHaveCount(0);
+        await expect(ownerPage.locator('.toast')).toContainText('Pilot Steward now owns Code Black Pilot. You are an administrator.');
+        expect((await db.query("SELECT user_id,role FROM members WHERE role IN ('owner','admin') ORDER BY role DESC")).rows.map(r => [r.user_id, r.role])).toEqual([[steward.id, 'owner'], [owner.id, 'admin']]);
+        await account(ownerPage);
+        await expect(ownerPage.locator('.account-communities li')).toHaveText([/Code Black Pilot\s*admin/i]);
+        await expect(ownerPage.locator('.account-owner-note')).toHaveCount(0);
+        await a11y('account-after-handover-live', ownerPage);
+        await confirmWith(ownerPage, PASSWORDS.owner);
+        await expect(ownerPage.getByRole('heading', { name: 'Good to see you.' })).toBeVisible();
+        expect((await db.query('SELECT count(*)::int AS n FROM auth_user WHERE id=$1', [owner.id])).rows[0].n).toBe(0);
+        expect((await db.query("SELECT user_id FROM members WHERE role='owner'")).rows.map(r => r.user_id)).toEqual([steward.id]);
     });
     await check('connected account journeys produced no uncaught browser errors', async () => { expect(errors).toEqual([]); });
     await writeFile(dir + '/results.json', JSON.stringify({ generatedAt: new Date().toISOString(), method: 'Live Vite build + Hono HTTP + Better Auth cookies and password checks + local PGlite database; application under the restricted runtime role with forced row security. No external service.', results, errors }, null, 2));
