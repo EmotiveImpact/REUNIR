@@ -6,6 +6,7 @@ import { migrate } from '../packages/db/src/migrate';
 import { WorkspaceRepository, setContext } from '../packages/db/src/repository';
 import { grantRuntimeTables } from '../packages/db/src/runtime-role';
 import { createSeed, DEMO_ADMIN, DEMO_USER } from '../packages/domain/src/seed';
+import { seedAtSchema } from './helpers/legacy-fixture';
 
 const ORG = 'org_code_black', MAYA = 'member_maya';
 let db: Database, runtime: Database, repo: WorkspaceRepository;
@@ -112,8 +113,8 @@ test('the tables refuse a second featured collection, mismatched kinds and other
 test('an upgraded database keeps its records and starts with no collections', async () => {
     const old = await openDatabase('pglite:memory');
     try {
-        // Collections arrive in 0028, and teaching grants, library pictures and uploads gain columns later; the old seed carries none of them.
-        await migrate(old, '0021'); await new WorkspaceRepository(old).seed({ ...createSeed(), collections: [], collectionItems: [], trackInstructors: [], coverLibrary: [], uploads: [] });
+        // Collections arrive in 0028, and other columns later; the old seed carries only what 0021 has.
+        await migrate(old, '0021'); await seedAtSchema(old);
         const posts = (await old.query('SELECT id,title FROM posts ORDER BY organization_id,id')).rows;
         await migrate(old);
         assert.deepEqual((await old.query('SELECT id,title FROM posts ORDER BY organization_id,id')).rows, posts);

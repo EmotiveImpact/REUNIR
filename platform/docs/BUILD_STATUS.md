@@ -6,7 +6,7 @@
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `3c770b5` (the merge of PR #24, Alpha 35, which brought Alpha 23, 28 and 39) |
+| Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `3c770b5` (the merge of PR #24, Alpha 35, which brought Alpha 23, 28 and 39), with main `f3efa39` (PR #26, Alpha 32 appeals) merged in |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
@@ -30,7 +30,7 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 757 passed, 0 failed (7 new in `tests/instructor-tracks.test.ts` and `tests/instructor-tracks-database.test.ts`) |
+| `npm test` | 777 passed, 0 failed after main's Alpha 32 was merged in; the suites below ran just before it (7 new in `tests/instructor-tracks.test.ts` and `tests/instructor-tracks-database.test.ts`) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
 | Demo-browser suites | 299 passed across 17 suites, including 13 instructor checks (1 new: an instructor starts a track, members see it only after an administrator publishes it) |
@@ -48,6 +48,59 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. Uploaded lesson video (Alpha 37, migration 0036), off until the operator sets `LESSON_VIDEO_MAX_MB`.
 3. When deployment resumes: follow LAUNCH_RUNBOOK.md and run `npm run db:migrate`.
+
+## Historical Alpha 32 evidence: appealing a hidden post
+
+3 October 2026. The application version stays 0.39.0-alpha.1: Alpha 39 (PR #21) reached main first. The author of a hidden post is told, still sees it, and can appeal; an owner or administrator who did not hide it decides. See decisions/032-moderation-appeals.md and MODERATION.md.
+
+Numbering: this thread holds Alpha 31 to 34, decisions 031 to 034 and migrations 0030 to 0033. Retention took Alpha 31 and migration 0030, so this is Alpha 32 with migration 0031.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/accounts-trust-zojuqs`, restarted from main `b80fc04` (the merge of PR #23, Alpha 31), with main `16b2768` (PR #16, Alpha 23 virus scanning) main `0a818fa` (PR #21, Alpha 39 cover library management, migration 0038) and main `94b130b` (PR #25, Alpha 28 collections, migration 0028) and main `3c770b5` (PR #24, Alpha 35 lesson grants, migration 0034) merged in |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Yes: [PR #26](https://github.com/EmotiveImpact/REUNIR/pull/26), merged into main as `f3efa39` |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- **Who moderated.** `post.moderate` records who last changed a post's visibility and when (`posts.moderated_by`, `posts.moderated_at`). Existing rows stay empty; nothing is guessed.
+- **The author is told.** Hiding someone else's post sends "Your post was hidden", leading to `/appeals`. The author still sees the post, marked hidden only to them, and cannot reply, react or save while it is hidden.
+- **Appeals** (`moderationAppeals`, table `moderation_appeals`): `moderation.appeal`, `moderation.appeal.decide` and `moderation.appeal.withdraw`. One open appeal per hiding. Deciders are active owners and administrators who are neither the appellant nor the moderator; all of them are notified. Reversal restores the post; upholding keeps it hidden; the appellant gets the reply. Every step is audited.
+- **Migration 0031** (additive): the two post columns, the appeals table with forced row security (read, insert, withdraw, decide and account-deletion policies) and a partial unique index; the runtime role may update only `status`, `decided_by`, `decided_at` and `response`. 0001 to 0030 unchanged.
+- **Web.** New Appeals page, an Appeal dialogue on the post, and an Open appeals panel on the Moderation tab. Neutral colours only.
+- **Demo.** Code Black has one fictional hidden post by the demo member, so the whole journey works in the browser demo.
+- **Account deletion** removes the appellant's appeals; decisions stay in the audit trail.
+- Review fix on PR #26 (Codex): an appeal records the hiding it challenges (`hidden_by`, `hidden_at`). Once the post is restored or hidden again, the appeal can no longer be decided, in the domain and under row security, and appealing the current hiding closes it. Two new tests cover this.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 on loopback.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 703 passed, 0 failed after the review fix; 716 passed after main's Alpha 23 was merged in; 742 passed after main's Alpha 39 was merged in; 761 passed after main's Alpha 28 was merged in; 770 passed after main's Alpha 35 was merged in (20 new: 14 in `tests/appeals.test.ts`, including cross-tenant and inactive-administrator cases, and 6 in `tests/appeals-database.test.ts` under the restricted role) |
+| `npm run test:http` | 19 passed |
+| `npm run build`, `npm run bundle:preview` | Passed |
+| Demo-browser suites | `appeals` 7 (new), `accounts` 13, `monochrome` 16, `v4` 20, `covers` 20, `states` 12, `instructors` 12, `notifications` 5, `curation` 9 (after the Alpha 35 merge) |
+| `npm run test:postgres` | 24 passed on PostgreSQL 16, 25 after the Alpha 39 merge, 26 after the Alpha 28 merge and again after the Alpha 35 merge (2 new: the column grant, and an appeal reversed through a restricted connection) |
+| Python helpers | 35 passed; research register valid |
+
+## Not verified, and why
+
+- No HTTP-level test of the appeal commands: they use the existing generic `/commands` route, covered by the domain, database and PostgreSQL checks.
+- Hosted PostgreSQL was not exercised.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. A correction and withdrawal history for reviewed evidence (Alpha 33), then consented credit for several contributors (Alpha 34).
+3. Undecided: appeals against suspension or message-report outcomes, a second level of appeal, and time limits.
 
 ## Historical Alpha 35 evidence: teaching grants for chosen lessons
 

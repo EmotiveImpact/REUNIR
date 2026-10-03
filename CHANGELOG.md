@@ -25,6 +25,21 @@ Details:
 
 - Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
 
+## Alpha 32: appealing a hidden post (no version change), 3 October 2026
+
+On main through [PR #26](https://github.com/EmotiveImpact/REUNIR/pull/26), merged as `f3efa39`. This thread holds Alpha 31 to 34 and migrations 0030 to 0033, so this is Alpha 32 with decision 032 and migration 0031. Alpha 39 (PR #21) reached main first, so the application version stays 0.39.0-alpha.1.
+
+**In plain language:** when a moderator hides your post, you are now told, you can still see it, and you can ask for it to be looked at again. An owner or administrator who did not hide it decides, writes you a reply, and either restores the post or keeps it hidden. Appeals are private to you and the people who decide them.
+
+Details:
+
+- New **Appeals** page: your hidden posts, your appeals and their outcomes, and for owners and administrators the appeals waiting for a decision. The Moderation tab in the community studio lists open appeals.
+- The person who hid the post, and the appellant, can never decide the appeal. If nobody else can, the appeal waits and both sides are told why.
+- One open appeal per hiding; withdrawing allows another; a decided appeal closes that hiding.
+- Additive migration 0031: `posts.moderated_by` and `posts.moderated_at`, and `moderation_appeals` under forced row security, with column-level updates on the decision fields only. Existing posts are not backfilled.
+- Deleting your account removes your appeals; the decisions stay in the audit trail.
+- Suspension, task-note removal and message reports are not appealable here (decision 032).
+
 ## Alpha 35: teaching grants for chosen lessons (no version change), 3 October 2026
 
 On main through [PR #24](https://github.com/EmotiveImpact/REUNIR/pull/24), merged as `3c770b5`. The coordinator allocated Alpha 35 to 38 to courses and teaching, so this release is Alpha 35 with decision 035 and migration 0034. Alpha 39 reached main first, so the version stays 0.39.0-alpha.1 rather than going backwards.

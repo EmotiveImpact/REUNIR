@@ -1757,6 +1757,14 @@ tables.push({key:'notificationPreferences',table:'notification_preferences',fiel
 
 // Alpha 25: a teaching grant names its role. Changing a role replaces the grant; it is never rewritten in place.
 tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'role',column:'role',type:'text'});
+// Appeals against moderation. Posts record who last hid or restored them; an appeal changes only its decision fields.
+tables.find(t => t.key === 'posts')!.fields.push({property:'moderatedBy',column:'moderated_by',type:'text'},{property:'moderatedAt',column:'moderated_at',type:'timestamptz'});
+tables.push({key:'moderationAppeals',table:'moderation_appeals',mutable:['status','decidedBy','decidedAt','response'],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'subject',column:'subject',type:'text'},{property:'subjectId',column:'subject_id',type:'text'},{property:'appellantId',column:'appellant_id',type:'text'},
+    {property:'hiddenBy',column:'hidden_by',type:'text'},{property:'hiddenAt',column:'hidden_at',type:'timestamptz'},
+    {property:'reason',column:'reason',type:'text'},{property:'status',column:'status',type:'text'},{property:'decidedBy',column:'decided_by',type:'text'},
+    {property:'decidedAt',column:'decided_at',type:'timestamptz'},{property:'response',column:'response',type:'text'}]});
 
 // Alpha 35: a grant may cover only some of a track's lessons. NULL keeps the whole track.
 tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'lessonIds',column:'lesson_ids',type:'jsonb'});
