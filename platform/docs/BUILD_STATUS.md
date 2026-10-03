@@ -6,12 +6,16 @@
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of Alpha 27 (PR #22) |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, from main `f9f32d6` (the merge of PR #22, Alpha 27) |
 | Verified locally | Yes: the full suite on base `b24095a`, and the checks below on top of Alpha 27 and main `fab9510` |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
 | Deployed | No. Nothing was provisioned |
 | Operated with real members | No |
+
+## PR #22 merged into main
+
+Alpha 27 was merged into main on 3 October 2026 as `f9f32d6`, a merge commit whose parents are main `fab9510` (PR #20, Alpha 25) and the tested head `297dab8`; its tree is identical to the tested head's tree. CI runs 37127344409 and 37127347035 (application and postgres) passed on `297dab8`.
 
 ## What changed
 

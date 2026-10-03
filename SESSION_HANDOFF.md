@@ -4,7 +4,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, CURATION.md, decisions/028-curate
 
 ## Where the source is
 
-- Base: Alpha 27 (PR #22) on `claude/everyday-use-4z9rmz`, which includes main `9b34cac`.
+- Base: main `f9f32d6`, the merge of PR #22 (Alpha 27), tree identical to its tested head `297dab8`.
 - This slice: branch `claude/everyday-use-4z9rmz`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - This thread holds Alpha 27 to 30, decisions 027 to 030 and migrations 0028 and 0029.
 
