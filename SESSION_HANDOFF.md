@@ -5,7 +5,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, ACCOUNTS.md, decisions/016-owners
 ## Where the source is
 
 - Base: main `cc806e7`, the merge of PR #6 (Alpha 15 account deletion), with main `4bda5e7` (PR #7, the changelog) merged in.
-- This slice: branch `claude/ownership-transfer-7kx603`, on its own pull request. BUILD_STATUS.md records the local runs and the CI receipt. Merging into main needs the owner's approval.
+- This slice: branch `claude/ownership-transfer-7kx603`, [PR EmotiveImpact/REUNIR#8](https://github.com/EmotiveImpact/REUNIR/pull/8). Tested commit `553e0a7`, green in CI runs 37110819170 and 37110833684. BUILD_STATUS.md records the local runs and the CI receipt. Merging into main needs the owner's approval.
 
 ## What is done
 

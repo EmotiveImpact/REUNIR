@@ -6,9 +6,9 @@
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/ownership-transfer-7kx603`, from main `cc806e7` with main `4bda5e7` (PR #7, the changelog) merged in |
+| Implemented | Yes, on `claude/ownership-transfer-7kx603`, from main `cc806e7` with main `4bda5e7` (PR #7, the changelog) merged in ([PR EmotiveImpact/REUNIR#8](https://github.com/EmotiveImpact/REUNIR/pull/8)) |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Recorded on the pull request once CI has run |
+| Verified remotely (GitHub Actions) | Passed on `553e0a7`: [run 37110819170](https://github.com/EmotiveImpact/REUNIR/actions/runs/37110819170) and [run 37110833684](https://github.com/EmotiveImpact/REUNIR/actions/runs/37110833684), both jobs (application and PostgreSQL 17) green |
 | Merged | No. Merging into main needs the owner's approval |
 | Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
 | Operated with real members | No |
@@ -57,7 +57,7 @@ The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `h
 
 ## Publication receipt
 
-Pending: the pushed commit, the remote read-back and CI are recorded here once they exist.
+Source commit `553e0a7edd7753e2a660440f50734ab9fc87d4c4` was pushed to `claude/ownership-transfer-7kx603`; the remote ref was read back and matched. Both CI runs on it passed (links above), with no review threads open. This receipt commit changes only documentation and source hashes. Merging into main needs the owner's approval.
 
 ## Next actions
 

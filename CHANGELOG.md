@@ -10,7 +10,7 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ### 0.16.0-alpha.1 (Alpha 16): ownership transfer, 3 October 2026
 
-On branch `claude/ownership-transfer-7kx603`, awaiting review and the owner's approval to merge.
+On [PR #8](https://github.com/EmotiveImpact/REUNIR/pull/8), awaiting review and the owner's approval to merge.
 
 **In plain language:** a community owner can now hand their community to one of its administrators. The previous owner stays on as an administrator, and once they own no community they can delete their account.
 
