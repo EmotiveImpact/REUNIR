@@ -14,6 +14,7 @@ import { DomainError } from '../../../packages/contracts/src/index';
 import { WorkspaceRepository } from '../../../packages/db/src/repository';
 import { coverLibraryObjectKey, coverObjectKey, isMissingObject, objectKey, resourceObjectKey, uploadSchema, type PrivateStorage } from './storage';
 import { clientUpload, type StoredObservation } from '../../../packages/domain/src/resources';
+import { learningRecordFilename } from '../../../packages/domain/src/learning-record';
 import { SIGNATURE_BYTES, fileSignatureMatches, resourceUploadRequest, type ResourceContext } from '../../../packages/contracts/src/lesson-resources';
 import { COVER_HEAD_BYTES, coverBytesAcceptable, coverLibraryUploadRequest, coverSubject, coverUploadRequest } from '../../../packages/contracts/src/covers';
 export interface SessionIdentity {
@@ -281,6 +282,12 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         const result = await repository.removeCoverLibraryItem(c.req.param('slug'), c.get('identity').id, id.parse(c.req.param('itemId')), c.get('requestId'));
         await removeQuietly(c.get('requestId'), result.objectKey ? [result.objectKey] : []);
         return c.json({ id: result.id, status: 'removed' });
+    });
+    // A member's own learning, as a file to keep. Nothing in it belongs to anyone else.
+    app.get('/api/organisations/:slug/me/learning-record', async (c) => {
+        const record = await repository.learningRecord(c.req.param('slug'), c.get('identity').id);
+        c.header('Content-Disposition', `attachment; filename="${learningRecordFilename(record.community.slug, record.generatedAt)}"`);
+        return c.json(record);
     });
     for (const [segment, context] of [['lessons', 'lesson'], ['lesson-drafts', 'draft'], ['lesson-revisions', 'revision']] as const)
         app.get(`/api/organisations/:slug/${segment}/:recordId/resources/:resourceId/download`, async (c) => c.json(await resourceDownload(c.req.param('slug'), c.get('identity').id, context, c.req.param('recordId'), c.req.param('resourceId'))));

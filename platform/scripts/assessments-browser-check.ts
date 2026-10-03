@@ -3,7 +3,7 @@ import { chromium, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { switchPreviewRole } from './ui-test-helpers';
+import { openProfile, switchPreviewRole } from './ui-test-helpers';
 const root = resolve(import.meta.dirname, '..'), dir = root + '/evidence/knowledge-checks'; await mkdir(dir, { recursive: true });
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, headless: true, args: ['--no-sandbox'] });
 const context = await browser.newContext({ viewport: { width: 1512, height: 1100 } }); const page = await context.newPage(); page.setDefaultTimeout(10000);
@@ -127,6 +127,23 @@ try {
         await expect(kc()).toContainText('Marked · 2 of 3 points'); await expect(kc()).toContainText('3 of 4 points · 75%');
         await expect(kc().locator('.quiz-correct')).toHaveCount(0); await expect(kc()).toContainText('This check does not show correct answers.');
         await expect(kc().getByRole('button', { name: 'Try again' })).toBeVisible();
+    });
+    await check('the learner downloads their own learning record with every attempt, mark and piece of feedback', async () => {
+        await openProfile(page);
+        await expect(page.getByRole('heading', { name: 'Your learning record' })).toBeVisible();
+        const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download your learning record', exact: true }).click()]);
+        expect(download.suggestedFilename()).toMatch(/^reunir-learning-record-code-black-\d{4}-\d{2}-\d{2}\.json$/);
+        const record = JSON.parse(await readFile((await download.path())!, 'utf8'));
+        type Attempt = { lesson: string; status: string; feedback: string; reviewedBy: string | null; score: number; maxScore: number; answers: Record<string, unknown>[] };
+        const attempts = (title: string) => (record.knowledgeChecks as Attempt[]).filter(a => a.lesson === title);
+        expect([record.format, record.member.name]).toEqual(['reunir.learning-record', 'Alex Morgan']);
+        expect(attempts('Test before you celebrate').at(-1)).toMatchObject({ status: 'reviewed', feedback: FEEDBACK, reviewedBy: 'Amina Okafor', score: 3, maxScore: 4 });
+        expect(attempts('Test before you celebrate').flatMap(a => a.answers).some(x => 'correctOptions' in x)).toBe(false);
+        expect(attempts('Cut it down to the useful part').length).toBeGreaterThan(1);
+        expect(attempts('Cut it down to the useful part').every(a => a.answers.every(x => 'correctOptions' in x))).toBe(true);
+        expect(JSON.stringify(record)).not.toContain('Sofia');
+        await expect(toast()).toContainText('Your learning record is downloading.');
+        await neutral('.learning-record'); await a11y('learning-record');
     });
     await check('the studio edits a knowledge check privately and explains what blocks saving', async () => {
         await role('admin'); await studio('Cut it down to the useful part');

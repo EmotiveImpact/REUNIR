@@ -5,6 +5,7 @@ import type { ResourceRef, ResourceUploadRequest } from '../../contracts/src/les
 import { beginResourceUpload, completeResourceUpload, discardResourceUpload, resolveResourceDownload, type StoredObservation } from '../../domain/src/resources';
 import { beginCoverLibraryUpload, beginCoverUpload, completeCoverUpload, removeCoverLibraryItem, resolveCoverImage, resolveLibraryPicture, type CoverObservation } from '../../domain/src/covers';
 import type { CoverLibraryUploadRequest, CoverSubject, CoverUploadRequest } from '../../contracts/src/covers';
+import { learningRecord } from '../../domain/src/learning-record';
 import { tables, type TableSpec, type CollectionKey } from './tables';
 import type { Database, SQL } from './connection';
 const slugPattern = /^[a-z0-9][a-z0-9-]{0,99}$/;
@@ -239,6 +240,10 @@ export class WorkspaceRepository {
             const { upload } = resolveCoverImage(await readAll(sql, org), context(String(org.id), userId), kind, subjectId, fileId);
             return { objectKey: upload.objectKey, generation: upload.generation!, contentType: upload.contentType, sizeBytes: upload.sizeBytes };
         });
+    }
+    /** The acting member's own learning record, read inside their own tenant transaction. */
+    async learningRecord(slug: string, userId: string) {
+        return this.within(slug, userId, false, async (sql, org) => learningRecord(await readAll(sql, org), context(String(org.id), userId), new Date().toISOString()));
     }
     async resourceDownload(slug: string, userId: string, ref: ResourceRef) {
         return this.within(slug, userId, false, async (sql, org) => {

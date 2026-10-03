@@ -8,7 +8,7 @@ import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { build } from 'vite';
 import { randomUUID } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { openDatabase } from '../packages/db/src/connection';
 import { migrate } from '../packages/db/src/migrate';
@@ -121,6 +121,20 @@ try {
         const rows = await attempts(); expect(rows.length).toBe(2); expect(rows[1].status).toBe('awaiting_review');
         const stored = (await db.query<{ prompt: string }>("SELECT quiz->'questions'->1->>'prompt' AS prompt FROM quiz_attempts WHERE attempt_number=2")).rows[0].prompt;
         expect(stored).toBe('Which single change would you make first, and how would you test it?');
+    });
+    await check('the learner downloads their own learning record through the live API; nobody else can', async () => {
+        await learnerPage.goto(`${origin}/#/profile`); await learnerPage.reload();
+        await expect(learnerPage.getByRole('heading', { name: 'Your learning record' })).toBeVisible();
+        const [download] = await Promise.all([learnerPage.waitForEvent('download'), learnerPage.getByRole('button', { name: 'Download your learning record', exact: true }).click()]);
+        expect(download.suggestedFilename()).toMatch(/^reunir-learning-record-pilot-\d{4}-\d{2}-\d{2}\.json$/);
+        const record = JSON.parse(await readFile((await download.path())!, 'utf8'));
+        expect([record.format, record.member.name, record.community.slug]).toEqual(['reunir.learning-record', 'Pilot Learner', 'pilot']);
+        expect(record.knowledgeChecks.map((a: { attempt: number; status: string }) => [a.attempt, a.status])).toEqual([[1, 'reviewed'], [2, 'awaiting_review']]);
+        expect(record.knowledgeChecks[0]).toMatchObject({ lesson: 'Watch before you change', reviewedBy: 'Pilot Owner', feedback: 'Clear and observed. Next, say how you would test the change.' });
+        expect(JSON.stringify(record)).not.toContain('acceptedAnswers');
+        await expect(learnerPage.locator('.toast')).toContainText('Your learning record is downloading.');
+        expect((await outsiderPage.request.get(`${origin}/api/organisations/pilot/me/learning-record`)).status()).toBe(404);
+        expect((await anonymousPage.request.get(`${origin}/api/organisations/pilot/me/learning-record`)).status()).toBe(401);
     });
     await check('the connected learner page with a knowledge check passes automated accessibility checks', async () => {
         const a = await new AxeBuilder({ page: learnerPage }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
