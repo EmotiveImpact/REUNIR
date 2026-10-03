@@ -31,3 +31,6 @@
 .instructor-scope label{display:flex;align-items:center;gap:8px;font-size:13px}
 .instructor-lessons{display:grid;gap:6px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;max-height:220px;overflow:auto}
 span.creator-title{cursor:default;color:var(--muted)}
+.instructor-list li{flex-wrap:wrap}
+.instructor-grant-scope{flex-basis:100%;display:grid;gap:8px;padding-top:8px;border-top:1px solid var(--border)}
+.instructor-grant-scope>div{display:flex;gap:8px;flex-wrap:wrap}

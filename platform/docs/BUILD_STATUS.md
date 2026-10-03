@@ -20,19 +20,20 @@ Numbering: the coordinator allocated Alpha 35 to 38, decisions 035 to 038 and mi
 - **What they work on** in a track's Instructors dialogue: the whole track, including new lessons (the default), or only chosen lessons, with a checkbox per lesson. The list names the lessons, and the Teaching page says "for N lessons".
 - `track.instructor.add` takes `lessonIds` (1 to 200 of the track's own lessons, or null for the whole track). Lessons from elsewhere are refused with 409 `LESSON_UNAVAILABLE`. Changing a grant's lessons replaces it in the acting administrator's name.
 - Drafts, history, draft files, publishing and archiving drafts, answer keys, attempts and review follow the chosen lessons. Other lessons' drafts are not found (404) and show as "Not one of your lessons" in the studio. Starting a lesson, reordering and the cover need a whole-track grant (403 `LESSON_NOT_GRANTED` or `INSTRUCTOR_REQUIRED`).
+- Review fix on PR #24: each grant in the dialogue has **Lessons**, which changes its lessons in place (whole track or chosen lessons) through the same replacement, so nobody is removed and added again.
 - Additive migration `0034_lesson_grants.sql`: `track_instructors.lesson_ids` (NULL or a JSON array of 1 to 200 ids) and lesson-scoped replacements for the draft, history read, published-revision, attempt read, attempt review and invitation policies. 0001 to 0023 are byte-identical; no grant change.
 
 ## Local verification, 3 October 2026
 
-Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). The run was on this branch's tree on top of main `fab9510`.
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). The latest run was on this branch's tree with main `b80fc04` merged in.
 
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 685 passed, 0 failed (main's 676 plus 5 lesson grant domain and 4 lesson grant database tests) |
+| `npm test` | 692 passed, 0 failed after main's Alpha 27 and Alpha 31 were merged in (9 new: 5 lesson grant domain and 4 lesson grant database tests) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
-| Demo-browser suites | 273 passed across 15 suites, including 12 instructor checks (1 new: an administrator grants chosen lessons only, and the list names them) |
+| Demo-browser suites | 274 passed across 15 suites, including 12 instructor checks (1 new: an administrator grants chosen lessons only, the list names them, and the grant widens in place) |
 | Connected-browser suites | 62 passed (unchanged) |
 | `npm run test:postgres` | Passed on PostgreSQL 16 |
 | Python helpers, `scripts/check_research.py` | 35 passed; the register validates |

@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 35 teaching grants for chosen lessons",
   "version": "0.35.0-alpha.1",
   "sourceBaseline": "fab951092928133ac014f17c0430e893d1b91dfe",
-  "generatedAt": "2026-10-03T17:00:48.729682+00:00",
+  "generatedAt": "2026-10-03T17:14:18.789326+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -226,8 +226,8 @@
     },
     {
       "path": "platform/apps/web/src/components/instructors.tsx",
-      "sha256": "50cc7d2476be4d8398cce87371dcd4ff7189379442dc389c85dfbed84bf533a3",
-      "bytes": 8669
+      "sha256": "63c79c2bcc03310bb19b9378503be24df73af2493f8ff1d9a63a7df293fefbd5",
+      "bytes": 10458
     },
     {
       "path": "platform/apps/web/src/components/knowledge-check.tsx",
@@ -351,8 +351,8 @@
     },
     {
       "path": "platform/apps/web/src/instructors.css",
-      "sha256": "febff13753d499c508847833c932f179d8935f18cc905471f99ec3db4f4aa9a9",
-      "bytes": 2240
+      "sha256": "10fa9859b0eca50ecebb6baece6cc5370d7564b873a9c5f1d80cf88fb0fa8abb",
+      "bytes": 2454
     },
     {
       "path": "platform/apps/web/src/knowledge-checks.css",
@@ -586,8 +586,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "ff9ba00403b988568672cdaffe5c3f7bc324ba3874b419e0dbcfe7bb5cc3289e",
-      "bytes": 147424
+      "sha256": "bcd57188b9557864c34eee9df3e094ecfee08b0cdc4a46bded48d64b10bb02fc",
+      "bytes": 147707
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -1561,8 +1561,8 @@
     },
     {
       "path": "platform/scripts/instructors-browser-check.ts",
-      "sha256": "c518eb5727afd67bafb30bcaa0722c3c9a0d44fc95d495f4331009456ad5fce8",
-      "bytes": 13346
+      "sha256": "1bbb84b0952022c39ad02009971c01721bc229e93ea767d8243fe8e8f7a99cd4",
+      "bytes": 13993
     },
     {
       "path": "platform/scripts/instructors-connected-check.ts",

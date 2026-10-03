@@ -100,7 +100,7 @@ try {
         await expect(dialog()).toContainText('No instructors yet.');
         await dialog().getByRole('button', { name: 'Done', exact: true }).click(); await expect(dialog()).toHaveCount(0);
     });
-    await check('an administrator grants chosen lessons only, and the list names them', async () => {
+    await check('an administrator grants chosen lessons only, the list names them, and the grant widens in place', async () => {
         await track('track_product');
         await page.getByRole('button', { name: 'Instructors', exact: true }).click();
         await dialog().getByLabel('Add someone to teach').selectOption({ label: 'Maya Bennett' });
@@ -113,6 +113,13 @@ try {
         await expect(row).toContainText('Instructor for ');
         await expect(dialog().locator('.instructor-list li', { hasText: 'Idris Cole' })).toContainText('whole track');
         await neutral(); await a11y('lesson-grant-dialog');
+        // Widening the grant replaces it in place; nobody has to be removed and added again.
+        await dialog().getByRole('button', { name: 'Change lessons for Maya Bennett', exact: true }).click();
+        await expect(row.locator('.instructor-grant-scope input[type=checkbox]').first()).toBeChecked();
+        await row.getByLabel('The whole track, including new lessons').check();
+        await row.getByRole('button', { name: 'Save lessons', exact: true }).click();
+        await expect(row).toContainText('Instructor, whole track');
+        await expect(row.locator('.instructor-grant-scope')).toHaveCount(0);
         await dialog().getByRole('button', { name: 'Remove Maya Bennett from this track', exact: true }).click();
         await expect(row).toHaveCount(0);
         await dialog().getByRole('button', { name: 'Done', exact: true }).click(); await expect(dialog()).toHaveCount(0);
