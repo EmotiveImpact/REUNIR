@@ -1,4 +1,62 @@
-# Alpha 19 notification settings and email digests
+# Alpha 20 inviting someone new to teach a track
+
+3 October 2026. Application 0.20.0-alpha.1. Owners and administrators can invite someone who is not yet a member to teach one track, from that track's Instructors dialogue. Accepting makes them a member and that track's instructor. See decisions/020-instructor-invitations.md and INSTRUCTORS.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/build-out-tvzn40`, from main `648df31` (the merge of PR #12, Alpha 19) |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## PR #12 merged into main
+
+Alpha 19 was merged into main on 3 October 2026 as `648df31ee27c41829bc1665fce73ce2dbfaa6e26`, a merge commit whose parents are the previous main `a211a09` (PR #11) and the tested head `dd50d86`; its tree, `7832b8907f96f6846e4d944052e3874d83d82f59`, is identical to the tested head's tree. CI runs 37118692649 and 37118705076 (application and postgres) passed on `dd50d86`. This slice started from that main.
+
+## What changed
+
+- **Invite to teach.** The Instructors dialogue has **Invite someone new to teach**. `POST /api/organisations/:slug/invitations` takes an optional `trackId`. The email and the invitation page name the track, and Member access lists the invitation with "To teach" and the track. The demo records a fictional invitation and sends nothing.
+- **Acceptance.** Accepting an invitation that names a track inserts the grant in the sender's name, with an audit entry, only while the sender is an active owner or administrator and the track exists. Otherwise the person joins as a member only. The response says which track they can teach.
+- **Additive migration 0020** adds `invitations.track_id` (tied to a track in the same community) and the insert policy `instructor_invited`, which admits a grant only for the accepting person, whose account has the invited address, for the invitation's track and sender, while the invitation is pending and the sender administers the community.
+- The web client's invitation calls moved into `lib/invitations.ts`, shared by Member access and the Instructors dialogue.
+- Migrations 0001 to 0019 are byte-identical; no grant changes; no new runtime dependency. Release constant and package version are 0.20.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 611 passed, 0 failed (605 existing plus 6 for instructor invitations under the restricted role, including the row-security policy and the route) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 281 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 16 covers, 10 instructors (1 new: inviting someone to teach), 10 accounts, 5 notifications, 16 monochrome, 20 v4 |
+| Connected-browser suites | 56 passed: 12 connected, 9 resources, 9 assessments, 13 covers, 6 instructors, 7 accounts |
+| `npm run test:postgres` | 19 passed on PostgreSQL 16 |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates with 55 pinned sources and 18 register decisions |
+
+Tests changed rather than added: migration-count assertions moved from 19 to 20.
+
+## Corrections made while verifying
+
+- The first version of the grant policy checked the invitation, track and sender but not the person: anyone holding the invitation's secret could have granted themselves. The policy now also requires the accepting account to have the invited address, and a test proves another member is refused.
+
+## Not verified, and why
+
+- No mail provider is configured, by the user's instruction; the invitation email was exercised through the encrypted outbox and opened in tests, not delivered.
+
+## Next actions
+
+1. Push, open the pull request, drive CI green and merge with the owner's standing approval; read back main.
+2. Two-step sign-in for owners and administrators, and email verification and change.
+3. When deployment resumes: follow LAUNCH_RUNBOOK.md once it lands (twenty migrations).
+
+## Historical Alpha 19 evidence: notification settings and email digests
 
 3 October 2026. Application 0.19.0-alpha.1. Members can turn off notices about conversations, learning, projects or events in each community, and can ask for a daily or weekly email digest of notices they have not read. Notices about their own access always arrive. See decisions/019-notification-settings-and-digests.md.
 
@@ -8,8 +66,8 @@
 | --- | --- |
 | Implemented | Yes, on `claude/build-out-tvzn40`, from main `a211a09` (the merge of PR #11, Alpha 18) |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes: runs 37118692649 and 37118705076 on `dd50d86` (application and postgres) |
+| Merged | Yes, [PR #12](https://github.com/EmotiveImpact/REUNIR/pull/12) as `648df31`, under the owner's standing approval (3 October 2026) |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 

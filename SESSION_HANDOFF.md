@@ -1,17 +1,53 @@
-# Current continuation: Alpha 19 notification settings and digests, then the rest of the roadmap
+# Current continuation: Alpha 20 instructor invitations, then the rest of the roadmap
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, decisions/019-notification-settings-and-digests.md, PILOT_OPERATIONS.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, decisions/020-instructor-invitations.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `a211a09`, the merge of PR #11 (Alpha 18), tree identical to its tested head `595dee2`.
+- Base: main `648df31`, the merge of PR #12 (Alpha 19), tree identical to its tested head `dd50d86`.
 - This slice: branch `claude/build-out-tvzn40`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ## What is done
 
-Members turn off notices about conversations, learning, projects or events per community and may choose a daily or weekly email digest of unread notices (Notifications page, **Notification settings**). Access, role, ownership and teaching notices always arrive. Muting is forward only. Additive migration 0019 adds `notification_preferences` with own-row writes and a narrow read policy for the digest job. `GET /api/internal/digests` and `npm run digests:queue` queue digests through the encrypted outbox; the mail drain sends them. Nothing is scheduled or sent until a mail provider and scheduler are configured.
+Owners and administrators invite someone who is not yet a member to teach one track from that track's Instructors dialogue. Accepting makes them a member and that track's instructor in the sender's name, only while the sender still administers the community. Additive migration 0020 adds the invitation's optional track and one insert policy that also checks the accepting account's address.
 
 ## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Preview as admin, open a track, choose **Instructors**, then **Invite someone new to teach**. For PostgreSQL: `npm run db:migrate` (applies 0020; no grant changes).
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+## Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Authority is granted explicitly and must be current when it takes effect; teaching is a per-track grant, not a community role. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+## Next
+
+1. Two-step sign-in for owners and administrators, and email verification and change.
+2. Later roadmap features: cover descriptions, upload scanning, group conversations and the account and trust items in ROADMAP.md.
+3. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 19 handover: notification settings and digests
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, decisions/019-notification-settings-and-digests.md, PILOT_OPERATIONS.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: Alpha 18 on `claude/build-out-tvzn40` ([PR #11](https://github.com/EmotiveImpact/REUNIR/pull/11)), from main `a924295` (PR #10, Alpha 17).
+- This slice: [PR #12](https://github.com/EmotiveImpact/REUNIR/pull/12), green in CI runs 37118692649 and 37118705076 and merged into main as `648df31` (tree identical to the tested head `dd50d86`). BUILD_STATUS.md records the local runs. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+
+### What is done
+
+Members turn off notices about conversations, learning, projects or events per community and may choose a daily or weekly email digest of unread notices (Notifications page, **Notification settings**). Access, role, ownership and teaching notices always arrive. Muting is forward only. Additive migration 0019 adds `notification_preferences` with own-row writes and a narrow read policy for the digest job. `GET /api/internal/digests` and `npm run digests:queue` queue digests through the encrypted outbox; the mail drain sends them. Nothing is scheduled or sent until a mail provider and scheduler are configured.
+
+### Run it
 
 ```sh
 cd platform
@@ -23,11 +59,11 @@ For PostgreSQL: `npm run db:migrate` (applies 0019; no grant changes beyond the 
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (now including `test:browser:notifications`), and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Notices about a person's own access always arrive. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. Authority is granted, never inferred from attribution or engagement. The interface stays black, white and neutral grey. Community review is not accreditation.
 
-## Next
+### Next
 
 1. Instructor email invitations and two-step sign-in for owners and administrators.
 2. Later roadmap features: email verification and change, cover descriptions, upload scanning, group conversations and the account and trust items in ROADMAP.md.

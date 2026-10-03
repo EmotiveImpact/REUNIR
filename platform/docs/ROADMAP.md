@@ -27,6 +27,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 17 | Deleting an account hands back claimed tasks everywhere, suspended communities included; replaced covers are erased at once; the deletion-during-acceptance case is tested | Mentions in other people's posts stay as written; real bucket deletion unverified |
 | Alpha 18 | Notices, knowledge-check review queues and the audit trail load a page at a time with exact counts; workspace reads stop growing with those histories | Posts, tasks and other collections still load with the snapshot; no archive of old notices yet |
 | Alpha 19 | Members turn off notice topics per community and may get a daily or weekly email digest of unread notices; access notices always arrive | No mail provider or scheduler configured; no per-notice switches or quiet hours |
+| Alpha 20 | Owners and administrators invite someone new by email to teach one track; accepting makes them a member and that track's instructor | Only while the sender still administers; one track per invitation; no contributor roles or instructor-created tracks |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 
