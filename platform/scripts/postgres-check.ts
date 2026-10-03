@@ -186,6 +186,25 @@ try{
         await assert.rejects(()=>rows(IDRIS,"INSERT INTO track_instructors(id,organization_id,created_at,track_id,user_id,granted_by) VALUES('g_pg','org_code_black',now(),'track_story','member_idris','member_idris')"),/row-level security/);
         await assert.rejects(()=>rows(DEMO_ADMIN,"UPDATE track_instructors SET track_id='track_story'"),/permission denied/);
     });
+    await check('contribution credits stay between two people until accepted, through a restricted PostgreSQL connection',async()=>{
+        const repo=new WorkspaceRepository(runtime!),IDRIS='member_idris';
+        const exec=(cmd:unknown,user:string)=>repo.execute('code-black',user,cmd,randomUUID(),'credits-postgres');
+        const rows=(user:string,sql:string,params:unknown[]=[],org='org_code_black')=>runtime!.transaction(async tx=>{await setContext(tx,org,user);return (await tx.query<Record<string,unknown>>(sql,params)).rows;});
+        const work=(await exec({type:'contribution.submit',projectId:'project_common',title:'Postgres credit check',body:'Fictional contribution for the PostgreSQL check.'},DEMO_USER)).objectId!;
+        const credit=(await exec({type:'credit.invite',contributionId:work,userId:IDRIS,role:'co-author'},DEMO_USER)).objectId!;
+        await assert.rejects(()=>exec({type:'credit.invite',contributionId:work,userId:'member_nia'},DEMO_USER),{code:'INVALID_CREDIT'});
+        await assert.rejects(()=>exec({type:'credit.invite',contributionId:work,userId:'member_maya'},IDRIS),{code:'AUTHOR_REQUIRED'});
+        assert.deepEqual(await rows(DEMO_ADMIN,'SELECT id FROM contribution_credits WHERE id=$1',[credit]),[],'an administrator cannot read the invitation');
+        assert.deepEqual(await rows(IDRIS,'SELECT id FROM contribution_credits WHERE id=$1',[credit],'org_studio_north'),[],'nor another community');
+        await assert.rejects(()=>rows(DEMO_USER,"UPDATE contribution_credits SET status='accepted',responded_at=now() WHERE id=$1",[credit]),/row-level security/,'the author cannot accept for them');
+        await assert.rejects(()=>rows(IDRIS,"UPDATE contribution_credits SET role='lead' WHERE id=$1",[credit]),/permission denied/);
+        await exec({type:'credit.respond',creditId:credit,decision:'accepted'},IDRIS);
+        assert.deepEqual((await rows(DEMO_ADMIN,'SELECT status FROM contribution_credits WHERE id=$1',[credit])),[{status:'accepted'}]);
+        assert((await repo.snapshot('code-black','member_nia')).contributionCredits.every(k=>k.status==='accepted'));
+        assert.equal((await rows(DEMO_ADMIN,'DELETE FROM contribution_credits RETURNING id')).length,0,'no credit is deleted outside a person’s own account deletion');
+        await exec({type:'credit.withdraw',creditId:credit},DEMO_USER);
+        assert.deepEqual(await rows(IDRIS,'SELECT status,withdrawn_by FROM contribution_credits WHERE id=$1',[credit]),[{status:'withdrawn',withdrawn_by:DEMO_USER}]);
+    });
     await check('the cover library lists, serves and removes pictures through a restricted PostgreSQL connection',async()=>{
         const repo=new WorkspaceRepository(runtime!),key=(org:string,id:string)=>`organisations/${org}/covers/library/${id}.png`;
         const exec=(cmd:unknown,user:string)=>repo.execute('code-black',user,cmd,randomUUID(),'library-postgres');
@@ -304,13 +323,16 @@ try{
         const seen=(await repo.snapshot('code-black',theo)).lessons.find(l=>l.id==='lesson_5')!.quiz!;
         await repo.execute('code-black',theo,{type:'quiz.attempt.submit',lessonId:'lesson_5',fingerprint:quizFingerprint(seen),answers:[{questionId:'q5_feedback',optionIds:['a']},{questionId:'q5_essentials',optionIds:['a']},{questionId:'q5_outcome',text:'useful'}]},randomUUID(),'pg-account');
         await repo.execute('code-black',DEMO_ADMIN,{type:'track.instructor.add',trackId:'track_product',userId:theo},randomUUID(),'pg-account');
+        const film=(await repo.execute('code-black','member_maya',{type:'contribution.submit',projectId:'project_afterhours',title:'Edited the night shift scene',body:'Fictional edit with Theo on sound.'},randomUUID(),'pg-account')).objectId!;
+        const theoCredit=(await repo.execute('code-black','member_maya',{type:'credit.invite',contributionId:film,userId:theo,role:'sound'},randomUUID(),'pg-account')).objectId!;
+        await repo.execute('code-black',theo,{type:'credit.respond',creditId:theoCredit,decision:'accepted'},randomUUID(),'pg-account');
         await admin.query("UPDATE members SET status='suspended' WHERE organization_id='org_studio_north' AND user_id=$1",[theo]);
         await assert.rejects(()=>repo.deleteAccount(DEMO_ADMIN),{code:'OWNER_CANNOT_DELETE'});
         assert.equal((await admin.query('SELECT count(*)::int AS n FROM auth_user WHERE id=$1',[DEMO_ADMIN])).rows[0].n,1,'a refused owner keeps their account');
         const {summary}=await repo.deleteAccount(theo);
-        assert.equal(summary.communities,2);assert.equal(summary.removed.quizAttempts,1);assert.equal(summary.removed.trackInstructors,1);
+        assert.equal(summary.communities,2);assert.equal(summary.removed.quizAttempts,1);assert.equal(summary.removed.trackInstructors,1);assert.equal(summary.removed.contributionCredits,1);
         assert.deepEqual((await admin.query('SELECT DISTINCT name,status,avatar,bio,role FROM members WHERE user_id=$1',[theo])).rows,[{name:'Former member',status:'left',avatar:'',bio:'',role:'member'}]);
-        for(const table of ['quiz_attempts','track_instructors','enrolments','reactions','rsvps','notifications','reputation','auth_session'])assert.equal((await admin.query(`SELECT count(*)::int AS n FROM ${table} WHERE user_id=$1`,[theo])).rows[0].n,0,table);
+        for(const table of ['quiz_attempts','track_instructors','contribution_credits','enrolments','reactions','rsvps','notifications','reputation','auth_session'])assert.equal((await admin.query(`SELECT count(*)::int AS n FROM ${table} WHERE user_id=$1`,[theo])).rows[0].n,0,table);
         assert.equal((await admin.query('SELECT count(*)::int AS n FROM auth_user WHERE id=$1',[theo])).rows[0].n,0);
         assert.equal((await admin.query('SELECT count(*)::int AS n FROM project_members WHERE user_id=$1',[theo])).rows[0].n,2,'team places stay with the work');
         await assert.rejects(()=>repo.snapshot('code-black',theo),{code:'NOT_FOUND'});

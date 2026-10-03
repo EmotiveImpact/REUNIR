@@ -8,6 +8,7 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { isAdmin } from '../../../../packages/domain/src/engine';
 import { canReviewEvidence, evidenceAuthor, evidenceText, historyOf, isReviewedEvidence, type EvidenceRecord } from '../../../../packages/domain/src/evidence-history';
+import { isCreditedOn } from '../../../../packages/domain/src/credits';
 import type { EvidenceChange, EvidenceSubject, EvidenceText } from '../../../../packages/contracts/src/index';
 
 const LIMITS: Record<EvidenceSubject, { title: number; text: number }> = { contribution: { title: 140, text: 8000 }, outcome: { title: 160, text: 5000 } };
@@ -40,7 +41,7 @@ export function EvidenceHistory({ subject, record }: { subject: EvidenceSubject;
     const author = evidenceAuthor(subject, record) === me.userId;
     const reviewed = isReviewedEvidence(subject, record);
     const pending = history.find(c => c.status === 'pending');
-    const reviewer = !author && canReviewEvidence(data, subject, record, me);
+    const reviewer = !author && canReviewEvidence(data, subject, record, me) && !(subject === 'contribution' && isCreditedOn(data, record.id, me.userId));
     const name = (userId: string | null) => data.members.find(m => m.userId === userId)?.name || 'Community reviewer';
     const actions = reviewed && (author || isAdmin(me));
     if (!history.length && !actions) return null;

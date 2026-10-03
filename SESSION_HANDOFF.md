@@ -1,49 +1,18 @@
-# Current continuation: Alpha 30 every form on the shared shadcn components
-
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, FORMS.md, decisions/030-shared-form-components.md and UI_DESIGN_DIRECTION.md first. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
-
-## Where the source is
-
-- Base: Alpha 29 on `claude/everyday-use-4z9rmz`.
-- The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
-- This thread held Alpha 27 to 30, decisions 027 to 030 and migrations 0028 and 0029; all four Everyday use items are built.
-
-## What is done
-
-Every form uses the shared shadcn components. New forms should use `components/ui` Input, Textarea, Label, NativeSelect, Checkbox, RadioGroup, Switch and Button; `scripts/test_forms_contract.py` fails on a hand-styled field.
-
-## Run it
-
-```sh
-cd platform
-npm ci
-VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
-```
-
-Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run build`, every `npm run test:browser:*` script (now including `test:browser:forms`). From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`.
-
-## Next
-
-1. When upload scanning (Alpha 23) lands, confirm task files go through it and gate downloads where decision 029 says.
-2. Later: remove the legacy `.button` and element rules so the shadcn classes alone style the app.
-3. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
-
----
-## Historical handover: Alpha 29 files on project tasks and live project work, then shared forms
+# Current continuation: Alpha 29 files on project tasks and live project work, then shared forms
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, PROJECT_WORK.md, decisions/029-task-files-and-live-project-work.md, LESSON_RESOURCES.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
-### Where the source is
+## Where the source is
 
 - Base: main `94b130b`, the merge of PR #25 (Alpha 28), tree identical to its tested head `e4d69fa`.
 - This slice: branch `claude/everyday-use-4z9rmz`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - This thread holds Alpha 27 to 30, decisions 027 to 030 and migrations 0028 and 0029.
 
-### What is done
+## What is done
 
 Project teams attach files to tasks through the shared upload-intent path; boards and open tasks refresh through a cheap change check; concurrent task edits are caught and explained. Additive migration 0029, no grant change.
 
-### Run it
+## Run it
 
 ```sh
 cd platform
@@ -55,19 +24,53 @@ Open Projects, a project, Open project workspace, then a task and Attach a file.
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (now including `test:browser:task-files`), and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`.
 
-### Next
+## Next
 
 1. Shared form components (Alpha 30). Task files already go through Alpha 23 upload scanning.
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
 
 ---
-## Historical handover: Alpha 33 evidence history, then consented credits
+## Historical handover: Alpha 34 consented credits, the last accounts and trust item
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, CREDITS.md, decisions/034-contribution-credits.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `e930e39`, the merge of PR #29 (Alpha 33, correcting and withdrawing reviewed evidence). The application version stays main's 0.39.0-alpha.1.
+- This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+
+### What is done
+
+The author of a contribution credits teammates; each person accepts or declines, and only accepted credits are shown, on the contribution and under Credited on in the person's profile. Credits never count as evidence. Invitations stay between the two people, under forced row security. Migration 0033.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+### Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores, notification settings, appeals and unanswered credits private. Reviewed evidence is corrected only through review and withdrawn only with a reason. A credit is shown only with the credited person's consent and is never evidence. Nobody decides about their own work. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+### Next
+
+1. Accounts and trust is complete for this round once this merges. Undecided: removing someone from a project team, credits on outcomes, and appeals against suspension or message-report outcomes.
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 33 handover: correcting and withdrawing reviewed evidence
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, EVIDENCE_HISTORY.md, decisions/033-evidence-history.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ### Where the source is
 
 - Base: main `f3efa39`, the merge of PR #26 (Alpha 32, appealing a hidden post). The application version stays main's 0.39.0-alpha.1.
+- Outcome: [PR #29](https://github.com/EmotiveImpact/REUNIR/pull/29), merged into main as `e930e39`.
 - This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ### What is done
