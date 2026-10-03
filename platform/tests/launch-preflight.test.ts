@@ -15,7 +15,7 @@ const good: Environment = {
     NODE_ENV: 'production', VITE_DATA_MODE: 'live', APP_ORIGIN: 'https://staging.ferven.example.test',
     DATABASE_URL: `postgresql://reunir_app:${DBPASS}@ep-quiet-sky-123456-pooler.eu-central-1.aws.neon.tech/reunir?sslmode=require`,
     BETTER_AUTH_SECRET: AUTH, EMAIL_ENCRYPTION_KEY: ENC, CRON_SECRET: CRON, RESEND_API_KEY: KEY, EMAIL_FROM: FROM,
-    GCS_BUCKET: 'ferven-staging-uploads', GCS_CREDENTIALS_JSON: GCS_JSON,
+    GCS_BUCKET: 'ferven-staging-uploads', GCS_CREDENTIALS_JSON: GCS_JSON, CLAMAV_HOST: 'clamav.internal',
 };
 const state = (f: Finding[], key: string) => f.find(x => x.key === key)?.state;
 const failures = (env: Environment) => inspectLaunch(env).filter(f => f.state === 'fail').map(f => f.key);
@@ -102,6 +102,16 @@ test('storage variables are paired and shaped', () => {
     assert.deepEqual(failures({ ...good, GCS_BUCKET: 'Bad_Bucket!' }), ['GCS_BUCKET']);
     assert.deepEqual(failures({ ...good, GCS_CREDENTIALS_JSON: '{not json' }), ['GCS_CREDENTIALS_JSON']);
     assert.equal(state(inspectLaunch({ ...good, GCS_CREDENTIALS_JSON: undefined }), 'GCS_CREDENTIALS_JSON'), 'warn');
+});
+
+test('uploads are scanned unless the launch says otherwise', () => {
+    assert.equal(state(inspectLaunch(good), 'upload-scanning'), 'pass');
+    assert.deepEqual(failures({ ...good, CLAMAV_HOST: undefined }), ['upload-scanning'], 'unset means required in production');
+    assert.equal(state(inspectLaunch({ ...good, CLAMAV_HOST: undefined, UPLOAD_SCANNING: 'optional' }), 'upload-scanning'), 'warn');
+    assert.deepEqual(failures({ ...good, UPLOAD_SCANNING: 'later' }), ['UPLOAD_SCANNING']);
+    assert.deepEqual(failures({ ...good, CLAMAV_PORT: 'clam' }), ['CLAMAV_PORT']);
+    assert.equal(state(inspectLaunch({ ...good, GCS_BUCKET: undefined, GCS_CREDENTIALS_JSON: undefined }), 'upload-scanning'), 'warn', 'a scanner without a bucket has nothing to scan');
+    assert(!JSON.stringify(inspectLaunch(good)).includes('clamav.internal'), 'the host is never printed');
 });
 
 test('no secret or credential value ever appears in the output', () => {

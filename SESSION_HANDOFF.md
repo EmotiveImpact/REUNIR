@@ -1,15 +1,15 @@
-# Current continuation: Alpha 31 data retention, then the rest of accounts and trust
+# Current continuation: Alpha 23 virus scanning of uploads (landing after Alpha 31), then the rest of the roadmap
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, RETENTION.md, decisions/031-data-retention.md, ACCOUNTS.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, SECURITY.md, decisions/023-upload-scanning.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `9b34cac`, the merge of PR #18 (Alpha 26, email confirmation and change), with main `fab9510` (PR #20, Alpha 25 contributor roles, migration 0023) and main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) merged in.
-- This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- Base: main `b24095a` (PR #14, Alpha 21), with main merged in at `ec4285d` (Alpha 22) and `b80fc04` (PR #23, Alpha 31, after Alpha 24 to 27). The version stays 0.31.0-alpha.1.
+- This slice: branch `claude/upload-scanning-1p9o9m`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ## What is done
 
-Housekeeping records are cleared by one list of rules (RETENTION.md): expired sessions and links, rate counters, request receipts, change events, finished mail and read notices. The job is a dry run unless told to apply, reports counts only, and clears each community's records inside its own tenant context. Migration 0030 adds the job's read-only community listing policy. Your account says how long everything is kept. Nothing is scheduled.
+When `CLAMAV_HOST` names a clamd service, every upload (lesson files, covers, library pictures, member attachments) is scanned at completion, at the exact stored generation that is then recorded and served. Flagged files are rejected and deleted with 422 `FILE_FLAGGED`; no verdict returns 503 `SCAN_UNAVAILABLE` and the upload stays pending. `UPLOAD_SCANNING` is required by default in production, so a server with a bucket and no scanner will not start. No migration.
 
 ## Run it
 
@@ -19,13 +19,48 @@ npm ci
 VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
 ```
 
-Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed. `npm run retention:run` needs `DATABASE_URL` and is a dry run by default.
+The demo has no storage, so nothing is scanned there. With a clamd reachable (for example the official `clamav/clamav` container on a private network), set `CLAMAV_HOST` and run `npm run scan:check`.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
 ## Product invariants for the next slice
 
-People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Retention clears housekeeping only; reviewed evidence and the audit trail stay. An address changes only by a link opened at the new address after the password. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Authority is granted explicitly and must be current when it takes effect; teaching is a per-track grant, not a community role. Owner and administrator authority may require two-step sign-in. No upload becomes ready unscanned when a scanner is configured, and an unclear scanner answer is never clean. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
 
 ## Next
+
+1. The remaining account and trust items in ROADMAP.md, which other threads hold (Alpha 31 to 34).
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing. At launch, run clamd beside the API and confirm it with `npm run scan:check`.
+
+---
+## Historical Alpha 31 handover: data retention
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, RETENTION.md, decisions/031-data-retention.md, ACCOUNTS.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `9b34cac`, the merge of PR #18 (Alpha 26, email confirmation and change), with main `fab9510` (PR #20, Alpha 25 contributor roles, migration 0023) and main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) merged in.
+- This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+
+### What is done
+
+Housekeeping records are cleared by one list of rules (RETENTION.md): expired sessions and links, rate counters, request receipts, change events, finished mail and read notices. The job is a dry run unless told to apply, reports counts only, and clears each community's records inside its own tenant context. Migration 0030 adds the job's read-only community listing policy. Your account says how long everything is kept. Nothing is scheduled.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed. `npm run retention:run` needs `DATABASE_URL` and is a dry run by default.
+
+### Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Retention clears housekeeping only; reviewed evidence and the audit trail stay. An address changes only by a link opened at the new address after the password. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+### Next
 
 1. Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and consented credit for several contributors, one pull request each. They are built locally in separate worktrees and need renumbering from main when opened.
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
