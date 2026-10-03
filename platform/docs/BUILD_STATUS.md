@@ -22,6 +22,7 @@ Numbering: main carried Alpha 22 (cover descriptions, PR #15) and Alpha 23 (viru
 - **Invitations confirm the address** they were sent to when accepted.
 - **`POST /api/account/email`** checks the password (five attempts in fifteen minutes), then Better Auth sends a confirmation link to the new address; the address changes only when it is opened. The current address gets a notice with the new address masked and no link. A taken address gets the same answer and no mail. Better Auth's own `/api/auth/change-email` answers 404.
 - `/api/account/capabilities` adds `emailVerification`, `emailConfirmation` and `emailChange`; `/api/session` adds the person's own `email` and `emailVerified`.
+- Review fixes on PR #18: changing or resetting the password cancels any change link asked for before it (the server refuses an older link and the address stays), and the password check no longer needs a session started within the last day, so days two to seven of a session can change the address, delete the account or hand over a community.
 - `npm run launch:preflight` (from PR #17) now also checks `EMAIL_VERIFICATION`: an invalid value fails, `optional` warns. Against the blank `.env.example` it reports 5 failures and 6 warnings.
 - No migration, no grant change, no new runtime dependency. Release constant and package version are 0.24.0-alpha.1.
 

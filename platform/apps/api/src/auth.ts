@@ -1,5 +1,7 @@
 import type { MailQueue } from './mail';
 import { betterAuth } from 'better-auth';
+import { createEmailVerificationToken } from 'better-auth/api';
+import { verifyJWT } from 'better-auth/crypto';
 import { twoFactor } from 'better-auth/plugins/two-factor';
 import { TWO_FACTOR_ISSUER } from '../../../packages/contracts/src/two-factor';
 import { EMAIL_LINK_SECONDS, verificationMail, type EmailVerification } from '../../../packages/contracts/src/email';
@@ -41,11 +43,19 @@ export function createAuth(db: Database, baseURL: string, secret: string, bootst
         advanced: { cookiePrefix: 'reunir', useSecureCookies: base.protocol === 'https:', defaultCookieAttributes: { httpOnly: true, sameSite: 'lax', secure: base.protocol === 'https:' } },
     });
 }
-/** The signed-in person's current password, checked by Better Auth. False only for a wrong password; other errors rise. */
+/**
+ * The signed-in person's current password, checked against their stored hash with Better Auth's own hasher. False for a
+ * wrong password or no session; other errors rise. Typing the password is the fresh proof of who is asking, so this does
+ * not also require a session started within the last day, as Better Auth's own route does: a session stays valid for
+ * seven days and every route that asks for the password must work throughout.
+ */
 export function passwordCheck(auth: ReturnType<typeof createAuth>) {
     return async (headers: Headers, password: string) => {
-        try { await auth.api.verifyPassword({ body: { password }, headers }); return true; }
-        catch (error) { if ((error as { body?: { code?: string } }).body?.code === 'INVALID_PASSWORD') return false; throw error; }
+        const session = await auth.api.getSession({ headers });
+        if (!session) return false;
+        const ctx = await auth.$context;
+        const hash = (await ctx.internalAdapter.findAccounts(session.user.id)).find(a => a.providerId === 'credential')?.password;
+        return !!hash && await ctx.password.verify({ hash, password });
     };
 }
 /** The signed-in person as the API needs them: who they are, their address and whether it is confirmed, and two-step sign-in. */
@@ -56,6 +66,34 @@ export function sessionResolver(auth: ReturnType<typeof createAuth>) {
     };
 }
 /** Asks Better Auth to send a confirmation link to a new address. The address changes only when that link is opened. */
+/**
+ * Sends the link that moves an account to a new address, after the caller has checked the password. The link is Better
+ * Auth's own (the same signed token its change-email route makes), so opening it changes the address through Better Auth.
+ * A taken address gets no link and the same answer.
+ */
 export function emailChanger(auth: ReturnType<typeof createAuth>) {
-    return async (headers: Headers, newEmail: string, callbackURL: string) => { await auth.api.changeEmail({ body: { newEmail, callbackURL }, headers }); };
+    return async (user: { id: string; email: string; name: string }, newEmail: string, callbackURL: string) => {
+        const ctx = await auth.$context;
+        const send = ctx.options.emailVerification?.sendVerificationEmail;
+        if (!send) throw new Error('Changing an email address needs a mail queue.');
+        if (await ctx.internalAdapter.findUserByEmail(newEmail)) return;
+        const token = await createEmailVerificationToken(ctx.secret, user.email, newEmail, EMAIL_LINK_SECONDS, { requestType: 'change-email-verification' });
+        await send({ user: { ...user, email: newEmail } as never, url: `${ctx.baseURL}/verify-email?token=${token}&callbackURL=${encodeURIComponent(callbackURL)}` });
+    };
+}
+/**
+ * Whether a link to change an address may still be used. A link asked for before the password last changed is refused, so
+ * changing or resetting the password stops a change someone else asked for. Links that change no address pass through.
+ */
+export function emailChangeLinkCheck(auth: ReturnType<typeof createAuth>) {
+    return async (token: string) => {
+        const ctx = await auth.$context;
+        const payload = await verifyJWT<{ email?: string; updateTo?: string; iat?: number }>(token, ctx.secret);
+        if (!payload?.updateTo || !payload.email) return true;
+        const user = await ctx.internalAdapter.findUserByEmail(payload.email);
+        if (!user) return true;
+        const credential = (await ctx.internalAdapter.findAccounts(user.user.id)).find(a => a.providerId === 'credential');
+        const changed = credential ? Math.floor(new Date(credential.updatedAt).getTime() / 1000) : 0;
+        return typeof payload.iat === 'number' && payload.iat >= changed;
+    };
 }

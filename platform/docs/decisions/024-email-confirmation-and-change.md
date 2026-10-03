@@ -23,6 +23,8 @@ Every account signs in with an email address, and password resets and invitation
 - `required` in production, matching `ADMIN_TWO_FACTOR`: a pilot should not run with addresses nobody has confirmed.
 - No confirmation of the change from the old address first. The password is the proof that the person asking owns the account, and the old address is told at once. A stolen session alone cannot move an account.
 - Opening the change link while signed out signs the person in, as Better Auth does, because only the new address received it. That sign-in skips two-step sign-in; the person had to pass it, and give their password, to ask for the change.
+- Changing or resetting the password cancels every change link asked for before it. The links are Better Auth's signed tokens, which cannot be revoked one by one, so the server refuses any change link issued before the password last changed and returns to Your account with "That link no longer works". The notice to the old address tells its owner to change the password, and that is now enough. (Found in review on PR #18.)
+- The password typed into the change form, or the deletion and ownership forms, is checked against the stored hash directly. Better Auth's own password route also demands a session started within the last day, which made days two to seven of a valid session fail; typing the password is itself the fresh proof. (Found in review on PR #18.)
 - Invitations already sent to the old address are not moved. The panel says so.
 - Better Auth's per-path limit for sending a confirmation link is three a minute per client address.
 

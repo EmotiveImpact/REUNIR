@@ -20,7 +20,8 @@ export function EmailAddressPanel() {
         <p>In a connected community your email address signs you in. A link sent to it confirms that it is yours; accepting an invitation confirms it too. You can move your account to a new address: the change happens only when you open the link sent there, and your current address is told about it.</p>
         <p className="sample-note">This fictional demo has no email addresses or sign-in, so there is nothing to confirm or change here.</p>
     </section>;
-    const confirmed = !!identity.emailVerified, justConfirmed = new URLSearchParams(location.search).get('email') === 'confirmed';
+    const outcome = new URLSearchParams(location.search).get('email');
+    const confirmed = !!identity.emailVerified, justConfirmed = outcome === 'confirmed';
     const resend = async () => {
         setError(''); setSent(''); setWorking(true);
         try { await sendConfirmation(identity.email ?? ''); setSent('A confirmation link is on its way. It works for 24 hours.'); }
@@ -31,6 +32,7 @@ export function EmailAddressPanel() {
         <div className="two-step-head"><h2 id={heading}>Email address</h2><Pill>{confirmed ? <><MailCheck size={13} aria-hidden="true"/>Confirmed</> : 'Not confirmed'}</Pill></div>
         <p className="email-current">{identity.email}</p>
         {justConfirmed && confirmed && <p className="email-confirmed" role="status">Thank you. This address is confirmed.</p>}
+        {outcome === 'refused' && <p className="email-confirmed" role="status">That link no longer works because the password changed after it was sent. Your address has not changed.</p>}
         <p>{confirmed
             ? 'You sign in with this address, and password resets and invitations go to it.'
             : caps.data?.verification === 'required' ? 'Confirm this address so you can keep signing in. The link goes to the address above.' : 'Confirm this address so password resets and notices reach you. The link goes to the address above.'}</p>

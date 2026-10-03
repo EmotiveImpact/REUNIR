@@ -8,7 +8,7 @@ import { createSeed, DEMO_ADMIN, DEMO_USER } from '../packages/domain/src/seed';
 import { MailQueue, type Mail } from '../apps/api/src/mail';
 import { InvitationService } from '../apps/api/src/invitations';
 import { createApp } from '../apps/api/src/app';
-import { createAuth, emailChanger, passwordCheck, sessionResolver } from '../apps/api/src/auth';
+import { createAuth, emailChangeLinkCheck, emailChanger, passwordCheck, sessionResolver } from '../apps/api/src/auth';
 import { emailVerificationMode, inspectConfiguration, validateRuntimeConfiguration } from '../apps/api/src/config';
 import { EMAIL_CHANGE_SENT, maskEmail } from '../packages/contracts/src/email';
 
@@ -54,7 +54,7 @@ before(async () => {
         await db.query("INSERT INTO auth_account(id,account_id,provider_id,user_id,password,created_at,updated_at) VALUES($1,$2,'credential',$2,$3,now(),now())", [randomUUID(), id, hash]);
     }
     const shared = { repository: repo, origin, invitations: new InvitationService(repo, origin, mail) };
-    required = createApp({ ...shared, mail, emailVerification: 'required', verifyPassword: passwordCheck(auth), changeEmail: emailChanger(auth), authHandler: r => auth.handler(r), resolveSession: sessionResolver(auth) });
+    required = createApp({ ...shared, mail, emailVerification: 'required', verifyPassword: passwordCheck(auth), changeEmail: emailChanger(auth), emailChangeLinkValid: emailChangeLinkCheck(auth), authHandler: r => auth.handler(r), resolveSession: sessionResolver(auth) });
     optional = createApp({ ...shared, mail, emailVerification: 'optional', verifyPassword: passwordCheck(lenient), changeEmail: emailChanger(lenient), authHandler: r => lenient.handler(r), resolveSession: sessionResolver(lenient) });
     noMail = createApp({ ...shared, mail: unsent, verifyPassword: passwordCheck(plain), changeEmail: emailChanger(plain), authHandler: r => plain.handler(r), resolveSession: sessionResolver(plain) });
     for (const [id, email, verified] of people) if (verified) { const s = await signIn(email); assert.equal(s.status, 200); cookies[id] = s.cookie; }
@@ -148,14 +148,47 @@ test('the address changes only when the link sent to the new address is opened, 
     assert.equal((await session(fresh.cookie)).email, 'alex.new@example.test');
 });
 
+test('a session older than a day can still change the address: typing the password is the fresh proof', async () => {
+    await db.query("UPDATE auth_session SET created_at=now() - interval '3 days' WHERE user_id=$1", [DEMO_ADMIN]);
+    assert.equal((await session(cookies[DEMO_ADMIN])).id, DEMO_ADMIN, 'the session itself is still valid');
+    await takeMail();
+    assert.equal(await errorCode(await post('/api/account/email', { newEmail: 'amina.next@example.test', password: 'wrong-password-123' }, cookies[DEMO_ADMIN])), 'WRONG_PASSWORD');
+    const r = await post('/api/account/email', { newEmail: 'amina.next@example.test', password: PASSWORD }, cookies[DEMO_ADMIN]);
+    assert.equal(r.status, 200, 'not refused for the age of the session');
+    assert((await takeMail()).some(m => m.to === 'amina.next@example.test'));
+});
+
+test('changing the password cancels a change link asked for before it, and the address stays', async () => {
+    await takeMail();
+    assert.equal((await post('/api/account/email', { newEmail: 'amina.taken.over@example.test', password: PASSWORD }, cookies[DEMO_ADMIN])).status, 200);
+    const pending = (await takeMail()).find(m => m.to === 'amina.taken.over@example.test')!;
+    await new Promise(r => setTimeout(r, 1100));
+    const before = (await db.query<{ updated_at: Date }>("SELECT updated_at FROM auth_account WHERE user_id=$1 AND provider_id='credential'", [DEMO_ADMIN])).rows[0].updated_at;
+    await db.query("UPDATE auth_session SET created_at=now() WHERE user_id=$1", [DEMO_ADMIN]);
+    const changed = await post('/api/auth/change-password', { currentPassword: PASSWORD, newPassword: PASSWORD }, cookies[DEMO_ADMIN]);
+    assert.equal(changed.status, 200, 'the owner changes the password');
+    const after = (await db.query<{ updated_at: Date }>("SELECT updated_at FROM auth_account WHERE user_id=$1 AND provider_id='credential'", [DEMO_ADMIN])).rows[0].updated_at;
+    assert(new Date(after).getTime() > new Date(before).getTime(), 'the password change is recorded');
+    const opened = await open(link(pending));
+    assert.equal(opened.status, 302);
+    assert.equal(opened.headers.get('location'), origin + '/#/account?email=refused');
+    assert.equal((await db.query<{ email: string }>('SELECT email FROM auth_user WHERE id=$1', [DEMO_ADMIN])).rows[0].email, 'amina@example.test', 'the address did not change');
+    assert(!opened.headers.getSetCookie().some(c => c.includes('session_token=') && !c.includes('session_token=;')), 'no session is created for whoever opened it');
+    await post('/api/account/email', { newEmail: 'amina.later@example.test', password: PASSWORD }, cookies[DEMO_ADMIN]);
+    const later = (await takeMail()).find(m => m.to === 'amina.later@example.test')!;
+    assert.notEqual((await open(link(later), cookies[DEMO_ADMIN])).headers.get('location'), origin + '/#/account?email=refused', 'a link asked for afterwards still works');
+    assert.equal((await db.query<{ email: string }>('SELECT email FROM auth_user WHERE id=$1', [DEMO_ADMIN])).rows[0].email, 'amina.later@example.test');
+    cookies[DEMO_ADMIN] = (await signIn('amina.later@example.test')).cookie;
+});
+
 test('asking for an address someone else already has answers the same way and sends that person nothing', async () => {
     await takeMail();
-    const r = await post('/api/account/email', { newEmail: 'amina@example.test', password: PASSWORD }, cookies[DEMO_USER]);
+    const r = await post('/api/account/email', { newEmail: 'amina.later@example.test', password: PASSWORD }, cookies[DEMO_USER]);
     assert.equal(r.status, 200);
     assert.equal((await r.json()).message, EMAIL_CHANGE_SENT);
     const sent = await takeMail();
-    assert(!sent.some(m => m.to === 'amina@example.test'), 'the other account gets no link');
-    assert.equal((await db.query<{ email: string }>('SELECT email FROM auth_user WHERE id=$1', [DEMO_ADMIN])).rows[0].email, 'amina@example.test');
+    assert(!sent.some(m => m.to === 'amina.later@example.test'), 'the other account gets no link');
+    assert.equal((await db.query<{ email: string }>('SELECT email FROM auth_user WHERE id=$1', [DEMO_ADMIN])).rows[0].email, 'amina.later@example.test');
 });
 
 test('five attempts in fifteen minutes are allowed per account', async () => {

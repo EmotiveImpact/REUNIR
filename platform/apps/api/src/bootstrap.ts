@@ -6,7 +6,7 @@ import {InvitationService} from './invitations';
 import {DigestService} from './digests';
 import { openDatabase } from '../../../packages/db/src/connection';
 import { WorkspaceRepository } from '../../../packages/db/src/repository';
-import { createAuth, emailChanger, passwordCheck, sessionResolver } from './auth';
+import { createAuth, emailChangeLinkCheck, emailChanger, passwordCheck, sessionResolver } from './auth';
 import { createApp } from './app';
 import { googleStorage } from './storage';
 export async function bootstrap() {
@@ -30,7 +30,7 @@ export async function bootstrap() {
     const digests=mail.transport?new DigestService(db,mail,new URL(APP_ORIGIN).origin):undefined;
     const app = createApp({ repository, invitations, mail, operations, cronSecret:process.env.CRON_SECRET, digests,
         registerInvited:async(name,email,password)=>{const result=await registration.api.signUpEmail({body:{name,email,password}});return {id:result.user.id};},
-        verifyPassword: passwordCheck(auth), emailVerification, changeEmail: emailChanger(auth), origin: APP_ORIGIN, resolveSession: sessionResolver(auth), adminTwoFactor: adminTwoFactorMode(process.env), authHandler: req => auth.handler(req), storage: GCS_BUCKET ? googleStorage(GCS_BUCKET, GCS_CREDENTIALS_JSON) : undefined });
+        verifyPassword: passwordCheck(auth), emailVerification, changeEmail: emailChanger(auth), emailChangeLinkValid: emailChangeLinkCheck(auth), origin: APP_ORIGIN, resolveSession: sessionResolver(auth), adminTwoFactor: adminTwoFactorMode(process.env), authHandler: req => auth.handler(req), storage: GCS_BUCKET ? googleStorage(GCS_BUCKET, GCS_CREDENTIALS_JSON) : undefined });
     return { app, db, repository, auth, mail, invitations, digests };
     } catch(error) { await db.close(); throw error; }
 }

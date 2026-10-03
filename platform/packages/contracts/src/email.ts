@@ -18,6 +18,8 @@ export const EMAIL_LINK_SECONDS = 24 * 60 * 60;
 
 /** Where a confirmation link returns to, inside the app, and what the page then says. */
 export const EMAIL_CONFIRMED_PATH = '/account?email=confirmed';
+/** Where a change link returns to when the password changed after it was asked for, so it no longer works. */
+export const EMAIL_LINK_REFUSED_PATH = '/account?email=refused';
 
 export const emailChangeRequest = z.object({
     newEmail: z.string().trim().toLowerCase().email('Enter an email address you can open.').max(254),
@@ -42,5 +44,5 @@ export const verificationMail = (url: string) => ({
 /** Sent to the current address when someone asks to move the account to another one. */
 export const changeNoticeMail = (newEmail: string) => ({
     subject: 'Your REUNIR email address is being changed',
-    text: `Someone signed in to your REUNIR account asked to change its email address to ${maskEmail(newEmail)}. The change happens only when the confirmation link sent to that address is opened.\n\nIf this was not you, sign in and change your password straight away. Until the link is opened, this address still signs you in.`,
+    text: `Someone signed in to your REUNIR account asked to change its email address to ${maskEmail(newEmail)}. The change happens only when the confirmation link sent to that address is opened.\n\nIf this was not you, sign in and change your password straight away: that cancels the link. Until the link is opened, this address still signs you in.`,
 });

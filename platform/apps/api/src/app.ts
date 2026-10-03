@@ -20,7 +20,7 @@ import { SIGNATURE_BYTES, fileSignatureMatches, resourceUploadRequest, type Reso
 import { accountDeletionRequest } from '../../../packages/contracts/src/account';
 import { pagedList, pageQuery } from '../../../packages/contracts/src/pages';
 import { ownershipTransferRequest } from '../../../packages/contracts/src/ownership';
-import { EMAIL_CHANGE_SENT, EMAIL_CONFIRMED_PATH, changeNoticeMail, emailChangeRequest, type EmailVerification } from '../../../packages/contracts/src/email';
+import { EMAIL_CHANGE_SENT, EMAIL_CONFIRMED_PATH, EMAIL_LINK_REFUSED_PATH, changeNoticeMail, emailChangeRequest, type EmailVerification } from '../../../packages/contracts/src/email';
 import { TWO_FACTOR_REQUIRED, TWO_FACTOR_REQUIRED_MESSAGE, type AdminTwoFactor } from '../../../packages/contracts/src/two-factor';
 import { COVER_HEAD_BYTES, coverBytesAcceptable, coverLibraryUploadRequest, coverSubject, coverUploadRequest } from '../../../packages/contracts/src/covers';
 export interface SessionIdentity {
@@ -52,9 +52,11 @@ interface Dependencies {
     /** Whether an unconfirmed address may sign in. Reported to the browser; Better Auth enforces it. Default optional. */
     emailVerification?: EmailVerification;
     /** Asks the auth provider to send a confirmation link to a new address. Only this API's password-checked route calls it. */
-    changeEmail?: (headers: Headers, newEmail: string, callbackURL: string) => Promise<void>;
+    changeEmail?: (user: { id: string; email: string; name: string }, newEmail: string, callbackURL: string) => Promise<void>;
+    /** False for a link to change an address that was asked for before the password last changed. */
+    emailChangeLinkValid?: (token: string) => Promise<boolean>;
 }
-export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, invitations, mail, cronSecret, registerInvited, verifyPassword, digests, adminTwoFactor = 'optional', emailVerification = 'optional', changeEmail }: Dependencies) {
+export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, invitations, mail, cronSecret, registerInvited, verifyPassword, digests, adminTwoFactor = 'optional', emailVerification = 'optional', changeEmail, emailChangeLinkValid }: Dependencies) {
     const messaging=new MessagingRepository(repository);
     const canonical = new URL(origin).origin;
     const app = new Hono<{
@@ -147,12 +149,19 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         const body = emailChangeRequest.parse(await c.req.json());
         if (!await verifyPassword(c.req.raw.headers, body.password)) throw new DomainError('WRONG_PASSWORD', 'That password is not right.', 403);
         if (body.newEmail === who.email?.toLowerCase()) throw new DomainError('SAME_EMAIL', 'That is already your email address.');
-        await changeEmail(c.req.raw.headers, body.newEmail, canonical + '/#' + EMAIL_CONFIRMED_PATH);
-        if (who.email) await mail.enqueue({ to: who.email, ...changeNoticeMail(body.newEmail) });
+        if (!who.email) throw new DomainError('EMAIL_UNAVAILABLE', 'Your account has no email address to change.', 409);
+        await changeEmail({ id: who.id, email: who.email, name: who.name }, body.newEmail, canonical + '/#' + EMAIL_CONFIRMED_PATH);
+        await mail.enqueue({ to: who.email, ...changeNoticeMail(body.newEmail) });
         return c.json({ requested: true, message: EMAIL_CHANGE_SENT });
     });
     // Only the route above may change an address, so the password is always asked for.
     app.post('/api/auth/change-email', c => c.json({ error: { code: 'NOT_FOUND', message: 'Endpoint not found.' } }, 404));
+    // A change link asked for before the password last changed no longer works, so a password change or reset stops it.
+    app.get('/api/auth/verify-email', async (c, next) => {
+        const token = c.req.query('token');
+        if (token && emailChangeLinkValid && !await emailChangeLinkValid(token)) return c.redirect(canonical + '/#' + EMAIL_LINK_REFUSED_PATH);
+        await next();
+    });
     app.on(['GET', 'POST'], '/api/auth/*', c => authHandler ? authHandler(c.req.raw) : c.json({ error: { code: 'AUTH_UNAVAILABLE', message: 'Authentication is not configured.' } }, 503));
     app.get('/api/session', async (c) => { const who = await resolveSession(c.req.raw.headers); return c.json(who ? { ...who, emailVerified: who.emailVerified === true, twoFactorEnabled: who.twoFactorEnabled === true, memberships: await repository.memberships(who.id) } : null); });
     // The one rule for owner and administrator authority when ADMIN_TWO_FACTOR is required: an account without two-step

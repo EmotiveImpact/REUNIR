@@ -86,7 +86,7 @@ Version 0.24.0-alpha.1. Your account has an **Email address** panel showing the 
 - **Changing it.** **Change email address…** asks for the new address and your password. A confirmation link goes to the new address and a notice to the current one, naming the new address only in part. Nothing changes until the link is opened; then the new address signs in, is confirmed, and the old one no longer works. If the new address already has an account, the answer is the same and nothing is sent there. Five attempts in fifteen minutes are allowed. Invitations already sent to the old address still need it.
 - **The demo** has no addresses, so its panel only explains the feature.
 
-`POST /api/account/email` checks the password with Better Auth and then calls Better Auth's change-email flow; Better Auth's own `/api/auth/change-email` route is closed so the password is always asked for. No migration: `auth_user.email_verified` and `auth_verification` already existed. The decision is in `decisions/024-email-confirmation-and-change.md`.
+`POST /api/account/email` checks the password against the stored hash with Better Auth's hasher and then sends Better Auth's own change link (the same signed token its change-email flow makes); changing or resetting the password afterwards cancels that link, and the server refuses it with "That link no longer works"; Better Auth's own `/api/auth/change-email` route is closed so the password is always asked for. No migration: `auth_user.email_verified` and `auth_verification` already existed. The decision is in `decisions/024-email-confirmation-and-change.md`.
 
 ## Known limits
 
