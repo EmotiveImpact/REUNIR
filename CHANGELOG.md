@@ -24,6 +24,20 @@ Details:
 
 - Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
 
+## Alpha 23: virus scanning of uploads (no version change), 3 October 2026
+
+On main through [PR #16](https://github.com/EmotiveImpact/REUNIR/pull/16), merged as `16b2768`. Alpha 23 was allocated to this slice before it was built; it reaches main after Alpha 31, so the version stays 0.31.0-alpha.1 rather than going backwards.
+
+**In plain language:** once a virus scanner is connected, every file people upload (lesson files, cover pictures, library pictures and attachments) is checked before anyone can use it. A flagged file is deleted straight away and the uploader is told why. If the scanner is briefly unavailable, the upload simply waits and can be tried again.
+
+Details:
+
+- ClamAV's clamd is reached over TCP with its `INSTREAM` command (`CLAMAV_HOST`, `CLAMAV_PORT`); no new runtime dependency and no paid service.
+- The whole stored file is scanned at the exact generation that is then recorded and served. Flagged files return 422 `FILE_FLAGGED` and are deleted; no verdict returns 503 `SCAN_UNAVAILABLE` and the upload stays pending.
+- `UPLOAD_SCANNING` (`required` or `optional`, required by default in production): with a bucket and no scanner, a production server will not start. `npm run scan:check` tests a configured clamd with the EICAR test file (decision 023).
+- `npm run launch:preflight` and LAUNCH_RUNBOOK.md cover the scanner: clamd runs on a private network beside the API, since Vercel functions cannot run it.
+- A rejected member attachment can no longer be completed again. No database migration.
+
 ## 0.31.0-alpha.1 (Alpha 31): data retention rules, 3 October 2026
 
 On main through [PR #23](https://github.com/EmotiveImpact/REUNIR/pull/23), merged as `b80fc04`. Numbering follows the project's allocation of 3 October 2026: this thread holds Alpha 31 to 34, decision records 031 to 034 and migrations 0030 to 0033, so data retention is Alpha 31, decision 031 and migration 0030 (first opened as Alpha 27 with migration 0023).

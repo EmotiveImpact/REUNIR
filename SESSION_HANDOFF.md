@@ -4,9 +4,9 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, decisions/025-con
 
 ## Where the source is
 
-- Base: main `fab9510`, the merge of PR #20 (Alpha 25 contributor roles), with main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) and main `b80fc04` (PR #23, Alpha 31 data retention, migration 0030) merged in.
+- Base: main `fab9510`, the merge of PR #20 (Alpha 25 contributor roles), with main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) and main `b80fc04` (PR #23, Alpha 31 data retention, migration 0030) and main `16b2768` (PR #16, Alpha 23 virus scanning) merged in.
 - This slice: branch `claude/courses-teaching-6hum2q`, restarted from that main. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
-- Numbering: courses and teaching uses Alpha 35 to 38, decisions 035 to 038 and migrations 0034 to 0037, as allocated by the project coordinator on 3 October 2026. Other threads hold Alpha 27 to 34 and 39 to 40. Alpha 23 (upload scanning) is still on PR #16.
+- Numbering: courses and teaching uses Alpha 35 to 38, decisions 035 to 038 and migrations 0034 to 0037, as allocated by the project coordinator on 3 October 2026. Other threads hold Alpha 27 to 34 and 39 to 40.
 
 ## What is done
 
@@ -32,6 +32,42 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 
 1. Instructors starting their own tracks, published by an administrator (Alpha 36, migration 0035), then uploaded lesson video (Alpha 37, migration 0036). Both are built locally in this thread. Question banks, timers and partial marks wait for pilot needs.
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 23 handover: virus scanning of uploads
+- Outcome: [PR #16](https://github.com/EmotiveImpact/REUNIR/pull/16), merged into main as `16b2768`.
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, SECURITY.md, decisions/023-upload-scanning.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `b24095a` (PR #14, Alpha 21), with main merged in at `ec4285d` (Alpha 22) and `b80fc04` (PR #23, Alpha 31, after Alpha 24 to 27). The version stays 0.31.0-alpha.1.
+- This slice: branch `claude/upload-scanning-1p9o9m`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+
+### What is done
+
+When `CLAMAV_HOST` names a clamd service, every upload (lesson files, covers, library pictures, member attachments) is scanned at completion, at the exact stored generation that is then recorded and served. Flagged files are rejected and deleted with 422 `FILE_FLAGGED`; no verdict returns 503 `SCAN_UNAVAILABLE` and the upload stays pending. `UPLOAD_SCANNING` is required by default in production, so a server with a bucket and no scanner will not start. No migration.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+The demo has no storage, so nothing is scanned there. With a clamd reachable (for example the official `clamav/clamav` container on a private network), set `CLAMAV_HOST` and run `npm run scan:check`.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+### Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Authority is granted explicitly and must be current when it takes effect; teaching is a per-track grant, not a community role. Owner and administrator authority may require two-step sign-in. No upload becomes ready unscanned when a scanner is configured, and an unclear scanner answer is never clean. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+### Next
+
+1. The remaining account and trust items in ROADMAP.md, which other threads hold (Alpha 31 to 34).
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing. At launch, run clamd beside the API and confirm it with `npm run scan:check`.
 
 ---
 ## Historical Alpha 31 handover: data retention
