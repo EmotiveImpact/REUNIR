@@ -65,7 +65,26 @@
 .cover-slider{grid-template-columns:minmax(0,1fr) 44px}.cover-slider label{grid-column:1/-1}
 .cover-previews{grid-template-columns:minmax(0,1fr) 64px}.cover-preview-banner{grid-column:1/-1}
 .detail-tools{float:none;justify-content:flex-start;margin:0 0 14px}
-.cover-library-list>li{flex-wrap:wrap}.cover-library-list>li>.button{margin-left:86px}
+.cover-library-list>li{flex-wrap:wrap}.cover-library-list>li>.button,.cover-library-row-actions{margin-left:86px}
 }
 .cover-description{display:grid;gap:6px}
 .cover-description small{color:var(--muted);font-size:11px;line-height:1.6}
+/* Library management: tags, the picker's filter and the row actions. Neutral greys only. */
+.cover-library-row-actions{display:flex;flex-wrap:wrap;gap:8px}
+.cover-tag-list{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0;padding:0;list-style:none}
+.cover-tag{display:inline-flex;align-items:center;min-height:22px;padding:2px 8px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:#d4d4d4;font-size:11px;line-height:1.4}
+/* No colour transition: a toggle changes state at once, so it never passes through a low-contrast mix. */
+button.cover-tag:not(:disabled){min-height:28px;cursor:pointer;transition:none}
+button.cover-tag:hover{border-color:#5d5d5d}
+button.cover-tag[aria-pressed=true]{border-color:#f1f1f1;background:#f1f1f1;color:#111111}
+button.cover-tag:focus-visible{outline:2px solid #f1f1f1;outline-offset:2px}
+.cover-library-filter{display:grid;gap:8px}
+.cover-library-filter>label{font-size:12px}
+.cover-library-search{display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:#141414;color:var(--dim)}
+.cover-library-search input{flex:1;min-width:0;border:0;background:transparent;padding:8px 0}
+.cover-library-search:focus-within{border-color:#d4d4d4}
+.cover-tag-filters{display:flex;flex-wrap:wrap;gap:6px}
+.cover-library-picker p.cover-library-count{font-size:11px;color:var(--muted)}
+.cover-library-label{display:grid;gap:2px}
+.cover-library-tags{font-size:11px;color:var(--muted)}
+.cover-library-none{display:flex;flex-wrap:wrap;align-items:center;gap:10px}

@@ -93,7 +93,7 @@ test('when required, an owner without two-step sign-in keeps reads and member ac
     const spaces = (await (await get('/api/organisations/code-black/workspace', cookies[DEMO_ADMIN])).json()).spaces;
     assert(!spaces.some((s: { name: string }) => s.name === 'Owner without two-step'), 'nothing was written');
     assert.equal((await command(DEMO_ADMIN, { type: 'post.create', spaceId: 'space_general', kind: 'update', title: '', body: 'An ordinary post still works.' })).status, 200);
-    for (const [path, body] of [['/api/organisations/code-black/invitations', { email: 'someone@example.test' }], ['/api/organisations/code-black/ownership', { memberId: SOFIA, password: PASSWORD, confirmation: 'Code Black' }], ['/api/organisations/code-black/cover-library/item_x/remove', {}]] as const) {
+    for (const [path, body] of [['/api/organisations/code-black/invitations', { email: 'someone@example.test' }], ['/api/organisations/code-black/ownership', { memberId: SOFIA, password: PASSWORD, confirmation: 'Code Black' }], ['/api/organisations/code-black/cover-library/item_x/remove', {}], ['/api/organisations/code-black/cover-library/library_mountain/details', { label: 'Renamed', tags: [] }]] as const) {
         const r = await post(path, body, cookies[DEMO_ADMIN]);
         assert.equal(r.status, 403, path);
         assert.equal(await errorCode(r), 'TWO_FACTOR_REQUIRED', path);

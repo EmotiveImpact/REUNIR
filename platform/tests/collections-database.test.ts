@@ -112,6 +112,7 @@ test('the tables refuse a second featured collection, mismatched kinds and other
 test('an upgraded database keeps its records and starts with no collections', async () => {
     const old = await openDatabase('pglite:memory');
     try {
+        // Collections arrive in 0028, task columns in 0029, and teaching grants, library pictures and uploads gain columns later; the old seed carries none of them.
         await migrate(old, '0021'); await new WorkspaceRepository(old).seed({ ...createSeed(), collections: [], collectionItems: [], trackInstructors: [], projectTasks: [], taskNotes: [], uploads: [], coverLibrary: [] });
         const posts = (await old.query('SELECT id,title FROM posts ORDER BY organization_id,id')).rows;
         await migrate(old);

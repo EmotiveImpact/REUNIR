@@ -115,7 +115,8 @@ try {
     });
     await check('a member sees the cover through the access-checked route, privately cached, with no edit control', async () => {
         await signIn(learnerPage, 'learner@example.test'); await open(learnerPage, '/learn');
-        expect(await loaded(learnerPage, `.track-card[href="#/learn/${trackId}"] .cover-media img`)).toMatchObject({ width: 440, position: '35% 60%' });
+        // A picture no wider than a card has no small copy: the card asks for one and is served the picture itself.
+        expect(await loaded(learnerPage, `.track-card[href="#/learn/${trackId}"] .cover-media img`)).toEqual({ width: 440, src: coverRoute('track', trackId, trackCover) + '/thumbnail', position: '35% 60%' });
         const r = await learnerPage.request.get(origin + coverRoute('track', trackId, trackCover));
         expect(r.status()).toBe(200);
         expect([r.headers()['content-type'], r.headers()['cache-control'], r.headers()['x-content-type-options'], r.headers()['content-disposition']]).toEqual(['image/jpeg', 'private, max-age=3600', 'nosniff', 'inline']);
@@ -167,9 +168,34 @@ try {
         expect((await learnerPage.request.get(origin + coverRoute('track', trackId, trackCover))).status()).toBe(404);
         await open(learnerPage, '/learn'); await expect(learnerPage.locator(`.track-card[href="#/learn/${trackId}"] .cover-media`)).toHaveClass(/cover-plain/);
     });
+    await check('a large cover uploads a verified small copy beside it; cards load the copy and the track page the picture', async () => {
+        await open(ownerPage, `/learn/${trackId}`);
+        const before = new Set(objects.keys());
+        await upload(ownerPage, { name: 'wide.jpg', mimeType: 'image/jpeg', buffer: await picture(ownerPage, 'image/jpeg', 2400, 1200) });
+        const added = [...objects.keys()].filter(k => !before.has(k)), cover = (await coverOf('tracks', trackId))!;
+        expect(added).toHaveLength(2);
+        const thumbKey = added.find(k => k.endsWith(`/covers/tracks/${trackId}/${cover.fileId}-thumb.webp`))!, fullKey = added.find(k => k.endsWith(`/covers/tracks/${trackId}/${cover.fileId}.jpg`))!;
+        expect([thumbKey, fullKey].every(Boolean)).toBe(true);
+        expect(imageDimensions('image/webp', objects.get(thumbKey)!.bytes)).toEqual({ width: 480, height: 240 });
+        expect(imageDimensions('image/jpeg', objects.get(fullKey)!.bytes)).toEqual({ width: 1600, height: 800 });
+        expect(cookiesSeen).toBe(0);
+        expect((await db.query('SELECT thumbnail_content_type,thumbnail_size_bytes,thumbnail_generation FROM upload_intents WHERE id=$1', [cover.fileId])).rows).toEqual([{ thumbnail_content_type: 'image/webp', thumbnail_size_bytes: objects.get(thumbKey)!.bytes.length, thumbnail_generation: objects.get(thumbKey)!.generation }]);
+        expect(await loaded(ownerPage, '.track-detail-cover img')).toMatchObject({ width: 1600, src: coverRoute('track', trackId, cover.fileId) });
+        await open(learnerPage, '/learn');
+        expect(await loaded(learnerPage, `.track-card[href="#/learn/${trackId}"] .cover-media img`)).toMatchObject({ width: 480, src: coverRoute('track', trackId, cover.fileId) + '/thumbnail' });
+        const small = await learnerPage.request.get(origin + coverRoute('track', trackId, cover.fileId) + '/thumbnail');
+        expect([small.status(), small.headers()['content-type'], small.headers()['cache-control'], small.headers()['x-content-type-options']]).toEqual([200, 'image/webp', 'private, max-age=3600', 'nosniff']);
+        expect(Buffer.compare(await small.body(), Buffer.from(objects.get(thumbKey)!.bytes))).toBe(0);
+        expect((await outsiderPage.request.get(origin + coverRoute('track', trackId, cover.fileId) + '/thumbnail')).status()).toBe(404);
+        expect((await anonymousPage.request.get(origin + coverRoute('track', trackId, cover.fileId) + '/thumbnail')).status()).toBe(401);
+        await ownerPage.getByRole('button', { name: 'Change cover', exact: true }).click();
+        await dialog(ownerPage).getByRole('button', { name: 'Remove cover', exact: true }).click(); await expect(dialog(ownerPage)).toHaveCount(0);
+        expect(objects.has(thumbKey) || objects.has(fullKey)).toBe(false);
+        expect((await learnerPage.request.get(origin + coverRoute('track', trackId, cover.fileId) + '/thumbnail')).status()).toBe(404);
+    });
     const libraryRoute = (itemId: string) => `/api/organisations/pilot/cover-library/${itemId}`;
     const send = (p: Page, path: string, data: unknown) => p.request.post(origin + path, { headers: { 'Content-Type': 'application/json', Origin: origin, 'Idempotency-Key': randomUUID() }, data });
-    let libraryItem = '', libraryFile = '', libraryKey = '';
+    let libraryItem = '', libraryFile = '', libraryKey = '', libraryThumbKey = '';
     await check('the owner adds a picture to the cover library in Community settings; it reaches the bucket under the community key', async () => {
         await open(ownerPage, '/settings');
         const section = ownerPage.locator('.cover-library-settings');
@@ -179,15 +205,18 @@ try {
         await chooser.setFiles({ name: 'harbour.jpg', mimeType: 'image/jpeg', buffer: withExif(await picture(ownerPage, 'image/jpeg', 1200, 800), 'REUNIR-PRIVATE-LOCATION') });
         await expect(dialog(ownerPage).locator('.cover-editor-status')).toContainText('Ready');
         await dialog(ownerPage).getByLabel('Name', { exact: true }).fill('Quiet harbour');
+        await dialog(ownerPage).getByLabel('Tags', { exact: true }).fill('Harbour, sea');
         await dialog(ownerPage).getByRole('button', { name: 'Add to library', exact: true }).click(); await expect(dialog(ownerPage)).toHaveCount(0);
         await expect(ownerPage.locator('.toast')).toContainText('Quiet harbour is in the cover library.');
-        const row = (await db.query<{ id: string; file_id: string; label: string; added_by: string }>('SELECT id,file_id,label,added_by FROM cover_library')).rows;
-        expect(row.map(r => [r.label, r.added_by])).toEqual([['Quiet harbour', owner.id]]);
+        const row = (await db.query<{ id: string; file_id: string; label: string; added_by: string; tags: string[] }>('SELECT id,file_id,label,added_by,tags FROM cover_library')).rows;
+        expect(row.map(r => [r.label, r.added_by, r.tags])).toEqual([['Quiet harbour', owner.id, ['harbour', 'sea']]]);
         [libraryItem, libraryFile] = [row[0].id, row[0].file_id];
-        libraryKey = [...objects.keys()].find(k => k.includes('/covers/library/'))!;
+        libraryKey = [...objects.keys()].find(k => k.includes('/covers/library/') && k.endsWith(`${libraryFile}.jpg`))!;
+        libraryThumbKey = [...objects.keys()].find(k => k.includes('/covers/library/') && k.endsWith(`${libraryFile}-thumb.webp`))!;
         expect(libraryKey).toMatch(new RegExp(`^organisations/[0-9a-f-]{36}/covers/library/${libraryFile}\\.jpg$`));
+        expect(imageDimensions('image/webp', objects.get(libraryThumbKey)!.bytes)).toEqual({ width: 480, height: 320 });
         expect(Buffer.from(objects.get(libraryKey)!.bytes).includes('REUNIR-PRIVATE-LOCATION')).toBe(false); expect(cookiesSeen).toBe(0);
-        expect(await loaded(ownerPage, '.cover-library-list img')).toMatchObject({ width: 1200, src: libraryRoute(libraryItem) });
+        expect(await loaded(ownerPage, '.cover-library-list img')).toMatchObject({ width: 480, src: libraryRoute(libraryItem) + '/thumbnail' });
         const a = await new AxeBuilder({ page: ownerPage }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
         expect(a.violations.map(v => v.id)).toEqual([]);
         await section.screenshot({ path: dir + '/connected-library-settings.png' });
@@ -208,6 +237,32 @@ try {
         expect([r.status(), r.headers()['content-type'], r.headers()['cache-control'], r.headers()['x-content-type-options']]).toEqual([200, 'image/jpeg', 'private, max-age=3600', 'nosniff']);
         expect(Buffer.compare(await r.body(), Buffer.from(objects.get(libraryKey)!.bytes))).toBe(0);
     });
+    await check('the owner renames and retags the picture; members cannot, and the picker filters by tag', async () => {
+        await open(ownerPage, '/settings');
+        await ownerPage.getByRole('button', { name: 'Edit the name and tags of Quiet harbour', exact: true }).click();
+        await dialog(ownerPage).getByLabel('Name', { exact: true }).fill('Still harbour');
+        await dialog(ownerPage).getByLabel('Tags', { exact: true }).fill('Water, harbour');
+        await dialog(ownerPage).getByRole('button', { name: 'Save changes', exact: true }).click(); await expect(dialog(ownerPage)).toHaveCount(0);
+        await expect(ownerPage.locator('.toast')).toContainText('Still harbour is saved.');
+        expect((await db.query('SELECT label,tags,file_id FROM cover_library WHERE id=$1', [libraryItem])).rows).toEqual([{ label: 'Still harbour', tags: ['water', 'harbour'], file_id: libraryFile }]);
+        expect((await db.query<{ action: string }>('SELECT action FROM audit WHERE object_id=$1', [libraryItem])).rows.map(r => r.action)).toContain('cover.library.updated');
+        const member = await send(learnerPage, `${libraryRoute(libraryItem)}/details`, { label: 'Mine', tags: [] });
+        expect(member.status()).toBe(403); expect((await member.json()).error.code).toBe('ADMIN_REQUIRED');
+        const outsider = await send(outsiderPage, `${libraryRoute(libraryItem)}/details`.replace('/pilot/', '/elsewhere/'), { label: 'Taken', tags: [] });
+        expect(outsider.status()).toBe(404);
+        await open(learnerPage, `/projects/${projectId}`);
+        await learnerPage.getByRole('button', { name: 'Change cover', exact: true }).click();
+        const picker = dialog(learnerPage).locator('.cover-library-picker');
+        await expect(picker.getByLabel('Still harbour', { exact: true })).toBeChecked();
+        await picker.getByRole('button', { name: 'water', exact: true }).click();
+        await expect(picker.locator('.cover-library-option')).toHaveCount(1);
+        await picker.getByLabel('Find a picture', { exact: true }).fill('forest');
+        await expect(picker).toContainText('No pictures match.');
+        const a = await new AxeBuilder({ page: learnerPage }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+        expect(a.violations.map(v => v.id)).toEqual([]);
+        await dialog(learnerPage).getByRole('button', { name: 'Cancel', exact: true }).click();
+        expect((await coverOf('projects', projectId))!.fileId).toBe(libraryFile);
+    });
     await check('members cannot add library pictures; other communities and anonymous visitors cannot read them', async () => {
         const denied = await send(learnerPage, '/api/organisations/pilot/uploads', { purpose: 'cover_library', contentType: 'image/jpeg', sizeBytes: 9000 });
         expect(denied.status()).toBe(403); expect((await denied.json()).error.code).toBe('ADMIN_REQUIRED');
@@ -218,17 +273,17 @@ try {
     });
     await check('a picture in use cannot be removed; once free, removing it deletes the stored file', async () => {
         await open(ownerPage, '/settings');
-        await expect(ownerPage.getByRole('button', { name: 'Remove Quiet harbour', exact: true })).toBeDisabled();
+        await expect(ownerPage.getByRole('button', { name: 'Remove Still harbour', exact: true })).toBeDisabled();
         const busy = await send(ownerPage, `${libraryRoute(libraryItem)}/remove`, {});
         expect(busy.status()).toBe(409); expect((await busy.json()).error.code).toBe('COVER_IN_USE'); expect(objects.has(libraryKey)).toBe(true);
         await open(learnerPage, `/projects/${projectId}`); await learnerPage.getByRole('button', { name: 'Change cover', exact: true }).click();
         await dialog(learnerPage).getByRole('button', { name: 'Remove cover', exact: true }).click(); await expect(dialog(learnerPage)).toHaveCount(0);
         await open(ownerPage, '/settings');
         ownerPage.once('dialog', d => d.accept());
-        await ownerPage.getByRole('button', { name: 'Remove Quiet harbour', exact: true }).click();
-        await expect(ownerPage.locator('.toast')).toContainText('Quiet harbour was removed from the cover library.');
+        await ownerPage.getByRole('button', { name: 'Remove Still harbour', exact: true }).click();
+        await expect(ownerPage.locator('.toast')).toContainText('Still harbour was removed from the cover library.');
         await expect(ownerPage.locator('.cover-library-empty')).toBeVisible();
-        expect(objects.has(libraryKey)).toBe(false);
+        expect(objects.has(libraryKey)).toBe(false); expect(objects.has(libraryThumbKey)).toBe(false);
         expect((await db.query('SELECT count(*)::int AS n FROM cover_library')).rows[0].n).toBe(0);
         expect((await db.query('SELECT count(*)::int AS n FROM upload_intents WHERE id=$1', [libraryFile])).rows[0].n).toBe(0);
         expect((await learnerPage.request.get(origin + libraryRoute(libraryItem))).status()).toBe(404);

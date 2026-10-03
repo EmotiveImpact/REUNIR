@@ -10,7 +10,7 @@ import { createApp } from '../apps/api/src/app';
 import { inspectConfiguration, validateRuntimeConfiguration, uploadScanningSetting } from '../apps/api/src/config';
 import { ScannerUnavailable, clamdScanner, readVerdict, scannerFromEnvironment, type FileScanner } from '../apps/api/src/scanner';
 import { FakeBucket } from './helpers/fake-bucket';
-import { jpegHeader } from './helpers/images';
+import { jpegHeader, webpHeader } from './helpers/images';
 
 /** Stands in for clamd. Anything containing the marker is flagged; `down` makes every scan unavailable. */
 const MARKER = 'REUNIR-TEST-FLAG';
@@ -177,6 +177,26 @@ test('cover pictures are scanned too', async () => {
     const done = await flagged.complete();
     assert.equal(done.status, 422); assert.equal((await done.json()).error.code, 'FILE_FLAGGED');
     assert.equal(await status(flagged.id), 'rejected'); assert(!bucket.objects.has(flagged.key));
+});
+test('a cover\'s small copy is scanned too; a flagged copy is deleted and the picture kept', async () => {
+    const webp = (tail = '') => { const b = new Uint8Array(2000); b.set(webpHeader(480, 270)); b.set(new TextEncoder().encode(tail), 1500); return b; };
+    const send = async (thumb: Uint8Array) => {
+        const r = await post('/uploads', { purpose: 'cover_image', subject: 'track', subjectId: 'track_story', contentType: 'image/jpeg', sizeBytes: 9000, thumbnail: { contentType: 'image/webp', sizeBytes: thumb.length } });
+        assert.equal(r.status, 201);
+        const { id } = await r.json(), [main, small] = bucket.policies.slice(-2);
+        bucket.put(main.key, jpeg(), 'image/jpeg'); bucket.put(small.key, thumb, 'image/webp');
+        const done = await post(`/uploads/${id}/complete`, {});
+        const row = (await db.query<{ status: string; thumbnail_object_key: string | null }>('SELECT status,thumbnail_object_key FROM upload_intents WHERE id=$1', [id])).rows[0];
+        return { done, row, key: main.key, thumbKey: small.key };
+    };
+    const clean = await send(webp());
+    assert.equal(clean.done.status, 200);
+    assert.deepEqual(Buffer.from(scanner.scanned.at(-1)!), Buffer.from(webp()), 'the whole small copy was scanned');
+    assert.equal(clean.row.thumbnail_object_key, clean.thumbKey);
+    const flagged = await send(webp(MARKER));
+    assert.equal(flagged.done.status, 200, 'the picture itself is clean and is kept');
+    assert.equal(flagged.row.status, 'ready'); assert.equal(flagged.row.thumbnail_object_key, null);
+    assert(bucket.objects.has(flagged.key)); assert(!bucket.objects.has(flagged.thumbKey), 'the flagged copy is deleted');
 });
 test('member attachments are scanned, and a flagged one cannot be revived by uploading again', async () => {
     const clean = await start({ name: 'plan.pdf' }, pdf('member'), 'application/pdf');

@@ -1,7 +1,7 @@
 import { DomainError, newId, type Command, type Member, type Project, type TenantContext, type Track, type Upload, type Workspace } from '../../contracts/src/index';
 import {
-    COVER_UPLOAD_TTL_MS, MAX_COVER_DESCRIPTION, MAX_COVER_LIBRARY_ITEMS, MAX_COVER_UPLOADS, MAX_PENDING_COVER_UPLOADS, coverLibraryUploadRequest, coverUploadRequest, isCoverImageType,
-    type CoverImage, type CoverLibraryUploadRequest, type CoverSubject, type CoverUploadRequest,
+    COVER_UPLOAD_TTL_MS, MAX_COVER_DESCRIPTION, MAX_COVER_LIBRARY_ITEMS, MAX_COVER_UPLOADS, MAX_PENDING_COVER_UPLOADS, coverLibraryDetails, coverLibraryUploadRequest, coverUploadRequest, isCoverImageType,
+    type CoverImage, type CoverLibraryDetails, type CoverLibraryUploadRequest, type CoverSubject, type CoverThumbnailRequest, type CoverUploadRequest, type CoverVariant,
 } from '../../contracts/src/covers';
 import { actorFor, canSeeSpace, isAdmin } from './access';
 import { teaches } from './instructors';
@@ -62,11 +62,23 @@ function releaseReplacedCover(s: Workspace, organizationId: string, fileId: stri
     if (!fileId || isCoverReferenced(s, organizationId, fileId)) return;
     s.uploads = s.uploads.filter(u => !(u.id === fileId && coverFile(u, organizationId)));
 }
+/** Every stored object an upload record owns: the picture and, for covers, its small copy. */
+export const storedKeys = (u: Pick<Upload, 'objectKey' | 'thumbnailObjectKey'>): string[] => [u.objectKey, ...(u.thumbnailObjectKey ? [u.thumbnailObjectKey] : [])];
 /** Stored files of cover uploads that a change released, for removal after commit. Library pictures never appear here. */
 export function releasedCoverKeys(before: Workspace, after: Workspace): string[] {
     const kept = new Set(after.uploads.map(u => u.id));
-    return before.uploads.filter(u => u.purpose === 'cover_image' && !kept.has(u.id)).map(u => u.objectKey);
+    return before.uploads.filter(u => u.purpose === 'cover_image' && !kept.has(u.id)).flatMap(storedKeys);
 }
+/** Stored keys the caller deletes once the change commits. */
+const expiredKeys = (rows: Upload[]) => rows.map(u => ({ id: u.id, objectKey: u.objectKey, thumbnailObjectKey: u.thumbnailObjectKey ?? null }));
+/** Pending small-copy fields, when the browser declared one and the server chose its key. */
+function thumbnailFields(thumbnail: CoverThumbnailRequest | undefined, key: string | undefined): Pick<Upload, 'thumbnailObjectKey' | 'thumbnailContentType' | 'thumbnailSizeBytes' | 'thumbnailGeneration'> {
+    return thumbnail && key
+        ? { thumbnailObjectKey: key, thumbnailContentType: thumbnail.contentType, thumbnailSizeBytes: thumbnail.sizeBytes, thumbnailGeneration: null }
+        : { thumbnailObjectKey: null, thumbnailContentType: null, thumbnailSizeBytes: null, thumbnailGeneration: null };
+}
+/** Clear a small copy that failed its checks. The full picture stands on its own. */
+const dropThumbnail = (u: Upload) => Object.assign(u, { thumbnailObjectKey: null, thumbnailContentType: null, thumbnailSizeBytes: null, thumbnailGeneration: null });
 function record(s: Workspace, ctx: TenantContext, now: string, makeId: () => string, type: string, objectId: string, audit: boolean) {
     s.revision++;
     s.outbox.push({ id: makeId(), organizationId: ctx.organizationId, createdAt: now, actorId: ctx.userId, type, objectId, payload: { requestId: ctx.requestId } });
@@ -87,7 +99,7 @@ export function staleCoverUploads(s: Workspace, organizationId: string, now: str
  * Record an authorised cover upload before any storage capability is minted. Rejected uploads, stale pending ones and
  * replaced covers nobody references any more are pruned, and their keys are returned for best-effort deletion.
  */
-export function beginCoverUpload(input: Workspace, ctx: TenantContext, raw: CoverUploadRequest, ids: { id: string; objectKey: string }, now: string, makeId: () => string = newId) {
+export function beginCoverUpload(input: Workspace, ctx: TenantContext, raw: CoverUploadRequest, ids: { id: string; objectKey: string; thumbnailObjectKey?: string }, now: string, makeId: () => string = newId) {
     const request = coverUploadRequest.parse(raw);
     requireEditor(input, ctx, request.subject, request.subjectId);
     const s = normalisePurposeState(structuredClone(input));
@@ -102,36 +114,48 @@ export function beginCoverUpload(input: Workspace, ctx: TenantContext, raw: Cove
         id: ids.id, organizationId: ctx.organizationId, createdAt: now, userId: ctx.userId, purpose: 'cover_image', trackId: null,
         coverTrackId: request.subject === 'track' ? request.subjectId : null, coverProjectId: request.subject === 'project' ? request.subjectId : null,
         originalName: `${request.subject} cover`, contentType: request.contentType, sizeBytes: request.sizeBytes,
-        status: 'pending', objectKey: ids.objectKey, completedAt: null, generation: null,
+        status: 'pending', objectKey: ids.objectKey, completedAt: null, generation: null, ...thumbnailFields(request.thumbnail, ids.thumbnailObjectKey),
     };
     s.uploads.push(upload);
     record(s, ctx, now, makeId, 'cover.upload.started', upload.id, false);
-    return { workspace: s, upload, expired: expired.map(u => ({ id: u.id, objectKey: u.objectKey })) };
+    return { workspace: s, upload, expired: expiredKeys(expired) };
 }
 
 /** What storage reported for the object. `bytesAcceptable` covers the signature and the declared dimensions. */
-export interface CoverObservation { sizeBytes: number; contentType: string; generation: string | null; bytesAcceptable: boolean }
+export interface CoverObservation {
+    sizeBytes: number; contentType: string; generation: string | null; bytesAcceptable: boolean;
+    /** The small copy, when one was declared: null when it never arrived. `bytesAcceptable` includes its shape against the full picture. */
+    thumbnail?: { sizeBytes: number; contentType: string; generation: string | null; bytesAcceptable: boolean } | null;
+}
 export function completeCoverUpload(input: Workspace, ctx: TenantContext, uploadId: string, observed: CoverObservation, now: string, makeId: () => string = newId) {
     const found = input.uploads.find(u => u.id === uploadId && (coverFile(u, ctx.organizationId) || libraryFile(u, ctx.organizationId)) && u.userId === ctx.userId) ?? gone('That upload is not available.');
     if (found.purpose === 'cover_library') requireLibraryAdmin(input, ctx);
     else { const subject = subjectOf(found) ?? gone('That upload is not available.'); requireEditor(input, ctx, subject.kind, subject.id); }
-    if (found.status === 'ready') return { workspace: input, upload: found, outcome: 'unchanged' as const };
+    if (found.status === 'ready') return { workspace: input, upload: found, outcome: 'unchanged' as const, discarded: [] as string[] };
     if (found.status === 'rejected') throw new DomainError('FILE_REJECTED', 'This image did not pass verification. Choose it again.', 409);
     if (Date.parse(now) - Date.parse(found.createdAt) > COVER_UPLOAD_TTL_MS) throw new DomainError('UPLOAD_EXPIRED', 'This upload expired. Choose the image again.', 409);
     const s = normalisePurposeState(structuredClone(input));
     const upload = s.uploads.find(u => u.id === found.id && u.organizationId === ctx.organizationId)!;
-    const accepted = observed.sizeBytes === upload.sizeBytes && observed.contentType === upload.contentType && observed.bytesAcceptable && !!observed.generation && /^[0-9]{1,20}$/.test(observed.generation);
+    const generationOk = (g: string | null | undefined): g is string => !!g && /^[0-9]{1,20}$/.test(g);
+    const accepted = observed.sizeBytes === upload.sizeBytes && observed.contentType === upload.contentType && observed.bytesAcceptable && generationOk(observed.generation);
     Object.assign(upload, { status: accepted ? 'ready' : 'rejected', completedAt: now, generation: accepted ? observed.generation : null });
+    // A small copy that is missing or fails its checks is dropped; the full picture is served in its place.
+    const thumb = observed.thumbnail, declared = upload.thumbnailObjectKey ?? null;
+    const thumbOk = accepted && !!declared && !!thumb && thumb.bytesAcceptable && thumb.sizeBytes === upload.thumbnailSizeBytes && thumb.contentType === upload.thumbnailContentType && generationOk(thumb.generation);
+    if (thumbOk) upload.thumbnailGeneration = thumb!.generation;
+    else if (declared && accepted) dropThumbnail(upload);
     const kind = upload.purpose === 'cover_library' ? 'cover.library' : 'cover';
     record(s, ctx, now, makeId, accepted ? `${kind}.uploaded` : `${kind}.rejected`, upload.id, true);
-    return { workspace: s, upload, outcome: accepted ? 'ready' as const : 'rejected' as const };
+    // Keys of stored objects nothing will serve: a refused upload's picture and small copy, or a dropped small copy.
+    const discarded = !accepted ? storedKeys(found) : declared && !thumbOk ? [declared] : [];
+    return { workspace: s, upload, outcome: accepted ? 'ready' as const : 'rejected' as const, discarded };
 }
 
 /**
  * Record an authorised library upload. Uploads never added to the library are pruned once rejected or an hour old;
  * pictures in the library are never pruned.
  */
-export function beginCoverLibraryUpload(input: Workspace, ctx: TenantContext, raw: CoverLibraryUploadRequest, ids: { id: string; objectKey: string }, now: string, makeId: () => string = newId) {
+export function beginCoverLibraryUpload(input: Workspace, ctx: TenantContext, raw: CoverLibraryUploadRequest, ids: { id: string; objectKey: string; thumbnailObjectKey?: string }, now: string, makeId: () => string = newId) {
     const request = coverLibraryUploadRequest.parse(raw);
     requireLibraryAdmin(input, ctx);
     const s = normalisePurposeState(structuredClone(input));
@@ -143,11 +167,11 @@ export function beginCoverLibraryUpload(input: Workspace, ctx: TenantContext, ra
     const upload: Upload = {
         id: ids.id, organizationId: org, createdAt: now, userId: ctx.userId, purpose: 'cover_library', trackId: null, coverTrackId: null, coverProjectId: null,
         originalName: 'cover library picture', contentType: request.contentType, sizeBytes: request.sizeBytes,
-        status: 'pending', objectKey: ids.objectKey, completedAt: null, generation: null,
+        status: 'pending', objectKey: ids.objectKey, completedAt: null, generation: null, ...thumbnailFields(request.thumbnail, ids.thumbnailObjectKey),
     };
     s.uploads.push(upload);
     record(s, ctx, now, makeId, 'cover.library.upload.started', upload.id, false);
-    return { workspace: s, upload, expired: expired.map(u => ({ id: u.id, objectKey: u.objectKey })) };
+    return { workspace: s, upload, expired: expiredKeys(expired) };
 }
 
 /** A picture leaves the library only when no track or project shows it, so no cover silently disappears. */
@@ -162,7 +186,32 @@ export function removeCoverLibraryItem(input: Workspace, ctx: TenantContext, ite
     s.coverLibrary = s.coverLibrary.filter(i => !(i.id === item.id && i.organizationId === org));
     s.uploads = s.uploads.filter(u => u !== upload);
     record(s, ctx, now, makeId, 'cover.library.removed', item.id, true);
-    return { workspace: s, item, objectKey: upload?.objectKey ?? null };
+    return { workspace: s, item, objectKey: upload?.objectKey ?? null, thumbnailObjectKey: upload?.thumbnailObjectKey ?? null };
+}
+
+/**
+ * Rename a library picture or change its tags. Only active owners and administrators may, as for adding and removing.
+ * The picture and every cover that shows it are untouched.
+ */
+export function updateCoverLibraryItem(input: Workspace, ctx: TenantContext, itemId: string, raw: CoverLibraryDetails, now: string, makeId: () => string = newId) {
+    const details = coverLibraryDetails.parse(raw);
+    requireLibraryAdmin(input, ctx);
+    const org = ctx.organizationId;
+    if (!input.coverLibrary.some(i => i.id === itemId && i.organizationId === org)) gone('That picture is not in the cover library.');
+    const s = normalisePurposeState(structuredClone(input));
+    const item = s.coverLibrary.find(i => i.id === itemId && i.organizationId === org)!;
+    const changed = item.label !== details.label || JSON.stringify(item.tags ?? []) !== JSON.stringify(details.tags);
+    if (!changed) return { workspace: input, item, changed: false };
+    Object.assign(item, { label: details.label, tags: details.tags });
+    record(s, ctx, now, makeId, 'cover.library.updated', item.id, true);
+    return { workspace: s, item, changed: true };
+}
+
+/** The stored object to serve: the small copy when asked for one and it passed its checks, otherwise the picture. */
+export function servedObject(upload: Upload, variant: CoverVariant = 'full') {
+    if (variant === 'thumbnail' && upload.thumbnailObjectKey && upload.thumbnailGeneration && isCoverImageType(upload.thumbnailContentType) && upload.thumbnailSizeBytes)
+        return { objectKey: upload.thumbnailObjectKey, generation: upload.thumbnailGeneration, contentType: upload.thumbnailContentType, sizeBytes: upload.thumbnailSizeBytes };
+    return { objectKey: upload.objectKey, generation: upload.generation!, contentType: upload.contentType, sizeBytes: upload.sizeBytes };
 }
 
 /** Every active member of the community can see the library and the pictures in it. */
@@ -190,7 +239,7 @@ export function applyCovers(s: Workspace, ctx: TenantContext, cmd: Command, now:
         const existing = s.coverLibrary.find(i => i.organizationId === org && i.fileId === upload.id);
         if (existing) return { message: 'This picture is already in the cover library.', objectId: existing.id, changed: false };
         if (s.coverLibrary.filter(i => i.organizationId === org).length >= MAX_COVER_LIBRARY_ITEMS) throw new DomainError('LIBRARY_FULL', `The cover library holds up to ${MAX_COVER_LIBRARY_ITEMS} pictures. Remove one before adding another.`, 409);
-        const item = { id: makeId(), organizationId: org, createdAt: now, fileId: upload.id, label: cmd.label, contentType: upload.contentType, sizeBytes: upload.sizeBytes, addedBy: ctx.userId };
+        const item = { id: makeId(), organizationId: org, createdAt: now, fileId: upload.id, label: cmd.label, contentType: upload.contentType, sizeBytes: upload.sizeBytes, addedBy: ctx.userId, tags: cmd.tags ?? [] };
         s.coverLibrary.push(item);
         return { message: `${cmd.label} is in the cover library.`, objectId: item.id, changed: true, audit: true };
     }
