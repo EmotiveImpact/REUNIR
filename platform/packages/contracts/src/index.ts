@@ -5,6 +5,7 @@ import { coverChange, coverLibraryLabel, coverLibraryTags, type CoverImage, type
 import { z } from 'zod';
 import type { WorkspaceSummary } from './pages';
 import { notificationPreferencesInput, type DigestFrequency, type MutableTopic } from './notifications';
+import { collectionFields, collectionItemFields, collectionNote, type CollectionItemKind } from './collections';
 export type Id = string;
 export type Role = 'owner' | 'admin' | 'moderator' | 'member';
 export interface TenantContext {
@@ -331,7 +332,23 @@ export interface NotificationPreference extends TenantRecord {
     /** When the last digest email was queued, by the digest job only. */
     lastDigestAt: string | null;
 }
+/**
+ * A named set of useful community content, chosen by owners, administrators and moderators. A draft is seen only by them;
+ * publishing is explicit. At most one published collection is featured on Home.
+ */
+export interface Collection extends TenantRecord {
+    title: string; description: string; status: 'draft' | 'published'; featured: boolean;
+    createdBy: Id; updatedBy: Id; updatedAt: string; publishedAt: string | null;
+}
+/** Points at exactly one existing record, named by the property for its kind. Never a copy of the content. */
+export interface CollectionItem extends TenantRecord {
+    collectionId: Id; kind: CollectionItemKind; position: number; note: string; addedBy: Id;
+    postId: Id | null; trackId: Id | null; lessonId: Id | null; projectId: Id | null;
+    eventId: Id | null; pathId: Id | null; missionId: Id | null; outputId: Id | null;
+}
 export interface Workspace {
+    collections: Collection[];
+    collectionItems: CollectionItem[];
     notificationPreferences: NotificationPreference[];
     /** Exact totals for lists the snapshot shortens (see pages.ts). Absent on stored state. */
     summary?: WorkspaceSummary;
@@ -460,6 +477,14 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('profile.update'), name: text(80), headline: z.string().trim().max(160), bio: z.string().trim().max(2000), skills: z.array(text(40)).max(12) }).strict(),
     z.object({ type: z.literal('notification.read'), notificationId: id.optional() }).strict(),
     z.object({ type: z.literal('notification.preferences.save'), ...notificationPreferencesInput }).strict(),
+    z.object({ type: z.literal('collection.save'), collectionId: id.optional(), ...collectionFields }).strict(),
+    z.object({ type: z.literal('collection.publish'), collectionId: id, published: z.boolean() }).strict(),
+    z.object({ type: z.literal('collection.feature'), collectionId: id, featured: z.boolean() }).strict(),
+    z.object({ type: z.literal('collection.delete'), collectionId: id }).strict(),
+    z.object({ type: z.literal('collection.item.add'), collectionId: id, ...collectionItemFields }).strict(),
+    z.object({ type: z.literal('collection.item.note'), itemId: id, note: collectionNote }).strict(),
+    z.object({ type: z.literal('collection.item.remove'), itemId: id }).strict(),
+    z.object({ type: z.literal('collection.items.reorder'), collectionId: id, expectedOrder: z.array(id).max(100), itemIds: z.array(id).max(100) }).strict(),
     z.object({ type: z.literal('organisation.update'), name: text(80), tagline: text(180), accent: z.enum(['violet', 'mint', 'blue', 'amber']) }).strict(),
     z.object({ type: z.literal('space.create'), name: text(60), description: text(500), visibility: z.enum(['members', 'private']), kind: z.enum(['discussion', 'learning', 'project']) }).strict(),
     z.object({ type: z.literal('track.create'), title: text(120), summary: text(240), description: text(4000), category: text(40), spaceId: optionalSpace.default(null) }).strict(),

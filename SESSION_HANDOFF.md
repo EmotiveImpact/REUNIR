@@ -1,18 +1,50 @@
-# Current continuation: Alpha 39 cover library management and small copies
+# Current continuation: Alpha 28 collections of useful content, then task files and shared forms
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, CURATION.md, decisions/028-curated-collections.md, STATES.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+## Where the source is
+
+- Base: main `f9f32d6`, the merge of PR #22 (Alpha 27), tree identical to its tested head `297dab8`, with main merged in since at `b80fc04` (Alpha 31), `16b2768` (Alpha 23) and `0a818fa` (Alpha 39). The package version is 0.39.0-alpha.1.
+- This slice: branch `claude/everyday-use-4z9rmz`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- This thread holds Alpha 27 to 30, decisions 027 to 030 and migrations 0028 and 0029.
+
+## What is done
+
+Owners, administrators and moderators curate collections of existing content with notes and order, drafted privately and published explicitly; one can be featured on Home. Each viewer sees only items they can already open. Additive migration 0028 with forced row security.
+
+## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Open Collections in the sidebar, or Preview as admin to edit "Start here". For PostgreSQL: `npm run db:migrate` (applies 0028), then `npm run db:grant-runtime`.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (now including `test:browser:curation`), and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`.
+
+## Next
+
+1. Task files with live updates (Alpha 29) and shared form components (Alpha 30).
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical handover: Alpha 39 cover library management and small copies
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, decisions/039-cover-library-management-and-small-copies.md, LAUNCH_RUNBOOK.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
-## Where the source is
+### Where the source is
 
 - Base: main `16b2768`, the merge of PR #16 (Alpha 23 virus scanning of uploads), on top of main `b80fc04` (PR #23, Alpha 31 data retention rules), main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens), main `fab9510` (PR #20, Alpha 25 contributor roles) and main `9b34cac` (PR #18, Alpha 26 email confirmation and change). This slice was first opened as Alpha 23 on main `f5ec8d3`. Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 27 before the blocks were agreed; gaps in the sequence on main are expected.
 - This slice: branch `claude/build-out-tvzn40`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Since 3 October 2026 the remaining work is split across threads in the project. This thread owns covers and launch preparation. Each pull request takes the next free alpha, migration and decision numbers from main when it is opened, and renumbers if another lands first.
 
-## What is done
+### What is done
 
 Administrators rename and tag cover library pictures (up to five tags), the library holds up to 60, and the cover picker filters by name or tag. New covers wider than 480 pixels carry a 480-pixel copy made in the browser and verified by the server; cards and lists load it through `/thumbnail` routes that fall back to the full picture. Additive migration 0038 adds the tags, an update policy for active owners and administrators, and the checked small-copy columns.
 
-## Run it
+### Run it
 
 ```sh
 cd platform
@@ -24,11 +56,11 @@ Preview as admin, open Community settings, then the cover library, and choose **
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Authority is granted explicitly and must be current when it takes effect; teaching is a per-track grant, not a community role. Owner and administrator authority may require two-step sign-in. Library pictures change only their name and tags in place, never the picture. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
 
-## Next
+### Next
 
 1. Covers are complete for now; stock search and backfilling small copies for existing covers are not planned.
 2. Launch: LAUNCH_RUNBOOK.md and `npm run launch:preflight` are ready; the owner decides when. Provision nothing until then.
@@ -806,7 +838,7 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, RICH_LESSONS.md and ROADMAP.md. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL app.
 
-## Verified delivery
+### Verified delivery
 
 Published source commit: `24eeebfdc14aefed457bdd513f378b65d6fd9be8` on `feat/creator-rich-lessons`, PR #2. The remote tree was fetched and compared with the local source. GitHub [run 36969054997](https://github.com/EmotiveImpact/REUNIR/actions/runs/36969054997) passed both application and PostgreSQL jobs.
 
@@ -819,11 +851,11 @@ This receipt changes documentation and source hashes only. Merge status is track
 
 # START HERE: REUNIR Alpha 07, approved v4 integrated
 
-## What the user wants
+### What the user wants
 
 The approved v4 visual design belongs IN the existing React application, not in another standalone mock. Preserve all existing work, keep pushing coherent source waves, and report what remains. The user explicitly requested merging appropriate completed work. Do not merge incomplete transfer/archive branches or overwrite concurrent work to satisfy the word "everything".
 
-## Exact source to continue
+### Exact source to continue
 
 The complete application is now on GitHub in PR #1, branch `integration/alpha07-source-2026-10-02`. Publication commit `5e88b30675832fcedfb0a26491484851d951dd59` has the exact same tree as recovered Alpha 07 `76b31ab787029126e6462f747f7127a224212899`: `5b9d79453d07c75f5d71e0374889d945a3ee1eb8`. It was fetched back through Git and compared with no differences. Use the latest verified remote branch, or main after the PR is merged. Do not repeat the source recovery/import or return to a transport branch. Earlier local history remains in the saved Alpha 07 bundle; the publication snapshot is parented to GitHub's original main.
 
@@ -831,21 +863,21 @@ Restore the accompanying `REUNIR-Alpha-07.bundle` into a fresh worktree, or use 
 
 Baseline preserved: `e834a1742e9b7f8c741ff362ba5a2584b3cdabf8` (Alpha 06 monochrome, 206 source-manifest entries), itself built on the complete Alpha 06 creator checkpoint `a09cd7db8f71462328b68a3c49b52dae4299dd97`. The first new integration checkpoint is `bb1dc52`. Current local branch: `integration/v4-application-2026-10-02`. Do not treat an earlier checkpoint in this paragraph as the final release commit.
 
-## Read before editing
+### Read before editing
 
 AGENTS.md; platform/docs/BUILD_STATUS.md; PRODUCT_DOCTRINE.md; PRD.md; ROADMAP.md; ARCHITECTURE.md; UI_DESIGN_DIRECTION.md; CREATOR_AUTHORING.md; RELEASE_GATES.md; research/reuse-register.json and the relevant research-to-build note. Earlier handover/status are under platform/docs/history, for provenance only.
 
-## Approved design
+### Approved design
 
 Far-left workspace rail; navigation-only second sidebar with NO search or community switcher; one top-right account portrait/menu; natural photo avatars, not coloured initials; no duplicate account blocks in sidebars. Neutral chrome, fine borders, clean white/outline buttons, proper Lucide icons, Inter-first UI and a restrained editorial Home heading. Keep the approved mountain and quieter hierarchy. Do not revive coloured tiles, side stripes, glitter, generic dashboards or another visual exploration.
 
 Actual shadcn Button/Avatar/Menu source is now incorporated and attributed, with Radix primitives and Tailwind utilities. Not every legacy form/dialog has been converted. Shared styling carries into the existing routes, which still invoke the original domain/data model. Demo portraits are only for explicit fictional fixture IDs; no invented face is assigned to a connected user.
 
-## Product invariants
+### Product invariants
 
 People + Purpose + Progress + Projects + Proof. Preserve Become/Build/Achieve, private goals/messages, tenant isolation, current role checks, existing lesson completion evidence, immutable draft/publication history, task proof and separate community-review outcomes. No force-feeding progress metadata into arbitrary posts. All seven migration files remain byte-identical. No AI, funding or credential expansion during this UI slice.
 
-## GitHub and deployment
+### GitHub and deployment
 
 Before publication, all 11 remote branches and open PRs were checked. Main was the README-only `551d7a2da3914080956372beced5f01debc898a8`; the other branches contained dependency/transport material and no newer application. Those branches were preserved. PR #1 now contains the normal complete source tree.
 
@@ -853,7 +885,7 @@ The current workspace can fetch GitHub but has no direct Git write credential. T
 
 No live Neon/Vercel/email/bucket/scheduler or production database was changed. Complete the existing staging/receipt/hosted-session/privacy/restore gates separately.
 
-## Verification and continuation
+### Verification and continuation
 
 Read BUILD_STATUS.md and the current release evidence for completed results and limitations. Browser demos exercise actual bundled React against fictional local state, not a live API. Node HTTP checks use local PGlite and captured email. Tests updated the intentionally moved control selectors, not their business assertions. The historical Events journey fixes Date to its September fixture period; a new v4 test verifies an honest empty future calendar.
 

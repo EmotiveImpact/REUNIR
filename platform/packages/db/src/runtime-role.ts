@@ -25,5 +25,10 @@ export async function grantRuntimeTables(sql: SQL): Promise<void> {
     await sql.query(`REVOKE UPDATE ON track_instructors FROM ${role}`);
     // Library pictures are added or removed; only their name and tags change in place (migration 0038), never the picture.
     await sql.query(`REVOKE UPDATE ON cover_library FROM ${role}`);
+    // Collections change their wording, status and editor in place, and items only their order and note. Who created a
+    // collection, and what an item points at, never change.
+    await sql.query(`REVOKE UPDATE ON collections,collection_items FROM ${role}`);
+    await sql.query(`GRANT UPDATE (title,description,status,featured,updated_by,updated_at,published_at) ON collections TO ${role}`);
+    await sql.query(`GRANT UPDATE (position,note) ON collection_items TO ${role}`);
     await sql.query(`GRANT UPDATE (label,tags) ON cover_library TO ${role}`);
 }
