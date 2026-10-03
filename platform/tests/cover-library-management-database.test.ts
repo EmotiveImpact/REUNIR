@@ -35,7 +35,7 @@ before(async () => {
 });
 after(async () => db?.close());
 
-test('0023 upgrade keeps every library picture and upload as it was, with no tags and no small copies', async () => {
+test('0038 upgrade keeps every library picture and upload as it was, with no tags and no small copies', async () => {
     const old = await openDatabase('pglite:memory');
     try {
         await migrate(old, '0022'); await seedBeforeProjectWork(old);

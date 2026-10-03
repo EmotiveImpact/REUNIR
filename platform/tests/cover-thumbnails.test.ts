@@ -78,7 +78,7 @@ test('a missing or failing small copy is dropped and the picture alone is kept; 
     const keyless = beginCoverUpload(createSeed(), ctx(DEMO_ADMIN), request(), { id: 'keyless', objectKey: 'k/keyless.png' }, T0);
     assert.equal(keyless.upload.thumbnailObjectKey, null, 'a small copy is recorded only when the server chose its key');
     const legacy = { ...none.done.upload }; delete legacy.thumbnailObjectKey; delete legacy.thumbnailGeneration;
-    assert.deepEqual(servedObject(legacy, 'thumbnail').objectKey, legacy.objectKey, 'records from before migration 0023');
+    assert.deepEqual(servedObject(legacy, 'thumbnail').objectKey, legacy.objectKey, 'records from before migration 0038');
 });
 
 test('a refused picture discards its small copy too, and released or pruned uploads list both stored files', () => {

@@ -138,7 +138,7 @@ export interface Upload extends TenantRecord {
     objectKey: string; completedAt: string | null; generation: string | null;
     /**
      * Covers only: a smaller copy for cards, stored beside the full picture and verified with it. All null when there is
-     * none, as for every cover uploaded before migration 0023; readers then get the full picture.
+     * none, as for every cover uploaded before migration 0038; readers then get the full picture.
      */
     thumbnailObjectKey?: string | null; thumbnailContentType?: string | null; thumbnailSizeBytes?: number | null; thumbnailGeneration?: string | null;
 }

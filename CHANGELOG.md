@@ -8,7 +8,7 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### 0.27.0-alpha.1 (Alpha 27): cover library management and small copies, 3 October 2026
+### 0.39.0-alpha.1 (Alpha 39): cover library management and small copies, 3 October 2026
 
 On a pull request from `claude/build-out-tvzn40`, to be merged once its checks pass.
 
@@ -17,9 +17,9 @@ On a pull request from `claude/build-out-tvzn40`, to be merged once its checks p
 Details:
 
 - Up to five tags per library picture; renaming and tagging are audited and need two-step sign-in when the server requires it.
-- New covers wider than 480 pixels get a 480-pixel copy made in the browser and checked by the server; covers without one fall back to the full picture (decision 027).
-- Additive migration 0023; run `npm run db:grant-runtime` after migrating. No new runtime dependency.
-- First opened as Alpha 23. Upload scanning (PR #16) and contributor roles (PR #20) hold Alpha 23 and 25, and group conversations and email took 24 and 26, so this release is Alpha 27 with migration 0023 and decision 027.
+- New covers wider than 480 pixels get a 480-pixel copy made in the browser and checked by the server; covers without one fall back to the full picture (decision 039).
+- Additive migration 0038; run `npm run db:grant-runtime` after migrating. No new runtime dependency.
+- Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 39 before the blocks were agreed; gaps in the sequence on main are expected.
 
 ### Planned
 

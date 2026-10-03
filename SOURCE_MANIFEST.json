@@ -1,8 +1,8 @@
 {
-  "release": "REUNIR Alpha 27 cover library management and small copies",
-  "version": "0.27.0-alpha.1",
+  "release": "REUNIR Alpha 39 cover library management and small copies",
+  "version": "0.39.0-alpha.1",
   "sourceBaseline": "9b34cacaac42ab294cc9897502a49214e92dfd21",
-  "generatedAt": "2026-10-03T13:23:39.538907+00:00",
+  "generatedAt": "2026-10-03T13:38:00.675635+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "365e2d6c00c2ca874c3f1eeea3d6a51a4f653c3092e61aa089e25061c76be22c",
-      "bytes": 31924
+      "sha256": "d6552cd5090ad872deaa5cf05181e1885a6cf10215cf7df68ddc54c546834971",
+      "bytes": 32044
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "fcf5563e7b55f9d2d941772ac23e128787788b8dc3ccb0d9637166f804987454",
-      "bytes": 72029
+      "sha256": "aa7a21bc95bfe33711948886607dfcbe833a260e0c69809c7e5a7472642dd8ab",
+      "bytes": 72217
     },
     {
       "path": "platform/.dockerignore",
@@ -561,12 +561,12 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "e67669dd9d64d8c5b11c0b6b0cab21a09a9e15dfd97aa3cc4d307adc0c658d32",
-      "bytes": 134630
+      "sha256": "e839866456835ad29185b58587b65207e6573e754bb6fd00c5c82d4a40ddd470",
+      "bytes": 134902
     },
     {
       "path": "platform/docs/COVERS.md",
-      "sha256": "34095e60de4c24610e98974bb85ed0395c92438fd0af1e8f6cb9e845d78b65cc",
+      "sha256": "25abf93a1da049161c359e7f16801457a971c0a6d0af91d26d879b9fbb88d37b",
       "bytes": 18034
     },
     {
@@ -611,7 +611,7 @@
     },
     {
       "path": "platform/docs/PRD.md",
-      "sha256": "cf7ec0f42f2d9715735f17a6eab397b532328fb670f00fbee3b3930f3da61def",
+      "sha256": "5306a25940ffd9ec2e364fbebeca335f40ad5ea55e6f5c2675ccce2716344771",
       "bytes": 54207
     },
     {
@@ -636,12 +636,12 @@
     },
     {
       "path": "platform/docs/ROADMAP.md",
-      "sha256": "b9c33c67beaa7b4c93587177e0f7f1de7d02c938002318b843fa8ef9401a6e18",
+      "sha256": "338dcc3b27b568353c074a6a0ac92f6aed246c1677b815388f4fd41464ae9961",
       "bytes": 11397
     },
     {
       "path": "platform/docs/SECURITY.md",
-      "sha256": "7ec5f416009c4a21d7ec9be747ced9bc21efe0214405dff389890e05a0e3ced6",
+      "sha256": "e2d518017ed98e6bf0d9d528899b35990a134079ef604912407092690ab2be5a",
       "bytes": 18285
     },
     {
@@ -760,8 +760,8 @@
       "bytes": 5162
     },
     {
-      "path": "platform/docs/decisions/027-cover-library-management-and-small-copies.md",
-      "sha256": "adf1ea9ee061fa03239236c2d4c17e12224d3a5ddcf199acbe78aa6eaec862a0",
+      "path": "platform/docs/decisions/039-cover-library-management-and-small-copies.md",
+      "sha256": "36dfb55e6b54ed6aa84a0e044e64057fe311721dd7760a173126a617863bd5bf",
       "bytes": 5387
     },
     {
@@ -1071,12 +1071,12 @@
     },
     {
       "path": "platform/package-lock.json",
-      "sha256": "0b59b3740094829d07aa6df2af48bcdd971bfe5d31833ce5d955c0fa202a7995",
+      "sha256": "b42c8fb84065be149b2521e024d1d347837dbe71b532600b8bd14f40de0921ea",
       "bytes": 173096
     },
     {
       "path": "platform/package.json",
-      "sha256": "7bf6384f06bafd6a118ef2fbf61c3c8f0a3525641be3219d6ea021d0e3d439cc",
+      "sha256": "ccf7c2845a45c83d855de40569407aff82115998c5dc38bf397c5fd85aa349a3",
       "bytes": 4567
     },
     {
@@ -1106,7 +1106,7 @@
     },
     {
       "path": "platform/packages/contracts/src/index.ts",
-      "sha256": "c80494d8b6f2e88041300ea524f408a9a8560ac7d3252409a520b2f04d02aeaa",
+      "sha256": "8d82731df6c578f812f6c7d9b29485db31b7d4d288223e1cddb30201ed2eb3bc",
       "bytes": 24142
     },
     {
@@ -1131,7 +1131,7 @@
     },
     {
       "path": "platform/packages/contracts/src/operations.ts",
-      "sha256": "5739c9933ac9d53d8571a12fa218b88fb68c8d504f6f05c91c60e9ef2e8b49ac",
+      "sha256": "047ce9de7ba0f2e03b72c2c6aae718270d2fbb86d0b84954ad212bc6fa85719b",
       "bytes": 1937
     },
     {
@@ -1260,9 +1260,9 @@
       "bytes": 3635
     },
     {
-      "path": "platform/packages/db/migrations/0023_cover_library_tags_and_thumbnails.sql",
-      "sha256": "daa4d1fbdd8c251c68bd405e93c0b5677abb69aae67cf48b845ef32c7b9296e9",
-      "bytes": 3073
+      "path": "platform/packages/db/migrations/0038_cover_library_tags_and_thumbnails.sql",
+      "sha256": "25768c51a867aacef50c20337a8061fa9297619207265d158474227fb87de2f9",
+      "bytes": 3079
     },
     {
       "path": "platform/packages/db/package.json",
@@ -1306,7 +1306,7 @@
     },
     {
       "path": "platform/packages/db/src/runtime-role.ts",
-      "sha256": "46f42e308236febffe33cef7a097bf67da996260da8016330d34fc39d9a68ea9",
+      "sha256": "ae53e26e08ebd70d581de2883bf6ad4381ca2881babef584f3fc85c5fd213cb0",
       "bytes": 2837
     },
     {
@@ -1316,7 +1316,7 @@
     },
     {
       "path": "platform/packages/db/src/tables.ts",
-      "sha256": "d022870fe05645466bf95cd0d0105e6fa543c6ca1ef22573af3c7011e8e531e2",
+      "sha256": "88097460277bee510c6e78c57a40cbcae77407af4a90cba4e937fa5c11e289c7",
       "bytes": 48342
     },
     {
@@ -1631,7 +1631,7 @@
     },
     {
       "path": "platform/tests/cover-library-database.test.ts",
-      "sha256": "5c8458f58a00e5e74d86465b10e1ae93f81ac5e09221320664a6c10921faf24a",
+      "sha256": "4941e0e4243b6b810f402aa29167f3314631894842883a4d51e9e9630a7aa5c4",
       "bytes": 13919
     },
     {
@@ -1641,7 +1641,7 @@
     },
     {
       "path": "platform/tests/cover-library-management-database.test.ts",
-      "sha256": "3d5db26d4faeccd0a4bf83287d8d93305164b4bd685098fa394bc4599d1f089b",
+      "sha256": "9edb84888ca6c2d57ad11c75c174fa83a26fdd279039bc4f340dd18818434b51",
       "bytes": 15534
     },
     {
@@ -1661,7 +1661,7 @@
     },
     {
       "path": "platform/tests/cover-thumbnails.test.ts",
-      "sha256": "555c25f06c56eb42dc1d0c02c46d12dee2ef0327214c5e58370bf19f34aa4fea",
+      "sha256": "14b8604325f23f4dbbf03ae63dbf4e9c71c382f157ddf78acc902607f7cfe178",
       "bytes": 10163
     },
     {
@@ -1781,7 +1781,7 @@
     },
     {
       "path": "platform/tests/operator-erasure-database.test.ts",
-      "sha256": "29e56a0324c74b9856e5ae897872ec47f91fbc454c26867671a02238d3201a7b",
+      "sha256": "b4f208ac72227bf06ffcd1b49d0a5a35e736e6a89d41c1d968b09289e7aa70b0",
       "bytes": 12122
     },
     {
@@ -2036,7 +2036,7 @@
     },
     {
       "path": "research/reuse-register.json",
-      "sha256": "18f1f94a387f2be0860ab6788181f6dc3a33398d7cfbf1c1f6385ccaf6fd7cf1",
+      "sha256": "1edb0c9656a0703d2dbf6dcd87b93e1305df74571b4f5c2793c9713361363dfc",
       "bytes": 64889
     },
     {

@@ -1,6 +1,6 @@
-# Alpha 27 cover library management and small copies of covers
+# Alpha 39 cover library management and small copies of covers
 
-3 October 2026. Application 0.27.0-alpha.1. Administrators rename and tag cover library pictures, the library holds up to 60, the cover picker can be filtered, and cards and lists load a small copy of each cover instead of the full picture. See decisions/027-cover-library-management-and-small-copies.md and COVERS.md.
+3 October 2026. Application 0.39.0-alpha.1. Administrators rename and tag cover library pictures, the library holds up to 60, the cover picker can be filtered, and cards and lists load a small copy of each cover instead of the full picture. See decisions/039-cover-library-management-and-small-copies.md and COVERS.md.
 
 ## Status at a glance
 
@@ -17,19 +17,19 @@
 
 Two other threads' releases reached main while this slice was open. Alpha 24 (group conversations) was merged as `d62424dc5b68cf9386757173a89464211f5b7021` on top of `f5ec8d3`, its tree `85e91e8022d87830336918d8765392698795b48d` identical to its tested head `5c97bb4` (CI runs 37123762116 and 37123778756). Alpha 26 (email confirmation and change) was then merged as `9b34cac`, its tree `2e61a0a1ea8f287c3fe3e8dc6a2f455f57a7e3b5` identical to its tested head `a427140` (CI runs 37124821464 and 37124825018). This slice merged both in.
 
-Numbering: first opened as Alpha 23 with migration 0022 and decision 023. Group conversations took migration 0022 and decision 024; upload scanning (PR #16) holds Alpha 23 and decision 023; contributor roles (PR #20) hold Alpha 25 and decision 025; email took Alpha 26 and decision 026. This release is therefore Alpha 27, with migration 0023 and decision 027.
+Numbering: Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 39 before the blocks were agreed; gaps in the sequence on main are expected.
 
 ## What changed
 
 - **Library management.** `POST /api/organisations/:slug/cover-library/:itemId/details` renames a picture and sets up to five tags (lower case, 1 to 24 characters, letters and numbers with single spaces or hyphens; too many or too long are refused, never cut). It requires two-step sign-in when the server does, and each change is audited as `cover.library.updated`. Community settings has an Edit dialogue; the cover picker has **Find a picture** and a toggle per tag.
 - **Limit raised from 24 to 60**, enforced by the domain on every library upload.
 - **Small copies.** When the browser prepares a picture wider than 480 pixels it also draws a 480-pixel copy (WebP, or JPEG where WebP cannot be written), at most 256 KB, uploaded under a second five-minute policy tied to the same upload record. On completion the server checks the copy's signature, size, type and dimensions from its own stored generation; a failed copy is deleted and dropped while the picture is kept. New `/thumbnail` routes serve the copy, or the full picture when there is none, so existing covers keep working. Every deletion path removes both files.
-- **Additive migration 0023** adds `cover_library.tags` with a shape check, an update policy for active owners and administrators, and four checked small-copy columns on `upload_intents`. The runtime role may update only `label` and `tags` on `cover_library`; run `npm run db:grant-runtime` after migrating.
-- Migrations 0001 to 0022 are byte-identical; no new runtime dependency. Release constant and package version are 0.27.0-alpha.1.
+- **Additive migration 0038** adds `cover_library.tags` with a shape check, an update policy for active owners and administrators, and four checked small-copy columns on `upload_intents`. The runtime role may update only `label` and `tags` on `cover_library`; run `npm run db:grant-runtime` after migrating.
+- Migrations 0001 to 0022 are byte-identical; no new runtime dependency. Release constant and package version are 0.39.0-alpha.1.
 
 ## Local verification, 3 October 2026
 
-Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). Every step ran on this branch's tree on top of main `9b34cac`.
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). Every step ran on this branch's tree on top of main `9b34cac`. The full run used the earlier Alpha 27 numbering; after renaming the migration to 0038, the decision to 039 and the version to 0.39.0-alpha.1, `check_research.py`, `npm run typecheck`, `npm test` (691), `npm run test:postgres` (22) and the Python helpers were run again and passed.
 
 | Check | Result |
 | --- | --- |
@@ -37,12 +37,12 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | `npm test` | 691 passed, 0 failed (666 on main `9b34cac` plus 25: 6 library management, 6 small copies, 6 database tests under the restricted role including cross-tenant and inactive-role refusals, 7 HTTP) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
-| Demo-browser suites | 297 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 20 covers (3 new), 10 instructors, 11 accounts, 16 monochrome, 20 v4, 5 notifications, 11 groups |
-| Connected-browser suites | 62 passed: 12 connected, 9 resources, 9 assessments, 15 covers (2 new), 6 instructors, 11 accounts |
+| Demo-browser suites | 298 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 20 covers (3 new), 10 instructors, 12 accounts, 16 monochrome, 20 v4, 5 notifications, 11 groups |
+| Connected-browser suites | 64 passed: 12 connected, 9 resources, 9 assessments, 15 covers (2 new), 6 instructors, 13 accounts |
 | `npm run test:postgres` | 22 passed on PostgreSQL 16 (1 new for renaming and tagging through the restricted role; the existing library case now checks that changing the picture itself is refused) |
 | Python helpers, `scripts/check_research.py` | 35 passed; the register validates with 55 pinned sources and 18 register decisions |
 
-Tests changed rather than added: migration-count assertions moved from 22 to 23, and the 0023 upgrade test starts from a database at 0022; the 0009, 0011 and 0013 upgrade tests strip the four new upload columns and assert they are empty; the operator-erasure test seeds its 0013-era database without uploads; the library grant test also asserts the two updatable columns; the two-step sign-in HTTP test lists the new route among those that refuse.
+Tests changed rather than added: migration-count assertions moved from 22 to 23, and the 0038 upgrade test starts from a database at 0022; the 0009, 0011 and 0013 upgrade tests strip the four new upload columns and assert they are empty; the operator-erasure test seeds its 0013-era database without uploads; the library grant test also asserts the two updatable columns; the two-step sign-in HTTP test lists the new route among those that refuse.
 
 ## Corrections made while verifying
 

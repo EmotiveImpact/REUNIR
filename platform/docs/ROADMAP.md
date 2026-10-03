@@ -32,7 +32,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 22 | Whoever may change a track or project cover can describe the picture; the track's or project's own page announces it to screen readers | No descriptions for library pictures themselves, automatic descriptions or translations |
 | Alpha 24 | Members start named group conversations of up to 20 people; anyone in a group adds people and renames it, the starter removes people, anyone leaves; people added later read only what follows | No join or leave lines, mentions, attachments or new-message notices; blocks stop adding but never pause a group |
 | Alpha 26 | People confirm their email address by a link, and invitations confirm it; when the server requires it (the production default) an unconfirmed address cannot sign in; anyone changes their address with their password and a link to the new one | Needs a mail sender; no confirmation step at the old address; invitations already sent stay with the old address; real delivery unverified |
-| Alpha 27 | Administrators rename and tag cover library pictures (up to 60); the picker filters by name or tag; cards and lists load a 480-pixel copy checked by the server | No stock search or backfilled copies for existing covers; real bucket signing for the second policy unverified |
+| Alpha 39 | Administrators rename and tag cover library pictures (up to 60); the picker filters by name or tag; cards and lists load a 480-pixel copy checked by the server | No stock search or backfilled copies for existing covers; real bucket signing for the second policy unverified |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 

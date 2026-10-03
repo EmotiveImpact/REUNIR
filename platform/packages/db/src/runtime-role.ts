@@ -23,7 +23,7 @@ export async function grantRuntimeTables(sql: SQL): Promise<void> {
     await sql.query(`GRANT UPDATE (results,score,passed,status,feedback,reviewer_id,reviewed_at,version) ON quiz_attempts TO ${role}`);
     // Instructor grants are added or revoked, never rewritten.
     await sql.query(`REVOKE UPDATE ON track_instructors FROM ${role}`);
-    // Library pictures are added or removed; only their name and tags change in place (migration 0023), never the picture.
+    // Library pictures are added or removed; only their name and tags change in place (migration 0038), never the picture.
     await sql.query(`REVOKE UPDATE ON cover_library FROM ${role}`);
     await sql.query(`GRANT UPDATE (label,tags) ON cover_library TO ${role}`);
 }

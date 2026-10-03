@@ -1,16 +1,16 @@
-# Current continuation: Alpha 27 cover library management and small copies
+# Current continuation: Alpha 39 cover library management and small copies
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, decisions/027-cover-library-management-and-small-copies.md, LAUNCH_RUNBOOK.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, decisions/039-cover-library-management-and-small-copies.md, LAUNCH_RUNBOOK.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `9b34cac`, the merge of PR #18 (Alpha 26 email confirmation and change), tree identical to its tested head `a427140`. This slice was first opened as Alpha 23 on main `f5ec8d3`; group conversations took migration 0022, and Alpha 23, 25 and 26 were claimed by other threads, so it is Alpha 27 with migration 0023 and decision 027.
+- Base: main `9b34cac`, the merge of PR #18 (Alpha 26 email confirmation and change), tree identical to its tested head `a427140`. This slice was first opened as Alpha 23 on main `f5ec8d3`. Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 39 before the blocks were agreed; gaps in the sequence on main are expected.
 - This slice: branch `claude/build-out-tvzn40`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Since 3 October 2026 the remaining work is split across threads in the project. This thread owns covers and launch preparation. Each pull request takes the next free alpha, migration and decision numbers from main when it is opened, and renumbers if another lands first.
 
 ## What is done
 
-Administrators rename and tag cover library pictures (up to five tags), the library holds up to 60, and the cover picker filters by name or tag. New covers wider than 480 pixels carry a 480-pixel copy made in the browser and verified by the server; cards and lists load it through `/thumbnail` routes that fall back to the full picture. Additive migration 0023 adds the tags, an update policy for active owners and administrators, and the checked small-copy columns.
+Administrators rename and tag cover library pictures (up to five tags), the library holds up to 60, and the cover picker filters by name or tag. New covers wider than 480 pixels carry a 480-pixel copy made in the browser and verified by the server; cards and lists load it through `/thumbnail` routes that fall back to the full picture. Additive migration 0038 adds the tags, an update policy for active owners and administrators, and the checked small-copy columns.
 
 ## Run it
 
@@ -20,7 +20,7 @@ npm ci
 VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
 ```
 
-Preview as admin, open Community settings, then the cover library, and choose **Edit** on a picture. For PostgreSQL: `npm run db:migrate` (applies 0023), then `npm run db:grant-runtime`.
+Preview as admin, open Community settings, then the cover library, and choose **Edit** on a picture. For PostgreSQL: `npm run db:migrate` (applies 0038), then `npm run db:grant-runtime`.
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 

@@ -38,7 +38,7 @@ after(async () => db?.close());
 test('0014 upgrade adds one delete policy and changes no rows', async () => {
     const old = await openDatabase('pglite:memory');
     try {
-        // Library pictures and uploads gained columns in 0023, so the 0013 schema is seeded without them; neither is erased here.
+        // Library pictures and uploads gained columns in 0038, so the 0013 schema is seeded without them; neither is erased here.
         const seed = createSeed(); seed.coverLibrary = []; seed.uploads = [];
         await migrate(old, '0013'); await new WorkspaceRepository(old).seed(seed);
         const read = async (table: string) => (await old.query(`SELECT * FROM ${table} ORDER BY organization_id,id`)).rows;
