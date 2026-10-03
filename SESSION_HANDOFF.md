@@ -1,15 +1,15 @@
-# Current continuation: Alpha 33 evidence history, then consented credits
+# Current continuation: Alpha 34 consented credits, the last accounts and trust item
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, EVIDENCE_HISTORY.md, decisions/033-evidence-history.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, CREDITS.md, decisions/034-contribution-credits.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `f3efa39`, the merge of PR #26 (Alpha 32, appealing a hidden post). The application version stays main's 0.39.0-alpha.1.
+- Base: main `e930e39`, the merge of PR #29 (Alpha 33, correcting and withdrawing reviewed evidence). The application version stays main's 0.39.0-alpha.1.
 - This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ## What is done
 
-Reviewed evidence can be corrected through a second review or withdrawn with a reason. The reviewed wording is kept in `evidence_changes`, which the runtime role can add to and decide but never reword or delete. Withdrawn evidence stays visible, marked withdrawn, and stops counting everywhere recognised or verified evidence counts. Migration 0032.
+The author of a contribution credits teammates; each person accepts or declines, and only accepted credits are shown, on the contribution and under Credited on in the person's profile. Credits never count as evidence. Invitations stay between the two people, under forced row security. Migration 0033.
 
 ## Run it
 
@@ -23,9 +23,43 @@ Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `
 
 ## Product invariants for the next slice
 
-People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores, notification settings and appeals private. Reviewed evidence is corrected only through review and withdrawn only with a reason; its history is never rewritten. Nobody decides an appeal or reviews a correction about their own work. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores, notification settings, appeals and unanswered credits private. Reviewed evidence is corrected only through review and withdrawn only with a reason. A credit is shown only with the credited person's consent and is never evidence. Nobody decides about their own work. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
 
 ## Next
+
+1. Accounts and trust is complete for this round once this merges. Undecided: removing someone from a project team, credits on outcomes, and appeals against suspension or message-report outcomes.
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 33 handover: correcting and withdrawing reviewed evidence
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, EVIDENCE_HISTORY.md, decisions/033-evidence-history.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `f3efa39`, the merge of PR #26 (Alpha 32, appealing a hidden post). The application version stays main's 0.39.0-alpha.1.
+- Outcome: [PR #29](https://github.com/EmotiveImpact/REUNIR/pull/29), merged into main as `e930e39`.
+- This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+
+### What is done
+
+Reviewed evidence can be corrected through a second review or withdrawn with a reason. The reviewed wording is kept in `evidence_changes`, which the runtime role can add to and decide but never reword or delete. Withdrawn evidence stays visible, marked withdrawn, and stops counting everywhere recognised or verified evidence counts. Migration 0032.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+### Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores, notification settings and appeals private. Reviewed evidence is corrected only through review and withdrawn only with a reason; its history is never rewritten. Nobody decides an appeal or reviews a correction about their own work. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+### Next
 
 1. Consented credit for several contributors (Alpha 34, migration 0033), built locally and opened from main once this merges.
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.

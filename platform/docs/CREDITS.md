@@ -1,6 +1,6 @@
 # Contribution credits
 
-The member who recorded a project contribution can credit teammates who worked on it with them. Decision: decisions/0NN-contribution-credits.md.
+The member who recorded a project contribution can credit teammates who worked on it with them. Decision: decisions/034-contribution-credits.md.
 
 ## How it works
 

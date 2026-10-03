@@ -1,6 +1,6 @@
-# Decision NNN: crediting teammates on a contribution, with consent
+# Decision 034: crediting teammates on a contribution, with consent
 
-Status: implemented on a local branch, verified locally; not deployed. Date: 3 October 2026.
+Status: implemented on a feature branch, verified locally; not deployed. Date: 3 October 2026.
 
 ## Problem
 
