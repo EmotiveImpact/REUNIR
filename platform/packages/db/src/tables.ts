@@ -1757,6 +1757,9 @@ tables.push({key:'notificationPreferences',table:'notification_preferences',fiel
 
 // Alpha 25: a teaching grant names its role. Changing a role replaces the grant; it is never rewritten in place.
 tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'role',column:'role',type:'text'});
+
+// Alpha 35: a grant may cover only some of a track's lessons. NULL keeps the whole track.
+tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'lessonIds',column:'lesson_ids',type:'jsonb'});
 // Collections of useful content. Items follow every record they can point at, so they are inserted after them. Only the
 // listed properties change in place: who created a collection, and what an item points at, are fixed.
 tables.push({key:'collections',table:'collections',mutable:['title','description','status','featured','updatedBy','updatedAt','publishedAt'],fields:[

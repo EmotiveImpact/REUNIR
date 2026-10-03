@@ -168,6 +168,8 @@ export interface TrackInstructor extends TenantRecord {
     grantedBy: Id;
     /** Instructors publish and review; contributors write drafts and files for an instructor to publish. Absent means instructor. */
     role?: TeachingRole;
+    /** The lessons this grant covers. Absent or null means the whole track, including new lessons, order and cover. */
+    lessonIds?: Id[] | null;
 }
 export const teachingRoles = ['instructor', 'contributor'] as const;
 export type TeachingRole = typeof teachingRoles[number];
@@ -428,7 +430,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({type:z.literal('track.lessons.reorder'),trackId:id,
         expectedOrder:z.array(id).max(200),lessonIds:z.array(id).max(200)}).strict(),
     z.object({type:z.literal('track.cover.set'),trackId:id,...coverChange}).strict(),
-    z.object({type:z.literal('track.instructor.add'),trackId:id,userId:id,role:z.enum(teachingRoles).default('instructor')}).strict(),
+    z.object({type:z.literal('track.instructor.add'),trackId:id,userId:id,role:z.enum(teachingRoles).default('instructor'),lessonIds:z.array(id).min(1).max(200).nullable().default(null)}).strict(),
     z.object({type:z.literal('cover.library.add'),fileId:id,label:coverLibraryLabel,tags:coverLibraryTags.default([])}).strict(),
     z.object({type:z.literal('track.instructor.remove'),trackId:id,userId:id}).strict(),
     z.object({type:z.literal('project.cover.set'),projectId:id,...coverChange}).strict(),

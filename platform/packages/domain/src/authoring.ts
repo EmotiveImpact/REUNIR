@@ -1,7 +1,7 @@
 import { lessonDocumentText } from '../../contracts/src/lesson-document';
 import { DomainError, type Command, type Workspace, type TenantContext, type Member, type Lesson, type LessonDraft, type LessonContent } from '../../contracts/src/index';
 import { actorFor, canSeeSpace } from './access';
-import { contributedTracks, contributes, contributesAny, teaches } from './instructors';
+import { contributes, contributesAny, holdsGrant, teaches } from './instructors';
 import { assertResourcesAvailable, normaliseResources, resolveResources } from './resources';
 import type { LessonResource } from '../../contracts/src/lesson-resources';
 import type { AuthoredQuiz } from '../../contracts/src/assessments';
@@ -15,9 +15,9 @@ export function lessonContent(value: LessonContent): EditableLessonContent {
 }
 export function filterAuthoring(state: Workspace, actor: Member): Workspace {
     // Drafts and history are private to the people who teach the track: its instructors, its contributors and the community's administrators.
-    const tracks=contributedTracks(state,actor);
-    state.lessonDrafts=state.lessonDrafts.filter(d=>d.organizationId===actor.organizationId&&tracks.has(d.trackId));
-    state.lessonRevisions=state.lessonRevisions.filter(d=>d.organizationId===actor.organizationId&&tracks.has(d.trackId));
+    // A grant for some lessons shows only those lessons' drafts and history.
+    state.lessonDrafts=state.lessonDrafts.filter(d=>d.organizationId===actor.organizationId&&contributes(state,actor,d.trackId,d.lessonId));
+    state.lessonRevisions=state.lessonRevisions.filter(d=>d.organizationId===actor.organizationId&&contributes(state,actor,d.trackId,d.lessonId));
     return state;
 }
 export function applyAuthoring(s: Workspace, ctx: TenantContext, cmd: Command, now: string, makeId:()=>string) {
@@ -26,9 +26,11 @@ export function applyAuthoring(s: Workspace, ctx: TenantContext, cmd: Command, n
     if(!contributesAny(s,actor))throw new DomainError('AUTHOR_REQUIRED','Only a track instructor or contributor, or a community owner or administrator, can manage lesson drafts.',403);
     const missing=():never=>{throw new DomainError('NOT_FOUND','That learning material is not available.',404);};
     // An instructor or contributor of another track is told nothing about this one.
-    const track=(id:string)=>{const t=s.tracks.find(t=>t.id===id&&t.organizationId===ctx.organizationId);if(!t||!canSeeSpace(s,actor,t.spaceId)||!contributes(s,actor,t.id))return missing();return t;};
+    const track=(id:string)=>{const t=s.tracks.find(t=>t.id===id&&t.organizationId===ctx.organizationId);if(!t||!canSeeSpace(s,actor,t.spaceId)||!holdsGrant(s,actor,t.id))return missing();return t;};
+    // A grant for some lessons covers only those lessons; a new lesson belongs to the whole track.
+    const write=(id:string,lessonId:string|null)=>{const t=track(id);if(!contributes(s,actor,t.id,lessonId))throw new DomainError('LESSON_NOT_GRANTED',lessonId?'You were asked to work on other lessons in this track.':'Only someone who teaches or contributes to the whole track can start a new lesson.',403);return t;};
     // Contributors write drafts. What learners see (publication and order) and archiving stay with the track's instructors.
-    const lead=(id:string)=>{const t=track(id);if(!teaches(s,actor,t.id))throw new DomainError('INSTRUCTOR_REQUIRED','Only this track’s instructors or a community owner or administrator can publish, archive or reorder its lessons.',403);return t;};
+    const lead=(id:string,lessonId:string|null)=>{const t=write(id,lessonId);if(!teaches(s,actor,t.id,lessonId))throw new DomainError('INSTRUCTOR_REQUIRED','Only this track’s instructors or a community owner or administrator can publish, archive or reorder its lessons.',403);return t;};
     const base=()=>({id:makeId(),organizationId:ctx.organizationId,createdAt:now});
     const result=(objectId:string,message:string,changed=true)=>({objectId,message,changed,audit:changed});
     const snapshot=(lesson:Lesson,draft:LessonDraft,kind:'captured'|'published')=>{
@@ -36,7 +38,7 @@ export function applyAuthoring(s: Workspace, ctx: TenantContext, cmd: Command, n
         s.lessonRevisions.push({...base(),...lessonContent(lesson),trackId:lesson.trackId,lessonId:lesson.id,draftId:draft.id,sequence,kind,actorId:ctx.userId});
     };
     if(cmd.type==='track.lessons.reorder'){
-        lead(cmd.trackId);
+        lead(cmd.trackId,null);
         const lessons=s.lessons.filter(l=>l.trackId===cmd.trackId&&l.organizationId===ctx.organizationId).sort((a,b)=>a.position-b.position);
         const current=lessons.map(l=>l.id);
         if(JSON.stringify(current)!==JSON.stringify(cmd.expectedOrder))throw new DomainError('STALE_CURRICULUM','The curriculum changed. Refresh before reordering.',409);
@@ -49,6 +51,7 @@ export function applyAuthoring(s: Workspace, ctx: TenantContext, cmd: Command, n
         track(cmd.trackId);
         const lesson=cmd.lessonId?s.lessons.find(l=>l.id===cmd.lessonId&&l.trackId===cmd.trackId&&l.organizationId===ctx.organizationId):undefined;
         if(cmd.lessonId&&!lesson)return missing();
+        write(cmd.trackId,lesson?.id??null);
         const existing=lesson?s.lessonDrafts.find(d=>d.lessonId===lesson.id&&d.organizationId===ctx.organizationId):undefined;
         if(existing)return result(existing.id,existing.archived?'This lesson has an archived draft. Restore it to continue.':'Opened the existing draft.',false);
         const draft:LessonDraft={...base(),...(lesson?lessonContent(lesson):{title:'Untitled lesson',summary:'',body:'',minutes:5,resourceUrl:''}),trackId:cmd.trackId,lessonId:lesson?.id??null,version:1,publishedVersion:lesson?.published?1:null,archived:false,createdBy:ctx.userId,updatedBy:ctx.userId,updatedAt:now};
@@ -58,7 +61,9 @@ export function applyAuthoring(s: Workspace, ctx: TenantContext, cmd: Command, n
     }
     if(!('draftId' in cmd)||!('expectedVersion' in cmd))return undefined;
     const draft=s.lessonDrafts.find(d=>d.id===cmd.draftId&&d.organizationId===ctx.organizationId)??missing();
-    if(cmd.type==='lesson.draft.publish'||cmd.type==='lesson.draft.archive')lead(draft.trackId);else track(draft.trackId);
+    // A draft outside someone's lessons is not theirs to see, so it is not available.
+    track(draft.trackId);if(!contributes(s,actor,draft.trackId,draft.lessonId))missing();
+    if(cmd.type==='lesson.draft.publish'||cmd.type==='lesson.draft.archive')lead(draft.trackId,draft.lessonId);
     if(draft.version!==cmd.expectedVersion)throw new DomainError('STALE_DRAFT','Someone saved a newer draft. Reload it before saving or publishing.',409);
     if(cmd.type==='lesson.draft.archive'){
         if(draft.archived===cmd.archived)return result(draft.id,'The draft is already in this state.',false);
