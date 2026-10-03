@@ -44,6 +44,7 @@ interface Dependencies {
     invitations?: InvitationService;
     mail?: MailQueue;
     cronSecret?: string;
+    retention?: { run(now?: Date, apply?: boolean): Promise<{ applied: boolean; counts: Record<string, number>; communities: number }> };
     registerInvited?: (name:string,email:string,password:string)=>Promise<{id:string}>;
     /** Checks the signed-in person's current password. False only for a wrong password. */
     verifyPassword?: (headers: Headers, password: string) => Promise<boolean>;
@@ -57,7 +58,7 @@ interface Dependencies {
     /** False for a link to change an address that was asked for before the password last changed. */
     emailChangeLinkValid?: (token: string) => Promise<boolean>;
 }
-export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, invitations, mail, cronSecret, registerInvited, verifyPassword, digests, adminTwoFactor = 'optional', emailVerification = 'optional', changeEmail, emailChangeLinkValid }: Dependencies) {
+export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, invitations, mail, cronSecret, registerInvited, verifyPassword, digests, retention, adminTwoFactor = 'optional', emailVerification = 'optional', changeEmail, emailChangeLinkValid }: Dependencies) {
     const messaging=new MessagingRepository(repository);
     const canonical = new URL(origin).origin;
     const app = new Hono<{
@@ -99,6 +100,11 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     app.get('/api/internal/digests',async c=>{
         if(!scheduled(c))return c.json({error:{code:'FORBIDDEN',message:'Not authorised.'}},403);
         return c.json(digests ? {configured:true,...await digests.run()} : {configured:false,due:0,queued:0,quiet:0,skipped:0});
+    });
+    // Clears the housekeeping records in RETENTION_DAYS (docs/RETENTION.md). Same scheduler secret; ?dry=1 only counts.
+    app.get('/api/internal/retention',async c=>{
+        if(!scheduled(c))return c.json({error:{code:'FORBIDDEN',message:'Not authorised.'}},403);
+        return c.json(retention ? {configured:true,...await retention.run(new Date(),c.req.query('dry')!=='1')} : {configured:false});
     });
     app.use('/api/auth/request-password-reset',async(c,next)=>{if(!mail?.transport)return c.json({error:{code:'EMAIL_UNAVAILABLE',message:'Password recovery is not configured. Contact the community owner.'}},503);await next();});
     app.use('/api/invitations/*',async(c,next)=>{

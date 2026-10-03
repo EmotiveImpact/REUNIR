@@ -1,13 +1,13 @@
 # Alpha 29 files on project tasks and live project work
 
-3 October 2026. Application 0.29.0-alpha.1. Project teams attach files to tasks through the shared verified upload path, boards and open tasks refresh when teammates change something, and concurrent edits are caught and explained. See decisions/029-task-files-and-live-project-work.md and PROJECT_WORK.md.
+3 October 2026. Release 0.29.0-alpha.1; the package version stays at 0.31.0-alpha.1, set by Alpha 31 on main. Project teams attach files to tasks through the shared verified upload path, boards and open tasks refresh when teammates change something, and concurrent edits are caught and explained. See decisions/029-task-files-and-live-project-work.md and PROJECT_WORK.md.
 
 ## Status at a glance
 
 | Item | State |
 | --- | --- |
 | Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of Alpha 28 |
-| Verified locally | Yes: the full suite on base `b24095a`, and the checks below on top of Alpha 28 and main `f9f32d6` |
+| Verified locally | Yes: the full suite on base `b24095a`, and the checks below on top of Alpha 28 and main `b80fc04` |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
 | Deployed | No. Nothing was provisioned |
@@ -20,13 +20,13 @@
 - Account deletion keeps attached files as Former member work and deletes the person's unfinished or refused uploads (`taskFileUploads`); `db:prune-covers` also clears stale task uploads.
 - Live project work: `GET` change check per project with ETag and 304, polled every 5 seconds while visible, paused when hidden, backing off to 60 seconds on errors, behind `watchProjectChanges`/`useProjectChanges`. "Updated just now" shows only for other people's changes.
 - Edit conflicts: the existing `expectedVersion` refusal now names who changed the task and when (`project_tasks.updated_by`), keeps the person's text and offers Load the latest version or Keep my edits.
-- Additive migration 0029: `upload_intents.task_id`, `project_tasks.updated_by` and four restrictive row-security policies; no grant change. Migrations 0001 to 0028 are byte-identical. No new dependency.
+- Additive migration 0029: `upload_intents.task_id`, `project_tasks.updated_by` and four restrictive row-security policies; no grant change. Migrations 0001 to 0028 and 0030 are byte-identical. No new dependency.
 
 ## Local verification, 3 October 2026
 
 On base `b24095a` (by the building agent): typecheck, builds, `npm test` 657 passed (32 new), `test:http` 19, every demo suite including the new `test:browser:task-files` (12, plus four repeat runs after fixing a timing race), every connected suite (60), `test:postgres` 21 on PostgreSQL 16, Python helpers 35 and the research register.
 
-On this branch, on top of Alpha 28 and main `f9f32d6`: typecheck, build and bundle passed; `npm test` 729 passed, 0 failed; `test:http` 19 passed; `test:postgres` 23 passed on a fresh PostgreSQL 16 loopback cluster with no leftover `reunir_*` roles; `task-files` 12, `work` 29, `states` 12, `curation` 9, `v4` 20 and `monochrome` 16 passed.
+On this branch, on top of Alpha 28 and main `b80fc04`: typecheck, build and bundle passed; `npm test` 729 passed, 0 failed; `test:http` 19 passed; `test:postgres` 23 passed on a fresh PostgreSQL 16 loopback cluster with no leftover `reunir_*` roles; `task-files` 12, `work` 29, `states` 12, `curation` 9, `v4` 20 and `monochrome` 16 passed.
 
 ## Not verified, and why
 
@@ -41,13 +41,13 @@ On this branch, on top of Alpha 28 and main `f9f32d6`: typecheck, build and bund
 
 ## Historical evidence: Alpha 28 collections of useful content
 
-3 October 2026. Application 0.28.0-alpha.1. Owners, administrators and moderators gather useful posts, tracks, lessons, paths, projects, events, missions and community outputs into collections with notes and a chosen order; one published collection can be featured on Home. See decisions/028-curated-collections.md and CURATION.md.
+3 October 2026. Release 0.28.0-alpha.1; the package version stays at 0.31.0-alpha.1 because Alpha 31 (data retention) reached main first. Owners, administrators and moderators gather useful posts, tracks, lessons, paths, projects, events, missions and community outputs into collections with notes and a chosen order; one published collection can be featured on Home. See decisions/028-curated-collections.md and CURATION.md.
 
 ## Status at a glance
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/everyday-use-4z9rmz`, from main `f9f32d6` (the merge of PR #22, Alpha 27) |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, from main `f9f32d6` (the merge of PR #22, Alpha 27), with main `b80fc04` (Alpha 31 data retention) merged in |
 | Verified locally | Yes: the full suite on base `b24095a`, and the checks below on top of Alpha 27 and main `fab9510` |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
@@ -64,7 +64,7 @@ Alpha 27 was merged into main on 3 October 2026 as `f9f32d6`, a merge commit who
 - Additive migration 0028: `collections` and `collection_items` with composite tenant keys, forced row security, drafts readable only by curators, writes only by an active curator in their own name, one featured collection per community, and runtime updates limited to wording, status, feature flag and editor (collections) and order and note (items). Run `npm run db:grant-runtime` after migrating.
 - Web: Collections page and detail with management for curators, a compact featured block on Home, global search includes collections. The existing private Saved page is unchanged and now browser-checked.
 - Demo: fictional "Start here" (published, featured, with one item from a private space members never see) and a draft by Maya Bennett.
-- Migrations 0001 to 0023 are byte-identical; migration counts come from the migrations directory. No new dependency.
+- Migrations 0001 to 0023 and 0030 are byte-identical; migration counts come from the migrations directory. No new dependency.
 
 ## Local verification, 3 October 2026
 
@@ -76,6 +76,8 @@ On this branch, on top of Alpha 27 and main `fab9510`: typecheck, build and bund
 
 The Codex review of PR #25 found that a mission on an unpublished track was offered to curators as live, although members lose it with the track. Missions now follow their track's publication like lessons do; `tests/collections.test.ts` refuses adding such a mission (failed before the fix, passes after). `npm test` 697 passed and `curation` 9 passed after the fix.
 
+After merging main `b80fc04` (Alpha 31 data retention): typecheck, build and bundle passed; `npm test` 702 passed, 0 failed; `test:postgres` 23 passed on a fresh PostgreSQL 16 cluster; `curation` 9, `v4` 20 and `monochrome` 16 passed.
+
 ## Not verified, and why
 
 - PostgreSQL 17 runs in CI only. No hosted deployment.
@@ -86,7 +88,60 @@ The Codex review of PR #25 found that a mission on an unpublished track was offe
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. Task files with live updates (Alpha 29) and shared form components (Alpha 30).
 
-## Historical evidence: Alpha 27 loading, error and empty screens
+## Historical evidence: Alpha 31 data retention rules
+
+3 October 2026. Application 0.31.0-alpha.1. Housekeeping records are cleared on a schedule by one list of rules, and Your account says how long everything is kept. What people make, reviewed evidence and the audit trail are never cleared by the job. See decisions/031-data-retention.md and RETENTION.md.
+
+Numbering follows the project's allocation of 3 October 2026: this thread holds Alpha 31 to 34, decision records 031 to 034 and migrations 0030 to 0033, so data retention is Alpha 31, decision 031 and migration 0030 (first opened as Alpha 27 with migration 0023). Migration 0023 (contributor roles, Alpha 25) is on main and 0024 to 0029 belong to other threads, so a gap before 0030 is expected; the runner applies files in order and does not need consecutive numbers.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/accounts-trust-zojuqs`, restarted from main `9b34cac` (the merge of PR #18, Alpha 26), with main `fab9510` (PR #20, Alpha 25 contributor roles, migration 0023) and main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) merged in |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- **Rules** (`packages/contracts/src/retention.ts`): expired sessions, expired links and rate counters one day after expiry; request receipts 30 days; internal change events 90 days; sent and cancelled mail records 90 days; undelivered mail contents 30 days, the record 90; read notices 180 days. Unread notices and queued mail are never touched.
+- **Job** (`packages/db/src/retention.ts`): records outside any community are cleared directly; each community's receipts, change events and read notices inside its own tenant context. A dry run does the same work and rolls it back, so its counts are exact. Each applied run is recorded as `retention-job` in service observations.
+- **Running it**: `npm run retention:run` (dry run unless `RETENTION=apply`) and `GET /api/internal/retention` with the scheduler secret (applies; `?dry=1` counts). Nothing is scheduled.
+- **Migration 0030** (additive): `email_outbox.failed_at`, `organisations_retention`, a read-only policy that lists communities only when the transaction sets `app.worker` to `retention`, and `notifications_read_idx`. 0001 to 0023 unchanged; no grant change.
+- **How long things are kept** panel on Your account, from the same list. RETENTION.md, PILOT_OPERATIONS.md and SECURITY.md updated.
+- Review fixes on PR #23: migration 0030 also adds `email_outbox.failed_at` (set by the mail worker; mail already failed starts its period at migration), and failed mail is counted from it; `npm run launch:preflight` and LAUNCH_RUNBOOK.md now require `CRON_SECRET` even without mail, and list the retention route; against the blank `.env.example` the preflight now reports 6 failures and 5 warnings.
+- Upgrade tests count the migration files (`tests/helpers/migrations.ts`, from Alpha 25), so no count changed.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 on loopback.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 671 passed, 0 failed after the review fixes; 683 passed, 0 failed after main's Alpha 25 and Alpha 27 were merged in (5 new in `tests/retention-database.test.ts`: one list of rules, the worker-only community listing, an exact dry run then a real run that clears only what the rules name, the scheduled route, and failed mail counted from its failure) |
+| `npm run test:http` | 19 passed |
+| `npm run build`, `npm run bundle:preview` | Passed |
+| Demo-browser suites | `accounts` 13 (1 new: the retention panel, at phone width too), `monochrome` 16, `v4` 20 |
+| Connected-browser suites | `accounts-connected` 13; `instructors` 11 after the Alpha 25 merge; `states` 12 after the Alpha 27 merge |
+| `npm run test:postgres` | 22 passed on PostgreSQL 16 (1 new: the worker policy and a dry and real run through the restricted runtime role) |
+| Python helpers | 35 passed; research register valid |
+
+## Not verified, and why
+
+- No scheduler runs the job: the operator chooses one when deploying. Hosted PostgreSQL was not exercised.
+- The periods are the same for every community; per-community settings and a period for the audit trail need the owner's decision.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and consented credit for several contributors, one pull request each.
+3. When deployment resumes: schedule the retention job daily after a dry run on staging.
+
+## Historical Alpha 27 evidence: loading, error and empty screens
 
 3 October 2026. Application 0.27.0-alpha.1. Shared loading, error and empty states across the web app: shell-preserving loading outlines, route error boundaries with Try again, a Not found page, offline and failed-refresh notices, marked command failures and role-aware empty states. See decisions/027-loading-error-empty-states.md and STATES.md. Alpha 23 is claimed by another open pull request, and Alpha 24 to 26 are on main, so this slice takes the next free number.
 
@@ -97,7 +152,7 @@ The Codex review of PR #25 found that a mission on an unpublished track was offe
 | Implemented | Yes, on `claude/everyday-use-4z9rmz`, from main `f5ec8d3` (the launch kit after Alpha 22), with main `fab9510` (Alpha 24 group conversations, Alpha 26 email confirmation and Alpha 25 contributor roles) merged in |
 | Verified locally | Yes: the full suite on the original base `b24095a`, and the checks below again on top of `f5ec8d3` |
 | Verified remotely (GitHub Actions) | Run 37124475400 (application and postgres) passed on `bc37d8c` before main moved; the merge with Alpha 24 is recorded on the pull request |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Merged | Yes: [PR #22](https://github.com/EmotiveImpact/REUNIR/pull/22), merged into main as `f9f32d6` |
 | Deployed | No. Nothing was provisioned |
 | Operated with real members | No |
 
@@ -143,7 +198,7 @@ After merging main `fab9510` (Alpha 25 contributor roles): typecheck, build and 
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. Content curation, task files with live updates, and the shared form components follow as their own pull requests from the same thread.
 
-## Historical evidence: Alpha 25 contributor roles for teaching
+## Historical Alpha 25 evidence: contributor roles for teaching
 
 3 October 2026. Alpha 26 (PR #18) reached main first, so the application version stays 0.26.0-alpha.1. An owner or administrator adds someone to a track as an instructor or a contributor. Contributors write the track's lesson drafts and files; instructors publish them, and only instructors see and review learners' knowledge-check answers. See decisions/025-contributor-roles.md and INSTRUCTORS.md.
 
@@ -154,7 +209,7 @@ After merging main `fab9510` (Alpha 25 contributor roles): typecheck, build and 
 | Implemented | Yes, on `claude/courses-teaching-6hum2q`, from main `ec4285d` (the merge of PR #15, Alpha 22), with main `f5ec8d3` (PR #17, the launch kit) main `d62424d` (PR #19, Alpha 24) and main `9b34cac` (PR #18, Alpha 26) merged in |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Passed on `919b352` (run 37125616557) before main moved again; the merge with Alpha 26 is recorded on the pull request |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Merged | Yes: [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20), merged into main as `fab9510` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 
@@ -211,8 +266,8 @@ Numbering: first opened as Alpha 24. Alpha 23 is claimed by open pull requests (
 | --- | --- |
 | Implemented | Yes, on `claude/accounts-trust-zojuqs`, from main `b24095a` with main `ec4285d` (PR #15, Alpha 22) `f5ec8d3` (PR #17, launch kit) and `d62424d` (PR #19, Alpha 24 group conversations) merged in |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes: runs 37124825018 and 37124821464 (application and postgres) on `a427140` |
+| Merged | Yes: [PR #18](https://github.com/EmotiveImpact/REUNIR/pull/18), merged into main as `9b34cac` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 

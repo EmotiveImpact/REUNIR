@@ -93,7 +93,7 @@ These are every variable the server code reads (`apps/api/src/bootstrap.ts`, `ap
 | `RESEND_API_KEY` | For mail | Sending-only key for the verified domain. | Section 7 |
 | `EMAIL_FROM` | For mail | Sender, for example `Ferven <pilot@mail.<your-domain>>`. | Section 7 |
 | `EMAIL_ENCRYPTION_KEY` | When mail is set | Encrypts queued mail. Stable: changing it makes pending mail unreadable. | `<generate: openssl rand -base64 48>` |
-| `CRON_SECRET` | When mail is set | Bearer secret for `/api/internal/mail` and `/api/internal/digests`. | `<generate: openssl rand -base64 48>` |
+| `CRON_SECRET` | Yes | Bearer secret for `/api/internal/mail`, `/api/internal/digests` and `/api/internal/retention`. The retention job needs it even without mail. | `<generate: openssl rand -base64 48>` |
 | `GCS_BUCKET` | For uploads | Private bucket name. | Section 6 |
 | `GCS_CREDENTIALS_JSON` | For uploads on Vercel | Service-account JSON, as one line. Vercel has no application default credentials. | Section 6 |
 
@@ -177,8 +177,9 @@ Nothing schedules these routes today, and `vercel.json` deliberately has **no `c
 | --- | --- | --- |
 | `GET /api/internal/mail` | About every minute | Sends at most 2 queued emails per call |
 | `GET /api/internal/digests` | About hourly | Queues at most 100 due digests; the mail route sends them |
+| `GET /api/internal/retention` | Daily | Clears housekeeping records by the rules in RETENTION.md; run `?dry=1` on staging first. Needed even without mail |
 
-Both require `Authorization: Bearer <CRON_SECRET>` in a **header**. Never put the secret in a URL or query string, where it would reach logs.
+All three require `Authorization: Bearer <CRON_SECRET>` in a **header**. Never put the secret in a URL or query string, where it would reach logs.
 
 - [ ] Choose one scheduler dedicated to this project and record it:
   - **Vercel Cron Jobs.** Vercel sends `Authorization: Bearer $CRON_SECRET` automatically when `CRON_SECRET` is set in the project. A once-a-minute schedule needs a plan that allows it. If chosen, add this to `vercel.json` in a reviewed commit:
@@ -186,7 +187,8 @@ Both require `Authorization: Bearer <CRON_SECRET>` in a **header**. Never put th
     ```json
     "crons": [
       { "path": "/api/internal/mail", "schedule": "* * * * *" },
-      { "path": "/api/internal/digests", "schedule": "0 * * * *" }
+      { "path": "/api/internal/digests", "schedule": "0 * * * *" },
+      { "path": "/api/internal/retention", "schedule": "30 3 * * *" }
     ]
     ```
   - **Another scheduler** (for example Google Cloud Scheduler in the REUNIR project) that can send the header from its own secret store. It must not be shared with another project.

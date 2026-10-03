@@ -10,7 +10,7 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ### 0.29.0-alpha.1 (Alpha 29): files on project tasks and live project work, 3 October 2026
 
-On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass.
+On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass. The package version stays at 0.31.0-alpha.1, set by Alpha 31.
 
 **In plain language:** project teams can now attach files to tasks, through the same private, checked upload path as lesson files. Workboards and open tasks update within a few seconds when a teammate changes something, and if someone changes a task you are editing, you are told who and choose whether to load their version or keep your own edits.
 
@@ -23,9 +23,22 @@ Details:
 - Additive migration 0029 adds `upload_intents.task_id`, `project_tasks.updated_by` and four restrictive row-security policies; no grant change (decision 029). When upload scanning (Alpha 23) lands, task files go through it on the shared upload path.
 - New demo browser suite `npm run test:browser:task-files`. No new dependency.
 
+### 0.31.0-alpha.1 (Alpha 31): data retention rules, 3 October 2026
+
+On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. Numbering follows the project's allocation of 3 October 2026: this thread holds Alpha 31 to 34, decision records 031 to 034 and migrations 0030 to 0033, so data retention is Alpha 31, decision 031 and migration 0030 (first opened as Alpha 27 with migration 0023).
+
+**In plain language:** REUNIR now clears its own housekeeping on a schedule: expired sign-in sessions and links, old rate counters, technical receipts, records of email already sent and notices people read long ago. What people make, reviewed evidence and the audit trail are never cleared by it. Your account has a new **How long things are kept** panel that says what is kept and for how long.
+
+Details:
+
+- One list of rules (`packages/contracts/src/retention.ts`) serves the job, the panel and `platform/docs/RETENTION.md` (decision 031).
+- `npm run retention:run` is a dry run with exact counts; `RETENTION=apply` clears. An authenticated `GET /api/internal/retention` applies the rules on a schedule, `?dry=1` only counts. Counts per rule only, never contents.
+- Additive migration 0030: a read-only policy so the job lists communities only as its own worker, and an index for read notices. Each community's records are cleared inside that community's tenant context.
+- Nothing is scheduled; the operator chooses a daily schedule.
+
 ### 0.28.0-alpha.1 (Alpha 28): collections of useful content, 3 October 2026
 
-On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass.
+On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass. Alpha 31 reached main first, so the package version stays at 0.31.0-alpha.1.
 
 **In plain language:** communities can now gather useful material into collections such as "Start here". Owners, administrators and moderators pick posts, lessons, tracks, paths, projects, events, missions and community outputs, add short notes and choose the order, keeping a collection private until they publish it. Everyone sees only the items they already have access to, and one featured collection appears on Home.
 
@@ -38,38 +51,10 @@ Details:
 - Additive migration 0028 adds `collections` and `collection_items` with forced row security and column-limited updates (decision 028). Run `npm run db:grant-runtime` after migrating.
 - New demo browser suite `npm run test:browser:curation`. No new dependency.
 
-### 0.26.0-alpha.1 (Alpha 26): confirming and changing your email address, 3 October 2026
-
-On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. Alpha 23 is claimed by open pull requests (#16, #21), Alpha 24 (group conversations, PR #19) reached main first, and Alpha 25 is on PR #20, so this release is Alpha 26 with decision 026.
-
-**In plain language:** people can now confirm their email address with a link, and accepting an invitation confirms it automatically. Once the app is live, an address has to be confirmed before it can sign in. Anyone can also move their account to a new email address: they enter their password, open the link sent to the new address, and their old address is told.
-
-Details:
-
-- **Email address** panel on Your account: the address, Confirmed or Not confirmed, **Send a confirmation link** and **Change email address…**.
-- `EMAIL_VERIFICATION` (`required` or `optional`, required by default in production, applied only where mail can be sent): an unconfirmed address gets a fresh link instead of a session (decision 026).
-- `POST /api/account/email` checks the password, then sends a confirmation link to the new address; the address changes only when it is opened. The current address gets a notice. Better Auth's own change-email route is closed.
-- Changing or resetting the password cancels any change link asked for before it.
-- The launch preflight also checks `EMAIL_VERIFICATION`.
-- No migration and no new runtime dependency: Better Auth's own email verification and change-email flows, through the encrypted outbox.
-
-### 0.25.0-alpha.1 (Alpha 25): contributor roles for teaching, 3 October 2026
-
-On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass. Alpha 26 (PR #18) reached main first, so the application version stays 0.26.0-alpha.1 when this release merges.
-
-**In plain language:** when you add someone to teach a track you can now make them a contributor instead of an instructor. Contributors write and save lesson drafts and attach files; the track's instructors decide when to publish them. Contributors do not see learners' quiz answers.
-
-Details:
-
-- **Instructor or Contributor** in a track's Instructors dialogue, with a role menu for each person. Instructor stays the default.
-- Publishing, archiving, reordering, the track cover and knowledge-check review need an instructor or administrator (`INSTRUCTOR_REQUIRED`, decision 025).
-- Additive migration 0023 adds `track_instructors.role` and role-aware policies for published revisions, attempts and invitations. Every existing grant stays an instructor's. No grant change.
-- Database upgrade tests now count the migration files instead of a fixed number.
-
 ### Planned
 
-- Data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
-- Virus scanning of uploads, content curation, task files with live updates and shared form components.
+- Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+- Virus scanning of uploads, task files with live updates and shared form components.
 
 ## 0.27.0-alpha.1 (Alpha 27): loading, error and empty screens, 3 October 2026
 
@@ -84,6 +69,34 @@ Details:
 - Offline and failed-refresh notices; a failed background refresh keeps the page instead of replacing the app. Failed commands, uploads and downloads show a marked error toast and keep what was typed.
 - Empty states distinguish first run from no results, and actions appear only for roles that may take them.
 - New demo browser suite `npm run test:browser:states`. No migration, no grant change, no new dependency.
+
+## 0.26.0-alpha.1 (Alpha 26): confirming and changing your email address, 3 October 2026
+
+On main through [PR #18](https://github.com/EmotiveImpact/REUNIR/pull/18), merged as `9b34cac`.
+
+**In plain language:** people can now confirm their email address with a link, and accepting an invitation confirms it automatically. Once the app is live, an address has to be confirmed before it can sign in. Anyone can also move their account to a new email address: they enter their password, open the link sent to the new address, and their old address is told.
+
+Details:
+
+- **Email address** panel on Your account: the address, Confirmed or Not confirmed, **Send a confirmation link** and **Change email address…**.
+- `EMAIL_VERIFICATION` (`required` or `optional`, required by default in production, applied only where mail can be sent): an unconfirmed address gets a fresh link instead of a session (decision 026).
+- `POST /api/account/email` checks the password, then sends a confirmation link to the new address; the address changes only when it is opened. The current address gets a notice. Better Auth's own change-email route is closed.
+- Changing or resetting the password cancels any change link asked for before it.
+- The launch preflight also checks `EMAIL_VERIFICATION`.
+- No migration and no new runtime dependency: Better Auth's own email verification and change-email flows, through the encrypted outbox.
+
+## 0.25.0-alpha.1 (Alpha 25): contributor roles for teaching, 3 October 2026
+
+On main through [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20), merged as `fab9510`. Alpha 26 reached main first.
+
+**In plain language:** when you add someone to teach a track you can now make them a contributor instead of an instructor. Contributors write and save lesson drafts and attach files; the track's instructors decide when to publish them. Contributors do not see learners' quiz answers.
+
+Details:
+
+- **Instructor or Contributor** in a track's Instructors dialogue, with a role menu for each person. Instructor stays the default.
+- Publishing, archiving, reordering, the track cover and knowledge-check review need an instructor or administrator (`INSTRUCTOR_REQUIRED`, decision 025).
+- Additive migration 0023 adds `track_instructors.role` and role-aware policies for published revisions, attempts and invitations. Every existing grant stays an instructor's. No grant change.
+- Database upgrade tests now count the migration files instead of a fixed number.
 
 ## 0.24.0-alpha.1 (Alpha 24): group conversations, 3 October 2026
 
