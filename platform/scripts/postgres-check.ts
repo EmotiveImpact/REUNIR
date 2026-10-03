@@ -129,10 +129,32 @@ try{
         await exec({type:'project.cover.set',projectId:'project_still',fileId:upload.id},'member_jordan');
         await assert.rejects(()=>repo.removeCoverLibraryItem('code-black',DEMO_ADMIN,item,'library-postgres'),{code:'COVER_IN_USE'});
         await assert.rejects(()=>rows(DEMO_USER,`INSERT INTO cover_library(id,organization_id,created_at,file_id,label,content_type,size_bytes,added_by) VALUES('l_pg','org_code_black',now(),'${upload.id}','x','image/png',4096,'${DEMO_USER}')`),/row-level security/);
-        await assert.rejects(()=>rows(DEMO_ADMIN,"UPDATE cover_library SET label='Renamed'"),/permission denied/);
+        await assert.rejects(()=>rows(DEMO_ADMIN,"UPDATE cover_library SET file_id='other'"),/permission denied/);
         await exec({type:'project.cover.set',projectId:'project_still',fileId:null},'member_jordan');
-        assert.deepEqual(await repo.removeCoverLibraryItem('code-black',DEMO_ADMIN,item,'library-postgres'),{id:item,objectKey:key('org_code_black',upload.id)});
+        assert.deepEqual(await repo.removeCoverLibraryItem('code-black',DEMO_ADMIN,item,'library-postgres'),{id:item,objectKey:key('org_code_black',upload.id),thumbnailObjectKey:null});
         assert.deepEqual(await rows(DEMO_ADMIN,`SELECT id FROM upload_intents WHERE id='${upload.id}'`),[]);
+    });
+    await check('library pictures are renamed and tagged, and covers keep verified small copies, through a restricted PostgreSQL connection',async()=>{
+        const repo=new WorkspaceRepository(runtime!);
+        const rows=(user:string,org:string,sql:string)=>runtime!.transaction(async tx=>{await setContext(tx,org,user);return (await tx.query<Record<string,unknown>>(sql)).rows;});
+        assert.deepEqual(await repo.updateCoverLibraryItem('code-black',DEMO_ADMIN,'library_mountain',{label:'Ridge at noon',tags:['Hills','hills']},'library-postgres'),{id:'library_mountain',label:'Ridge at noon',tags:['hills'],changed:true});
+        await assert.rejects(()=>repo.updateCoverLibraryItem('code-black',DEMO_USER,'library_mountain',{label:'Mine',tags:[]},'library-postgres'),{code:'ADMIN_REQUIRED'});
+        await assert.rejects(()=>repo.updateCoverLibraryItem('studio-north',DEMO_ADMIN,'library_mountain',{label:'Taken',tags:[]},'library-postgres'),{code:'NOT_FOUND'});
+        assert.deepEqual(await rows(DEMO_USER,'org_code_black',"UPDATE cover_library SET label='Member' RETURNING id"),[],'a member\u2019s update matches nothing');
+        assert.deepEqual(await rows(DEMO_ADMIN,'org_studio_north',"UPDATE cover_library SET label='Elsewhere' WHERE organization_id='org_code_black' RETURNING id"),[],'another community\u2019s rows are out of sight');
+        await admin.query("UPDATE members SET status='suspended' WHERE organization_id='org_code_black' AND user_id=$1",[DEMO_ADMIN]);
+        try { assert.deepEqual(await rows(DEMO_ADMIN,'org_code_black',"UPDATE cover_library SET label='Suspended' RETURNING id"),[],'a suspended owner updates nothing'); }
+        finally { await admin.query("UPDATE members SET status='active' WHERE organization_id='org_code_black' AND user_id=$1",[DEMO_ADMIN]); }
+        await assert.rejects(()=>rows(DEMO_ADMIN,'org_code_black',`UPDATE cover_library SET tags='["Upper"]'::jsonb`),/check constraint/);
+        await repo.updateCoverLibraryItem('code-black',DEMO_ADMIN,'library_mountain',{label:'Mountain ridge',tags:['landscape','outdoors']},'library-postgres');
+        const key=(org:string,id:string)=>`organisations/${org}/covers/tracks/track_story/${id}.png`,thumb=(org:string,id:string)=>`organisations/${org}/covers/tracks/track_story/${id}-thumb.webp`;
+        const {upload}=await repo.beginCoverUpload('code-black',DEMO_ADMIN,{purpose:'cover_image',subject:'track',subjectId:'track_story',contentType:'image/png',sizeBytes:4096,thumbnail:{contentType:'image/webp',sizeBytes:2048}},key,'library-postgres',thumb);
+        const done=await repo.completeCoverUpload('code-black',DEMO_ADMIN,upload.id,{sizeBytes:4096,contentType:'image/png',generation:'1712345678907777',bytesAcceptable:true,thumbnail:{sizeBytes:2048,contentType:'image/webp',generation:'1712345678907778',bytesAcceptable:true}},'library-postgres');
+        assert.equal(done.upload.thumbnailGeneration,'1712345678907778');
+        await repo.execute('code-black',DEMO_ADMIN,{type:'track.cover.set',trackId:'track_story',fileId:upload.id,focusX:50,focusY:50},randomUUID(),'library-postgres');
+        assert.deepEqual(await repo.coverImage('code-black',DEMO_USER,'track','track_story',upload.id,'thumbnail'),{objectKey:thumb('org_code_black',upload.id),generation:'1712345678907778',contentType:'image/webp',sizeBytes:2048});
+        const {releasedFiles}=await repo.executeCommand('code-black',DEMO_ADMIN,{type:'track.cover.set',trackId:'track_story',fileId:null},randomUUID(),'library-postgres');
+        assert.deepEqual(releasedFiles,[key('org_code_black',upload.id),thumb('org_code_black',upload.id)]);
     });
     await check('an owner-authorised erasure removes one member\u2019s answers through a role without row-security bypass',async()=>{
         // A stand-in for a hosted migration role: table privileges, but no superuser and no BYPASSRLS.

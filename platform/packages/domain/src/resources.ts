@@ -20,7 +20,7 @@ export function normaliseResources(value: readonly LessonResource[] | null | und
     return (value ?? []).map(r => ({ id: r.id, fileId: r.fileId, name: r.name, description: r.description ?? '', contentType: r.contentType, sizeBytes: r.sizeBytes }));
 }
 /** Storage keys and generations are server-only. */
-export const clientUpload = (u: Upload): Upload => ({ ...u, objectKey: '', generation: null });
+export const clientUpload = (u: Upload): Upload => ({ ...u, objectKey: '', generation: null, ...(u.thumbnailObjectKey !== undefined ? { thumbnailObjectKey: u.thumbnailObjectKey ? '' : null, thumbnailGeneration: null } : {}) });
 export function visibleUploads(s: Workspace, actor: Member): Upload[] {
     // Upload records reach only the people who teach the track: its instructors and the community's administrators.
     const tracks = taughtTracks(s, actor);

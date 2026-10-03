@@ -51,9 +51,11 @@ test('0011 upgrade keeps tracks, projects and uploads exactly as they were and s
             assert(now.every(r => r.cover_image === null), table);
         }
         const uploads = await read('upload_intents');
-        assert.deepEqual(strip(uploads, ['cover_track_id', 'cover_project_id']), before.uploads);
+        const thumbnail = ['thumbnail_object_key', 'thumbnail_content_type', 'thumbnail_size_bytes', 'thumbnail_generation'];
+        assert.deepEqual(strip(uploads, ['cover_track_id', 'cover_project_id', ...thumbnail]), before.uploads);
         assert.deepEqual(uploads.map(u => [u.purpose, u.cover_track_id, u.cover_project_id]), [['member', null, null]]);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 21);
+        assert(uploads.every(u => thumbnail.every(k => u[k] === null)), 'no upload gains a small copy');
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 22);
     } finally { await old.close(); }
 });
 test('the restricted runtime role records, verifies and sets a track cover and a project owner’s cover', async () => {

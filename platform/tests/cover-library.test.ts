@@ -34,7 +34,7 @@ test('library requests carry no track, project or storage key, and labels are sh
     assert.throws(() => coverLibraryUploadRequest.parse(request({ objectKey: 'chosen-by-client' })), 'clients never name storage keys');
     assert.throws(() => coverLibraryUploadRequest.parse(request({ contentType: 'image/svg+xml' })));
     assert.throws(() => coverLibraryUploadRequest.parse(request({ sizeBytes: MAX_COVER_BYTES + 1 })));
-    assert.deepEqual(commandSchema.parse({ type: 'cover.library.add', fileId: 'f1', label: '  Harbour  ' }), { type: 'cover.library.add', fileId: 'f1', label: 'Harbour' });
+    assert.deepEqual(commandSchema.parse({ type: 'cover.library.add', fileId: 'f1', label: '  Harbour  ' }), { type: 'cover.library.add', fileId: 'f1', label: 'Harbour', tags: [] });
     assert.throws(() => commandSchema.parse({ type: 'cover.library.add', fileId: 'f1', label: '   ' }));
     assert.throws(() => commandSchema.parse({ type: 'cover.library.add', fileId: 'f1', label: 'x'.repeat(81) }));
     assert.throws(() => commandSchema.parse({ type: 'cover.library.add', fileId: 'f1', label: 'Harbour', addedBy: DEMO_USER }), 'the server records who added it');

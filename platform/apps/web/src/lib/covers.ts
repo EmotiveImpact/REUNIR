@@ -2,8 +2,11 @@ import { api, commitDemo, demoState, mode } from './data';
 import { getDemoFile, putDemoFile, removeDemoFile } from './demo-files';
 import mountainImage from '../assets/library-mountain.jpg';
 import { newId, type CoverLibraryItem, type Workspace } from '../../../../packages/contracts/src/index';
-import { COVER_EDGE, COVER_HEAD_BYTES, MAX_COVER_BYTES, MIN_COVER_EDGE, coverBytesAcceptable, coverImageTypes, imageDimensions, type CoverImageType, type CoverSubject } from '../../../../packages/contracts/src/covers';
-import { beginCoverLibraryUpload, beginCoverUpload, completeCoverUpload, removeCoverLibraryItem } from '../../../../packages/domain/src/covers';
+import {
+    COVER_EDGE, COVER_HEAD_BYTES, COVER_THUMBNAIL_WIDTH, MAX_COVER_BYTES, MAX_COVER_THUMBNAIL_BYTES, MIN_COVER_EDGE, coverBytesAcceptable, coverImageTypes, coverThumbnailAcceptable, imageDimensions,
+    type CoverImageType, type CoverLibraryDetails, type CoverSubject, type CoverVariant,
+} from '../../../../packages/contracts/src/covers';
+import { beginCoverLibraryUpload, beginCoverUpload, completeCoverUpload, removeCoverLibraryItem, updateCoverLibraryItem } from '../../../../packages/domain/src/covers';
 import { DEMO_COVER_LIBRARY_FILE } from '../../../../packages/domain/src/demo-files';
 
 /**
@@ -22,7 +25,9 @@ const PANEL = '#171717';
 /** Below this longest edge a cover can look soft on a large card. */
 const SOFT_EDGE = 800;
 
-export interface PreparedCover { blob: Blob; contentType: CoverImageType; width: number; height: number; soft: boolean; url: string }
+/** A smaller copy for cards and lists, drawn from the same picture. */
+export interface PreparedThumbnail { blob: Blob; contentType: CoverImageType; width: number; height: number }
+export interface PreparedCover { blob: Blob; contentType: CoverImageType; width: number; height: number; soft: boolean; url: string; thumbnail: PreparedThumbnail | null }
 
 interface Decoded { source: CanvasImageSource; width: number; height: number; close: () => void }
 async function decode(file: Blob): Promise<Decoded> {
@@ -85,11 +90,33 @@ export async function prepareCover(file: File): Promise<PreparedCover> {
             const blob = await encode(canvas, type, quality);
             // The browser's own encoder output is checked with the server's rules before anything is sent.
             if (!blob || blob.size > MAX_COVER_BYTES || blob.type !== type || !coverBytesAcceptable(type, await head(blob))) continue;
-            return { blob, contentType: type, width, height, soft: Math.max(width, height) < SOFT_EDGE, url: URL.createObjectURL(blob) };
+            const thumbnail = await prepareThumbnail(image, { width, height });
+            return { blob, contentType: type, width, height, soft: Math.max(width, height) < SOFT_EDGE, url: URL.createObjectURL(blob), thumbnail };
         }
         throw new Error('This image could not be prepared for upload. Try another picture.');
     }
     finally { image.close(); }
+}
+
+/**
+ * Cards and lists show covers a few hundred pixels wide, so they get a copy COVER_THUMBNAIL_WIDTH wide instead of the
+ * full picture. WebP keeps transparency where the browser can write it; otherwise JPEG on the panel grey. Pictures
+ * already that narrow, or a copy that fails the server's own checks here, simply have none and cards use the full one.
+ */
+async function prepareThumbnail(image: Decoded, full: { width: number; height: number }): Promise<PreparedThumbnail | null> {
+    if (full.width <= COVER_THUMBNAIL_WIDTH) return null;
+    const width = COVER_THUMBNAIL_WIDTH, height = Math.round(full.height * width / full.width);
+    if (height < MIN_COVER_EDGE) return null;
+    const attempts: [CoverImageType, number, string | null][] = [['image/webp', 0.8, null], ['image/jpeg', 0.8, PANEL], ['image/jpeg', 0.6, PANEL]];
+    for (const [type, quality, fill] of attempts) {
+        try {
+            const blob = await encode(draw(image, width, height, fill), type, quality);
+            if (!blob || blob.type !== type || blob.size > MAX_COVER_THUMBNAIL_BYTES || !coverThumbnailAcceptable(type, await head(blob), full)) continue;
+            return { blob, contentType: type, width, height };
+        }
+        catch { /* A browser that cannot draw the copy uploads the picture alone. */ }
+    }
+    return null;
 }
 
 /** A cover for one track or project, or a picture for the community's library. */
@@ -99,31 +126,45 @@ export const uploadCover = (slug: string, userId: string, subject: CoverSubject,
     uploadPrepared(slug, userId, { purpose: 'cover_image', subject, subjectId }, prepared);
 /** Upload and verify a library picture. Listing it under a name is a separate command. */
 export const uploadLibraryPicture = (slug: string, userId: string, prepared: PreparedCover) => uploadPrepared(slug, userId, { purpose: 'cover_library' }, prepared);
+/** Fictional demo only: the small copy is kept in this browser beside the picture. */
+const demoThumbnailId = (fileId: string) => `${fileId}-thumb`;
+type Policy = { url: string; fields: Record<string, string> };
+/** Signed policy: exact size and type. No application cookies are sent to storage. */
+async function postToStorage(policy: Policy, blob: Blob, type: CoverImageType, name: string) {
+    const form = new FormData();
+    for (const [field, value] of Object.entries(policy.fields)) form.append(field, value);
+    form.append('file', blob, `${name}.${coverImageTypes[type]}`);
+    return (await fetch(policy.url, { method: 'POST', body: form, credentials: 'omit' })).ok;
+}
 async function uploadPrepared(slug: string, userId: string, destination: Destination, prepared: PreparedCover): Promise<{ fileId: string }> {
-    const request = { ...destination, contentType: prepared.contentType, sizeBytes: prepared.blob.size };
+    const thumb = prepared.thumbnail;
+    const request = { ...destination, contentType: prepared.contentType, sizeBytes: prepared.blob.size, ...(thumb ? { thumbnail: { contentType: thumb.contentType, sizeBytes: thumb.blob.size } } : {}) };
     if (mode === 'demo') {
-        const id = newId(), ids = { id, objectKey: `browser-demo/${slug}/${id}` };
+        const id = newId(), ids = { id, objectKey: `browser-demo/${slug}/${id}`, ...(thumb ? { thumbnailObjectKey: `browser-demo/${slug}/${demoThumbnailId(id)}` } : {}) };
         const begun = request.purpose === 'cover_library'
             ? beginCoverLibraryUpload(demoState(slug), tenant(demoState(slug), userId), request, ids, now())
             : beginCoverUpload(demoState(slug), tenant(demoState(slug), userId), request, ids, now());
         commitDemo(slug, begun.workspace);
-        for (const old of begun.expired) { forgetDemoCover(slug, old.id); await removeDemoFile(slug, old.id); }
+        for (const old of begun.expired) { forgetDemoCover(slug, old.id); await removeDemoFile(slug, old.id); await removeDemoFile(slug, demoThumbnailId(old.id)); }
         await putDemoFile(slug, id, prepared.blob);
-        const done = completeCoverUpload(demoState(slug), tenant(demoState(slug), userId), id, { sizeBytes: prepared.blob.size, contentType: prepared.contentType, generation: '1', bytesAcceptable: coverBytesAcceptable(prepared.contentType, await head(prepared.blob)) }, now());
+        if (thumb) await putDemoFile(slug, demoThumbnailId(id), thumb.blob);
+        const full = imageDimensions(prepared.contentType, await head(prepared.blob));
+        const done = completeCoverUpload(demoState(slug), tenant(demoState(slug), userId), id, {
+            sizeBytes: prepared.blob.size, contentType: prepared.contentType, generation: '1', bytesAcceptable: coverBytesAcceptable(prepared.contentType, await head(prepared.blob)),
+            ...(thumb ? { thumbnail: { sizeBytes: thumb.blob.size, contentType: thumb.contentType, generation: '1', bytesAcceptable: coverThumbnailAcceptable(thumb.contentType, await head(thumb.blob), full) } } : {}),
+        }, now());
         commitDemo(slug, done.workspace);
+        if (done.outcome === 'rejected' || !done.upload.thumbnailGeneration) await removeDemoFile(slug, demoThumbnailId(id));
         if (done.outcome === 'rejected') {
             await removeDemoFile(slug, id);
             throw new Error('This image is not a JPEG, PNG or WebP of a usable size. Nothing was changed.');
         }
         return { fileId: id };
     }
-    const intent = await api<{ id: string; url: string; fields: Record<string, string> }>(`${base(slug)}/uploads`, request);
-    const form = new FormData();
-    for (const [name, value] of Object.entries(intent.fields)) form.append(name, value);
-    form.append('file', prepared.blob, `cover.${coverImageTypes[prepared.contentType]}`);
-    // Signed policy: exact size and type. No application cookies are sent to storage.
-    const stored = await fetch(intent.url, { method: 'POST', body: form, credentials: 'omit' });
-    if (!stored.ok) throw new Error('Private storage did not accept the image. Try again.');
+    const intent = await api<Policy & { id: string; thumbnail?: Policy }>(`${base(slug)}/uploads`, request);
+    if (!await postToStorage(intent, prepared.blob, prepared.contentType, 'cover')) throw new Error('Private storage did not accept the image. Try again.');
+    // The small copy is a convenience: if storage refuses it, the server finds none and cards show the full picture.
+    if (thumb && intent.thumbnail) await postToStorage(intent.thumbnail, thumb.blob, thumb.contentType, 'cover-thumbnail').catch(() => false);
     await api(`${base(slug)}/uploads/${encodeURIComponent(intent.id)}/complete`, {});
     return { fileId: intent.id };
 }
@@ -134,11 +175,23 @@ export async function removeLibraryPicture(slug: string, userId: string, item: C
     if (mode === 'demo') {
         const s = demoState(slug), r = removeCoverLibraryItem(s, tenant(s, userId), item.id, now());
         const note = commitDemo(slug, r.workspace);
-        forgetDemoCover(slug, item.fileId); await removeDemoFile(slug, item.fileId);
+        forgetDemoCover(slug, item.fileId); await removeDemoFile(slug, item.fileId); await removeDemoFile(slug, demoThumbnailId(item.fileId));
         return message + note;
     }
     await api(`${base(slug)}/cover-library/${encodeURIComponent(item.id)}/remove`, {});
     return message;
+}
+
+/** Rename a library picture or change its tags. Covers that show it keep showing it. */
+export async function saveLibraryDetails(slug: string, userId: string, item: CoverLibraryItem, details: CoverLibraryDetails): Promise<string> {
+    const message = `${details.label} is saved.`;
+    if (mode === 'demo') {
+        const s = demoState(slug), r = updateCoverLibraryItem(s, tenant(s, userId), item.id, details, now());
+        if (!r.changed) return 'Nothing changed.';
+        return message + commitDemo(slug, r.workspace);
+    }
+    const r = await api<{ changed: boolean }>(`${base(slug)}/cover-library/${encodeURIComponent(item.id)}/details`, details);
+    return r.changed ? message : 'Nothing changed.';
 }
 
 export async function coverUploadsAvailable(): Promise<boolean> {
@@ -146,33 +199,40 @@ export async function coverUploadsAvailable(): Promise<boolean> {
     return !!(await api<{ coverUploads?: boolean }>('/api/account/capabilities')).coverUploads;
 }
 
-/** Live covers come from the same-origin route, which checks access on every request. */
-export const liveCoverUrl = (slug: string, kind: CoverSubject, subjectId: string, fileId: string) =>
-    `${base(slug)}/covers/${kind}/${encodeURIComponent(subjectId)}/${encodeURIComponent(fileId)}`;
+/**
+ * Live covers come from the same-origin route, which checks access on every request. The thumbnail address serves the
+ * small copy, or the full picture for covers that have none.
+ */
+export const liveCoverUrl = (slug: string, kind: CoverSubject, subjectId: string, fileId: string, variant: CoverVariant = 'full') =>
+    `${base(slug)}/covers/${kind}/${encodeURIComponent(subjectId)}/${encodeURIComponent(fileId)}${variant === 'thumbnail' ? '/thumbnail' : ''}`;
 /** Library pictures are served to every active member of the community. */
-export const liveLibraryUrl = (slug: string, itemId: string) => `${base(slug)}/cover-library/${encodeURIComponent(itemId)}`;
+export const liveLibraryUrl = (slug: string, itemId: string, variant: CoverVariant = 'full') => `${base(slug)}/cover-library/${encodeURIComponent(itemId)}${variant === 'thumbnail' ? '/thumbnail' : ''}`;
 
 /** Fictional demo only: object URLs for covers stored in this browser, kept for the session. */
 const demoUrls = new Map<string, Promise<string | null>>(), resolvedDemoUrls = new Map<string, string | null>();
-const demoKey = (slug: string, fileId: string) => `${slug}/${fileId}`;
-export function demoCoverUrl(slug: string, fileId: string): Promise<string | null> {
+const demoKey = (slug: string, fileId: string, variant: CoverVariant = 'full') => `${slug}/${fileId}/${variant}`;
+/** The small copy when this browser holds one, otherwise the picture itself, as the live route does. */
+export function demoCoverUrl(slug: string, fileId: string, variant: CoverVariant = 'full'): Promise<string | null> {
     // The fictional library picture is the bundled photograph; nothing is stored for it.
     if (fileId === DEMO_COVER_LIBRARY_FILE) return Promise.resolve(mountainImage);
-    const key = demoKey(slug, fileId);
+    const key = demoKey(slug, fileId, variant);
     let url = demoUrls.get(key);
     if (!url) {
-        url = getDemoFile(slug, fileId).then(blob => blob ? URL.createObjectURL(blob) : null);
+        const stored = variant === 'thumbnail' ? getDemoFile(slug, demoThumbnailId(fileId)).then(blob => blob ?? getDemoFile(slug, fileId)) : getDemoFile(slug, fileId);
+        url = stored.then(blob => blob ? URL.createObjectURL(blob) : null);
         url.then(value => { if (demoUrls.get(key) === url) resolvedDemoUrls.set(key, value); });
         demoUrls.set(key, url);
     }
     return url;
 }
 /** A URL that has already been resolved, so a cover seen before renders without a blank frame. */
-export const peekDemoCoverUrl = (slug: string, fileId: string) => fileId === DEMO_COVER_LIBRARY_FILE ? mountainImage : resolvedDemoUrls.get(demoKey(slug, fileId));
+export const peekDemoCoverUrl = (slug: string, fileId: string, variant: CoverVariant = 'full') => fileId === DEMO_COVER_LIBRARY_FILE ? mountainImage : resolvedDemoUrls.get(demoKey(slug, fileId, variant));
 function forgetDemoCover(slug: string, fileId: string) {
-    const key = demoKey(slug, fileId), url = resolvedDemoUrls.get(key);
-    if (url) URL.revokeObjectURL(url);
-    demoUrls.delete(key); resolvedDemoUrls.delete(key);
+    for (const variant of ['full', 'thumbnail'] as const) {
+        const key = demoKey(slug, fileId, variant), url = resolvedDemoUrls.get(key);
+        if (url) URL.revokeObjectURL(url);
+        demoUrls.delete(key); resolvedDemoUrls.delete(key);
+    }
 }
 export function forgetDemoCovers() {
     for (const url of resolvedDemoUrls.values()) if (url) URL.revokeObjectURL(url);
