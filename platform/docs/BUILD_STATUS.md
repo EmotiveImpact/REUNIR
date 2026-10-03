@@ -1,4 +1,69 @@
-# Alpha 11 cover images
+# Alpha 12 track instructors
+
+3 October 2026. Application 0.12.0-alpha.1. Owners and administrators name instructors for a track; an instructor authors that track's lessons, files, knowledge checks and cover, and marks its knowledge checks, from a teaching page, without community-wide administrator rights. Being shown as a track's author grants nothing. See INSTRUCTORS.md and decisions/012-track-instructors.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)), after Alpha 11 cover images on the same branch |
+| Verified locally | Partly at this commit; see below. The full clean-worktree run is recorded in the publication receipt |
+| Verified remotely (GitHub Actions) | See the publication receipt below |
+| Merged | No. Merging into main needs the owner's approval |
+| Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- Migration `0012_track_instructors.sql` (additive): a `track_instructors` table with forced RLS (read in the tenant; inserted only by an active owner or administrator in their own name; deleted only by them), instructor policies on lesson drafts, revisions and knowledge-check attempts, and the restrictive lesson file read policy recreated to admit instructors of the file's own track. Migrations 0001 to 0011 are byte-identical. `npm run db:grant-runtime` grants the table without UPDATE.
+- Commands `track.instructor.add` and `track.instructor.remove`, administrator-only. One domain rule, `teaches`, decides drafts, history, lesson files, answer keys, attempts, reviews and the track cover; other tracks stay invisible to an instructor; suspension ends access at once. The repository now refuses to change rows that have no mutable properties in place.
+- A Teaching page (sidebar link for instructors who are not administrators) with their tracks and review queue; Creator studio, cover and file tools on their own tracks; an Instructors dialogue for administrators; Preview as instructor in the demo (Idris Cole on the product track). The review queue now lists only attempts on tracks the reviewer teaches and never their own.
+- No new runtime dependency. Release constant and package version are 0.12.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium 141 at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16.14 in a disposable loopback cluster (CI uses PostgreSQL 17). Run in this workspace on the source of feature commit `974fa36`; `75e89f6` only changes the version number.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 507 passed, 0 failed (486 existing plus 9 domain, 8 database and 4 HTTP instructor tests) |
+| `npm run test:browser:instructors` (new) | 9 passed: no teaching tools for members, the instructor's teaching page, feedback on a waiting answer, a lesson written and published on their own track, no tools on another track, the administrators' Instructors dialogue, the review on record, axe scans and no overflow at 390px |
+| `npm run test:browser:instructors-connected` (new) | 6 passed: live build and Better Auth sessions with the API under the restricted runtime role and forced RLS; grant from the live track page, teaching page, review in the instructor's name, publishing on their track, refusals, revocation |
+| `npm run test:postgres` | 11 passed, including the new restricted-role instructor check |
+| Python helpers, `scripts/check_research.py` | 34 passed; 35 pinned sources, 14 decisions |
+
+A full run from a clean worktree of `75e89f6`, after `npm ci`, was in progress when this was committed. By then `npm run test:http` (17), both builds and the regression (85), operations (17), project work (29), authoring (27), rich lessons (11), resources (19) and knowledge-check (14) demo suites had passed. The covers, instructor, monochrome and v4 demo suites and every connected suite were still running; their results are recorded in the publication receipt below and are not claimed for Alpha 12 until then.
+
+Tests changed rather than added: six migration-count assertions moved from 11 to 12, the old-schema fixture skips the new table, and the knowledge-check notification test now expects the seeded product-track instructor to be told as well as the owner, on their teaching page. No business assertion was weakened.
+
+## Corrections made while verifying
+
+- The repository writes ordinary rows with an upsert, which needs UPDATE; grants deliberately have none. Grants are now append-only rows, and changing any row without mutable properties in place raises an error instead of silently upserting.
+- The teaching page's track cover and the dialogue's portraits stretched because a child selector also matched them. Each text block now has its own class.
+
+## Not verified, and why
+
+- Hosted behaviour on Neon and Vercel, real sessions over the internet, email and backups remain deferred by the user.
+- Instructors receive notifications in the application only; no email is sent for a grant.
+
+## Preview
+
+The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `http://127.0.0.1:5173`, reachable only from inside the container. Use the account menu's **Preview as instructor** to see the teaching page, or **Preview as admin** and **Instructors** on a track to add or remove one. Clone the branch and run `npm ci && npm run dev` from `platform/`.
+
+## Publication receipt
+
+Pending: the push, the remote read-back and the GitHub Actions runs are recorded here after they happen.
+
+## Next actions
+
+1. Owner review of PR #5 (Alpha 11 and Alpha 12) in the demo; merge only with the owner's approval, then read back main.
+2. A paginated review queue and a learner's export of their own attempts.
+3. An operator erasure procedure covering a learner's answers and removed covers.
+4. When deployment resumes: Neon staging with twelve migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests.
+
+---
+## Historical Alpha 11 evidence: cover images
 
 3 October 2026. Application 0.11.0-alpha.1. Communities upload their own track and project covers, or a plain neutral panel shows. The generated cover art and every word written on it are retired; titles stay below pictures. Administrators set track covers; a project's owner or an administrator sets its cover. See COVERS.md and decisions/011-cover-images.md.
 

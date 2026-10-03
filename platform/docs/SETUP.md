@@ -96,6 +96,8 @@ Cookie-authenticated POSTs require the exact application `Origin` and JSON conte
 
 **Cover images (Alpha 11).** Track and project covers use the same endpoints with `{purpose:'cover_image',subject:'track'|'project',subjectId,contentType,sizeBytes}`. Owners and administrators can start track covers; a project's owner can also start its cover. JPEG, PNG and WebP up to 3 MiB are accepted, and completion checks the signature and the declared dimensions (16 to 4,096 pixels) on the pinned generation. Readers fetch bytes from `/api/organisations/:slug/covers/:kind/:subjectId/:fileId`, which checks access on every request and caches privately for an hour. `/api/account/capabilities` reports `coverUploads`. Apply migration 0011 and rerun `npm run db:grant-runtime`. The bucket needs no new CORS rule beyond the `POST` rule above; covers are served by the application, never by signed links. Objects under `covers/` that nothing displays are pruned by later cover uploads after an hour. See COVERS.md.
 
+**Track instructors (Alpha 12).** Apply migration 0012 and rerun `npm run db:grant-runtime`, which grants the new `track_instructors` table without UPDATE. No storage or environment change is needed. See INSTRUCTORS.md.
+
 Real Google credentials, CORS, IAM, billing, malware scanning, orphaned-object cleanup and member attachments for posts or missions remain staging/public-launch work.
 
 **Knowledge checks (Alpha 10).** No new environment variables or services. Apply migration 0010 with the administrative connection and rerun `npm run db:grant-runtime`, which revokes UPDATE and DELETE on `quiz_attempts` from the runtime role and grants UPDATE only on the review columns. Commands use the existing `/api/organisations/:slug/commands` route. See ASSESSMENTS.md.

@@ -1,4 +1,4 @@
-# REUNIR roadmap after cover images
+# REUNIR roadmap after track instructors
 
 ## Product mission, not a new scope
 
@@ -19,26 +19,27 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 09 | Private lesson files: ordered, named, described, replaceable and removable, following draft, preview, publication and revision; verified uploads and access-gated downloads | No malware scanning; real bucket, IAM and CORS unverified |
 | Alpha 10 | Knowledge checks in lessons: four question kinds, server-side scoring, private attempts, a review queue with marks and feedback, answer reveal under the author's rule | Not credentials or reputation; no question banks, timers, partial credit, exports or erasure procedure |
 | Alpha 11 | Uploaded track and project covers with a focal point, or a plain panel; decorative art and text on pictures retired | No server-side thumbnails or alt text field; removed pictures are pruned later, not erased at once |
+| Alpha 12 | Explicit track instructors who author and review one track from a teaching page, with RLS in depth | No invitations, contributor roles, per-lesson grants or instructor-created tracks |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 
 ## Deployment deferred by the user
 
-The user will clone, deploy and run hosted tests later. Continue product development without treating deployment as a prerequisite or claiming it is complete. Alpha 08 added rich lesson editing, safe external media and compatible revisions (RICH_LESSONS.md); PR #2 was merged after CI run 36969054997 passed. Alpha 09 added private lesson resources (LESSON_RESOURCES.md); PR #3 was merged after CI runs 37061204163 and 37061210244 passed. Alpha 10 added knowledge checks (ASSESSMENTS.md); PR #4 was merged after CI runs 37067079371 and 37067083907 passed. Alpha 11 adds cover images (COVERS.md); BUILD_STATUS.md records its local and remote verification. A hosted bucket needs the storage steps in SETUP.md when deployment resumes.
+The user will clone, deploy and run hosted tests later. Continue product development without treating deployment as a prerequisite or claiming it is complete. Alpha 08 added rich lesson editing, safe external media and compatible revisions (RICH_LESSONS.md); PR #2 was merged after CI run 36969054997 passed. Alpha 09 added private lesson resources (LESSON_RESOURCES.md); PR #3 was merged after CI runs 37061204163 and 37061210244 passed. Alpha 10 added knowledge checks (ASSESSMENTS.md); PR #4 was merged after CI runs 37067079371 and 37067083907 passed. Alpha 11 added cover images (COVERS.md) and Alpha 12 adds track instructors (INSTRUCTORS.md), both on PR #5; BUILD_STATUS.md records their local and remote verification. A hosted bucket needs the storage steps in SETUP.md when deployment resumes.
 
 ## Release work when deployment resumes: make the pilot operable
 
 1. **Source publication completed:** PR #1 contains the full Alpha 07 tree, verified against recovered checkpoint `76b31ab` and fetched back without differences. Preserve historical transport/dependency branches without merging them into the app. Never force-push or overwrite parallel work.
 2. **Application and PostgreSQL CI completed:** run 36964804738 passed all application, HTTP, demo-browser, connected-browser and PostgreSQL checks on commit `75b3f2b`. PR #1 tracks the final source integration. Dependency-resolution CI is no longer the only remote evidence.
-3. Connect the intended dedicated Neon staging database, run the eleven existing migrations and restricted-runtime grants. Do not reuse another application's database or put migration credentials on the web server.
+3. Connect the intended dedicated Neon staging database, run the twelve existing migrations and restricted-runtime grants. Do not reuse another application's database or put migration credentials on the web server.
 4. Connect a live-mode Vercel staging build, verified transactional sender and scheduled mail worker. Provision the real owner, use approved Code Black content and receive actual invitation/recovery messages.
 5. Complete hosted-browser two-person/two-tenant privacy tests, backups and restore rehearsal, monitoring and support/moderation responsibility. Only then invite a small consented Code Black pilot.
 
 ## Next product slices
 
-**Creator Studio:** Rich editing and safe external media (Alpha 08), private lesson resources with lesson/space access inheritance (Alpha 09) and knowledge checks with private attempts and reviewed feedback (Alpha 10) are implemented. Next: instructor-scoped authoring and review permissions, so a track's instructor can author and mark without community-wide administrator rights, followed by a paginated review queue and a learner's export of their own attempts. Question banks, partial credit and timers wait for real pilot needs.
+**Creator Studio:** Rich editing and safe external media (Alpha 08), private lesson resources with lesson/space access inheritance (Alpha 09) and knowledge checks with private attempts and reviewed feedback (Alpha 10) are implemented. Instructor-scoped authoring and review followed in Alpha 12. Next: a paginated review queue, a learner's export of their own attempts, and an operator procedure for erasing a learner's answers and removed covers. Question banks, partial credit and timers wait for real pilot needs.
 
-**Everyday reliability:** page-level cursor pagination beyond messages, notification preferences/digests, role-scoped instructor workflows and useful content curation. Course and project art is now uploaded by each community (Alpha 11); smaller renditions for thumbnails can follow real usage. Improve loading/error/empty states through real pilot observations.
+**Everyday reliability:** page-level cursor pagination beyond messages, notification preferences/digests, useful content curation. Course and project art is now uploaded by each community (Alpha 11); smaller renditions for thumbnails can follow real usage. Improve loading/error/empty states through real pilot observations.
 
 **Account and trust operations:** privileged MFA, general email verification/change, export/deletion and retention, ownership transfer, moderator appeals/escalation, reviewed-evidence correction/revocation history and consented multi-contributor credits.
 

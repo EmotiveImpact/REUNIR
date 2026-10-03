@@ -1,3 +1,14 @@
+# 0.12.0-alpha.1: track instructors
+
+- Owners and administrators name instructors for a track from an Instructors dialogue on the track page. The new instructor is notified.
+- Instructors author their track's lessons, files, knowledge checks and cover, and mark its knowledge checks, from a new Teaching page. They cannot change other tracks, choose instructors or open Community studio.
+- Rights come only from explicit grants; being shown as a track's author grants nothing, and upgrading grants nothing.
+- One per-track rule in the domain and in row security; other tracks stay invisible to an instructor; suspension ends access at once; grants are added or removed, never rewritten.
+- Additive migration 0012; migrations 0001 to 0011 unchanged. No new runtime dependency.
+- The demo adds Preview as instructor (Idris Cole, product track).
+- The connected instructor check runs the live API under the restricted runtime role with forced row security.
+- Deployment remains deferred by the user.
+
 # 0.11.0-alpha.1: cover images
 
 - Upload your own cover for a track or project. Administrators set track covers; a project's owner or an administrator sets its cover.

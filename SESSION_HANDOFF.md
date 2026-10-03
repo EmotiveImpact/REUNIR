@@ -1,17 +1,54 @@
-# Current continuation: Alpha 11 cover images
+# Current continuation: Alpha 12 track instructors
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, COVERS.md, ROADMAP.md and research/notes/17_TRACK_INSTRUCTORS.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+## Where the source is
+
+- Base: main `365e1c9a822297ce471083d891eea1f1256e0c63`, the merge of PR #4 (Alpha 10 knowledge checks). Main had not moved when this slice was pushed.
+- This slice and the one before it: branch `claude/laughing-goodall-2p7z0v`, [PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5). Alpha 11 cover images was verified, pushed and recorded first (receipt commit `bffa3b7`, CI runs 37094420188 and 37094422988 green on `108f0ce`); Alpha 12 track instructors follows on the same branch. The publication receipt in BUILD_STATUS.md records the pushed commit and CI runs. Merging into main needs the owner's approval.
+
+## What is done
+
+Track instructors are implemented and verified locally (see BUILD_STATUS.md for exact counts): owners and administrators name instructors per track; instructors author that track's lessons, files, knowledge checks and cover and mark its knowledge checks from a teaching page, never their own attempts; other tracks stay invisible to them; suspension ends access at once. Rights come only from explicit grants, never from being shown as a track's author. Migration 0012 is additive with forced RLS and instructor policies; 0001 to 0011 are unchanged. The connected instructor check runs the live API under the restricted runtime role with forced RLS.
+
+## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Use the account menu's Preview as instructor (Idris Cole, product track) to open Teaching, mark Sofia Chen's waiting answer and write a lesson in Creator studio. Preview as admin, open a track and choose Instructors to add or remove one. For PostgreSQL: `npm run db:migrate`, then `npm run db:grant-runtime`.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script including `instructors` and `instructors-connected`, and `npm run test:postgres` against a disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+## Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable, tenant isolation and role checks current, private goals, messages and scores private. Authority is granted, never inferred from attribution or engagement. Pictures keep their own colours; the interface stays black, white and neutral grey. Community review is not accreditation.
+
+## Next
+
+1. Owner review of PR #5 (Alpha 11 and Alpha 12) in the demo, then merge with the owner's approval and read back main.
+2. A paginated review queue and a learner's export of their own attempts.
+3. An operator procedure for erasing a learner's answers and removed covers on request.
+4. Deployment remains deferred by the user: Neon, Vercel, bucket, sender and scheduler are all unprovisioned.
+
+---
+## Historical Alpha 11 handover: cover images
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, ROADMAP.md and research/notes/16_COVER_IMAGES.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
-## Where the source is
+### Where the source was
 
 - Base: main `365e1c9a822297ce471083d891eea1f1256e0c63`, the merge of PR #4 (Alpha 10 knowledge checks), whose tree is identical to the tested PR head `abbb51f`. PR #5 was the only open pull request when this slice started.
 - This slice: branch `claude/laughing-goodall-2p7z0v`, [PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5). It began as the cover contrast follow-up (built from main `788e5d7`, merged with main `365e1c9`), and then, at the owner's request, replaced the decorative covers with uploaded ones. The publication receipt in BUILD_STATUS.md records the pushed commit, the CI runs and whether it was merged. Merging into main needs the owner's approval.
 
-## What is done
+### What is done
 
 Cover images are implemented and verified locally (see BUILD_STATUS.md for exact counts): communities upload their own track and project covers, set a focal point and preview the crops, or a plain neutral panel shows; no text sits on a picture. Administrators set track covers, and a project's owner or an administrator sets its cover. Pictures are resized in the browser, verified on the pinned generation and served through an access-checked same-origin route, with a restrictive RLS policy in depth. Migration 0011 is additive and 0001 to 0010 are unchanged. The earlier decorative art and its contrast patch are gone, so the knowledge-check connected scan covers the whole page again.
 
-## Run it
+### Run it
 
 ```sh
 cd platform
@@ -23,11 +60,11 @@ Every card starts with the plain panel. Use the account menu's Preview as admin,
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script including `covers` and `covers-connected`, and `npm run test:postgres` against a disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable, tenant isolation and role checks current, private goals, messages and scores private. Pictures keep their own colours; the interface stays black, white and neutral grey, and nothing is written on a picture. Community review is not accreditation.
 
-## Next
+### Next recorded at the time
 
 1. Owner review of PR #5 in the demo, then merge with the owner's approval and read back main.
 2. Instructor-scoped authoring and review: let a track's instructor author and mark without community-wide administrator rights, with the same RLS depth.

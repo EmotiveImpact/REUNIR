@@ -1,4 +1,8 @@
-# Research status: Alpha 11
+# Research status: Alpha 12
+
+Alpha 12 (track instructors) reviewed how Frappe Learning (course instructors and modify rules), LearnHouse (resource authors and contributor management) and ClassroomIO (course team middleware) scope course staff, at the same pinned commits; see notes/17_TRACK_INSTRUCTORS.md and the `track-instructors` decision in reuse-register.json. All three are behavioural references only. Imported donor files: zero. New runtime dependencies: none.
+
+## Alpha 11 record
 
 Alpha 11 (cover images) reviewed the course card files of Frappe Learning, LearnHouse and ClassroomIO at the same pinned commits, the contrast code of axe-core 4.13.0 (the installed version) and WCAG failure F83 with the contrast understanding document; see notes/16_COVER_IMAGES.md and the `cover-images` decision in reuse-register.json. The learning projects are AGPL at their roots, so they are behavioural references only; axe-core and WCAG were read to understand the checks, not copied. Imported donor files: zero. New runtime dependencies: none.
 

@@ -1,6 +1,6 @@
 # REUNIR · Product Requirements Document
 
-Version 0.11 · 3 October 2026 · Cover images, Alpha 11 (application 0.11.0-alpha.1), on the approved v4 design. Requirements and actual delivery are distinguished below.
+Version 0.12 · 3 October 2026 · Track instructors, Alpha 12 (application 0.12.0-alpha.1), on the approved v4 design. Requirements and actual delivery are distinguished below.
 
 ## 1. Product
 
@@ -410,3 +410,21 @@ Tracks and projects show a picture their community uploads, or a plain neutral p
 | C09 | The fictional demo runs the same rules with browser-local bytes | Demo browser journey |
 
 Server-side thumbnails, alt text fields, cropping tools, remote image URLs and covers for spaces, paths or events are outside this release. Removed pictures are pruned later rather than deleted at once; an operator erasure procedure is still open.
+
+## Alpha 12: track instructors
+
+Owners and administrators name instructors for a track. An instructor authors that track's lessons, files, knowledge checks and cover, and marks its knowledge checks, from a teaching page, without community-wide administrator rights. Being shown as a track's author grants nothing. See `INSTRUCTORS.md` and `decisions/012-track-instructors.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| I01 | Only active owners and administrators add or remove instructors, recorded in their own name | Domain, database, HTTP and both browser suites |
+| I02 | Rights come only from explicit grants, never from being named as a track's author; upgrading grants nothing | Domain and migration 0012 upgrade tests |
+| I03 | An instructor authors, publishes, reorders and manages files and the cover of their own tracks only | Domain, database, HTTP, demo and connected browser tests |
+| I04 | An instructor sees answer keys and attempts, and reviews once, on their own tracks only, never their own attempt | Domain, database (forced RLS), HTTP, browser and PostgreSQL tests |
+| I05 | Other tracks' drafts, files and attempts stay invisible to an instructor (not available, 404) | Domain, database and HTTP tests |
+| I06 | Suspension ends an instructor's access at once; grants are added or removed, never rewritten | Domain, database, grants and PostgreSQL tests |
+| I07 | No cross-tenant grants or access | Domain and database tests |
+| I08 | Instructors work from an accessible teaching page; Community studio stays for the community team | Demo and connected browser tests with axe |
+| I09 | The fictional demo previews an instructor with the same rules | Demo browser journey |
+
+Invitations to accept, contributor roles beyond instructor, per-lesson grants and instructor-created tracks are outside this release.
