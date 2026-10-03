@@ -8,6 +8,19 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
+### 0.23.0-alpha.1 (Alpha 23): virus scanning of uploads, 3 October 2026
+
+On a pull request from `claude/upload-scanning-1p9o9m`, to be merged once its checks pass.
+
+**In plain language:** once a virus scanner is connected, every file people upload (lesson files, cover pictures, library pictures and attachments) is checked before anyone can use it. A flagged file is deleted straight away and the uploader is told why. If the scanner is briefly unavailable, the upload simply waits and can be tried again.
+
+Details:
+
+- ClamAV's clamd is reached over TCP with its `INSTREAM` command (`CLAMAV_HOST`, `CLAMAV_PORT`); no new runtime dependency and no paid service.
+- The whole stored file is scanned at the exact generation that is then recorded and served. Flagged files return 422 `FILE_FLAGGED` and are deleted; no verdict returns 503 `SCAN_UNAVAILABLE` and the upload stays pending.
+- `UPLOAD_SCANNING` (`required` or `optional`, required by default in production): with a bucket and no scanner, a production server will not start. `npm run scan:check` tests a configured clamd with the EICAR test file (decision 023).
+- A rejected member attachment can no longer be completed again. No database migration.
+
 ### 0.21.0-alpha.1 (Alpha 21): two-step sign-in, 3 October 2026
 
 On a pull request from `claude/build-out-tvzn40`, to be merged once its checks pass.
@@ -23,7 +36,7 @@ Details:
 
 ### Planned
 
-- Cover picture descriptions, virus scanning of uploads, group conversations, and email verification and change.
+- Cover picture descriptions, group conversations, and email verification and change.
 
 ## 0.20.0-alpha.1 (Alpha 20): inviting someone new to teach a track, 3 October 2026
 

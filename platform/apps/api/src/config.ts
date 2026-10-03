@@ -1,5 +1,11 @@
 import type { PilotCheck } from '../../../packages/contracts/src/operations';
 import { adminTwoFactorSetting } from '../../../packages/contracts/src/two-factor';
+/** Whether every upload must be scanned. When unset, required in production and optional elsewhere. Null when invalid. */
+export function uploadScanningSetting(env: Readonly<Record<string, string | undefined>>): 'required' | 'optional' | null {
+    const raw = env.UPLOAD_SCANNING?.trim();
+    if (!raw) return env.NODE_ENV === 'production' ? 'required' : 'optional';
+    return raw === 'required' || raw === 'optional' ? raw : null;
+}
 export type Environment = Readonly<Record<string, string | undefined>>;
 const filled = (v: string | undefined): boolean => !!v?.trim();
 const safeSecret = (value: string | undefined): boolean => !!value && value.length >= 32 && !/^(test|change.?me|example|replace.?me)/i.test(value);
@@ -35,12 +41,22 @@ export function inspectConfiguration(env: Environment): PilotCheck[] {
     checks.push({key:'worker-auth',title:'Worker authentication',state:cron ? 'pass' : 'blocked',detail:cron ? 'The worker has an authentication secret. A schedule has not been inferred.' : 'Configure a random CRON_SECRET before scheduling the worker.'});
     const twoStep=adminTwoFactorSetting(env);
     checks.push({key:'admin-two-factor',title:'Two-step sign-in for administrators',state:twoStep===null ? 'blocked' : production && twoStep==='optional' ? 'warning' : 'pass',detail:twoStep===null ? 'ADMIN_TWO_FACTOR must be required or optional.' : twoStep==='required' ? 'Owners and administrators must turn on two-step sign-in before using their tools.' : production ? 'Two-step sign-in is optional for owners and administrators. Production normally requires it.' : 'Two-step sign-in is optional for owners and administrators outside production.'});
+    const scanning=uploadScanningSetting(env), bucket=filled(env.GCS_BUCKET), scanner=filled(env.CLAMAV_HOST);
+    const port=env.CLAMAV_PORT?.trim(), portValid=!port || (/^\d+$/.test(port) && Number(port)>=1 && Number(port)<=65535);
+    checks.push({key:'upload-scanning',title:'Virus scanning of uploads',
+        state:scanning===null || !portValid ? 'blocked' : !bucket ? 'pass' : scanner ? 'unverified' : scanning==='required' ? 'blocked' : production ? 'warning' : 'pass',
+        detail:scanning===null ? 'UPLOAD_SCANNING must be required or optional.'
+            : !portValid ? 'CLAMAV_PORT must be a TCP port number.'
+            : !bucket ? 'No attachment bucket is configured, so there are no uploads to scan.'
+            : scanner ? 'A ClamAV scanner is configured. Every upload is scanned before it is used; confirm it answers with npm run scan:check.'
+            : scanning==='required' ? 'Uploads must be scanned, but no scanner is configured. Set CLAMAV_HOST to a clamd service, or UPLOAD_SCANNING=optional.'
+            : production ? 'Uploads are only checked for type and size. Production normally scans them with ClamAV.' : 'Uploads are not scanned outside production unless CLAMAV_HOST is set.'});
     checks.push({key:'storage',title:'Attachments',state:filled(env.GCS_BUCKET) ? 'unverified' : 'warning',detail:filled(env.GCS_BUCKET) ? 'A bucket name is configured, but IAM and attachment delivery require separate verification.' : 'No attachment bucket is configured. Text and link-based pilot features still work.'});
     return checks;
 }
 /** Reject unsafe runtime configurations, while allowing a server without optional email/storage. */
 export function validateRuntimeConfiguration(env: Environment): void {
-    const fatal = new Set(['origin','auth-secret','database-config','client-secrets','privileged-config','fictional-seed','admin-two-factor']);
+    const fatal = new Set(['origin','auth-secret','database-config','client-secrets','privileged-config','fictional-seed','admin-two-factor','upload-scanning']);
     if (env.NODE_ENV === 'production' && (env.RESEND_API_KEY || env.EMAIL_FROM)) fatal.add('email-encryption');
     if(env.CRON_SECRET)fatal.add('worker-auth');
     const blocked = inspectConfiguration(env).filter(c=>fatal.has(c.key) && c.state==='blocked');

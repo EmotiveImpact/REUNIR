@@ -29,6 +29,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 19 | Members turn off notice topics per community and may get a daily or weekly email digest of unread notices; access notices always arrive | No mail provider or scheduler configured; no per-notice switches or quiet hours |
 | Alpha 20 | Owners and administrators invite someone new by email to teach one track; accepting makes them a member and that track's instructor | Only while the sender still administers; one track per invitation; no contributor roles or instructor-created tracks |
 | Alpha 21 | Two-step sign-in with an authenticator app and backup codes for anyone; owners and administrators need it to use their authority when the server requires it (the production default) | No passkeys, QR code or trusted devices; recovery without backup codes is an operator task; hosted Better Auth unverified |
+| Alpha 23 | Every upload is scanned with ClamAV before it can be used when a scanner is configured; flagged files are deleted, and uploads wait while the scanner is unavailable. Required by default in production | No rescanning when signatures update, no quarantine; a real clamd is unverified |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 
