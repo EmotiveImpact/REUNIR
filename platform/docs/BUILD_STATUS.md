@@ -1,4 +1,55 @@
-# Alpha 35 teaching grants for chosen lessons
+# Alpha 36 instructors start their own tracks
+
+3 October 2026. Application version stays 0.39.0-alpha.1: Alpha 39 is already on main. An active instructor of a whole track starts a new track. It stays unpublished, seen only by its teachers and the community's owners and administrators, until an owner or administrator publishes it. See decisions/036-instructor-tracks.md and INSTRUCTORS.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `3c770b5` (the merge of PR #24, Alpha 35, which brought Alpha 23, 28 and 39) |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+Numbering: Alpha 36, decision 036 and migration 0035 come from the block allocated to courses and teaching (Alpha 35 to 38, migrations 0034 to 0037).
+
+## What changed
+
+- **Start a track** on Learning and on the Teaching page for active instructors of at least one whole track. `track.create` from anyone else who is not an owner or administrator is refused with 403 `TRACK_STARTER_REQUIRED`; contributors and lesson-only grants do not qualify.
+- An instructor's track starts unpublished, authored by them, with a whole-track instructor grant in their own name. Members see nothing of it, its lessons or its cover; its teachers and administrators see it marked **Not published**. Administrators are told it was started.
+- **Publish track** (`track.publish`, owners and administrators, idempotent) makes it visible, records `track.published` in the audit and tells the starter.
+- An administrator who also teaches still needs two-step sign-in, where required, to create a published track, because the command would turn out differently without administrator authority.
+- Additive migration `0035_instructor_tracks.sql`: one INSERT policy on `track_instructors`, `instructor_own_track`, admitting only the starter's own grant on a new unpublished track they authored while they actively teach another whole track. Earlier migrations are byte-identical; no grant change.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | UNITCOUNT passed, 0 failed (UNITNEW new in `tests/instructor-tracks.test.ts` and `tests/instructor-tracks-database.test.ts`) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | DEMOCOUNT passed, including INSTRCOUNT instructor checks (1 new: an instructor starts a track, members see it only after an administrator publishes it) |
+| Connected-browser suites | CONNCOUNT passed (unchanged) |
+| `npm run test:postgres` | Passed on PostgreSQL 16 |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
+
+## Not verified, and why
+
+- Instructors cannot archive or delete a track they started, and there is no way to withdraw a started track except through an administrator.
+- The connected browser suite does not start a track; the policy is covered by the database tests through the restricted runtime role.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Uploaded lesson video (Alpha 37, migration 0036), off until the operator sets `LESSON_VIDEO_MAX_MB`.
+3. When deployment resumes: follow LAUNCH_RUNBOOK.md and run `npm run db:migrate`.
+
+## Historical Alpha 35 evidence: teaching grants for chosen lessons
 
 3 October 2026. Application version stays 0.39.0-alpha.1: Alpha 39 reached main first. An owner or administrator gives a teaching grant for the whole track or only for lessons they choose. A lesson grant reaches those lessons' drafts, history, draft files, publishing and learners' answers, and nothing else. See decisions/035-lesson-grants.md and INSTRUCTORS.md.
 
@@ -9,7 +60,7 @@
 | Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `fab9510` (the merge of PR #20, Alpha 25), with main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) and main `b80fc04` (PR #23, Alpha 31 data retention, migration 0030) and main `16b2768` (PR #16, Alpha 23 virus scanning, no migration) and main `0a818fa` (PR #21, Alpha 39 cover library, migration 0038) and main `94b130b` (PR #25, Alpha 28 collections, migration 0028) merged in |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Merged | Yes: [PR #24](https://github.com/EmotiveImpact/REUNIR/pull/24), merged into main as `3c770b5` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 

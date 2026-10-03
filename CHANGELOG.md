@@ -8,9 +8,26 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### Alpha 35: teaching grants for chosen lessons (no version change), 3 October 2026
+### Alpha 36: instructors start their own tracks (no version change), 3 October 2026
 
-On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass. The coordinator allocated Alpha 35 to 38 to courses and teaching, so this release is Alpha 35 with decision 035 and migration 0034. Alpha 39 reached main first, so the version stays 0.39.0-alpha.1 rather than going backwards.
+On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass. Decision 036 and migration 0035, from the block allocated to courses and teaching. Alpha 39 is already on main, so the version stays 0.39.0-alpha.1.
+
+**In plain language:** someone who already teaches a whole track can now start a new track themselves instead of asking an administrator. The new track stays hidden from members until an owner or administrator publishes it. Administrators are told when a track is started, and the person who started it is told when it is published.
+
+Details:
+
+- **Start a track** on Learning and on the Teaching page for active instructors of at least one whole track. Contributors and lesson-only grants cannot (403 `TRACK_STARTER_REQUIRED`).
+- The track starts unpublished, authored by its starter, with their own whole-track instructor grant. Only its teachers and the community's owners and administrators see it, marked **Not published**.
+- **Publish track** (`track.publish`, owners and administrators) makes it visible, records `track.published` in the audit and tells the starter (decision 036).
+- Additive migration 0035 adds one INSERT policy, `instructor_own_track`, that admits only that self-grant. No grant change.
+
+### Planned
+
+- Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+
+## Alpha 35: teaching grants for chosen lessons (no version change), 3 October 2026
+
+On main through [PR #24](https://github.com/EmotiveImpact/REUNIR/pull/24), merged as `3c770b5`. The coordinator allocated Alpha 35 to 38 to courses and teaching, so this release is Alpha 35 with decision 035 and migration 0034. Alpha 39 reached main first, so the version stays 0.39.0-alpha.1 rather than going backwards.
 
 **In plain language:** when you add someone to teach a track you can now give them only the lessons you choose instead of the whole track. They can write, publish and mark answers on those lessons and nothing else. New lessons, the lesson order and the track cover stay with people who have the whole track.
 
@@ -19,10 +36,6 @@ Details:
 - **What they work on** in a track's Instructors dialogue: the whole track (the default) or chosen lessons, with a checkbox per lesson. The list names the lessons.
 - Drafts, history, draft files, publishing and knowledge-check answers follow the chosen lessons; other drafts are not found (decision 035).
 - Additive migration 0034 adds `track_instructors.lesson_ids` and scopes the draft, history, publishing and attempt policies to the listed lessons. Every existing grant keeps the whole track. No grant change.
-
-### Planned
-
-- Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
 
 ## 0.28.0-alpha.1 (Alpha 28): collections of useful content, 3 October 2026
 

@@ -25,7 +25,11 @@ When adding someone in the same dialogue, choose **Instructor** or **Contributor
 
 The dialogue's "What they work on" choice gives a grant to **the whole track, including new lessons** (the default) or **only the lessons I choose**, with a checkbox per lesson. A lesson grant reaches only those lessons' drafts, history and draft files, and, for an instructor, publishing and archiving their drafts and the learners' knowledge-check answers on them. Starting a lesson, reordering the curriculum and the track cover need a whole-track grant. Other lessons' drafts are "not available" (404) and show as "Not one of your lessons" in the studio. The list names the lessons ("Instructor for …"); changing the scope replaces the grant. Migration `0034_lesson_grants.sql` (additive) adds `lesson_ids` and scopes the draft, history, publishing and attempt policies to the listed lessons; an invitation to teach is accepted only for a whole track (decision 035).
 
-An instructor or contributor cannot create tracks, choose instructors, change other tracks or open Community studio, member access or community settings. Owners and administrators keep doing everything on every track.
+### Starting a track (Alpha 36)
+
+An instructor of at least one whole track can **Start a track** from Learning or their Teaching page. The track starts unpublished, with them as author and whole-track instructor; members cannot see it. Administrators are told, and **Publish track** on the track's page makes it visible and tells the author. Contributors and lesson-only grants cannot start tracks (403 `TRACK_STARTER_REQUIRED`). Migration `0035_instructor_tracks.sql` (additive) admits only that self-grant (decision 036).
+
+Apart from starting a track as above, an instructor or contributor cannot create tracks, choose instructors, change other tracks or open Community studio, member access or community settings. Owners and administrators keep doing everything on every track.
 
 ## Rules
 
