@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 16 ownership transfer",
   "version": "0.16.0-alpha.1",
   "sourceBaseline": "4bda5e7d4385336a2a7eccf3890d95b19c9423d3",
-  "generatedAt": "2026-10-03T08:56:05.303856+00:00",
+  "generatedAt": "2026-10-03T10:29:13.069723+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "1d487b620d100f4454ccf5f45b038db1033ecaf316edc3a3b7feac58419e6db2",
-      "bytes": 21301
+      "sha256": "74ab55e0bae0d51721ae75d85c5c327ef07924839bc1013e872ffa27acd7fc5b",
+      "bytes": 21281
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "7ae2079faa6b14adc49dbe44b646f8388d8ee2ee3175ff61996a2b56fb0069a1",
-      "bytes": 38495
+      "sha256": "fceabfe5d38d32f37c9517cd35aee7402637f1d9126060ee6b00466cfd3e4fd5",
+      "bytes": 38478
     },
     {
       "path": "platform/.dockerignore",
@@ -506,8 +506,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "d8a549cec312e114f38f0e2c7c86530612542d929328ea5af060d086b85dc64c",
-      "bytes": 83892
+      "sha256": "0a7f16c0f963bed5ef84008b9201cda66893a9159c9265ed509469fb2c28c030",
+      "bytes": 84350
     },
     {
       "path": "platform/docs/COVERS.md",

@@ -9,7 +9,7 @@
 | Implemented | Yes, on `claude/ownership-transfer-7kx603`, from main `cc806e7` with main `4bda5e7` (PR #7, the changelog) merged in ([PR EmotiveImpact/REUNIR#8](https://github.com/EmotiveImpact/REUNIR/pull/8)) |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Passed on `553e0a7`: [run 37110819170](https://github.com/EmotiveImpact/REUNIR/actions/runs/37110819170) and [run 37110833684](https://github.com/EmotiveImpact/REUNIR/actions/runs/37110833684), both jobs (application and PostgreSQL 17) green |
-| Merged | No. Merging into main needs the owner's approval |
+| Merged | Yes: merged into main as `12ed75c`; the owner confirmed it on 3 October 2026 |
 | Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
 | Operated with real members | No |
 
@@ -59,11 +59,12 @@ The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `h
 
 Source commit `553e0a7edd7753e2a660440f50734ab9fc87d4c4` was pushed to `claude/ownership-transfer-7kx603`; the remote ref was read back and matched. Both CI runs on it passed (links above), with no review threads open. This receipt commit changes only documentation and source hashes. Merging into main needs the owner's approval.
 
+PR #8 was merged with a merge commit, no force-push: main is now `12ed75c32cefb4eed90e97b9c295524ba57bc6cf`, whose parents are the previous main `4bda5e7` and the tested head `d9568fa` (CI green). Main was fetched back after the merge; its tree, `94713f44478b95c44b836809a788c4f11ecb4402`, is identical to the tested head's tree. The merge went ahead on the coordinator's reading of the owner's request to build out the whole app, before an explicit approval; the owner then confirmed it, and approved merging each finished feature once its checks pass.
+
 ## Next actions
 
-1. Owner review of the ownership transfer pull request in the demo, then merge with the owner's approval and read back main.
-2. Server-side pagination for review queues and other long lists.
-3. When deployment resumes: Neon staging with seventeen migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests, including account deletion and ownership transfer against hosted Better Auth.
+1. Server-side pagination for review queues and other long lists.
+2. When deployment resumes: Neon staging with seventeen migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests, including account deletion and ownership transfer against hosted Better Auth.
 
 ---
 ## Historical Alpha 15 evidence: account deletion
