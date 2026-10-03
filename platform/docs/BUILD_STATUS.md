@@ -1,4 +1,59 @@
-# Alpha 22 cover picture descriptions
+# Alpha 25 contributor roles for teaching
+
+3 October 2026. Application 0.25.0-alpha.1. An owner or administrator adds someone to a track as an instructor or a contributor. Contributors write the track's lesson drafts and files; instructors publish them, and only instructors see and review learners' knowledge-check answers. See decisions/025-contributor-roles.md and INSTRUCTORS.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/courses-teaching-6hum2q`, from main `ec4285d` (the merge of PR #15, Alpha 22) |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+Alpha 23 (upload scanning, PR #16) was still open when this slice started, and Alpha 24 is reserved for group conversations in SESSION_HANDOFF.md, so this slice took the next unreserved number.
+
+## What changed
+
+- **Instructor or Contributor** when adding someone in a track's Instructors dialogue, and a role menu beside each person. Instructor is the default for the command, the API and every existing grant.
+- Contributors open, save, preview and restore drafts, upload and attach lesson files, and see the track's drafts, history and upload records. Publishing, archiving, reordering, the cover and knowledge-check attempts need an instructor or administrator (`INSTRUCTOR_REQUIRED`, or the existing cover and reviewer refusals).
+- Changing a role replaces the grant in the acting administrator's name; grants are still never updated in place.
+- Additive migration `0022_contributor_roles.sql`: `track_instructors.role` (`instructor` or `contributor`, NOT NULL, default `instructor`), and role-aware replacements for the published-revision, attempt read, attempt review and invitation policies. 0001 to 0021 are byte-identical; no grant change.
+- Database upgrade tests count the migration files (`tests/helpers/migrations.ts`) instead of a fixed number, so additive migrations from parallel slices no longer edit nine tests.
+- The 0014 upgrade test now seeds without teaching grants, whose newer columns do not exist at 0013.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). Every step ran on this branch's tree on top of main `ec4285d`.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 637 passed, 0 failed (627 existing plus 6 contributor domain and 4 contributor database tests) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 284 passed: as Alpha 22, with 11 instructor checks (1 new: adding a contributor and changing their role) |
+| Connected-browser suites | 60 passed (unchanged; the instructor suite follows the renamed controls) |
+| `npm run test:postgres` | 20 passed on PostgreSQL 16 |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
+
+## Corrections made while verifying
+
+- The first full `npm test` run failed one test, the 0014 upgrade, because it seeded the current fixture (with a teaching role) into a 0013 schema. The test now seeds without grants; the rerun passed.
+
+## Not verified, and why
+
+- Contributor invitations by email are not built: an invitation still makes an instructor, and the 0022 policy refuses any other role on acceptance.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Per-lesson grants, instructor-started tracks and uploaded lesson video, each its own release.
+3. When deployment resumes: follow the launch runbook once it lands.
+
+## Historical Alpha 22 evidence: cover picture descriptions
 
 3 October 2026. Application 0.22.0-alpha.1. Whoever may change a track or project cover can describe the picture, and a screen reader reads that description on the track's or project's own page. See decisions/022-cover-descriptions.md and COVERS.md.
 
