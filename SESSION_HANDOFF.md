@@ -5,7 +5,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, ACCOUNTS.md, decisions/016-owners
 ## Where the source is
 
 - Base: main `cc806e7`, the merge of PR #6 (Alpha 15 account deletion), with main `4bda5e7` (PR #7, the changelog) merged in.
-- This slice: branch `claude/ownership-transfer-7kx603`, [PR EmotiveImpact/REUNIR#8](https://github.com/EmotiveImpact/REUNIR/pull/8). Tested commit `553e0a7`, green in CI runs 37110819170 and 37110833684. BUILD_STATUS.md records the local runs and the CI receipt. Merging into main needs the owner's approval.
+- This slice: branch `claude/ownership-transfer-7kx603`, [PR EmotiveImpact/REUNIR#8](https://github.com/EmotiveImpact/REUNIR/pull/8). Tested commit `553e0a7`, green in CI runs 37110819170 and 37110833684. Merged into main as `12ed75c` (tree identical to the tested head `d9568fa`); the owner confirmed the merge. BUILD_STATUS.md records the local runs and the CI receipt. Merging into main needs the owner's approval.
 
 ## What is done
 
@@ -29,9 +29,8 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 
 ## Next
 
-1. Owner review of the ownership transfer pull request in the demo, then merge with the owner's approval and read back main.
-2. Server-side pagination for review queues and other long lists, beyond the bounded workspace snapshot.
-3. Deployment remains deferred by the user: Neon, Vercel, bucket, sender and scheduler are all unprovisioned.
+1. Server-side pagination for review queues and other long lists, beyond the bounded workspace snapshot.
+2. Deployment remains deferred by the user: Neon, Vercel, bucket, sender and scheduler are all unprovisioned.
 
 ---
 ## Historical Alpha 15 handover: account deletion
