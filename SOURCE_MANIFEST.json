@@ -1,8 +1,8 @@
 {
   "release": "REUNIR Alpha 29 files on project tasks and live project work",
   "version": "0.31.0-alpha.1",
-  "sourceBaseline": "b80fc04e119052e0be00f8bcb2ee46f93973029d",
-  "generatedAt": "2026-10-03T17:08:57.413396+00:00",
+  "sourceBaseline": "16b2768464d3951fe8fc1c7168a33595d91dda1b",
+  "generatedAt": "2026-10-03T17:36:15.582967+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "f1d0436df1dbe10b50535b71d59a7ffd3fcd34a503ff4ad8460a16556b3b9e8a",
-      "bytes": 38268
+      "sha256": "80634e2e669b895f4a9ea77eedaa737e3595f9187c2623e6dc551394dd333f76",
+      "bytes": 39861
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "f54b7cfa7c51274b60696a069ef0dcca044a4375ce7ac7dd6042929ae1c767ba",
-      "bytes": 81561
+      "sha256": "35a31c32d84b1e6f22d4d5efbcadc9a5b1217bc58be84a0b895576e55a7ef6bd",
+      "bytes": 84813
     },
     {
       "path": "platform/.dockerignore",
@@ -46,8 +46,8 @@
     },
     {
       "path": "platform/.env.example",
-      "sha256": "30e7d2bb4cca979f3afec5872cf8066d5f7b050cf94b744e392e7d22bd69dcf9",
-      "bytes": 2222
+      "sha256": "334695227aa216e9a42e1b3b2142fc59d689e70ec590fb322f2117274e9074da",
+      "bytes": 2637
     },
     {
       "path": "platform/.gitignore",
@@ -81,8 +81,8 @@
     },
     {
       "path": "platform/apps/api/src/app.ts",
-      "sha256": "8c7a4c67238924244f9223529ad6f5d9ec8cad9534bdb448d67572c9abf32da5",
-      "bytes": 39157
+      "sha256": "a1cc111b01f2fcaed98e1f9fb698f5045301060f5841759ea121151dddef4085",
+      "bytes": 42276
     },
     {
       "path": "platform/apps/api/src/auth.ts",
@@ -91,13 +91,13 @@
     },
     {
       "path": "platform/apps/api/src/bootstrap.ts",
-      "sha256": "e09aea7cc720103d49934dc4fc736788cf4fcaed0894de152bd7c473f9da48d1",
-      "bytes": 3091
+      "sha256": "b1e344486912fa0f68b6ace009d330cb9ee5cc7fe44264cbb6eb22f8dd834c28",
+      "bytes": 3189
     },
     {
       "path": "platform/apps/api/src/config.ts",
-      "sha256": "3b9664b94602b44206c62572ca6acc9c28356dd6845fb7fe7714a377db7c7619",
-      "bytes": 8673
+      "sha256": "4140cb4ecfe47bc55edca4de535a76f690d627da4fa6e230b6efd8f0e4d6bf73",
+      "bytes": 10350
     },
     {
       "path": "platform/apps/api/src/digests.ts",
@@ -123,6 +123,11 @@
       "path": "platform/apps/api/src/operations.ts",
       "sha256": "4c7e0768072790ba1e6a0a0b6821212669f4118e1414e9ff4993e5133e611142",
       "bytes": 7322
+    },
+    {
+      "path": "platform/apps/api/src/scanner.ts",
+      "sha256": "32a80632404364eb155e7ce666f8014163c4db65d76569feac17627291fa220c",
+      "bytes": 4331
     },
     {
       "path": "platform/apps/api/src/server.ts",
@@ -616,8 +621,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "3f5bf37ab98870555963722eb651ed2c6177939e715bc4ebf8fd11388e500669",
-      "bytes": 151417
+      "sha256": "d63e15257a31fb4e983dbd40689f1da820fdfab9d54ce79a0cb63504576e2e5d",
+      "bytes": 156793
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -651,8 +656,8 @@
     },
     {
       "path": "platform/docs/LAUNCH_RUNBOOK.md",
-      "sha256": "63974784302fdefda6b67d40852c83a7c4e4f8a207b67fc77ee7b8df47aaa97b",
-      "bytes": 20204
+      "sha256": "dc42a8dfbc48489fd6063cd8db345b694db474631adc16b645d1edf17a46f87c",
+      "bytes": 21159
     },
     {
       "path": "platform/docs/LEARNER_RECORDS.md",
@@ -661,8 +666,8 @@
     },
     {
       "path": "platform/docs/LESSON_RESOURCES.md",
-      "sha256": "f348249b1cccf107bcf4dfd68a6ff8f45a7d39a3f90dd4c69e215ffeaef72535",
-      "bytes": 7829
+      "sha256": "7487ed4a48daee54a932af3beb8d7dc7ff1f71f38448188e90129ba238a759be",
+      "bytes": 7987
     },
     {
       "path": "platform/docs/PILOT_OPERATIONS.md",
@@ -686,8 +691,8 @@
     },
     {
       "path": "platform/docs/PROJECT_WORK.md",
-      "sha256": "05a27e05402055e73ca4f9543cf14a56ea3499544c17dc00e15f8426b099097f",
-      "bytes": 7438
+      "sha256": "f0aa87a7e897ce414ad7934c575a18c4ae8d6928b4058af2b63e5b41c6a6f8df",
+      "bytes": 7479
     },
     {
       "path": "platform/docs/RELEASE_GATES.md",
@@ -706,18 +711,18 @@
     },
     {
       "path": "platform/docs/ROADMAP.md",
-      "sha256": "0dd0453ee2327660f657b47dbe2625ec9abaea3edabd1d31a8ef264196245852",
-      "bytes": 13061
+      "sha256": "35022f0daba6f7a1768079aa08b991c7dfb7f64b34e46d84f6b2224461fefab5",
+      "bytes": 13357
     },
     {
       "path": "platform/docs/SECURITY.md",
-      "sha256": "e494d140747c2f0801e555e6284d8654d01a5e3e136bbd7eb5c394daaf64aa6e",
-      "bytes": 17344
+      "sha256": "0bfa8275960f52af28e6ab3bcacbe8911837a0aba4ddf9891cc91e3e891b7bbd",
+      "bytes": 18403
     },
     {
       "path": "platform/docs/SETUP.md",
-      "sha256": "fedd635ccb627a2cdd34cd417579806bdcdf4a1086a3d9c07d218f9125673982",
-      "bytes": 18134
+      "sha256": "34bf4fcd08fdfe0e86f8824991a0b5d97333f0ddf5c4ef8c8d88a10a6b70f03e",
+      "bytes": 19220
     },
     {
       "path": "platform/docs/STATES.md",
@@ -825,6 +830,11 @@
       "bytes": 1593
     },
     {
+      "path": "platform/docs/decisions/023-upload-scanning.md",
+      "sha256": "162e476b56553fdb61aaddf0deb4f3c12d4d28b8ebe760dc3277f747f02baa81",
+      "bytes": 4025
+    },
+    {
       "path": "platform/docs/decisions/024-group-conversations.md",
       "sha256": "8a21091ab1ca45ac5516c85e14348fba9d8ce004dd44be78cc5bced324094cc6",
       "bytes": 3621
@@ -851,8 +861,8 @@
     },
     {
       "path": "platform/docs/decisions/029-task-files-and-live-project-work.md",
-      "sha256": "c61dbcf53b633732d47c9e47e8564334e0a0cc2192ca538714a33acf5c112b25",
-      "bytes": 10264
+      "sha256": "71ea25c45a9927b39d68d24fbdcc46f28e2f4d47e4949a1df338a55c45543f26",
+      "bytes": 10227
     },
     {
       "path": "platform/docs/decisions/031-data-retention.md",
@@ -1171,8 +1181,8 @@
     },
     {
       "path": "platform/package.json",
-      "sha256": "f36a8a005dedafa07a157a5eabc65f4dd5b086436bf89c3a3c56acc6261c3163",
-      "bytes": 4835
+      "sha256": "edb9cfde72d913fbdddda712c08d73d2777034beae55619940236db29a0e12f9",
+      "bytes": 4882
     },
     {
       "path": "platform/packages/contracts/package.json",
@@ -1651,8 +1661,8 @@
     },
     {
       "path": "platform/scripts/launch-preflight.ts",
-      "sha256": "99afbdae2b1ffc02c376bb2530ff650a9d28ad4dab30e3a5f4ecbd37213cb8a0",
-      "bytes": 13838
+      "sha256": "8c570b037e90e1a33e0529e9b87f2c0ab9e5292cf37afeee6a46aa46a3645475",
+      "bytes": 15169
     },
     {
       "path": "platform/scripts/monochrome-browser-check.ts",
@@ -1723,6 +1733,11 @@
       "path": "platform/scripts/rich-lessons-browser-check.ts",
       "sha256": "ad5455573180c0ecd7c15e79da6c51a0bed0709d6b5e6882097e8206470bd1b7",
       "bytes": 7902
+    },
+    {
+      "path": "platform/scripts/scan-check.ts",
+      "sha256": "41aeff49d07b6215d97b95bfe3fd16f4bc0b0b31dac2a123f6115dc816aeb828",
+      "bytes": 1421
     },
     {
       "path": "platform/scripts/states-browser-check.ts",
@@ -1926,8 +1941,8 @@
     },
     {
       "path": "platform/tests/launch-preflight.test.ts",
-      "sha256": "0b792ba02b6ce30ec4b26270e1edb2338f14bea5112d1229706e7f3d2fc2598c",
-      "bytes": 9338
+      "sha256": "71943e705e195af5e495f052132fdd359b48cc3b355e1a7f2a0b373f0ba2b33b",
+      "bytes": 10246
     },
     {
       "path": "platform/tests/learning-record-http.test.ts",
@@ -2045,6 +2060,11 @@
       "bytes": 7768
     },
     {
+      "path": "platform/tests/scanner.test.ts",
+      "sha256": "3a8c107acd374053134050b3ca433612cb827d1024233160ba64ef93b84ac2be",
+      "bytes": 12904
+    },
+    {
       "path": "platform/tests/states.test.ts",
       "sha256": "75f347f0d150f2d091e764e08ea5a1255bf547c6fe50c0de794ddb36e1027610",
       "bytes": 1888
@@ -2056,8 +2076,8 @@
     },
     {
       "path": "platform/tests/task-files-http.test.ts",
-      "sha256": "d7d7ba8ddb44af8b6021aae5c5d1cb6f4b0e75ff68ddb486140264014b995d4d",
-      "bytes": 9953
+      "sha256": "b3d3ccfc9386ac8b83808d29e8cb1508fe9083cb4cac241b8b5fb586dd8c4f84",
+      "bytes": 11740
     },
     {
       "path": "platform/tests/task-files.test.ts",

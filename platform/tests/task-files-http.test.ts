@@ -133,3 +133,25 @@ test('with two-step sign-in required, an administrator off the team cannot attac
     identity = { id: DEMO_USER, name: 'Alex', twoFactorEnabled: false };
     assert.equal((await intent('Member.pdf', 40, {}, strict)).status, 201);
 });
+test('with a scanner, task files are scanned whole and a flagged one is rejected and deleted', async () => {
+    as(DEMO_USER);
+    const flag = 'REUNIR-TEST-FLAG', scanned: Uint8Array[] = [];
+    const scanner = { async scan(b: Uint8Array) { scanned.push(b); return Buffer.from(b).includes(flag) ? { clean: false as const, signature: 'Reunir.Test.Flag' } : { clean: true as const }; }, async ping() { return true; } };
+    const scanning = createApp({ repository: repo, origin, resolveSession: async () => identity, storage: bucket, scanner });
+    const upload = async (bytes: Uint8Array) => {
+        const r = await intent('scanned.pdf', bytes.length, {}, scanning); assert.equal(r.status, 201);
+        const { id } = await r.json(), key = bucket.policies.at(-1)!.key;
+        bucket.put(key, bytes, PDF);
+        return { id: id as string, key, done: await post(`/uploads/${id}/complete`, {}, scanning) };
+    };
+    const clean = await upload(pdf('clean task file'));
+    assert.equal(clean.done.status, 200);
+    assert.deepEqual(Buffer.from(scanned.at(-1)!), Buffer.from(pdf('clean task file')), 'every byte was scanned');
+    const flagged = await upload(pdf(flag));
+    assert.equal(flagged.done.status, 422); assert.equal((await flagged.done.json()).error.code, 'FILE_FLAGGED');
+    assert.equal((await db.query<{ status: string }>('SELECT status FROM upload_intents WHERE id=$1', [flagged.id])).rows[0].status, 'rejected');
+    assert(!bucket.objects.has(flagged.key));
+    const uploads = (await (await get('/workspace')).json()).uploads as { id: string; status?: string }[];
+    assert(uploads.some(u => u.id === clean.id), 'the clean file is attached');
+    assert(!uploads.some(u => u.id === flagged.id && u.status === 'ready'), 'a flagged file is never attached');
+});

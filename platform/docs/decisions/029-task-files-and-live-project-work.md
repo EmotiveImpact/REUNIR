@@ -22,9 +22,9 @@ The application deploys as serverless Hono functions on Vercel. No websocket ser
 - **Account deletion.** A deleted person's files on shared tasks are shared work and stay, shown as from a Former member; the project lead or an administrator can remove them. Their uploads that never became files (pending or refused) are theirs alone and go, records and stored objects, counted as `taskFileUploads` in the summary. The operator command `npm run db:prune-covers` now also lists and clears task uploads that never became files (refused, or unfinished after an hour); attached files are never pruned.
 - **Demo.** The same domain functions run in the browser and the bytes stay in this browser (IndexedDB, or memory), as lesson files do.
 
-### Where a scan verdict would gate a download
+### Upload scanning
 
-Alpha 23 (upload scanning, built in parallel) adds scanning to the shared upload path. Task files use that path unchanged, so a scan applies to them as soon as it lands. Three places would then read the verdict: completion in `apps/api/src/app.ts` (the shared `lesson_resource` / `task_file` branch, where `observed` is assembled before `completeTaskFileUpload`), `resolveTaskFileDownload` in `packages/domain/src/task-files.ts` (beside `upload.status !== 'ready'`, so an unscanned or infected file is never released), and `visibleTaskFiles` in the same file (so the team does not see a Download button for a file that would be refused). The read policy `task_file_read` could add the same condition in a later migration.
+Alpha 23 added virus scanning to the shared upload path before this release merged. Task files complete through the same `lesson_resource` / `task_file` branch in `apps/api/src/app.ts`, so when a scanner is configured every byte of the recorded generation is scanned before the file can become ready; a flagged file is rejected, deleted and never attached (`FILE_FLAGGED`), and without a verdict it stays pending (`SCAN_UNAVAILABLE`). Downloads and the Download button already require `status = 'ready'` (`resolveTaskFileDownload` and `visibleTaskFiles` in `packages/domain/src/task-files.ts`), so an unscanned or flagged file is never released. `task-files-http.test.ts` covers a clean and a flagged task file.
 
 ### Live project work
 

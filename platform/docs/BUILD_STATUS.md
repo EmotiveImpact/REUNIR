@@ -7,7 +7,7 @@
 | Item | State |
 | --- | --- |
 | Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of Alpha 28 |
-| Verified locally | Yes: the full suite on base `b24095a`, and the checks below on top of Alpha 28 and main `b80fc04` |
+| Verified locally | Yes: the full suite on base `b24095a`, and the checks below on top of Alpha 28 and main `16b2768` |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
 | Deployed | No. Nothing was provisioned |
@@ -21,18 +21,18 @@
 - Live project work: `GET` change check per project with ETag and 304, polled every 5 seconds while visible, paused when hidden, backing off to 60 seconds on errors, behind `watchProjectChanges`/`useProjectChanges`. "Updated just now" shows only for other people's changes.
 - Edit conflicts: the existing `expectedVersion` refusal now names who changed the task and when (`project_tasks.updated_by`), keeps the person's text and offers Load the latest version or Keep my edits.
 - Additive migration 0029: `upload_intents.task_id`, `project_tasks.updated_by` and four restrictive row-security policies; no grant change. Migrations 0001 to 0028 and 0030 are byte-identical. No new dependency.
+- Task files go through Alpha 23 upload scanning on the shared lesson-file completion path: with a scanner configured, every byte of the recorded generation is scanned, a flagged file is rejected and deleted with `FILE_FLAGGED`, and it is never attached. A new HTTP test covers it.
 
 ## Local verification, 3 October 2026
 
 On base `b24095a` (by the building agent): typecheck, builds, `npm test` 657 passed (32 new), `test:http` 19, every demo suite including the new `test:browser:task-files` (12, plus four repeat runs after fixing a timing race), every connected suite (60), `test:postgres` 21 on PostgreSQL 16, Python helpers 35 and the research register.
 
-On this branch, on top of Alpha 28 and main `b80fc04`: typecheck, build and bundle passed; `npm test` 729 passed, 0 failed; `test:http` 19 passed; `test:postgres` 23 passed on a fresh PostgreSQL 16 loopback cluster with no leftover `reunir_*` roles; `task-files` 12, `work` 29, `states` 12, `curation` 9, `v4` 20 and `monochrome` 16 passed.
+On this branch, on top of Alpha 28 and main `16b2768`: typecheck, build and bundle passed; `npm test` 748 passed, 0 failed (including the new scanned task file test); `test:http` 19 passed; `test:postgres` runs in CI (no migration changed since the last local pass of 23); `task-files` 12, `work` 29, `states` 12, `curation` 9, `v4` 20 and `monochrome` 16 passed.
 
 ## Not verified, and why
 
 - Google Cloud Storage signing, CORS, deletion and generation pinning against a real bucket; the tests use the existing stand-in adapter.
 - Live polling and the conflict screen against the real API in a browser; the HTTP tests cover the change check, 304s, the conflict refusal and download access, and the demo suite covers the screens.
-- Upload scanning (Alpha 23) is not on main yet. Decision 029 names where its verdict gates task-file downloads.
 
 ## Next actions
 
@@ -47,7 +47,7 @@ On this branch, on top of Alpha 28 and main `b80fc04`: typecheck, build and bund
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/everyday-use-4z9rmz`, from main `f9f32d6` (the merge of PR #22, Alpha 27), with main `b80fc04` (Alpha 31 data retention) merged in |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, from main `f9f32d6` (the merge of PR #22, Alpha 27), with main `b80fc04` (Alpha 31 data retention) and main `16b2768` (Alpha 23 virus scanning of uploads) merged in |
 | Verified locally | Yes: the full suite on base `b24095a`, and the checks below on top of Alpha 27 and main `fab9510` |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
@@ -78,6 +78,8 @@ The Codex review of PR #25 found that a mission on an unpublished track was offe
 
 After merging main `b80fc04` (Alpha 31 data retention): typecheck, build and bundle passed; `npm test` 702 passed, 0 failed; `test:postgres` 23 passed on a fresh PostgreSQL 16 cluster; `curation` 9, `v4` 20 and `monochrome` 16 passed.
 
+After merging main `16b2768` (Alpha 23 virus scanning of uploads): typecheck and build passed; `npm test` 715 passed, 0 failed; `curation` 9, `v4` 20 and `monochrome` 16 passed.
+
 ## Not verified, and why
 
 - PostgreSQL 17 runs in CI only. No hosted deployment.
@@ -88,7 +90,59 @@ After merging main `b80fc04` (Alpha 31 data retention): typecheck, build and bun
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. Task files with live updates (Alpha 29) and shared form components (Alpha 30).
 
-## Historical evidence: Alpha 31 data retention rules
+## Historical evidence: Alpha 23 virus scanning of uploads
+
+3 October 2026. Application version stays 0.31.0-alpha.1: Alpha 23 was allocated before it was built and reaches main after Alpha 31. When a ClamAV scanner is configured, every upload is scanned before it can be used; flagged files are deleted and uploads wait while the scanner is unavailable. Required by default in production. See decisions/023-upload-scanning.md, SECURITY.md and SETUP.md section 6.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/upload-scanning-1p9o9m`, from main `b24095a` (PR #14, Alpha 21), with main merged in at `ec4285d` (Alpha 22) and `b80fc04` (PR #23, Alpha 31, which brought Alpha 24 to 27) |
+| Verified locally | Yes: typecheck, `npm test`, `npm run test:http`, build, preview bundle, Python helpers and the research register (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No clamd, bucket, database or other service was created |
+| Operated with real members | No |
+
+## What changed
+
+- **`apps/api/src/scanner.ts`** speaks clamd's `INSTREAM` protocol over TCP with `node:net`: length-prefixed chunks, a zero-length end, and a strict reading of `stream: OK` or `stream: <signature> FOUND`. Anything else, a timeout (30 seconds) or a refused connection is `ScannerUnavailable`, never clean. No new runtime dependency.
+- **Upload completion** reads the whole object once at the generation just measured, scans it, and uses the same bytes for the signature and dimension checks. Lesson files, track and project covers, library pictures and member attachments are all covered.
+- **Flagged** files become `rejected`, are deleted and return 422 `FILE_FLAGGED`; the log records the request ID and signature name only. **No verdict** returns 503 `SCAN_UNAVAILABLE` and leaves the upload pending with its object kept, so completing again succeeds later.
+- **A rejected member attachment** now returns 409 `FILE_REJECTED` if completion is tried again, so a second upload under the same policy cannot be marked ready unscanned.
+- **Configuration:** `CLAMAV_HOST`, `CLAMAV_PORT` (default 3310) and `UPLOAD_SCANNING` (`required` or `optional`, required by default in production). A new `upload-scanning` pilot check blocks start-up when scanning is required, a bucket is set and no scanner is configured, or when the setting or port is invalid. `/api/account/capabilities` reports `uploadScanning`.
+- **`npm run scan:check`** pings a configured clamd and checks a harmless sample and the EICAR test file. It is not run in CI because no clamd is provisioned.
+- **Launch kit:** `npm run launch:preflight` fails a production environment with a bucket and no `CLAMAV_HOST` (unless `UPLOAD_SCANNING=optional`, which warns) or with an invalid setting or port, and never prints the host. LAUNCH_RUNBOOK.md section 6 adds running clamd on a private network beside the API, since Vercel functions cannot run it.
+- No migration; every existing migration is byte-identical. The release constant, package version and research register stay at main's 0.31.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22, npm 10, on this branch's tree after merging main `b80fc04`.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 696 passed, 0 failed: main's tests plus 12 in `tests/scanner.test.ts` (reply parsing, the clamd client against a stand-in clamd on a real TCP socket, silent, erroring and closed scanners, the settings and pilot check, and HTTP completion for lesson files, covers and member attachments with a stand-in scanner) and 1 launch-preflight test |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory) |
+| Python helpers, `scripts/check_research.py` | Passed; the register validates with 55 pinned sources and 18 register decisions |
+
+Browser suites and `npm run test:postgres` were not rerun locally: no interface, migration or grant changed. CI runs both on the pull request.
+
+## Not verified, and why
+
+- No real clamd was run. The client is tested against a stand-in that speaks the same wire protocol; `npm run scan:check` is the first check to run against a real one.
+- Files made ready before scanning was turned on are not rescanned, and stored files are not rescanned when signatures update.
+- clamd's `StreamMaxLength` must be at least 10 MB; a lower limit makes uploads wait with `SCAN_UNAVAILABLE` rather than pass.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Group conversations (Alpha 24) continue in their own thread.
+3. When deployment resumes: run clamd on a private network beside the API, set `CLAMAV_HOST`, and run `npm run scan:check`.
+
+## Historical Alpha 31 evidence: data retention rules
 
 3 October 2026. Application 0.31.0-alpha.1. Housekeeping records are cleared on a schedule by one list of rules, and Your account says how long everything is kept. What people make, reviewed evidence and the audit trail are never cleared by the job. See decisions/031-data-retention.md and RETENTION.md.
 

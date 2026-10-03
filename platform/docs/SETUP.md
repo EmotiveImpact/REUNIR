@@ -92,6 +92,16 @@ HTTP flow:
 3. POST `{}` to `/api/organisations/:slug/uploads/:id/complete`.
 4. Authorised GET to `/api/organisations/:slug/uploads/:id/download` returns a short-lived URL.
 
+### Virus scanning
+
+Every upload is scanned with ClamAV before it can be used, once `CLAMAV_HOST` names a clamd service (decision 023). Run clamd on a private network next to the API, never on the public internet; the official `clamav/clamav` container listens on TCP 3310 and keeps its signatures current with freshclam. Keep clamd's `StreamMaxLength` at 10 MB or more (its default is 25 MB).
+
+- `CLAMAV_HOST` and `CLAMAV_PORT` (default 3310) point the API at clamd.
+- `UPLOAD_SCANNING` is `required` or `optional`. Unset means required when `NODE_ENV=production`. When required and `GCS_BUCKET` is set, the server refuses to start without `CLAMAV_HOST`. Set `optional` only deliberately, for example on a staging bucket before clamd exists.
+- `npm run scan:check` confirms clamd answers, a harmless sample is clean and the EICAR test file is flagged. It stores nothing.
+
+Completion returns 422 `FILE_FLAGGED` for a flagged file, which is deleted, and 503 `SCAN_UNAVAILABLE` when clamd gives no verdict; the upload then stays pending and completing again succeeds once clamd is back.
+
 Cookie-authenticated POSTs require the exact application `Origin` and JSON content type. Never proxy file bytes through the 64 KiB JSON API. Member uploads through this flow are private to their uploader.
 
 **Lesson files (Alpha 09).** Creator Studio uses the same endpoints with `{purpose:'lesson_resource',trackId,name,contentType,sizeBytes}`. Only active owners/admins can start them; PDF, DOCX, PPTX, XLSX, JPEG, PNG and WebP up to 10 MiB are accepted. Completion verifies the file signature and pins the object generation. Learners download through `/api/organisations/:slug/lessons/:lessonId/resources/:resourceId/download`; drafts and revisions have owner/admin-only equivalents. `/api/account/capabilities` reports `resourceUploads`. Apply migration 0009 and rerun `npm run db:grant-runtime` before starting this version. Bucket CORS needs the exact application origin with `POST`; signed downloads are navigations and need no CORS. Do not configure a lifecycle rule that deletes `lesson-resources/` objects, because revision history references them. See LESSON_RESOURCES.md.
