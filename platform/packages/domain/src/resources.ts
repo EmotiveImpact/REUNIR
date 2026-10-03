@@ -4,7 +4,7 @@ import {
     type LessonResource, type ResourceRef, type ResourceUploadRequest,
 } from '../../contracts/src/lesson-resources';
 import { actorFor, canSeeSpace, isAdmin } from './access';
-import { contributedTracks, contributes, contributesAny, holdsGrant } from './instructors';
+import { contributedTracks, contributes, contributesAny, holdsGrant, seesTrack } from './instructors';
 import { normalisePurposeState } from './purpose';
 
 /**
@@ -109,7 +109,7 @@ export function discardResourceUpload(input: Workspace, ctx: TenantContext, uplo
 /** Single gate for every download. Mirrors the visibility of the lesson, draft or revision listing the file. */
 export function resolveResourceDownload(s: Workspace, ctx: TenantContext, ref: ResourceRef) {
     const actor = actorFor(s, ctx), org = ctx.organizationId;
-    const track = (id: string) => s.tracks.find(t => t.id === id && t.organizationId === org && canSeeSpace(s, actor, t.spaceId) && (t.published || isAdmin(actor)));
+    const track = (id: string) => s.tracks.find(t => t.id === id && t.organizationId === org && canSeeSpace(s, actor, t.spaceId) && seesTrack(s, actor, t));
     let holder: { trackId: string; resources?: LessonResource[] | null } | undefined;
     if (ref.context === 'lesson') holder = s.lessons.find(l => l.id === ref.recordId && l.organizationId === org && (l.published || isAdmin(actor)) && !!track(l.trackId));
     else holder = (ref.context === 'draft' ? s.lessonDrafts : s.lessonRevisions).find(r => r.id === ref.recordId && r.organizationId === org && !!track(r.trackId) && contributes(s, actor, r.trackId, r.lessonId));

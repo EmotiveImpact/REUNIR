@@ -7,7 +7,7 @@ import { normalisePurposeState, filterPurposeWorkspace, applyPurposeCommand } fr
 import { visibleUploads } from './resources';
 import { visibleTaskFiles } from './task-files';
 import { applyCovers, filterCoverLibrary } from './covers';
-import { applyInstructors, filterInstructors } from './instructors';
+import { applyInstructors, filterInstructors, seesTrack, startsTracks } from './instructors';
 import { applyAssessment, filterAssessments } from './assessments';
 import { windowWorkspace } from './pages';
 import { applyNotificationSettings, dropMutedNotices } from './notifications';
@@ -37,7 +37,7 @@ export function visibleRecords(state: Workspace, ctx: TenantContext): Workspace 
     s.comments = s.comments.filter(x => posts.has(x.postId));
     s.reactions = s.reactions.filter(x => posts.has(x.postId));
     s.bookmarks = s.bookmarks.filter(x => posts.has(x.postId) && x.userId === ctx.userId);
-    s.tracks = s.tracks.filter(x => (!x.spaceId || spaces.has(x.spaceId)) && (x.published || isAdmin(actor)));
+    s.tracks = s.tracks.filter(x => (!x.spaceId || spaces.has(x.spaceId)) && seesTrack(state, actor, x));
     const tracks = new Set(s.tracks.map(x => x.id));
     s.lessons = s.lessons.filter(x => tracks.has(x.trackId) && (x.published || isAdmin(actor)));
     s.enrolments = s.enrolments.filter(x => tracks.has(x.trackId) && x.userId === ctx.userId);
@@ -402,14 +402,36 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
             break;
         }
         case 'track.create': {
-            admin();
+            // An instructor may start a track too. It stays unpublished, and theirs to teach, until an administrator publishes it.
+            const proposed = !isAdmin(actor);
+            if (proposed && !startsTracks(s, actor))
+                throw new DomainError('TRACK_STARTER_REQUIRED', 'Only an administrator, or an instructor of a whole track, can start a new track.', 403);
             scope(cmd.spaceId);
-            const t = { ...base(), ...cmd, level: 'All levels', colour: 'violet', cover: 'custom', authorId: ctx.userId, published: true };
+            const t = { ...base(), ...cmd, level: 'All levels', colour: 'violet', cover: 'custom', authorId: ctx.userId, published: !proposed };
             const { type, ...record } = t;
             s.tracks.push(record);
             objectId = t.id;
             audit('track.created', t.id);
-            message = 'Track created. Add its first lesson next.';
+            if (proposed) {
+                s.trackInstructors.push({ ...base(), trackId: t.id, userId: ctx.userId, grantedBy: ctx.userId, role: 'instructor', lessonIds: null });
+                for (const a of s.members.filter(m => m.organizationId === ctx.organizationId && m.status === 'active' && isAdmin(m)))
+                    notify(a.userId, `${actor.name} started a new track`, `${cmd.title} is waiting for an administrator to publish it.`, `/learn/${t.id}`);
+                message = 'Track started. Add lessons in Creator studio; an administrator publishes the track when it is ready.';
+            }
+            else
+                message = 'Track created. Add its first lesson next.';
+            break;
+        }
+        case 'track.publish': {
+            admin();
+            const t = find(s.tracks, cmd.trackId);
+            scope(t.spaceId);
+            if (t.published) { changed = false; message = 'This track is already published.'; objectId = t.id; break; }
+            t.published = true;
+            objectId = t.id;
+            audit('track.published', t.id);
+            notify(t.authorId, `${t.title} is published`, 'Members can now find and join the track.', `/learn/${t.id}`);
+            message = 'Track published. Members can now find and join it.';
             break;
         }
         case 'lesson.create': {
@@ -459,4 +481,4 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
     }
     return { workspace: s, message, objectId };
 }
-export const commandsForReference: Command['type'][] = ['task.file.remove','credit.invite','credit.respond','credit.withdraw','collection.save','collection.publish','collection.feature','collection.delete','collection.item.add','collection.item.note','collection.item.remove','collection.items.reorder','notification.preferences.save','cover.library.add','track.instructor.add','track.instructor.remove','track.cover.set','project.cover.set','quiz.attempt.submit','quiz.attempt.review','lesson.draft.create','lesson.draft.save','lesson.draft.publish','lesson.draft.archive','lesson.draft.restore','track.lessons.reorder','task.create','task.edit','task.claim','task.release','task.move','task.archive','task.submit','task.note','task.note.hide', 'member.status', 'member.role', 'space.access', 'post.create', 'post.comment', 'post.react', 'post.bookmark', 'post.report', 'post.moderate', 'moderation.appeal', 'moderation.appeal.decide', 'moderation.appeal.withdraw', 'track.enrol', 'lesson.complete', 'mission.submit', 'submission.review', 'project.join', 'project.create', 'project.update', 'event.rsvp', 'profile.update', 'notification.read', 'organisation.update', 'space.create', 'track.create', 'lesson.create', 'mission.create', 'event.create', 'purpose.save', 'path.create', 'path.publish', 'path.enrol', 'milestone.create', 'goal.set', 'goal.status', 'project.purpose', 'contribution.submit', 'contribution.resubmit', 'contribution.review', 'outcome.submit', 'outcome.resubmit', 'outcome.review', 'output.publish', 'evidence.correct', 'evidence.correction.review', 'evidence.withdraw'];
+export const commandsForReference: Command['type'][] = ['task.file.remove','credit.invite','credit.respond','credit.withdraw','collection.save','collection.publish','collection.feature','collection.delete','collection.item.add','collection.item.note','collection.item.remove','collection.items.reorder','notification.preferences.save','cover.library.add','track.instructor.add','track.instructor.remove','track.publish','track.cover.set','project.cover.set','quiz.attempt.submit','quiz.attempt.review','lesson.draft.create','lesson.draft.save','lesson.draft.publish','lesson.draft.archive','lesson.draft.restore','track.lessons.reorder','task.create','task.edit','task.claim','task.release','task.move','task.archive','task.submit','task.note','task.note.hide', 'member.status', 'member.role', 'space.access', 'post.create', 'post.comment', 'post.react', 'post.bookmark', 'post.report', 'post.moderate', 'moderation.appeal', 'moderation.appeal.decide', 'moderation.appeal.withdraw', 'track.enrol', 'lesson.complete', 'mission.submit', 'submission.review', 'project.join', 'project.create', 'project.update', 'event.rsvp', 'profile.update', 'notification.read', 'organisation.update', 'space.create', 'track.create', 'lesson.create', 'mission.create', 'event.create', 'purpose.save', 'path.create', 'path.publish', 'path.enrol', 'milestone.create', 'goal.set', 'goal.status', 'project.purpose', 'contribution.submit', 'contribution.resubmit', 'contribution.review', 'outcome.submit', 'outcome.resubmit', 'outcome.review', 'output.publish', 'evidence.correct', 'evidence.correction.review', 'evidence.withdraw'];
