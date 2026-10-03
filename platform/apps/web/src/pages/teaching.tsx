@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Pencil } from 'lucide-react';
+import { GraduationCap, Pencil } from 'lucide-react';
 import { Empty, PageHeading } from '../components/ui';
 import { Cover } from '../components/cover';
 import { QuizReviewQueue } from '../components/quiz-review';
@@ -10,7 +10,7 @@ import { contributes, teaches, teachesAny } from '../../../../packages/domain/sr
 export function TeachingPage() {
     const { data, me } = useWorkspace();
     const taught = data.tracks.filter(t => contributes(data, me, t.id));
-    if (!taught.length) return <Empty title="Teaching opens when you are an instructor or contributor." body="A community owner or administrator can ask you to teach or contribute to a learning track."/>;
+    if (!taught.length) return <Empty icon={GraduationCap} title="Teaching opens when you are an instructor or contributor." body="A community owner or administrator can ask you to teach or contribute to a learning track."/>;
     const reviews = teachesAny(data, me);
     return <section className="teaching-page">
         <PageHeading eyebrow="YOUR TEACHING" title="Teach what you know." body={reviews ? 'Author lessons for the tracks you teach and give feedback on knowledge checks. Scores stay private to each learner.' : 'Write lesson drafts for the tracks you contribute to. Their instructors publish them.'}/>

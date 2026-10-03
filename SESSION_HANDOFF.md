@@ -4,7 +4,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, RETENTION.md, decisions/031-data-
 
 ## Where the source is
 
-- Base: main `9b34cac`, the merge of PR #18 (Alpha 26, email confirmation and change), with main `fab9510` (PR #20, Alpha 25 contributor roles, migration 0023) merged in.
+- Base: main `9b34cac`, the merge of PR #18 (Alpha 26, email confirmation and change), with main `fab9510` (PR #20, Alpha 25 contributor roles, migration 0023) and main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) merged in.
 - This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ## What is done
@@ -28,6 +28,39 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 ## Next
 
 1. Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and consented credit for several contributors, one pull request each. They are built locally in separate worktrees and need renumbering from main when opened.
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 27 handover: loading, error and empty screens
+- Outcome: [PR #22](https://github.com/EmotiveImpact/REUNIR/pull/22), merged into main as `f9f32d6`.
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, STATES.md, decisions/027-loading-error-empty-states.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `f5ec8d3` (launch kit after Alpha 22), with main `fab9510` (Alpha 24, 25 and 26) merged in.
+- This slice: branch `claude/everyday-use-4z9rmz`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- Alpha 23 (upload scanning) is an open pull request from another thread. This thread uses Alpha 27 to 30.
+
+### What is done
+
+Every page and panel uses the shared loading, error and empty pieces in `apps/web/src/components/states.tsx`; STATES.md sets the conventions for new work. Unknown addresses show Not found; failures keep the shell and offer Try again; empty states only offer actions the viewer may take.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Open any unknown address for Not found, or `#/states/fault` in the demo for the error boundary. No migration.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (now including `test:browser:states`), and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`.
+
+### Next
+
+1. Content curation, task file uploads with live updates, and moving the remaining forms to the shadcn components, each as its own pull request.
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
 
 ---
