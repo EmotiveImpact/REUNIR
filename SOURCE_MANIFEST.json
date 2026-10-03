@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 36 instructors start their own tracks",
   "version": "0.39.0-alpha.1",
   "sourceBaseline": "3c770b562edc7db120cd3ada2e40c6bddc639ea9",
-  "generatedAt": "2026-10-03T19:09:11.656837+00:00",
+  "generatedAt": "2026-10-03T19:11:40.559445+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -526,8 +526,8 @@
     },
     {
       "path": "platform/apps/web/src/pages/learning.tsx",
-      "sha256": "78ed5864056e0e8f8289e5ecf44a81107d430231d6aa5bf21e194e5b1a64f822",
-      "bytes": 10312
+      "sha256": "15d3ed589ee905d1e582a317098c61958aa778a1976b1704fdc746afcd4e5037",
+      "bytes": 10426
     },
     {
       "path": "platform/apps/web/src/pages/message-groups.tsx",
@@ -621,8 +621,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "8bcdc1ffbc296c06f22223383321cc2a79609fe076e0837469e03347f9ea15d7",
-      "bytes": 174262
+      "sha256": "e5baf81ca20e6a33219c5191ebd722e7acb61341ec2b343985da9b5eae771dda",
+      "bytes": 174442
     },
     {
       "path": "platform/docs/COVERS.md",

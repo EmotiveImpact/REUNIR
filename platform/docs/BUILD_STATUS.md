@@ -20,6 +20,7 @@ Numbering: Alpha 36, decision 036 and migration 0035 come from the block allocat
 - **Start a track** on Learning and on the Teaching page for active instructors of at least one whole track. `track.create` from anyone else who is not an owner or administrator is refused with 403 `TRACK_STARTER_REQUIRED`; contributors and lesson-only grants do not qualify.
 - An instructor's track starts unpublished, authored by them, with a whole-track instructor grant in their own name. Members see nothing of it, its lessons or its cover; its teachers and administrators see it marked **Not published**. Administrators are told it was started.
 - **Publish track** (`track.publish`, owners and administrators, idempotent) makes it visible, records `track.published` in the audit and tells the starter.
+- Review fix on PR #28: an unpublished track's lessons show that members can join once it is published, instead of a **Join this track** button its own instructor could never use.
 - An administrator who also teaches still needs two-step sign-in, where required, to create a published track, because the command would turn out differently without administrator authority.
 - Additive migration `0035_instructor_tracks.sql`: one INSERT policy on `track_instructors`, `instructor_own_track`, admitting only the starter's own grant on a new unpublished track they authored while they actively teach another whole track. Earlier migrations are byte-identical; no grant change.
 
