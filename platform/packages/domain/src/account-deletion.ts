@@ -14,7 +14,8 @@ export type PersonalCollection = typeof PERSONAL_COLLECTIONS[number];
 export interface CommunityErasure {
     workspace: Workspace;
     memberId: string;
-    removed: Record<PersonalCollection, number>;
+    /** Rows removed, by collection. Appeals are the person's own too, and are named by their appellant. */
+    removed: Record<PersonalCollection | 'moderationAppeals', number>;
     releasedTasks: number;
     rewordedNotices: number;
 }
@@ -33,13 +34,18 @@ export function eraseFromCommunity(input: Workspace, userId: string, now: string
     if (member.role === 'owner') throw new DomainError('OWNER_CANNOT_DELETE', ownerRefusal([s.organisation.name]), 409);
     const formerName = member.status === 'left' ? '' : member.name;
     Object.assign(member, formerMember(member));
-    const removed = {} as Record<PersonalCollection, number>;
+    const removed = {} as Record<PersonalCollection | 'moderationAppeals', number>;
     for (const key of PERSONAL_COLLECTIONS) {
         const rows = s[key] as { userId: string; organizationId: string }[];
         const kept = rows.filter(r => !(r.userId === userId && r.organizationId === org));
         removed[key] = rows.length - kept.length;
         (s as unknown as Record<string, unknown>)[key] = kept;
     }
+    // Their appeals go too: private to them and the community team, and about a decision only they could ask to revisit.
+    // Every decision stays in the audit trail, and a post restored on appeal stays restored.
+    const appeals = (s.moderationAppeals ?? []).filter(a => !(a.appellantId === userId && a.organizationId === org));
+    removed.moderationAppeals = (s.moderationAppeals ?? []).length - appeals.length;
+    s.moderationAppeals = appeals;
     // Claimed tasks without submitted proof go back to the team. Tasks with proof keep it, and its contributor.
     let releasedTasks = 0;
     for (const t of s.projectTasks)
