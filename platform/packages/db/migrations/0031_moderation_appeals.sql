@@ -1,5 +1,5 @@
 -- Additive: appeals against a moderator hiding a post. Posts now record who last hid or restored them and when. Existing
--- rows keep NULL, because who moderated them was never recorded, and nothing is backfilled. 0001 to 0023 are unchanged.
+-- rows keep NULL, because who moderated them was never recorded, and nothing is backfilled. 0001 to 0030 are unchanged.
 ALTER TABLE posts ADD COLUMN moderated_by text;
 ALTER TABLE posts ADD COLUMN moderated_at timestamptz;
 ALTER TABLE posts ADD CONSTRAINT posts_moderated_by_fk FOREIGN KEY (organization_id,moderated_by) REFERENCES members(organization_id,user_id);
