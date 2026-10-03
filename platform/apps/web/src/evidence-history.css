@@ -1,0 +1,20 @@
+/* Evidence history: corrections and withdrawals of reviewed evidence. Neutral greys only. */
+.evidence-history{margin-top:16px;display:grid;gap:12px}
+.evidence-history h4{display:flex;align-items:center;gap:7px;margin:0 0 8px;font-size:12px;font-weight:600;color:#d6d6d6;letter-spacing:.02em}
+.evidence-history ol{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.evidence-change{border:1px solid var(--border);border-radius:8px;padding:11px 13px;display:grid;gap:6px;font-size:12px}
+.evidence-change>strong{font-size:12px;color:var(--text)}
+.evidence-change p{font-size:12px;line-height:1.6}
+.evidence-change small{color:var(--dim)}
+.evidence-change.change-pending{border-style:dashed}
+.evidence-change.change-withdrawn{border-color:#5a5a5a;background:#1a1a1a}
+.evidence-change .button{justify-self:start}
+.evidence-response{color:#d2d2d2}
+.evidence-wording{display:grid;gap:3px;border-left:2px solid #4a4a4a;padding:2px 0 2px 10px}
+.evidence-wording>span{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim)}
+.evidence-wording strong{font-size:12px;color:#dedede}
+.evidence-wording small{color:var(--muted);overflow-wrap:anywhere}
+.evidence-history-actions{display:flex;flex-wrap:wrap;gap:8px}
+.evidence-compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.is-withdrawn>h3,.is-withdrawn>p,.is-withdrawn>.preline{color:var(--dim)}
+.is-withdrawn>h3{text-decoration:line-through;text-decoration-thickness:1px}

@@ -1765,6 +1765,14 @@ tables.push({key:'moderationAppeals',table:'moderation_appeals',mutable:['status
     {property:'hiddenBy',column:'hidden_by',type:'text'},{property:'hiddenAt',column:'hidden_at',type:'timestamptz'},
     {property:'reason',column:'reason',type:'text'},{property:'status',column:'status',type:'text'},{property:'decidedBy',column:'decided_by',type:'text'},
     {property:'decidedAt',column:'decided_at',type:'timestamptz'},{property:'response',column:'response',type:'text'}]});
+// Evidence history: corrections and withdrawals of reviewed evidence. A change is never rewritten; only its decision is recorded.
+tables.push({key:'evidenceChanges',table:'evidence_changes',mutable:['status','decidedBy','decidedAt','response'],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'subject',column:'subject',type:'text'},{property:'subjectId',column:'subject_id',type:'text'},{property:'kind',column:'kind',type:'text'},
+    {property:'requestedBy',column:'requested_by',type:'text'},{property:'reason',column:'reason',type:'text'},
+    {property:'previous',column:'previous',type:'jsonb'},{property:'proposed',column:'proposed',type:'jsonb'},{property:'previousStatus',column:'previous_status',type:'text'},
+    {property:'status',column:'status',type:'text'},{property:'decidedBy',column:'decided_by',type:'text'},{property:'decidedAt',column:'decided_at',type:'timestamptz'},
+    {property:'response',column:'response',type:'text'}]});
 
 // Alpha 35: a grant may cover only some of a track's lessons. NULL keeps the whole track.
 tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'lessonIds',column:'lesson_ids',type:'jsonb'});
