@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 31 data retention rules",
   "version": "0.31.0-alpha.1",
   "sourceBaseline": "fab951092928133ac014f17c0430e893d1b91dfe",
-  "generatedAt": "2026-10-03T13:56:04.345710+00:00",
+  "generatedAt": "2026-10-03T14:02:06.888960+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -566,8 +566,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "06a483ea56a989e65ea5726fa721b404bf32ac3f837923fe4566fa408e655a03",
-      "bytes": 138056
+      "sha256": "a1dbbeccd3ea5f885419477f6cee47c1621d312ca876fab2b197b2b13dcfb06b",
+      "bytes": 138157
     },
     {
       "path": "platform/docs/COVERS.md",
