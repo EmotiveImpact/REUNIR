@@ -1,8 +1,15 @@
 {
+<<<<<<< HEAD
   "release": "REUNIR Alpha 24 email confirmation and change",
   "version": "0.24.0-alpha.1",
   "sourceBaseline": "ec4285d41f7107fb44bfcd9a6b419d5eb31a3cc1",
   "generatedAt": "2026-10-03T12:28:20.133099+00:00",
+=======
+  "release": "REUNIR Alpha 22 cover descriptions and launch kit",
+  "version": "0.22.0-alpha.1",
+  "sourceBaseline": "ec4285d41f7107fb44bfcd9a6b419d5eb31a3cc1",
+  "generatedAt": "2026-10-03T12:17:48.296388+00:00",
+>>>>>>> origin/main
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +28,13 @@
     },
     {
       "path": "CHANGELOG.md",
+<<<<<<< HEAD
       "sha256": "f613e52e5dd4975ef9a4cbd26fc3232e868af76af058462024018e68782d2e92",
       "bytes": 28430
+=======
+      "sha256": "a1c7c746fde25ece4c49a9fa310189a91beb8d8b7dbbb598a77e8ea50f6eeced",
+      "bytes": 27875
+>>>>>>> origin/main
     },
     {
       "path": "README.md",
@@ -36,8 +48,13 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
+<<<<<<< HEAD
       "sha256": "1526c2355f87ea302746357d99d334f1ad532bf317f680764ec47e32d044e500",
       "bytes": 60966
+=======
+      "sha256": "2f7c5c0ee71fedbfabcdb4f810c0e31b52d300bfe6c4ba60711a54ad9b7d72e2",
+      "bytes": 58305
+>>>>>>> origin/main
     },
     {
       "path": "platform/.dockerignore",
@@ -46,8 +63,13 @@
     },
     {
       "path": "platform/.env.example",
+<<<<<<< HEAD
       "sha256": "290bd5f4480dd937d5aa4073562d9825d4966c1342f51536fad77720aa996734",
       "bytes": 1952
+=======
+      "sha256": "0dc1f7ef167a6ea96e37e701ce71a7e9bfe90327d39bd62ef778efff68c72c59",
+      "bytes": 1893
+>>>>>>> origin/main
     },
     {
       "path": "platform/.gitignore",
@@ -551,8 +573,13 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
+<<<<<<< HEAD
       "sha256": "6e0293129f44b109d7dc5bcfb0538cadd397ddbb78c06c19834e5e95490e02da",
       "bytes": 118824
+=======
+      "sha256": "d7165d3fa3222a59f1b6843aa606cb9426d5cf9c6bc40b17e31c53affeedc001",
+      "bytes": 118210
+>>>>>>> origin/main
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -578,6 +605,11 @@
       "path": "platform/docs/INSTRUCTORS.md",
       "sha256": "d437acf8abe7b5f3f61c67a884d1ffe0fd2df6458a24af65af563a5e1d25a8cc",
       "bytes": 5309
+    },
+    {
+      "path": "platform/docs/LAUNCH_RUNBOOK.md",
+      "sha256": "cdda023c2ec6b841c93514d6902ff0f4c1a5c1fac7606b635c4cb97816ea6752",
+      "bytes": 19694
     },
     {
       "path": "platform/docs/LEARNER_RECORDS.md",
@@ -631,8 +663,8 @@
     },
     {
       "path": "platform/docs/SETUP.md",
-      "sha256": "5d0bcd543720f4df40556debb573945ff7585805a9a6ad29a6722770d3b17bfd",
-      "bytes": 17415
+      "sha256": "8cddf3ded05025e25db28f49bf515123c2482b3903b491370114e85e4ac7f68d",
+      "bytes": 17573
     },
     {
       "path": "platform/docs/UI_DESIGN_DIRECTION.md",
@@ -1051,8 +1083,13 @@
     },
     {
       "path": "platform/package.json",
+<<<<<<< HEAD
       "sha256": "23aa1eed3ebd460805b60a8edef322196793b330ccab33f3eae726405dd03e3c",
       "bytes": 4442
+=======
+      "sha256": "b8a16ecbcbf3d574597f651f25ea403eec433785c926a18c907c3d584dbb1989",
+      "bytes": 4501
+>>>>>>> origin/main
     },
     {
       "path": "platform/packages/contracts/package.json",
@@ -1455,6 +1492,11 @@
       "bytes": 12756
     },
     {
+      "path": "platform/scripts/launch-preflight.ts",
+      "sha256": "d0830b462f6cf821e7032263ba2c4ee2239684535fbb088ab77ed416da90f5df",
+      "bytes": 13217
+    },
+    {
       "path": "platform/scripts/monochrome-browser-check.ts",
       "sha256": "a0494c30f1960fcba81efbdbeb925c063f880bed691de67a7c0d48a7e53f8964",
       "bytes": 8921
@@ -1673,6 +1715,11 @@
       "path": "platform/tests/instructors.test.ts",
       "sha256": "8eaebc54b450f4bfa672594fe04d4d74c77b35829dd974acaccf935094077af8",
       "bytes": 13357
+    },
+    {
+      "path": "platform/tests/launch-preflight.test.ts",
+      "sha256": "1892ccff4dd8c9ad8fa11c03c10b5c50630aaa4d72d636129b66661b9025d347",
+      "bytes": 8717
     },
     {
       "path": "platform/tests/learning-record-http.test.ts",

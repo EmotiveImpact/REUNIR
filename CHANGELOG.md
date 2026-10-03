@@ -19,11 +19,24 @@ Details:
 - **Email address** panel on Your account: the address, Confirmed or Not confirmed, **Send a confirmation link** and **Change email address…**.
 - `EMAIL_VERIFICATION` (`required` or `optional`, required by default in production, applied only where mail can be sent): an unconfirmed address gets a fresh link instead of a session (decision 024).
 - `POST /api/account/email` checks the password, then sends a confirmation link to the new address; the address changes only when it is opened. The current address gets a notice. Better Auth's own change-email route is closed.
+- The launch preflight also checks `EMAIL_VERIFICATION`.
 - No migration and no new runtime dependency: Better Auth's own email verification and change-email flows, through the encrypted outbox.
 
 ### Planned
 
 - Data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+
+## Launch kit (no version change), 3 October 2026
+
+On main through [PR #17](https://github.com/EmotiveImpact/REUNIR/pull/17), merged as `f5ec8d3`.
+
+**In plain language:** a step-by-step launch guide and an offline check of the launch settings, so the app is ready to switch on when you decide. Nothing was provisioned and nothing is live.
+
+Details:
+
+- `platform/docs/LAUNCH_RUNBOOK.md` walks through every launch step in order: the Neon database and restricted runtime role, migrations, the first owner, server settings, storage, mail, Vercel, hosted privacy checks, the mail and digest scheduler, backups with a restore rehearsal, monitoring, rollback, and the written approvals needed before inviting pilot members.
+- `npm run launch:preflight` checks the shape of a production environment without printing a value or opening a connection, including `ADMIN_TWO_FACTOR`.
+- No migration, no runtime code change, no new dependency.
 
 ## 0.22.0-alpha.1 (Alpha 22): cover picture descriptions, 3 October 2026
 
