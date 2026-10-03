@@ -39,6 +39,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 31 | Housekeeping is cleared on a schedule by one list of rules (sessions, links, rate counters, request receipts, change events, finished mail, read notices); Your account says how long everything is kept | The same periods for every community; the audit trail is kept for the life of the community; nothing is scheduled until the operator chooses |
 | Alpha 35 | A teaching grant covers the whole track or lessons an administrator chooses; drafts, publishing and answer review follow the chosen lessons | No lesson grants by invitation; new lessons, order and cover stay with whole-track grants |
 | Alpha 36 | Instructors of a whole track start new tracks, unpublished until an administrator publishes them | No archiving or deleting by instructors, no publishing without an administrator |
+| Alpha 37 | Creators upload MP4 and WebM lesson video that learners play in the lesson; off until the operator sets a limit of up to 500 MB | No transcoding or captions; scanning large video needs clamd's stream limit raised |
 | Alpha 39 | Administrators rename and tag cover library pictures (up to 60); the picker filters by name or tag; cards and lists load a 480-pixel copy checked by the server | No stock search or backfilled copies for existing covers; real bucket signing for the second policy unverified |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.

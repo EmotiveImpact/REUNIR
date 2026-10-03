@@ -1,4 +1,57 @@
-# Alpha 36 instructors start their own tracks
+# Alpha 37 uploaded lesson video
+
+3 October 2026. Application version stays 0.39.0-alpha.1: Alpha 39 is already on main. Creators attach MP4 or WebM video to lessons, and learners play it in the page through a signed link, alongside the existing YouTube and Vimeo embeds. Video is off until the operator sets `LESSON_VIDEO_MAX_MB`. See decisions/037-lesson-video.md and LESSON_RESOURCES.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `A36SHA` (the merge of PR #28, Alpha 36) |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created, and no video storage was provisioned |
+| Operated with real members | No |
+
+Numbering: Alpha 37, decision 037 and migration 0036 come from the block allocated to courses and teaching (Alpha 35 to 38, migrations 0034 to 0037).
+
+## What changed
+
+- **Lesson video**: MP4 and WebM join the lesson file types, verified by signature (`ftyp` for MP4, an EBML header naming `webm` for WebM) and stored privately under the track like every lesson file.
+- **Switch and limit**: `LESSON_VIDEO_MAX_MB` (0 to 500; unset or 0 keeps video off). Capabilities report `videoUploadBytes`; the studio names the limit and only offers video types when it is on. Uploads are refused with 403 `VIDEO_UPLOADS_OFF` or 413 `FILE_TOO_LARGE`; other lesson files stay at 10 MB. An invalid value stops the server at start-up.
+- **Playback**: **Play** calls `GET .../resources/:resourceId/play`, which checks access exactly as a download does and returns a signed inline link valid for two hours; other files get 409 `NOT_A_VIDEO`. Downloads stay two-minute attachments. The demo plays from bytes kept in the browser.
+- **Migration 0036** (additive): replaces the 0001 size check on `upload_intents` so only lesson files declared as MP4 or WebM may exceed 10 MB, never 500 MB. Earlier migrations are byte-identical; no grant change.
+- **Scanning**: when a scanner is configured (Alpha 23), video is scanned whole like every upload. clamd refuses streams over its `StreamMaxLength` (25 MB by default), which counts as no verdict, so such uploads stay pending. `npm run launch:preflight` warns when video above 25 MB is on with a scanner.
+- `npm run launch:preflight`, `.env.example` and LAUNCH_RUNBOOK.md cover `LESSON_VIDEO_MAX_MB`.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | V_UNIT passed, 0 failed (7 new in `tests/lesson-video.test.ts`, 1 new in `tests/launch-preflight.test.ts`, which also checks the clamd stream warning) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | V_DEMO passed, including V_RES lesson resource checks (1 new: a creator uploads a WebM clip and a learner plays it) |
+| Connected-browser suites | V_CONN passed (unchanged) |
+| `npm run test:postgres` | Passed on PostgreSQL 16 |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
+
+## Not verified, and why
+
+- No real bucket or large file was used: the browser check plays a 690-byte WebM clip, and signed inline links were tested against the fake bucket. Range requests and seeking depend on the storage provider.
+- No real clamd scanned a large video. The API holds each upload in memory while it is scanned, so a 500 MB limit needs a raised `StreamMaxLength` and memory to match; scanning in chunks is follow-up work.
+- No transcoding, captions, transcripts or poster frames.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Scan large files in chunks so the API need not hold a whole video in memory.
+3. When deployment resumes: choose `LESSON_VIDEO_MAX_MB` with the bucket's storage and egress in mind, follow LAUNCH_RUNBOOK.md and run `npm run db:migrate`.
+
+## Historical Alpha 36 evidence: instructors start their own tracks
 
 3 October 2026. Application version stays 0.39.0-alpha.1: Alpha 39 is already on main. An active instructor of a whole track starts a new track. It stays unpublished, seen only by its teachers and the community's owners and administrators, until an owner or administrator publishes it. See decisions/036-instructor-tracks.md and INSTRUCTORS.md.
 
@@ -9,7 +62,7 @@
 | Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `3c770b5` (the merge of PR #24, Alpha 35, which brought Alpha 23, 28 and 39) |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Merged | Yes: [PR #28](https://github.com/EmotiveImpact/REUNIR/pull/28), merged into main as `A36SHA` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 

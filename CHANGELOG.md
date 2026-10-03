@@ -8,9 +8,28 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### Alpha 36: instructors start their own tracks (no version change), 3 October 2026
+### Alpha 37: uploaded lesson video (no version change), 3 October 2026
 
-On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass. Decision 036 and migration 0035, from the block allocated to courses and teaching. Alpha 39 is already on main, so the version stays 0.39.0-alpha.1.
+On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass. Decision 037 and migration 0036, from the block allocated to courses and teaching. Alpha 39 is already on main, so the version stays 0.39.0-alpha.1.
+
+**In plain language:** creators can now upload their own MP4 or WebM video to a lesson, alongside YouTube and Vimeo embeds. Learners press **Play** and watch it in the page; the video stays private to people who can open the lesson. It is off until whoever runs the server sets a size limit.
+
+Details:
+
+- `LESSON_VIDEO_MAX_MB` (1 to 500) switches video on and sets the largest file; unset or 0 keeps it off (403 `VIDEO_UPLOADS_OFF`), larger files get 413 `FILE_TOO_LARGE`. Other lesson files stay at 10 MB.
+- Video is checked by its file signature like every lesson file and stored privately under the track.
+- **Play** asks the server for a signed inline link valid for two hours, after the same access check as a download; downloads stay two-minute attachments (decision 037).
+- Additive migration 0036 lets only lesson files declared as MP4 or WebM exceed 10 MB in upload intents, never 500 MB. No grant change.
+- Video is scanned like every upload when a scanner is configured (Alpha 23). clamd refuses streams over 25 MB by default, so the launch preflight warns to raise `StreamMaxLength` when larger video is switched on; until then such uploads stay pending, never unscanned.
+- The launch preflight, `.env.example` and LAUNCH_RUNBOOK.md cover `LESSON_VIDEO_MAX_MB`.
+
+### Planned
+
+- Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+
+## Alpha 36: instructors start their own tracks (no version change), 3 October 2026
+
+On main through [PR #28](https://github.com/EmotiveImpact/REUNIR/pull/28), merged as `A36SHA`. Decision 036 and migration 0035, from the block allocated to courses and teaching. Alpha 39 is already on main, so the version stays 0.39.0-alpha.1.
 
 **In plain language:** someone who already teaches a whole track can now start a new track themselves instead of asking an administrator. The new track stays hidden from members until an owner or administrator publishes it. Administrators are told when a track is started, and the person who started it is told when it is published.
 
@@ -20,10 +39,6 @@ Details:
 - The track starts unpublished, authored by its starter, with their own whole-track instructor grant. Only its teachers and the community's owners and administrators see it, marked **Not published**.
 - **Publish track** (`track.publish`, owners and administrators) makes it visible, records `track.published` in the audit and tells the starter (decision 036).
 - Additive migration 0035 adds one INSERT policy, `instructor_own_track`, that admits only that self-grant. No grant change.
-
-### Planned
-
-- Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
 
 ## Alpha 35: teaching grants for chosen lessons (no version change), 3 October 2026
 

@@ -23,6 +23,10 @@ One domain function, `resolveResourceDownload`, decides every download from the 
 
 PostgreSQL enforces the same boundary in depth. A restrictive row policy on `upload_intents` lets a member's transaction read a lesson file only when a published lesson in the same tenant references it. Drafts and revisions keep their existing owner/admin-only policies, and the runtime role still cannot update or delete revision rows, including their file lists.
 
+## Lesson video (Alpha 37)
+
+Creators can also attach MP4 and WebM video, which learners play inside the lesson with **Play** and can still download. Video is off until the server sets `LESSON_VIDEO_MAX_MB` (1 to 500); the studio then names the limit, and every other file stays at 10 MB. The server refuses video while it is off (403 `VIDEO_UPLOADS_OFF`) or above its limit (413 `FILE_TOO_LARGE`) before any storage policy is made. Completion checks the signature as for any file: an MP4 must start with an `ftyp` box and a WebM with an EBML header that declares `webm`. `GET .../resources/:resourceId/play` applies exactly the download access rules and returns a signed link with `inline` disposition that lasts two hours, so a long lesson can be watched; documents get 409 `NOT_A_VIDEO`. Additive migration `0036_lesson_video.sql` lets the database hold MP4 and WebM lesson files up to 500 MB and keeps everything else at 10 MB (decision 037). The demo plays the browser's own copy of a fictional video.
+
 ## Upload and download lifecycle (live mode)
 
 1. `POST /api/organisations/:slug/uploads` with `{purpose:'lesson_resource', trackId, name, contentType, sizeBytes}`. The domain checks the author and track, prunes the community's expired or rejected intents, applies caps (5 pending per person, 500 files per community) and records a pending intent. Only then does the server mint a five-minute signed POST policy bound to the exact key, content type and byte size. The key is `organisations/{organisation}/lesson-resources/{track}/{uuid}.{ext}`.
@@ -46,7 +50,7 @@ Upgrade order: `npm ci`, `npm run db:migrate` with the administrative `MIGRATION
 
 ## Storage setup when deployment resumes
 
-Use a private bucket with uniform bucket-level access and no public principals. Configure CORS for the exact application origin with method `POST` (uploads). Downloads are top-level navigations to signed URLs and do not need CORS. Grant the service identity object create, read and delete on the bucket, plus the signing permission its credential type requires. Do not apply a lifecycle rule that deletes objects under `lesson-resources/`, because history references them. Set `GCS_BUCKET` and, if not using application default credentials, `GCS_CREDENTIALS_JSON`. When storage is not configured, the studio says so and uploads fail closed with 503.
+Use a private bucket with uniform bucket-level access and no public principals. Configure CORS for the exact application origin with method `POST` (uploads). Downloads are top-level navigations to signed URLs and do not need CORS, and lesson videos play from signed URLs without CORS. Grant the service identity object create, read and delete on the bucket, plus the signing permission its credential type requires. Do not apply a lifecycle rule that deletes objects under `lesson-resources/`, because history references them. Set `GCS_BUCKET` and, if not using application default credentials, `GCS_CREDENTIALS_JSON`. When storage is not configured, the studio says so and uploads fail closed with 503.
 
 ## Verification
 
@@ -54,8 +58,8 @@ Use a private bucket with uniform bucket-level access and no public principals. 
 
 ## Limits and not yet done
 
-- Since Alpha 23, every file is scanned with ClamAV before it becomes ready when the server has a scanner (decision 023); a flagged file is deleted. Without `CLAMAV_HOST`, only the signature check applies, which confirms the container format, not that a file is harmless. Files are always delivered as downloads.
-- No deep inspection of Office files, no previews or thumbnails, no audio, video or SCORM packages.
+- Since Alpha 23, every file is scanned with ClamAV before it becomes ready when the server has a scanner (decision 023); a flagged file is deleted. Without `CLAMAV_HOST`, only the signature check applies, which confirms the container format, not that a file is harmless. Files are delivered as downloads, except lesson videos, which play inline in a `<video>` element.
+- No deep inspection of Office files, no previews or thumbnails, no audio or SCORM packages. Lesson video plays as uploaded: there is no transcoding, streaming at several qualities, captions or poster frame.
 - Real Google Cloud Storage signing, IAM, CORS and downloads have not been exercised against a real bucket. The adapter is tested with the real SDK's offline signing and with in-memory stand-ins.
 - Objects whose best-effort deletion fails, or whose intents expired, can remain in the bucket. They are private and unreferenced. An operator sweep is a follow-up.
 - A published file stays in revision history. Removing personal data uploaded by mistake after publication needs an operator procedure that is not yet built.

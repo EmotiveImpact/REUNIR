@@ -1,18 +1,55 @@
-# Current continuation: Alpha 36 instructors start their own tracks, then uploaded lesson video
+# Current continuation: Alpha 37 uploaded lesson video, then the rest of the teaching roadmap
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, LESSON_RESOURCES.md, decisions/037-lesson-video.md, INSTRUCTORS.md, LAUNCH_RUNBOOK.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+## Where the source is
+
+- Base: main `A36SHA`, the merge of PR #28 (Alpha 36 instructors start their own tracks). The application version stays 0.39.0-alpha.1 because Alpha 39 is already on main.
+- This slice: branch `claude/courses-teaching-6hum2q`, restarted from that main. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- Numbering: courses and teaching uses Alpha 35 to 38, decisions 035 to 038 and migrations 0034 to 0037, as allocated by the project coordinator on 3 October 2026. Alpha 38 and migration 0037 are unused so far.
+
+## What is done
+
+Contributor roles, lesson grants and instructor-started tracks are on main. This slice adds MP4 and WebM lesson video, off until the operator sets `LESSON_VIDEO_MAX_MB` (up to 500 MB), played inline through a signed two-hour link after the same access check as a download. Additive migration 0036 lets only lesson video exceed 10 MB in upload intents.
+
+## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+The demo has video on at the 500 MB maximum. Open a track's Creator studio, attach an MP4 or WebM file to a lesson, publish, then choose **Play** on the lesson. Against a server, set `LESSON_VIDEO_MAX_MB` and run `npm run db:migrate` (applies 0036; no grant changes).
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+## Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Lesson files, video included, are released only to people who may open the lesson, through short-lived signed links. Authority is granted explicitly and must be current when it takes effect. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+## Next
+
+1. Scan large uploads in chunks so the API need not hold a whole video in memory; until then raise clamd `StreamMaxLength` to the video limit. Question banks, timers and partial marks wait for pilot needs.
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 36 handover: instructors start their own tracks
+- Outcome: [PR #28](https://github.com/EmotiveImpact/REUNIR/pull/28), merged into main as `A36SHA`.
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, decisions/025-contributor-roles.md, decisions/035-lesson-grants.md, decisions/036-instructor-tracks.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
-## Where the source is
+### Where the source is
 
 - Base: main `3c770b5`, the merge of PR #24 (Alpha 35 teaching grants for chosen lessons). The application version stays 0.39.0-alpha.1 because Alpha 39 is already on main.
 - This slice: branch `claude/courses-teaching-6hum2q`, restarted from that main. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Numbering: courses and teaching uses Alpha 35 to 38, decisions 035 to 038 and migrations 0034 to 0037, as allocated by the project coordinator on 3 October 2026. Other threads hold Alpha 27 to 34 and 39 to 40.
 
-## What is done
+### What is done
 
 Contributor roles (Alpha 25) and lesson grants (Alpha 35) are on main. This slice lets an active instructor of a whole track start a new track. It stays unpublished, seen only by its teachers and administrators, until an owner or administrator chooses **Publish track**. Additive migration 0035 admits only the starter's own grant on that new track.
 
-## Run it
+### Run it
 
 ```sh
 cd platform
@@ -24,11 +61,11 @@ Preview as an instructor of a whole track, open Learning or Teaching and choose 
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Authority is granted explicitly and must be current when it takes effect; teaching is a per-track grant with a role and an optional set of lessons, not a community role, and publishing a lesson stays with instructors. A track an instructor starts reaches members only when an owner or administrator publishes it. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
 
-## Next
+### Next
 
 1. Uploaded lesson video (Alpha 37, migration 0036), built locally in this thread and off until the operator sets `LESSON_VIDEO_MAX_MB`. Question banks, timers and partial marks wait for pilot needs.
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
