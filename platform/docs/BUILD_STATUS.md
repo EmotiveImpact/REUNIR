@@ -1,4 +1,58 @@
-# Launch kit: runbook and offline preflight (no version change)
+# Alpha 23 cover library management and small copies of covers
+
+3 October 2026. Application 0.23.0-alpha.1. Administrators rename and tag cover library pictures, the library holds up to 60, the cover picker can be filtered, and cards and lists load a small copy of each cover instead of the full picture. See decisions/023-cover-library-management-and-small-copies.md and COVERS.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/build-out-tvzn40`, from main `f5ec8d3` (the merge of PR #17, the launch kit) |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## PR #17 merged into main
+
+The launch kit was merged into main on 3 October 2026 as `f5ec8d3ebd1f937990ef8139657af3e718cf1301`, a merge commit whose parents are the previous main `ec4285d` (PR #15) and the tested head `8e2fdfc`; its tree, `47a92acd740b5ecfdd79106f5c2941093ba1883c`, is identical to the tested head's tree. CI runs 37122409822 and 37122421213 (application and postgres) passed on `8e2fdfc`. This slice started from that main.
+
+## What changed
+
+- **Library management.** `POST /api/organisations/:slug/cover-library/:itemId/details` renames a picture and sets up to five tags (lower case, 1 to 24 characters, letters and numbers with single spaces or hyphens; too many or too long are refused, never cut). It requires two-step sign-in when the server does, and each change is audited as `cover.library.updated`. Community settings has an Edit dialogue; the cover picker has **Find a picture** and a toggle per tag.
+- **Limit raised from 24 to 60**, enforced by the domain on every library upload.
+- **Small copies.** When the browser prepares a picture wider than 480 pixels it also draws a 480-pixel copy (WebP, or JPEG where WebP cannot be written), at most 256 KB, uploaded under a second five-minute policy tied to the same upload record. On completion the server checks the copy's signature, size, type and dimensions from its own stored generation; a failed copy is deleted and dropped while the picture is kept. New `/thumbnail` routes serve the copy, or the full picture when there is none, so existing covers keep working. Every deletion path removes both files.
+- **Additive migration 0022** adds `cover_library.tags` with a shape check, an update policy for active owners and administrators, and four checked small-copy columns on `upload_intents`. The runtime role may update only `label` and `tags` on `cover_library`; run `npm run db:grant-runtime` after migrating.
+- Migrations 0001 to 0021 are byte-identical; no new runtime dependency. Release constant and package version are 0.23.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). Every step ran on this branch's tree on top of main `f5ec8d3`.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 664 passed, 0 failed (639 existing plus 25: 6 library management, 6 small copies, 6 database tests under the restricted role including cross-tenant and inactive-role refusals, 7 HTTP) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 286 passed: as Alpha 22, with 20 covers (3 new) |
+| Connected-browser suites | 62 passed: as Alpha 22, with 15 connected covers (2 new) |
+| `npm run test:postgres` | 21 passed on PostgreSQL 16 (1 new for renaming and tagging through the restricted role; the existing library case now checks that changing the picture itself is refused) |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates with 55 pinned sources and 18 register decisions |
+
+Tests changed rather than added: migration-count assertions moved from 21 to 22; the 0009, 0011 and 0013 upgrade tests strip the four new upload columns and assert they are empty; the operator-erasure test seeds its 0013-era database without uploads; the library grant test also asserts the two updatable columns; the two-step sign-in HTTP test lists the new route among those that refuse.
+
+## Not verified, and why
+
+- Real Google Cloud Storage signing and bucket CORS for the second upload policy were not exercised; no bucket was created, by the owner's instruction.
+- WebP encoding was exercised only in Chromium; the JPEG fallback for other browsers is untested. Existing covers get no small copy until they are replaced.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. When deployment resumes: follow LAUNCH_RUNBOOK.md, and run `npm run db:grant-runtime` after migrating.
+
+## Historical launch kit evidence: runbook and offline preflight (no version change)
 
 3 October 2026. Application still 0.22.0-alpha.1. Everything needed to switch the app on is written down and checkable offline. Nothing was provisioned, no account was created and nothing is live, by the owner's instruction. See LAUNCH_RUNBOOK.md.
 
@@ -8,8 +62,8 @@
 | --- | --- |
 | Implemented | Yes, on `claude/build-out-tvzn40`, from main `ec4285d` (the merge of PR #15, Alpha 22) |
 | Verified locally | Yes: typecheck, unit tests and the preflight against `.env.example` (see below) |
-| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes: runs 37122409822 and 37122421213 on `8e2fdfc` (application and postgres) |
+| Merged | Yes, [PR #17](https://github.com/EmotiveImpact/REUNIR/pull/17) as `f5ec8d3`, under the owner's standing approval (3 October 2026) |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 

@@ -8,9 +8,25 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### Launch kit (no version change), 3 October 2026
+### 0.23.0-alpha.1 (Alpha 23): cover library management and small copies, 3 October 2026
 
 On a pull request from `claude/build-out-tvzn40`, to be merged once its checks pass.
+
+**In plain language:** administrators can rename and tag the pictures in the cover library, which now holds up to 60, and anyone choosing a cover can search the library by name or tag. Cards and lists now load a small copy of each cover, so pages with many covers load faster.
+
+Details:
+
+- Up to five tags per library picture; renaming and tagging are audited and need two-step sign-in when the server requires it.
+- New covers wider than 480 pixels get a 480-pixel copy made in the browser and checked by the server; covers without one fall back to the full picture (decision 023).
+- Additive migration 0022; run `npm run db:grant-runtime` after migrating. No new runtime dependency.
+
+### Planned
+
+- Virus scanning of uploads, group conversations, and email verification and change.
+
+## Launch kit (no version change), 3 October 2026
+
+On main through [PR #17](https://github.com/EmotiveImpact/REUNIR/pull/17), merged as `f5ec8d3`.
 
 **In plain language:** a step-by-step launch guide and an offline check of the launch settings, so the app is ready to switch on when you decide. Nothing was provisioned and nothing is live.
 
@@ -19,10 +35,6 @@ Details:
 - `platform/docs/LAUNCH_RUNBOOK.md` walks through every launch step in order: the Neon database and restricted runtime role, migrations, the first owner, server settings, storage, mail, Vercel, hosted privacy checks, the mail and digest scheduler, backups with a restore rehearsal, monitoring, rollback, and the written approvals needed before inviting pilot members.
 - `npm run launch:preflight` checks the shape of a production environment without printing a value or opening a connection, including `ADMIN_TWO_FACTOR`.
 - No migration, no runtime code change, no new dependency.
-
-### Planned
-
-- Virus scanning of uploads, group conversations, and email verification and change.
 
 ## 0.22.0-alpha.1 (Alpha 22): cover picture descriptions, 3 October 2026
 
