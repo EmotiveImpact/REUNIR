@@ -12,6 +12,8 @@ import { eraseFromCommunity, PERSONAL_COLLECTIONS } from '../../domain/src/accou
 import { ownerRefusal, type AccountDeletionSummary } from '../../contracts/src/account';
 import type { OwnershipTransferResult } from '../../contracts/src/ownership';
 import { transferOwnership } from '../../domain/src/ownership';
+import { reliesOnAdministration } from '../../domain/src/administration';
+import { TWO_FACTOR_REQUIRED, TWO_FACTOR_REQUIRED_MESSAGE } from '../../contracts/src/two-factor';
 import { tables, type TableSpec, type CollectionKey } from './tables';
 import type { Database, SQL } from './connection';
 const slugPattern = /^[a-z0-9][a-z0-9-]{0,99}$/;
@@ -122,8 +124,12 @@ export class WorkspaceRepository {
     async execute(slug: string, userId: string, raw: unknown, key: string, requestId: string): Promise<MutationResult> {
         return (await this.executeCommand(slug, userId, raw, key, requestId)).result;
     }
-    /** As `execute`, with the storage keys of cover pictures the change released, for the caller to remove after commit. */
-    async executeCommand(slug: string, userId: string, raw: unknown, key: string, requestId: string): Promise<{ result: MutationResult; releasedFiles: string[] }> {
+    /**
+     * As `execute`, with the storage keys of cover pictures the change released, for the caller to remove after commit.
+     * With `administration: 'withheld'`, a command that succeeds only because the actor is an owner or administrator is
+     * refused with TWO_FACTOR_REQUIRED and nothing is written; everything a moderator or member could do still works.
+     */
+    async executeCommand(slug: string, userId: string, raw: unknown, key: string, requestId: string, options: { administration?: 'allowed' | 'withheld' } = {}): Promise<{ result: MutationResult; releasedFiles: string[] }> {
         const command = commandSchema.parse(raw);
         if (!/^[A-Za-z0-9_-]{8,100}$/.test(key))
             throw new DomainError('INVALID_KEY', 'Use a valid idempotency key.');
@@ -145,6 +151,8 @@ export class WorkspaceRepository {
                 return { result: { ...old.rows[0].result, workspace: await view(sql, before, ctx) }, releasedFiles: [] };
             }
             const result = applyCommand(before, ctx, command);
+            if (options.administration === 'withheld' && reliesOnAdministration(before, ctx, command))
+                throw new DomainError(TWO_FACTOR_REQUIRED, TWO_FACTOR_REQUIRED_MESSAGE, 403);
             await saveChanges(sql, before, result.workspace);
             await sql.query('INSERT INTO command_receipts(organization_id,user_id,request_key,body_hash,result) VALUES ($1,$2,$3,$4,$5)', [orgId, userId, key, digest, JSON.stringify({ message: result.message, objectId: result.objectId })]);
             return { result: { ...result, workspace: await view(sql, result.workspace, ctx) }, releasedFiles: releasedCoverKeys(before, result.workspace) };

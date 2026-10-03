@@ -28,6 +28,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 18 | Notices, knowledge-check review queues and the audit trail load a page at a time with exact counts; workspace reads stop growing with those histories | Posts, tasks and other collections still load with the snapshot; no archive of old notices yet |
 | Alpha 19 | Members turn off notice topics per community and may get a daily or weekly email digest of unread notices; access notices always arrive | No mail provider or scheduler configured; no per-notice switches or quiet hours |
 | Alpha 20 | Owners and administrators invite someone new by email to teach one track; accepting makes them a member and that track's instructor | Only while the sender still administers; one track per invitation; no contributor roles or instructor-created tracks |
+| Alpha 21 | Two-step sign-in with an authenticator app and backup codes for anyone; owners and administrators need it to use their authority when the server requires it (the production default) | No passkeys, QR code or trusted devices; recovery without backup codes is an operator task; hosted Better Auth unverified |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 
@@ -49,7 +50,7 @@ The user will clone, deploy and run hosted tests later. Continue product develop
 
 **Everyday reliability:** cursor pagination for posts and tasks (notices, review queues and the audit trail page since Alpha 18), notification preferences and digests (Alpha 19), useful content curation. Course and project art is now uploaded by each community (Alpha 11); smaller renditions for thumbnails can follow real usage. Improve loading/error/empty states through real pilot observations.
 
-**Account and trust operations:** privileged MFA, general email verification/change, retention (self-service account deletion with Former member attribution arrived in Alpha 15, after the learning record download and answer erasure in Alpha 14, and ownership transfer, which lets owners delete their accounts too, in Alpha 16), moderator appeals/escalation, reviewed-evidence correction/revocation history and consented multi-contributor credits.
+**Account and trust operations:** general email verification/change, retention (self-service account deletion with Former member attribution arrived in Alpha 15, after the learning record download and answer erasure in Alpha 14, and ownership transfer, which lets owners delete their accounts too, in Alpha 16, and two-step sign-in for owners and administrators in Alpha 21), moderator appeals/escalation, reviewed-evidence correction/revocation history and consented multi-contributor credits.
 
 ## Commercial platform stage
 

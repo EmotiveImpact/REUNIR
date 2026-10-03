@@ -1,4 +1,60 @@
-# Alpha 20 inviting someone new to teach a track
+# Alpha 21 two-step sign-in for owners and administrators
+
+3 October 2026. Application 0.21.0-alpha.1. Anyone can turn on two-step sign-in with an authenticator app and one-time backup codes. When the server requires it, owners and administrators need it to use their authority. See decisions/021-two-step-sign-in.md, ACCOUNTS.md and SECURITY.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/build-out-tvzn40`, from main `c137f90` (the merge of PR #13, Alpha 20) |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## PR #13 merged into main
+
+Alpha 20 was merged into main on 3 October 2026 as `c137f9060edd6683b16ecbb65d9e040fda707812`, a merge commit whose parents are the previous main `648df31` (PR #12) and the tested head `19236bc`; its tree, `da77553516788ada343f0ab2abd152d2dfbafd6c`, is identical to the tested head's tree. CI runs 37119260110 and 37119273038 (application and postgres) passed on `19236bc`. This slice started from that main.
+
+## What changed
+
+- **Two-step sign-in** uses Better Auth's own two-factor plugin from the pinned `better-auth` 1.7.5: authenticator-app codes (RFC 6238, issuer "REUNIR") and ten one-time backup codes, both encrypted by the plugin. No SMS or email codes and no trusted devices.
+- **Your account** has a Two-step sign-in panel: turning it on needs the password and a correct code, the backup codes are shown once, and turning it off or making new backup codes needs the password. The demo panel only explains the feature.
+- **Sign-in** asks for the code or a backup code before any session exists, on the sign-in page and on an invitation page.
+- **`ADMIN_TWO_FACTOR`** is `required` or `optional`; unset means required in production. An invalid value stops the server. Without two-step sign-in, an owner or administrator keeps reads and member or moderator actions, and owner or administrator commands and routes return 403 `TWO_FACTOR_REQUIRED`. A monochrome notice links to Your account.
+- **Additive migration 0021** adds `auth_user.two_factor_enabled` and `auth_two_factor`, removed with the account and granted explicitly to the runtime role. Run `npm run db:grant-runtime` after migrating.
+- Migrations 0001 to 0020 are byte-identical; no new runtime dependency. Release constant and package version are 0.21.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). Every step below ran on this branch's tree on top of main `c137f90`.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 625 passed, 0 failed (611 existing plus 3 for the setting and helpers and 11 HTTP tests with a real Better Auth instance and independently computed codes) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 282 passed: as Alpha 20, with 11 accounts (1 new: the explanatory panel as member and administrator) |
+| Connected-browser suites | 60 passed: 12 connected, 9 resources, 9 assessments, 13 covers, 6 instructors, 11 accounts (4 new: notice and refusal, turning it on in a real browser, signing in with a backup code, turning it off) |
+| `npm run test:postgres` | 20 passed on PostgreSQL 16 (1 new: the runtime role's grant on `auth_two_factor`) |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates with 55 pinned sources and 18 register decisions |
+
+Tests changed rather than added: migration-count assertions moved from 20 to 21.
+
+## Not verified, and why
+
+- Hosted Better Auth and a real reverse proxy were not exercised; the plugin's per-address rate limit depends on the client address the proxy passes on.
+- A code can be replayed within the library's 30-second window. There is no recovery for someone who has lost both their app and their backup codes except an operator reset (ACCOUNTS.md). Changing `BETTER_AUTH_SECRET` makes stored secrets and backup codes unreadable.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Cover picture descriptions (Alpha 22), virus scanning of uploads (Alpha 23) and group conversations (Alpha 24), each built and tested locally.
+3. When deployment resumes: follow LAUNCH_RUNBOOK.md once it lands, set `ADMIN_TWO_FACTOR`, and run `npm run db:grant-runtime` after migrating.
+
+## Historical Alpha 20 evidence: inviting someone new to teach a track
 
 3 October 2026. Application 0.20.0-alpha.1. Owners and administrators can invite someone who is not yet a member to teach one track, from that track's Instructors dialogue. Accepting makes them a member and that track's instructor. See decisions/020-instructor-invitations.md and INSTRUCTORS.md.
 
@@ -8,8 +64,8 @@
 | --- | --- |
 | Implemented | Yes, on `claude/build-out-tvzn40`, from main `648df31` (the merge of PR #12, Alpha 19) |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes: runs 37119260110 and 37119273038 on `19236bc` (application and postgres) |
+| Merged | Yes, [PR #13](https://github.com/EmotiveImpact/REUNIR/pull/13) as `c137f90`, under the owner's standing approval (3 October 2026) |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 

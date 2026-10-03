@@ -1,4 +1,5 @@
 import type { PilotCheck } from '../../../packages/contracts/src/operations';
+import { adminTwoFactorSetting } from '../../../packages/contracts/src/two-factor';
 export type Environment = Readonly<Record<string, string | undefined>>;
 const filled = (v: string | undefined): boolean => !!v?.trim();
 const safeSecret = (value: string | undefined): boolean => !!value && value.length >= 32 && !/^(test|change.?me|example|replace.?me)/i.test(value);
@@ -32,14 +33,22 @@ export function inspectConfiguration(env: Environment): PilotCheck[] {
     checks.push({key:'email-encryption',title:'Independent mail encryption key',state:independent ? 'pass' : 'blocked',detail:independent ? 'A separate encryption key is configured for pending email.' : 'Use a stable random EMAIL_ENCRYPTION_KEY, different from the session secret.'});
     const cron=safeSecret(env.CRON_SECRET);
     checks.push({key:'worker-auth',title:'Worker authentication',state:cron ? 'pass' : 'blocked',detail:cron ? 'The worker has an authentication secret. A schedule has not been inferred.' : 'Configure a random CRON_SECRET before scheduling the worker.'});
+    const twoStep=adminTwoFactorSetting(env);
+    checks.push({key:'admin-two-factor',title:'Two-step sign-in for administrators',state:twoStep===null ? 'blocked' : production && twoStep==='optional' ? 'warning' : 'pass',detail:twoStep===null ? 'ADMIN_TWO_FACTOR must be required or optional.' : twoStep==='required' ? 'Owners and administrators must turn on two-step sign-in before using their tools.' : production ? 'Two-step sign-in is optional for owners and administrators. Production normally requires it.' : 'Two-step sign-in is optional for owners and administrators outside production.'});
     checks.push({key:'storage',title:'Attachments',state:filled(env.GCS_BUCKET) ? 'unverified' : 'warning',detail:filled(env.GCS_BUCKET) ? 'A bucket name is configured, but IAM and attachment delivery require separate verification.' : 'No attachment bucket is configured. Text and link-based pilot features still work.'});
     return checks;
 }
 /** Reject unsafe runtime configurations, while allowing a server without optional email/storage. */
 export function validateRuntimeConfiguration(env: Environment): void {
-    const fatal = new Set(['origin','auth-secret','database-config','client-secrets','privileged-config','fictional-seed']);
+    const fatal = new Set(['origin','auth-secret','database-config','client-secrets','privileged-config','fictional-seed','admin-two-factor']);
     if (env.NODE_ENV === 'production' && (env.RESEND_API_KEY || env.EMAIL_FROM)) fatal.add('email-encryption');
     if(env.CRON_SECRET)fatal.add('worker-auth');
     const blocked = inspectConfiguration(env).filter(c=>fatal.has(c.key) && c.state==='blocked');
     if(blocked.length)throw new Error('Unsafe REUNIR runtime configuration: '+blocked.map(c=>c.key).join(', ')+'. Run npm run pilot:check for redacted guidance.');
+}
+/** The validated ADMIN_TWO_FACTOR setting. Throws on anything but required or optional. */
+export function adminTwoFactorMode(env: Environment) {
+    const mode = adminTwoFactorSetting(env);
+    if (!mode) throw new Error('Unsafe REUNIR runtime configuration: admin-two-factor. Set ADMIN_TWO_FACTOR to required or optional.');
+    return mode;
 }

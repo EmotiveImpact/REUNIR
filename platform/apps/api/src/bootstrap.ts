@@ -1,4 +1,4 @@
-import { validateRuntimeConfiguration } from './config';
+import { adminTwoFactorMode, validateRuntimeConfiguration } from './config';
 import { requireSafeRuntimeRole } from '../../../packages/db/src/runtime-safety';
 import { PilotOperations } from './operations';
 import {MailQueue,resendTransport} from './mail';
@@ -6,7 +6,7 @@ import {InvitationService} from './invitations';
 import {DigestService} from './digests';
 import { openDatabase } from '../../../packages/db/src/connection';
 import { WorkspaceRepository } from '../../../packages/db/src/repository';
-import { createAuth, passwordCheck } from './auth';
+import { createAuth, passwordCheck, sessionResolver } from './auth';
 import { createApp } from './app';
 import { googleStorage } from './storage';
 export async function bootstrap() {
@@ -27,7 +27,7 @@ export async function bootstrap() {
     const digests=mail.transport?new DigestService(db,mail,new URL(APP_ORIGIN).origin):undefined;
     const app = createApp({ repository, invitations, mail, operations, cronSecret:process.env.CRON_SECRET, digests,
         registerInvited:async(name,email,password)=>{const result=await registration.api.signUpEmail({body:{name,email,password}});return {id:result.user.id};},
-        verifyPassword: passwordCheck(auth), origin: APP_ORIGIN, resolveSession: async (headers) => { const session = await auth.api.getSession({ headers }); return session ? { id: session.user.id, name: session.user.name } : null; }, authHandler: req => auth.handler(req), storage: GCS_BUCKET ? googleStorage(GCS_BUCKET, GCS_CREDENTIALS_JSON) : undefined });
+        verifyPassword: passwordCheck(auth), origin: APP_ORIGIN, resolveSession: sessionResolver(auth), adminTwoFactor: adminTwoFactorMode(process.env), authHandler: req => auth.handler(req), storage: GCS_BUCKET ? googleStorage(GCS_BUCKET, GCS_CREDENTIALS_JSON) : undefined });
     return { app, db, repository, auth, mail, invitations, digests };
     } catch(error) { await db.close(); throw error; }
 }

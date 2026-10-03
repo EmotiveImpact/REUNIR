@@ -1,5 +1,7 @@
 import type { MailQueue } from './mail';
 import { betterAuth } from 'better-auth';
+import { twoFactor } from 'better-auth/plugins/two-factor';
+import { TWO_FACTOR_ISSUER } from '../../../packages/contracts/src/two-factor';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import * as schema from '../../../packages/db/src/auth-schema';
 import type { Database } from '../../../packages/db/src/connection';
@@ -20,6 +22,9 @@ export function createAuth(db: Database, baseURL: string, secret: string, bootst
             }} : {}) },
         session: { expiresIn: 60 * 60 * 24 * 7, updateAge: 60 * 60 * 24, cookieCache: { enabled: false } },
         rateLimit: { enabled: true, storage: 'database', window: 60, max: 60, customRules: { '/sign-in/email': { window: 60, max: 8 } } },
+        // Two-step sign-in: an authenticator app's six-digit codes and ten one-time backup codes. The plugin encrypts the
+        // secret and the backup codes with the session secret. No SMS or email codes, and no "trust this device" in this slice.
+        plugins: [twoFactor({ issuer: TWO_FACTOR_ISSUER, backupCodeOptions: { amount: 10, length: 10, storeBackupCodes: 'encrypted' } })],
         advanced: { cookiePrefix: 'reunir', useSecureCookies: base.protocol === 'https:', defaultCookieAttributes: { httpOnly: true, sameSite: 'lax', secure: base.protocol === 'https:' } },
     });
 }
@@ -28,5 +33,12 @@ export function passwordCheck(auth: ReturnType<typeof createAuth>) {
     return async (headers: Headers, password: string) => {
         try { await auth.api.verifyPassword({ body: { password }, headers }); return true; }
         catch (error) { if ((error as { body?: { code?: string } }).body?.code === 'INVALID_PASSWORD') return false; throw error; }
+    };
+}
+/** The signed-in person as the API needs them: who they are, and whether two-step sign-in is on. */
+export function sessionResolver(auth: ReturnType<typeof createAuth>) {
+    return async (headers: Headers) => {
+        const session = await auth.api.getSession({ headers });
+        return session ? { id: session.user.id, name: session.user.name, twoFactorEnabled: session.user.twoFactorEnabled === true } : null;
     };
 }
