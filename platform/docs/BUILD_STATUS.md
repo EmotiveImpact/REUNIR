@@ -1,4 +1,57 @@
-# Alpha 35 teaching grants for chosen lessons
+# Alpha 32 appealing a hidden post
+
+3 October 2026. The application version stays 0.39.0-alpha.1: Alpha 39 (PR #21) reached main first. The author of a hidden post is told, still sees it, and can appeal; an owner or administrator who did not hide it decides. See decisions/032-moderation-appeals.md and MODERATION.md.
+
+Numbering: this thread holds Alpha 31 to 34, decisions 031 to 034 and migrations 0030 to 0033. Retention took Alpha 31 and migration 0030, so this is Alpha 32 with migration 0031.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/accounts-trust-zojuqs`, restarted from main `b80fc04` (the merge of PR #23, Alpha 31), with main `16b2768` (PR #16, Alpha 23 virus scanning) main `0a818fa` (PR #21, Alpha 39 cover library management, migration 0038) and main `94b130b` (PR #25, Alpha 28 collections, migration 0028) and main `3c770b5` (PR #24, Alpha 35 lesson grants, migration 0034) merged in |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- **Who moderated.** `post.moderate` records who last changed a post's visibility and when (`posts.moderated_by`, `posts.moderated_at`). Existing rows stay empty; nothing is guessed.
+- **The author is told.** Hiding someone else's post sends "Your post was hidden", leading to `/appeals`. The author still sees the post, marked hidden only to them, and cannot reply, react or save while it is hidden.
+- **Appeals** (`moderationAppeals`, table `moderation_appeals`): `moderation.appeal`, `moderation.appeal.decide` and `moderation.appeal.withdraw`. One open appeal per hiding. Deciders are active owners and administrators who are neither the appellant nor the moderator; all of them are notified. Reversal restores the post; upholding keeps it hidden; the appellant gets the reply. Every step is audited.
+- **Migration 0031** (additive): the two post columns, the appeals table with forced row security (read, insert, withdraw, decide and account-deletion policies) and a partial unique index; the runtime role may update only `status`, `decided_by`, `decided_at` and `response`. 0001 to 0030 unchanged.
+- **Web.** New Appeals page, an Appeal dialogue on the post, and an Open appeals panel on the Moderation tab. Neutral colours only.
+- **Demo.** Code Black has one fictional hidden post by the demo member, so the whole journey works in the browser demo.
+- **Account deletion** removes the appellant's appeals; decisions stay in the audit trail.
+- Review fix on PR #26 (Codex): an appeal records the hiding it challenges (`hidden_by`, `hidden_at`). Once the post is restored or hidden again, the appeal can no longer be decided, in the domain and under row security, and appealing the current hiding closes it. Two new tests cover this.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 on loopback.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 703 passed, 0 failed after the review fix; 716 passed after main's Alpha 23 was merged in; 742 passed after main's Alpha 39 was merged in; 761 passed after main's Alpha 28 was merged in; 770 passed after main's Alpha 35 was merged in (20 new: 14 in `tests/appeals.test.ts`, including cross-tenant and inactive-administrator cases, and 6 in `tests/appeals-database.test.ts` under the restricted role) |
+| `npm run test:http` | 19 passed |
+| `npm run build`, `npm run bundle:preview` | Passed |
+| Demo-browser suites | `appeals` 7 (new), `accounts` 13, `monochrome` 16, `v4` 20, `covers` 20, `states` 12, `instructors` 12, `notifications` 5, `curation` 9 (after the Alpha 35 merge) |
+| `npm run test:postgres` | 24 passed on PostgreSQL 16, 25 after the Alpha 39 merge, 26 after the Alpha 28 merge and again after the Alpha 35 merge (2 new: the column grant, and an appeal reversed through a restricted connection) |
+| Python helpers | 35 passed; research register valid |
+
+## Not verified, and why
+
+- No HTTP-level test of the appeal commands: they use the existing generic `/commands` route, covered by the domain, database and PostgreSQL checks.
+- Hosted PostgreSQL was not exercised.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. A correction and withdrawal history for reviewed evidence (Alpha 33), then consented credit for several contributors (Alpha 34).
+3. Undecided: appeals against suspension or message-report outcomes, a second level of appeal, and time limits.
+
+## Historical Alpha 35 evidence: teaching grants for chosen lessons
 
 3 October 2026. Application version stays 0.39.0-alpha.1: Alpha 39 reached main first. An owner or administrator gives a teaching grant for the whole track or only for lessons they choose. A lesson grant reaches those lessons' drafts, history, draft files, publishing and learners' answers, and nothing else. See decisions/035-lesson-grants.md and INSTRUCTORS.md.
 
@@ -9,7 +62,7 @@
 | Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `fab9510` (the merge of PR #20, Alpha 25), with main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) and main `b80fc04` (PR #23, Alpha 31 data retention, migration 0030) and main `16b2768` (PR #16, Alpha 23 virus scanning, no migration) and main `0a818fa` (PR #21, Alpha 39 cover library, migration 0038) and main `94b130b` (PR #25, Alpha 28 collections, migration 0028) merged in |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Merged | Yes: [PR #24](https://github.com/EmotiveImpact/REUNIR/pull/24), merged into main as `3c770b5` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 
@@ -226,7 +279,7 @@ Numbering follows the project's allocation of 3 October 2026: this thread holds 
 | --- | --- |
 | Implemented | Yes, on `claude/accounts-trust-zojuqs`, restarted from main `9b34cac` (the merge of PR #18, Alpha 26), with main `fab9510` (PR #20, Alpha 25 contributor roles, migration 0023) and main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) merged in |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Verified remotely (GitHub Actions) | Yes: runs 37128602184 and 37128604626 (application and postgres) on `5635bde` |
 | Merged | Yes: [PR #23](https://github.com/EmotiveImpact/REUNIR/pull/23), merged into main as `b80fc04` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |

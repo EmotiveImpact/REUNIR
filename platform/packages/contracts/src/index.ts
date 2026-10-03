@@ -5,6 +5,7 @@ import { coverChange, coverLibraryLabel, coverLibraryTags, type CoverImage, type
 import { z } from 'zod';
 import type { WorkspaceSummary } from './pages';
 import { notificationPreferencesInput, type DigestFrequency, type MutableTopic } from './notifications';
+import { appealCommands, type AppealStatus, type AppealSubject } from './appeals';
 import { collectionFields, collectionItemFields, collectionNote, type CollectionItemKind } from './collections';
 export type Id = string;
 export type Role = 'owner' | 'admin' | 'moderator' | 'member';
@@ -72,6 +73,9 @@ export interface Post extends TenantRecord {
     pinned: boolean;
     hidden: boolean;
     cover: string;
+    /** Who last hid or restored the post through moderation, and when. NULL on posts moderated before this was recorded. */
+    moderatedBy?: Id | null;
+    moderatedAt?: string | null;
 }
 export interface Comment extends TenantRecord {
     postId: Id;
@@ -325,6 +329,23 @@ export interface CoverLibraryItem extends TenantRecord {
     /** Up to five short lower-case words for finding the picture. Owners and administrators change them with the name. */
     tags: string[];
 }
+/**
+ * A member's request for a second look at a moderation decision about their own work. Private to the appellant and the
+ * community's owners and administrators. Only the decision fields change after it is made.
+ */
+export interface ModerationAppeal extends TenantRecord {
+    subject: AppealSubject;
+    subjectId: Id;
+    appellantId: Id;
+    /** The hiding this appeal challenges: who hid the post and when, as recorded on the post when the appeal was made. */
+    hiddenBy: Id | null;
+    hiddenAt: string | null;
+    reason: string;
+    status: AppealStatus;
+    decidedBy: Id | null;
+    decidedAt: string | null;
+    response: string;
+}
 /** One member's notice settings in one community. Absent means every topic on and no digest. */
 export interface NotificationPreference extends TenantRecord {
     userId: Id;
@@ -349,6 +370,7 @@ export interface CollectionItem extends TenantRecord {
     eventId: Id | null; pathId: Id | null; missionId: Id | null; outputId: Id | null;
 }
 export interface Workspace {
+    moderationAppeals: ModerationAppeal[];
     collections: Collection[];
     collectionItems: CollectionItem[];
     notificationPreferences: NotificationPreference[];
@@ -468,6 +490,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('post.bookmark'), postId: id }).strict(),
     z.object({ type: z.literal('post.report'), postId: id, reason: text(1000) }).strict(),
     z.object({ type: z.literal('post.moderate'), postId: id, hidden: z.boolean() }).strict(),
+    ...appealCommands,
     z.object({ type: z.literal('track.enrol'), trackId: id }).strict(),
     z.object({ type: z.literal('lesson.complete'), trackId: id, lessonId: id }).strict(),
     z.object({ type: z.literal('mission.submit'), missionId: id, body: text(10000), url: link.default('') }).strict(),

@@ -1,4 +1,38 @@
-# Current continuation: Alpha 35 teaching grants for chosen lessons, then the rest of the teaching roadmap
+# Current continuation: Alpha 32 appeals, then the rest of accounts and trust
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, MODERATION.md, decisions/032-moderation-appeals.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+## Where the source is
+
+- Base: main `b80fc04`, the merge of PR #23 (Alpha 31, data retention rules), with main `16b2768` (PR #16, Alpha 23 virus scanning) main `0a818fa` (PR #21, Alpha 39 cover library management, migration 0038) and main `94b130b` (PR #25, Alpha 28 collections, migration 0028) and main `3c770b5` (PR #24, Alpha 35 lesson grants, migration 0034) merged in. The application version stays main's 0.39.0-alpha.1.
+- This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+
+## What is done
+
+The author of a hidden post is told, still sees it, and can appeal. An active owner or administrator who neither hid the post nor wrote it decides, replies, and restores it or keeps it hidden. Appeals are private to the appellant and the deciders, under forced row security, and never become community activity. Migration 0031 adds who moderated a post and the appeals table.
+
+## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+## Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores, notification settings and appeals private. Nobody decides an appeal about their own decision. Retention clears housekeeping only; reviewed evidence and the audit trail stay. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+## Next
+
+1. A correction and withdrawal history for reviewed evidence (Alpha 33, migration 0032) and consented credit for several contributors (Alpha 34, migration 0033), one pull request each. They are built locally in separate worktrees and need renumbering from main when opened.
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 35 handover: teaching grants for chosen lessons
+- Outcome: [PR #24](https://github.com/EmotiveImpact/REUNIR/pull/24), merged into main as `3c770b5`.
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, decisions/025-contributor-roles.md, decisions/035-lesson-grants.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
@@ -148,6 +182,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, RETENTION.md, decisions/031-data-
 ### Where the source is
 
 - Base: main `9b34cac`, the merge of PR #18 (Alpha 26, email confirmation and change), with main `fab9510` (PR #20, Alpha 25 contributor roles, migration 0023) and main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) merged in.
+- Outcome: [PR #23](https://github.com/EmotiveImpact/REUNIR/pull/23), merged into main as `b80fc04`.
 - This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ### What is done

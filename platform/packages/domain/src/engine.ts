@@ -10,6 +10,8 @@ import { applyInstructors, filterInstructors } from './instructors';
 import { applyAssessment, filterAssessments } from './assessments';
 import { windowWorkspace } from './pages';
 import { applyNotificationSettings, dropMutedNotices } from './notifications';
+import { applyAppeals, filterAppeals } from './appeals';
+import { APPEALS_HREF } from '../../contracts/src/appeals';
 import { applyCollections, filterCollections } from './collections';
 /**
  * What this person may see, shortened for the browser: recent notices and audit entries and only their own attempts, with
@@ -26,7 +28,8 @@ export function visibleRecords(state: Workspace, ctx: TenantContext): Workspace 
     s.spaces = s.spaces.filter(x => canSeeSpace(s, actor, x.id));
     const spaces = new Set(s.spaces.map(x => x.id));
     s.spaceMembers = s.spaceMembers.filter(x => spaces.has(x.spaceId));
-    s.posts = s.posts.filter(p => spaces.has(p.spaceId) && (!p.hidden || isModerator(actor)));
+    // A hidden post stays visible to its author, so they know what was hidden and can appeal.
+    s.posts = s.posts.filter(p => spaces.has(p.spaceId) && (!p.hidden || isModerator(actor) || p.authorId === ctx.userId));
     const posts = new Set(s.posts.map(p => p.id));
     s.comments = s.comments.filter(x => posts.has(x.postId));
     s.reactions = s.reactions.filter(x => posts.has(x.postId));
@@ -61,7 +64,7 @@ export function visibleRecords(state: Workspace, ctx: TenantContext): Workspace 
     s.members = s.members.filter(x => x.status !== 'suspended' || isAdmin(actor)).map(x => x.status === 'left' ? formerMember(x) : x);
     s.uploads = visibleUploads(s, actor);
     // Collections last: an item is kept only when its content survived every filter above.
-    return filterCollections(filterAssessments(filterAuthoring(filterCoverLibrary(filterInstructors(filterProjectWork(filterPurposeWorkspace(s, ctx, actor), actor), actor), actor), actor), actor), actor);
+    return filterCollections(filterAppeals(filterAssessments(filterAuthoring(filterCoverLibrary(filterInstructors(filterProjectWork(filterPurposeWorkspace(s, ctx, actor), actor), actor), actor), actor), actor), actor), actor);
 }
 export function progress(state: Workspace, userId: string, trackId: string) {
     const lessons = state.lessons.filter(l => l.trackId === trackId && l.published);
@@ -107,7 +110,7 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
     let objectId: string | undefined;
     let changed = true;
     const noticesBefore = new Set(s.notifications.map(n => n.id));
-    const purposeResult = applyNotificationSettings(s, ctx, cmd, now, makeId) ?? applyAuthoring(s, ctx, cmd, now, makeId) ?? applyAssessment(s, ctx, cmd, now, makeId) ?? applyProjectWork(s, ctx, cmd, now, makeId) ?? applyCovers(s, ctx, cmd, now, makeId) ?? applyInstructors(s, ctx, cmd, now, makeId) ?? applyCollections(s, ctx, cmd, now, makeId) ?? applyPurposeCommand(s, ctx, cmd, now, makeId);
+    const purposeResult = applyNotificationSettings(s, ctx, cmd, now, makeId) ?? applyAuthoring(s, ctx, cmd, now, makeId) ?? applyAssessment(s, ctx, cmd, now, makeId) ?? applyProjectWork(s, ctx, cmd, now, makeId) ?? applyCovers(s, ctx, cmd, now, makeId) ?? applyInstructors(s, ctx, cmd, now, makeId) ?? applyAppeals(s, ctx, cmd, now, makeId) ?? applyCollections(s, ctx, cmd, now, makeId) ?? applyPurposeCommand(s, ctx, cmd, now, makeId);
     if (purposeResult) {
         message = purposeResult.message;
         objectId = purposeResult.objectId;
@@ -145,7 +148,7 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
         }
         case 'post.create': {
             scope(cmd.spaceId);
-            const p = { ...base(), spaceId: cmd.spaceId, authorId: ctx.userId, kind: cmd.kind, title: cmd.title, body: cmd.body, pinned: false, hidden: false, cover: '' };
+            const p = { ...base(), spaceId: cmd.spaceId, authorId: ctx.userId, kind: cmd.kind, title: cmd.title, body: cmd.body, pinned: false, hidden: false, cover: '', moderatedBy: null, moderatedAt: null };
             s.posts.unshift(p);
             objectId = p.id;
             message = 'Your post is in the conversation.';
@@ -204,6 +207,13 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
             if (!isModerator(actor))
                 throw new DomainError('FORBIDDEN', 'A moderator is required.', 403);
             const p = post(cmd.postId);
+            // Who changed the post's visibility, and when, is recorded when it changes.
+            if (p.hidden !== cmd.hidden) {
+                p.moderatedBy = ctx.userId;
+                p.moderatedAt = now;
+                if (cmd.hidden)
+                    notify(p.authorId, 'Your post was hidden', `${p.title ? `A moderator hid your post “${p.title}” from members.` : 'A moderator hid one of your posts from members.'} Only you can still see it, and you can appeal.`, APPEALS_HREF);
+            }
             p.hidden = cmd.hidden;
             for (const r of s.reports.filter(x => x.postId === p.id))
                 r.status = 'resolved';
@@ -446,4 +456,4 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
     }
     return { workspace: s, message, objectId };
 }
-export const commandsForReference: Command['type'][] = ['collection.save','collection.publish','collection.feature','collection.delete','collection.item.add','collection.item.note','collection.item.remove','collection.items.reorder','notification.preferences.save','cover.library.add','track.instructor.add','track.instructor.remove','track.cover.set','project.cover.set','quiz.attempt.submit','quiz.attempt.review','lesson.draft.create','lesson.draft.save','lesson.draft.publish','lesson.draft.archive','lesson.draft.restore','track.lessons.reorder','task.create','task.edit','task.claim','task.release','task.move','task.archive','task.submit','task.note','task.note.hide', 'member.status', 'member.role', 'space.access', 'post.create', 'post.comment', 'post.react', 'post.bookmark', 'post.report', 'post.moderate', 'track.enrol', 'lesson.complete', 'mission.submit', 'submission.review', 'project.join', 'project.create', 'project.update', 'event.rsvp', 'profile.update', 'notification.read', 'organisation.update', 'space.create', 'track.create', 'lesson.create', 'mission.create', 'event.create', 'purpose.save', 'path.create', 'path.publish', 'path.enrol', 'milestone.create', 'goal.set', 'goal.status', 'project.purpose', 'contribution.submit', 'contribution.resubmit', 'contribution.review', 'outcome.submit', 'outcome.resubmit', 'outcome.review', 'output.publish'];
+export const commandsForReference: Command['type'][] = ['collection.save','collection.publish','collection.feature','collection.delete','collection.item.add','collection.item.note','collection.item.remove','collection.items.reorder','notification.preferences.save','cover.library.add','track.instructor.add','track.instructor.remove','track.cover.set','project.cover.set','quiz.attempt.submit','quiz.attempt.review','lesson.draft.create','lesson.draft.save','lesson.draft.publish','lesson.draft.archive','lesson.draft.restore','track.lessons.reorder','task.create','task.edit','task.claim','task.release','task.move','task.archive','task.submit','task.note','task.note.hide', 'member.status', 'member.role', 'space.access', 'post.create', 'post.comment', 'post.react', 'post.bookmark', 'post.report', 'post.moderate', 'moderation.appeal', 'moderation.appeal.decide', 'moderation.appeal.withdraw', 'track.enrol', 'lesson.complete', 'mission.submit', 'submission.review', 'project.join', 'project.create', 'project.update', 'event.rsvp', 'profile.update', 'notification.read', 'organisation.update', 'space.create', 'track.create', 'lesson.create', 'mission.create', 'event.create', 'purpose.save', 'path.create', 'path.publish', 'path.enrol', 'milestone.create', 'goal.set', 'goal.status', 'project.purpose', 'contribution.submit', 'contribution.resubmit', 'contribution.review', 'outcome.submit', 'outcome.resubmit', 'outcome.review', 'output.publish'];
