@@ -8,6 +8,7 @@ import { grantRuntimeTables } from '../packages/db/src/runtime-role';
 import { createSeed, DEMO_ADMIN, DEMO_USER } from '../packages/domain/src/seed';
 import { fileSignatureMatches } from '../packages/contracts/src/lesson-resources';
 import { MIGRATION_COUNT } from './helpers/migrations';
+import { seedAtSchema } from './helpers/legacy-fixture';
 
 const ORG = 'org_code_black', LEAD = 'member_idris', OUTSIDER = 'member_nia', PDF = 'application/pdf' as const;
 const bytes = new TextEncoder().encode('%PDF-1.4\n% fictional task file\n');
@@ -43,8 +44,8 @@ after(async () => db?.close());
 test('0029 upgrade keeps every task and upload as it was and adds only empty columns and four policies', async () => {
     const old = await openDatabase('pglite:memory');
     try {
-        // Seeded without tasks and uploads, whose new columns the 0021 schema does not have, then given one of each by hand.
-        await migrate(old, '0021'); await new WorkspaceRepository(old).seed({ ...createSeed(), projectTasks: [], taskNotes: [], uploads: [], coverLibrary: [], collections: [], collectionItems: [], trackInstructors: [] });
+        // Seeded with only the tables and columns the 0021 schema has, then given one more task and upload by hand.
+        await migrate(old, '0021'); await seedAtSchema(old);
         await old.query(`INSERT INTO project_tasks(id,organization_id,created_at,project_id,title,brief,criteria,assignee_id,due_on,priority,work_state,contribution_id,created_by,updated_at,version,archived) VALUES('legacy_task','${ORG}',now(),'project_common','Legacy task','Kept as it was.','["Done"]'::jsonb,'${DEMO_USER}',NULL,'normal','todo',NULL,'${LEAD}',now(),3,false)`);
         await old.query(`INSERT INTO upload_intents(organization_id,id,user_id,object_key,content_type,size_bytes,original_name,created_at,status) VALUES('${ORG}','legacy_upload','${DEMO_USER}','organisations/${ORG}/members/${DEMO_USER}/legacy.pdf','application/pdf',100,'proof.pdf',now(),'ready')`);
         const read = async (table: string) => (await old.query(`SELECT * FROM ${table} ORDER BY organization_id,id`)).rows;
