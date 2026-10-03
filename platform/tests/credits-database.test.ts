@@ -33,16 +33,16 @@ before(async () => {
 });
 after(async () => db?.close());
 
-test('0022 upgrade keeps every contribution as it was and credits nobody', async () => {
+test('0033 upgrade keeps every contribution as it was and credits nobody', async () => {
     const old = await openDatabase('pglite:memory');
     try {
-        await migrate(old, '0021'); await seedBeforeProjectWork(old);
+        await migrate(old, '0032'); await seedBeforeProjectWork(old);
         const read = async (table: string) => (await old.query(`SELECT * FROM ${table} ORDER BY organization_id,id`)).rows;
         const before = { contributions: await read('contributions'), members: await read('members'), reputation: await read('reputation') };
         await migrate(old); await migrate(old);
         for (const table of ['contributions', 'members', 'reputation'] as const) assert.deepEqual(await read(table), before[table], table);
         assert.deepEqual(await read('contribution_credits'), []);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 22);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 26);
     } finally { await old.close(); }
 });
 

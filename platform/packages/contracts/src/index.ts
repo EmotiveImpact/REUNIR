@@ -5,6 +5,7 @@ import { coverChange, coverLibraryLabel, type CoverImage, type CoverImageType } 
 import { z } from 'zod';
 import type { WorkspaceSummary } from './pages';
 import { notificationPreferencesInput, type DigestFrequency, type MutableTopic } from './notifications';
+import { appealCommands, type AppealStatus, type AppealSubject } from './appeals';
 import { creditRole, type CreditStatus } from './credits';
 export type Id = string;
 export type Role = 'owner' | 'admin' | 'moderator' | 'member';
@@ -72,6 +73,9 @@ export interface Post extends TenantRecord {
     pinned: boolean;
     hidden: boolean;
     cover: string;
+    /** Who last hid or restored the post through moderation, and when. NULL on posts moderated before this was recorded. */
+    moderatedBy?: Id | null;
+    moderatedAt?: string | null;
 }
 export interface Comment extends TenantRecord {
     postId: Id;
@@ -284,7 +288,8 @@ export interface Milestone extends TenantRecord {
     pathId: Id; title: string; description: string; position: number;
     lessonId: Id | null; missionId: Id | null; projectId: Id | null;
 }
-export type ReviewStatus = 'submitted' | 'recognised' | 'changes_requested';
+/** A reviewed contribution or outcome can later be withdrawn. Withdrawn evidence stays on record but no longer counts. */
+export type ReviewStatus = 'submitted' | 'recognised' | 'changes_requested' | 'withdrawn';
 export interface Contribution extends TenantRecord {
     projectId: Id; userId: Id; title: string; body: string; evidenceUrl: string;
     status: ReviewStatus; reviewerId: Id | null; reviewedAt: string | null; feedback: string;
@@ -301,8 +306,21 @@ export interface ContributionCredit extends TenantRecord {
 export interface Outcome extends TenantRecord {
     purposeId: Id; projectId: Id | null; submissionId: Id | null; contributionId: Id | null;
     authorId: Id; title: string; summary: string; evidenceUrl: string;
-    status: 'submitted' | 'verified' | 'changes_requested'; reviewerId: Id | null;
+    status: 'submitted' | 'verified' | 'changes_requested' | 'withdrawn'; reviewerId: Id | null;
     reviewedAt: string | null; feedback: string;
+}
+/** The wording of a piece of evidence: a contribution's title, body and link, or an outcome's title, summary and link. */
+export interface EvidenceText { title: string; text: string; evidenceUrl: string; }
+export type EvidenceSubject = 'contribution' | 'outcome';
+/**
+ * One step in the history of reviewed evidence. A correction proposes new wording that a reviewer accepts or declines; a
+ * withdrawal is applied at once. Either way the reviewed wording it replaced stays here, so history is never rewritten.
+ */
+export interface EvidenceChange extends TenantRecord {
+    subject: EvidenceSubject; subjectId: Id; kind: 'correction' | 'withdrawal';
+    requestedBy: Id; reason: string; previous: EvidenceText; proposed: EvidenceText | null;
+    previousStatus: 'recognised' | 'verified'; status: 'pending' | 'accepted' | 'declined' | 'applied';
+    decidedBy: Id | null; decidedAt: string | null; response: string;
 }
 export type OutputKind = 'film' | 'software' | 'research' | 'event' | 'music' | 'book' | 'company' | 'campaign' | 'other';
 export interface CommunityOutput extends TenantRecord {
@@ -321,6 +339,20 @@ export interface CoverLibraryItem extends TenantRecord {
     sizeBytes: number;
     addedBy: Id;
 }
+/**
+ * A member's request for a second look at a moderation decision about their own work. Private to the appellant and the
+ * community's owners and administrators. Only the decision fields change after it is made.
+ */
+export interface ModerationAppeal extends TenantRecord {
+    subject: AppealSubject;
+    subjectId: Id;
+    appellantId: Id;
+    reason: string;
+    status: AppealStatus;
+    decidedBy: Id | null;
+    decidedAt: string | null;
+    response: string;
+}
 /** One member's notice settings in one community. Absent means every topic on and no digest. */
 export interface NotificationPreference extends TenantRecord {
     userId: Id;
@@ -331,6 +363,8 @@ export interface NotificationPreference extends TenantRecord {
     lastDigestAt: string | null;
 }
 export interface Workspace {
+    moderationAppeals: ModerationAppeal[];
+    evidenceChanges: EvidenceChange[];
     notificationPreferences: NotificationPreference[];
     /** Exact totals for lists the snapshot shortens (see pages.ts). Absent on stored state. */
     summary?: WorkspaceSummary;
@@ -444,6 +478,9 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('outcome.submit'), purposeId: id, submissionId: optionalSpace.default(null), contributionId: optionalSpace.default(null), title: text(160), summary: text(5000), evidenceUrl: link.default('') }).strict(),
     z.object({ type: z.literal('outcome.resubmit'), outcomeId: id, title: text(160), summary: text(5000), evidenceUrl: link.default('') }).strict(),
     z.object({ type: z.literal('outcome.review'), outcomeId: id, decision: z.enum(['verified', 'changes_requested']), feedback: text(2000) }).strict(),
+    z.object({ type: z.literal('evidence.correct'), subject: z.enum(['contribution', 'outcome']), subjectId: id, title: text(160), text: text(8000), evidenceUrl: link.default(''), reason: text(1000) }).strict(),
+    z.object({ type: z.literal('evidence.correction.review'), changeId: id, decision: z.enum(['accepted', 'declined']), response: text(2000) }).strict(),
+    z.object({ type: z.literal('evidence.withdraw'), subject: z.enum(['contribution', 'outcome']), subjectId: id, reason: text(1000) }).strict(),
     z.object({ type: z.literal('output.publish'), outcomeId: id, kind: z.enum(['film', 'software', 'research', 'event', 'music', 'book', 'company', 'campaign', 'other']) }).strict(),
 
     z.object({ type: z.literal('post.create'), spaceId: id, kind: z.enum(['update', 'question', 'resource', 'project']), title: z.string().trim().max(160).default(''), body: text(10000) }).strict(),
@@ -452,6 +489,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('post.bookmark'), postId: id }).strict(),
     z.object({ type: z.literal('post.report'), postId: id, reason: text(1000) }).strict(),
     z.object({ type: z.literal('post.moderate'), postId: id, hidden: z.boolean() }).strict(),
+    ...appealCommands,
     z.object({ type: z.literal('track.enrol'), trackId: id }).strict(),
     z.object({ type: z.literal('lesson.complete'), trackId: id, lessonId: id }).strict(),
     z.object({ type: z.literal('mission.submit'), missionId: id, body: text(10000), url: link.default('') }).strict(),

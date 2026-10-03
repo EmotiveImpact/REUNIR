@@ -1,6 +1,6 @@
 {
   "name": "reunir",
-  "version": "0.22.0-alpha.1",
+  "version": "0.31.0-alpha.1",
   "description": "Purposeful communities. People, purpose, progress, projects and proof.",
   "scripts": {
     "dev": "tsx scripts/dev.ts",
@@ -26,10 +26,12 @@
     "test:browser:purpose": "tsx scripts/purpose-browser-check.ts",
     "mail:drain": "tsx scripts/drain-mail.ts",
     "digests:queue": "tsx scripts/queue-digests.ts",
+    "retention:run": "tsx scripts/apply-retention.ts",
     "test:browser:pilot": "tsx scripts/pilot-browser-check.ts",
     "test:http": "tsx scripts/pilot-http-check.ts",
     "test:browser:connected": "tsx scripts/pilot-connected-check.ts",
     "pilot:check": "tsx scripts/pilot-check.ts",
+    "launch:preflight": "tsx scripts/launch-preflight.ts",
     "test:browser:operations": "tsx scripts/operations-browser-check.ts",
     "test:postgres": "tsx scripts/postgres-check.ts",
     "test:browser:work": "tsx scripts/project-work-browser-check.ts",
@@ -48,6 +50,9 @@
     "test:browser:accounts": "tsx scripts/accounts-browser-check.ts",
     "test:browser:accounts-connected": "tsx scripts/accounts-connected-check.ts",
     "test:browser:notifications": "tsx scripts/notifications-browser-check.ts",
+    "test:browser:appeals": "tsx scripts/appeals-browser-check.ts",
+    "test:browser:groups": "tsx scripts/groups-browser-check.ts",
+    "test:browser:evidence": "tsx scripts/evidence-history-browser-check.ts",
     "test:browser:credits": "tsx scripts/credits-browser-check.ts"
   },
   "dependencies": {

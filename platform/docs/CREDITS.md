@@ -1,6 +1,6 @@
 # Contribution credits
 
-The member who recorded a project contribution can credit teammates who worked on it with them. Decision: decisions/023-contribution-credits.md (number to be confirmed).
+The member who recorded a project contribution can credit teammates who worked on it with them. Decision: decisions/0NN-contribution-credits.md.
 
 ## How it works
 
@@ -17,7 +17,7 @@ The member who recorded a project contribution can credit teammates who worked o
 
 ## Storage and checks
 
-Migration `0022_contribution_credits.sql`, additive, with forced row security and column-limited update grants (see `packages/db/src/runtime-role.ts`). Tests: `tests/credits.test.ts`, `tests/credits-database.test.ts`, the account-deletion tests, the credits check in `scripts/postgres-check.ts`, and `npm run test:browser:credits`.
+Migration `0033_contribution_credits.sql`, additive, with forced row security and column-limited update grants (see `packages/db/src/runtime-role.ts`). Tests: `tests/credits.test.ts`, `tests/credits-database.test.ts`, the account-deletion tests, the credits check in `scripts/postgres-check.ts`, and `npm run test:browser:credits`.
 
 ## Known limits
 

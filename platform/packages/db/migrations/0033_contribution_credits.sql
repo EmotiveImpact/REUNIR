@@ -1,7 +1,7 @@
 -- Additive: the author of a contribution may credit other members of the project's team on it, with their consent.
 -- A credit is invited, then accepted or declined by the person named; an accepted credit may later be withdrawn by
 -- either of them. Credits are acknowledgement between people: nothing in paths, milestones, recognition, outcomes,
--- reputation or roles reads this table. No rows are created on upgrade; 0001 to 0021 are unchanged.
+-- reputation or roles reads this table. No rows are created on upgrade; 0001 to 0032 are unchanged.
 CREATE TABLE contribution_credits (
  id text NOT NULL, organization_id text NOT NULL REFERENCES organisations(id) ON DELETE CASCADE, created_at timestamptz NOT NULL,
  contribution_id text NOT NULL, project_id text NOT NULL, user_id text NOT NULL, invited_by text NOT NULL,

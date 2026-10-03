@@ -1,6 +1,6 @@
 # Decision NNN: crediting teammates on a contribution, with consent
 
-Status: implemented on a local branch, verified locally; not deployed. Date: 3 October 2026. (Number to be assigned by the coordinator.)
+Status: implemented on a local branch, verified locally; not deployed. Date: 3 October 2026.
 
 ## Problem
 
@@ -15,7 +15,7 @@ A project contribution names one person: the member who recorded it. Real work i
 - **No asking twice.** One live credit (invited or accepted) per person per contribution, enforced by a partial unique index. If the person declined, or removed their own credit, the author cannot ask again. If the author withdrew, they may. At most 10 live credits per contribution, and 30 credit records in total.
 - **Notifications.** The invitee is notified when asked, and the author when they answer. A withdrawn accepted credit notifies the other person. All link to the project page and fall under the Projects notification topic, so they follow the person's notification settings.
 - **Inactive members.** A suspended member cannot invite, answer or withdraw (they cannot act in the community at all), and their accepted credits are hidden from people who cannot see suspended members, as in the directory; administrators still see them. Former members: deleting an account deletes every credit naming that person (`contributionCredits` is a personal collection). Credits the person gave on their own contributions stay with the contribution, which is kept as Former member's work; an open invitation from them can still be answered, and no notice goes to them.
-- **Storage.** Additive migration `0022_contribution_credits.sql` (renumbered if needed) adds `contribution_credits` with forced row security. Foreign keys tie the inviter to the contribution's author and the credited person to the project's team. The runtime role gets select, insert and delete, and update only on `status`, `responded_at`, `withdrawn_by` and `withdrawn_at`. Deletion is admitted only during the person's own account deletion.
+- **Storage.** Additive migration `0033_contribution_credits.sql` adds `contribution_credits` with forced row security. Foreign keys tie the inviter to the contribution's author and the credited person to the project's team. The runtime role gets select, insert and delete, and update only on `status`, `responded_at`, `withdrawn_by` and `withdrawn_at`. Deletion is admitted only during the person's own account deletion.
 
 ## Not decided here
 

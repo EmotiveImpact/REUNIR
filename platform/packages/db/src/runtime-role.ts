@@ -12,7 +12,7 @@ export async function grantRuntimeTables(sql: SQL): Promise<void> {
     if(owned.rows.length)throw new Error('Runtime role must not own database objects.');
     const memberships=await sql.query('SELECT 1 FROM pg_auth_members a JOIN pg_roles r ON r.oid=a.member WHERE r.rolname=$1 LIMIT 1',[role]);
     if(memberships.rows.length)throw new Error('Runtime role must not inherit or assume other database roles.');
-    const names=['service_observations','invitations','email_outbox','conversations','messages','message_receipts','message_reports','member_blocks','organisations', ...tables.map(t=>t.table),'command_receipts','request_limits','upload_intents','auth_user','auth_session','auth_account','auth_verification','auth_rate_limit','auth_two_factor'];
+    const names=['service_observations','invitations','email_outbox','conversations','conversation_joins','messages','message_receipts','message_reports','member_blocks','organisations', ...tables.map(t=>t.table),'command_receipts','request_limits','upload_intents','auth_user','auth_session','auth_account','auth_verification','auth_rate_limit','auth_two_factor'];
     await sql.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
     await sql.query(`GRANT USAGE,SELECT ON SEQUENCE messages_sequence_seq TO ${role}`);
     await sql.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON TABLE ${names.join(',')} TO ${role}`);
@@ -25,6 +25,12 @@ export async function grantRuntimeTables(sql: SQL): Promise<void> {
     await sql.query(`REVOKE UPDATE ON track_instructors FROM ${role}`);
     // Library pictures are added or removed, never rewritten.
     await sql.query(`REVOKE UPDATE ON cover_library FROM ${role}`);
+    // Appeals: only the decision fields change after an appeal is made (migration 0031).
+    await sql.query(`REVOKE UPDATE ON moderation_appeals FROM ${role}`);
+    await sql.query(`GRANT UPDATE (status,decided_by,decided_at,response) ON moderation_appeals TO ${role}`);
+    // Evidence history is kept: a change is never removed, and only its decision is recorded once.
+    await sql.query(`REVOKE UPDATE,DELETE ON evidence_changes FROM ${role}`);
+    await sql.query(`GRANT UPDATE (status,decided_by,decided_at,response) ON evidence_changes TO ${role}`);
     // A credit is answered or withdrawn; who, what and when it was offered never change.
     await sql.query(`REVOKE UPDATE ON contribution_credits FROM ${role}`);
     await sql.query(`GRANT UPDATE (status,responded_at,withdrawn_by,withdrawn_at) ON contribution_credits TO ${role}`);
