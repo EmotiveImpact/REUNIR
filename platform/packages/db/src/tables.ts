@@ -1751,6 +1751,8 @@ tables.push({key:'notificationPreferences',table:'notification_preferences',fiel
     {property:'userId',column:'user_id',type:'text'},{property:'muted',column:'muted',type:'jsonb'},{property:'digest',column:'digest',type:'text'},
     {property:'updatedAt',column:'updated_at',type:'timestamptz'},{property:'lastDigestAt',column:'last_digest_at',type:'timestamptz'}]});
 
+// Alpha 25: a teaching grant names its role. Changing a role replaces the grant; it is never rewritten in place.
+tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'role',column:'role',type:'text'});
 // Collections of useful content. Items follow every record they can point at, so they are inserted after them. Only the
 // listed properties change in place: who created a collection, and what an item points at, are fixed.
 tables.push({key:'collections',table:'collections',mutable:['title','description','status','featured','updatedBy','updatedAt','publishedAt'],fields:[
