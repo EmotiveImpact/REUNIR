@@ -82,7 +82,7 @@ try {
         const slug = required('COMMUNITY_SLUG'), owner = required('AUTHORISED_BY');
         const stale = await repo.staleCoverUploads(slug, owner);
         if (process.env.PRUNE !== 'yes') {
-            console.log(`Dry run: ${stale.length} cover or library uploads in ${slug} are unused and rejected or over an hour old. Nothing was changed. Set PRUNE=yes to delete them and their stored files.`);
+            console.log(`Dry run: ${stale.length} cover, library or task uploads in ${slug} are unused and rejected or over an hour old. Nothing was changed. Set PRUNE=yes to delete them and their stored files.`);
             for (const u of stale) console.log(`  ${u.purpose} ${u.status} ${u.createdAt} ${u.objectKey}${u.thumbnailObjectKey ? ` and ${u.thumbnailObjectKey}` : ''}`);
         }
         else {
@@ -99,7 +99,7 @@ try {
                 if (removed) gone.push(u.id);
             }
             const removed = await repo.removeStaleCoverUploads(slug, owner, gone);
-            console.log(`Removed ${removed.length} unused cover uploads and their stored files.` + (kept.length ? ` ${kept.length} files could not be deleted, so their records were kept:\n  ${kept.join('\n  ')}` : ''));
+            console.log(`Removed ${removed.length} unused cover, library or task uploads and their stored files.` + (kept.length ? ` ${kept.length} files could not be deleted, so their records were kept:\n  ${kept.join('\n  ')}` : ''));
         }
     }
     if (action === 'check') {

@@ -48,6 +48,7 @@ jobs:
       - run: npm run test:browser:groups
       - run: npm run test:browser:states
       - run: npm run test:browser:curation
+      - run: npm run test:browser:task-files
       - run: npm run test:browser:monochrome
       - run: npm run test:browser:v4
       - run: npm run test:browser:connected

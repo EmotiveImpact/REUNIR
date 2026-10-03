@@ -52,8 +52,8 @@ test('0013 upgrade keeps tracks, projects, covers and uploads exactly as they we
         const before = { tracks: await read('tracks'), projects: await read('projects'), upload_intents: await read('upload_intents'), members: await read('members') };
         await migrate(old); await migrate(old);
         for (const table of ['tracks', 'projects', 'members'] as const) assert.deepEqual(await read(table), before[table], table);
-        // Migration 0038 adds empty small-copy columns to uploads; every earlier column is unchanged.
-        const thumbnail = ['thumbnail_object_key', 'thumbnail_content_type', 'thumbnail_size_bytes', 'thumbnail_generation'];
+        // Task files (migration 0029) add an empty task_id, and migration 0038 empty small-copy columns, to every upload; every earlier column is unchanged.
+        const thumbnail = ['thumbnail_object_key', 'thumbnail_content_type', 'thumbnail_size_bytes', 'thumbnail_generation', 'task_id'];
         const uploads = await read('upload_intents');
         assert.deepEqual(uploads.map(r => Object.fromEntries(Object.entries(r).filter(([k]) => !thumbnail.includes(k)))), before.upload_intents, 'upload_intents');
         assert(uploads.every(r => thumbnail.every(k => r[k] === null)));

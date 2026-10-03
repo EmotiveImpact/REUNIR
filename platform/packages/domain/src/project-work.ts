@@ -24,7 +24,7 @@ export function filterProjectWork(s:Workspace,actor:Member):Workspace {
     s.taskNotes=s.taskNotes.filter(n=>n.organizationId===actor.organizationId&&projects.has(n.projectId)&&tasks.has(n.taskId)).map(n=>n.hidden?{...n,body:''}:n);
     return s;
 }
-const types=new Set(['task.create','task.edit','task.claim','task.release','task.move','task.archive','task.submit','task.note','task.note.hide']);
+const types=new Set(['task.create','task.edit','task.claim','task.release','task.move','task.archive','task.submit','task.note','task.note.hide','task.file.remove']);
 /** Reuses the command transaction, review engine, notification table and outbox. */
 export function applyProjectWork(s:Workspace,ctx:TenantContext,cmd:Command,now:string,makeId:()=>string) {
     if(!types.has(cmd.type))return undefined;
@@ -37,11 +37,11 @@ export function applyProjectWork(s:Workspace,ctx:TenantContext,cmd:Command,now:s
     const assignee=(p:Project,userId:string|null)=>{if(userId===null)return;const m=s.members.find(x=>x.organizationId===ctx.organizationId&&x.userId===userId&&x.status==='active');
         if(!m||!canSeeSpace(s,m,p.spaceId)||!s.projectMembers.some(x=>x.organizationId===ctx.organizationId&&x.projectId===p.id&&x.userId===userId))fail('INVALID_ASSIGNEE','Choose an active, authorised member of this project.');};
     const task=(id:string)=>{const t=s.projectTasks.find(x=>x.id===id&&x.organizationId===ctx.organizationId);if(!t)return missing();project(t.projectId);return t;};
-    const current=(t:ProjectTask,version:number)=>{if(t.version!==version)fail('STALE_TASK','This task changed. Refresh the workspace before trying again.');};
+    const current=(t:ProjectTask,version:number)=>{if(t.version!==version)fail('STALE_TASK','Someone else changed this task. Reload it to see the latest version, then try again.');};
     const open=(t:ProjectTask)=>{if(t.archived)fail('TASK_ARCHIVED','Restore this task before changing it.');};
     const unlocked=(t:ProjectTask)=>{if(t.contributionId)fail('PROOF_LINKED','The brief and assignment stay fixed once proof is submitted. Create a follow-up task for different work.');};
     const mine=(t:ProjectTask)=>{if(t.assigneeId!==ctx.userId)fail('ASSIGNEE_REQUIRED','Only the assigned contributor can do this.',403);};
-    const touch=(t:ProjectTask)=>{t.version++;t.updatedAt=now;};
+    const touch=(t:ProjectTask)=>{t.version++;t.updatedAt=now;t.updatedBy=ctx.userId;};
     const notify=(userId:string|null,title:string,projectId:string)=>{
         if(userId&&userId!==ctx.userId&&!isFormer(s,userId))s.notifications.push({...base(),userId,title,body:'Open your project workspace to see the latest authorised details.',href:`/projects/${projectId}/work`,readAt:null});
     };
@@ -51,7 +51,7 @@ export function applyProjectWork(s:Workspace,ctx:TenantContext,cmd:Command,now:s
             const p=project(cmd.projectId);lead(p);assignee(p,cmd.assigneeId);
             if(s.projectTasks.filter(x=>x.projectId===p.id&&!x.archived).length>=100)fail('TASK_LIMIT','Keep at most 100 active tasks in a project. Archive finished work first.');
             const {type,projectId,...data}=cmd;
-            const t:ProjectTask={...base(),...data,projectId,workState:'todo',contributionId:null,createdBy:ctx.userId,updatedAt:now,version:1,archived:false};
+            const t:ProjectTask={...base(),...data,projectId,workState:'todo',contributionId:null,createdBy:ctx.userId,updatedAt:now,updatedBy:ctx.userId,version:1,archived:false};
             s.projectTasks.push(t);notify(t.assigneeId,'You have been assigned project work',p.id);return result(t.id,'Task added with a clear definition of done.');
         }
         case 'task.edit': {
@@ -95,6 +95,14 @@ export function applyProjectWork(s:Workspace,ctx:TenantContext,cmd:Command,now:s
             const n=s.taskNotes.find(n=>n.id===cmd.noteId&&n.organizationId===ctx.organizationId);if(!n)return missing();const t=task(n.taskId),p=project(t.projectId);
             if(n.authorId!==ctx.userId)lead(p);if(n.hidden)return result(n.id,'Note already removed.',false);
             n.hidden=true;n.body='';return result(n.id,'Note removed. Its author and timestamp remain.');
+        }
+        case 'task.file.remove': {
+            // The person who attached a file, or the project lead, removes it. Its record goes now; its stored object is
+            // deleted once this change commits (releasedTaskFileKeys). Archived tasks keep this, so mistakes can be undone.
+            const t=task(cmd.taskId),p=project(t.projectId);
+            const f=s.uploads.find(u=>u.id===cmd.fileId&&u.organizationId===ctx.organizationId&&u.purpose==='task_file'&&u.taskId===t.id&&u.status==='ready');if(!f)return missing();
+            if(f.userId!==ctx.userId)lead(p);
+            s.uploads=s.uploads.filter(u=>u!==f);return result(f.id,'File removed from the task and deleted.');
         }
     }
 }

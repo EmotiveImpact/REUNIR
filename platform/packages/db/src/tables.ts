@@ -1712,7 +1712,7 @@ for (const key of ['lessons','lessonDrafts','lessonRevisions']) tables.find(t=>t
 
 // Alpha 09: lesson files reuse the existing upload intents. Member-private uploads stay outside workspace reads.
 for (const key of ['lessons','lessonDrafts','lessonRevisions']) tables.find(t=>t.key===key)!.fields.push({property:'resources',column:'resources',type:'jsonb'});
-tables.push({key:'uploads',table:'upload_intents',where:"purpose IN ('lesson_resource','cover_image','cover_library')",fields:[
+tables.push({key:'uploads',table:'upload_intents',where:"purpose IN ('lesson_resource','cover_image','cover_library','task_file')",fields:[
     {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
     {property:'userId',column:'user_id',type:'text'},{property:'purpose',column:'purpose',type:'text'},{property:'trackId',column:'track_id',type:'text'},
     {property:'originalName',column:'original_name',type:'text'},{property:'contentType',column:'content_type',type:'text'},{property:'sizeBytes',column:'size_bytes',type:'integer'},
@@ -1757,6 +1757,9 @@ tables.push({key:'notificationPreferences',table:'notification_preferences',fiel
 
 // Alpha 25: a teaching grant names its role. Changing a role replaces the grant; it is never rewritten in place.
 tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'role',column:'role',type:'text'});
+// Task files: verified uploads bound to one project task, and who made a task's latest change, for conflict messages.
+tables.find(t => t.key === 'uploads')!.fields.push({property:'taskId',column:'task_id',type:'text'});
+tables.find(t => t.key === 'projectTasks')!.fields.push({property:'updatedBy',column:'updated_by',type:'text'});
 // Appeals against moderation. Posts record who last hid or restored them; an appeal changes only its decision fields.
 tables.find(t => t.key === 'posts')!.fields.push({property:'moderatedBy',column:'moderated_by',type:'text'},{property:'moderatedAt',column:'moderated_at',type:'timestamptz'});
 tables.push({key:'moderationAppeals',table:'moderation_appeals',mutable:['status','decidedBy','decidedAt','response'],fields:[

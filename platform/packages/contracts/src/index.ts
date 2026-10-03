@@ -137,8 +137,10 @@ export interface LessonRevision extends TenantRecord, LessonContent {
 }
 /** The existing upload intent. Lesson files are scoped to one track and covers to one track or project; storage keys never leave the server. */
 export interface Upload extends TenantRecord {
-    userId: Id; purpose: 'member' | 'lesson_resource' | 'cover_image' | 'cover_library'; trackId: Id | null;
+    userId: Id; purpose: 'member' | 'lesson_resource' | 'cover_image' | 'cover_library' | 'task_file'; trackId: Id | null;
     coverTrackId?: Id | null; coverProjectId?: Id | null;
+    /** Task files name exactly one project task; the project team sees them once verified. */
+    taskId?: Id | null;
     originalName: string; contentType: string; sizeBytes: number;
     status: 'pending' | 'ready' | 'rejected';
     objectKey: string; completedAt: string | null; generation: string | null;
@@ -234,6 +236,8 @@ export interface ProjectTask extends TenantRecord {
     assigneeId: Id | null; dueOn: string | null; priority: 'normal' | 'high';
     workState: 'todo' | 'doing'; contributionId: Id | null;
     createdBy: Id; updatedAt: string; version: number; archived: boolean;
+    /** Who made the latest change, shown when someone else's edit conflicts with yours. Null for older tasks. */
+    updatedBy?: Id | null;
 }
 export interface TaskNote extends TenantRecord {
     projectId: Id; taskId: Id; authorId: Id; body: string; hidden: boolean;
@@ -493,6 +497,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({type:z.literal('task.submit'),taskId:id,expectedVersion,body:text(8000),evidenceUrl:link.default('')}).strict(),
     z.object({type:z.literal('task.note'),taskId:id,body:text(4000)}).strict(),
     z.object({type:z.literal('task.note.hide'),noteId:id}).strict(),
+    z.object({type:z.literal('task.file.remove'),taskId:id,fileId:id}).strict(),
     z.object({ type: z.literal('member.status'), memberId: id, status: z.enum(['active','suspended']), reason: text(500) }).strict(),
     z.object({ type: z.literal('member.role'), memberId: id, role: z.enum(['member','moderator','admin']) }).strict(),
     z.object({ type: z.literal('space.access'), spaceId: id, userId: id, granted: z.boolean() }).strict(),

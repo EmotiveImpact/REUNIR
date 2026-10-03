@@ -19,6 +19,11 @@ export function resourceObjectKey(organizationId: string, trackId: string, conte
     scope(organizationId, trackId, id);
     return `organisations/${organizationId}/lesson-resources/${trackId}/${id}.${lessonResourceTypes[contentType].extension}`;
 }
+/** Task files sit under their project, never under the uploader, so a deleted person's shared files do not move. */
+export function taskFileObjectKey(organizationId: string, projectId: string, contentType: LessonResourceType, id: string = randomUUID()) {
+    scope(organizationId, projectId, id);
+    return `organisations/${organizationId}/task-files/${projectId}/${id}.${lessonResourceTypes[contentType].extension}`;
+}
 /** Covers sit under their track or project, never under the uploader, so ownership changes do not move them. */
 export function coverObjectKey(organizationId: string, subject: CoverSubject, subjectId: string, contentType: CoverImageType, id: string = randomUUID()) {
     scope(organizationId, subjectId, id);

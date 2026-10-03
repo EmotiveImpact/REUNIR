@@ -52,6 +52,20 @@ export function demoState(slug: string): Workspace {
     catch { /* Storage can be unavailable in a private browser. Continue in memory. */ }
     return memory[slug] = createSeed(slug);
 }
+/**
+ * Another tab of the demo may have saved newer fictional state. Adopt it when its revision is ahead, so this tab sees
+ * the change and never writes over it. Browser storage that is unavailable leaves this tab's own state in place.
+ */
+export function syncDemo(slug: string): void {
+    try {
+        const raw = localStorage.getItem(prefix + slug);
+        if (!raw) return;
+        const s = JSON.parse(raw);
+        if (s.organisation?.slug === slug && Array.isArray(s.members) && Array.isArray(s.outbox) && Array.isArray(s.lessons) && typeof s.revision === 'number' && s.revision > (memory[slug]?.revision ?? -1))
+            memory[slug] = normalisePurposeState(s);
+    }
+    catch { /* Restricted storage: this tab keeps its own state. */ }
+}
 /** Store fictional demo state. Returns a note when the browser keeps it only for this session. */
 export function commitDemo(slug: string, workspace: Workspace): string {
     memory[slug] = workspace;
@@ -70,10 +84,11 @@ export function resetDemo() { memory = {}; void clearDemoFiles(); window.dispatc
         localStorage.removeItem('reunir.chat.v1.' + slug);
     }
     catch { /* best effort for restricted storage */ } }
-export async function loadWorkspace(slug: string, userId: string): Promise<Workspace> { return mode === 'demo' ? snapshot(slug, userId) : api(`/api/organisations/${encodeURIComponent(slug)}/workspace`); }
+export async function loadWorkspace(slug: string, userId: string): Promise<Workspace> { if (mode === 'demo') syncDemo(slug); return mode === 'demo' ? snapshot(slug, userId) : api(`/api/organisations/${encodeURIComponent(slug)}/workspace`); }
 export async function sendCommand(slug: string, userId: string, command: CommandInput): Promise<MutationResult> {
     if (mode === 'live')
         return api(`/api/organisations/${encodeURIComponent(slug)}/commands`, command);
+    syncDemo(slug);
     const s = demoState(slug);
     const r = applyCommand(s, { organizationId: s.organisation.id, userId, requestId: newId() }, command);
     const message = r.message + commitDemo(slug, r.workspace);
@@ -81,3 +96,5 @@ export async function sendCommand(slug: string, userId: string, command: Command
 }
 export async function identity(): Promise<Identity | null> { if (mode === 'demo')
     return { id: DEMO_USER, name: 'Alex Morgan', memberships: [{ slug: 'code-black', name: 'Code Black' }, { slug: 'studio-north', name: 'Studio North' }] }; return api('/api/session'); }
+/** The API's error code, or a domain error's, when there is one. */
+export const errorCode = (error: unknown): string | undefined => error && typeof error === 'object' && 'code' in error && typeof (error as { code: unknown }).code === 'string' ? (error as { code: string }).code : undefined;
