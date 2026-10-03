@@ -54,7 +54,7 @@ Use a private bucket with uniform bucket-level access and no public principals. 
 
 ## Limits and not yet done
 
-- No malware or content scanning. The signature check confirms the container format, not that a file is harmless. Files are always delivered as downloads.
+- Since Alpha 23, every file is scanned with ClamAV before it becomes ready when the server has a scanner (decision 023); a flagged file is deleted. Without `CLAMAV_HOST`, only the signature check applies, which confirms the container format, not that a file is harmless. Files are always delivered as downloads.
 - No deep inspection of Office files, no previews or thumbnails, no audio, video or SCORM packages.
 - Real Google Cloud Storage signing, IAM, CORS and downloads have not been exercised against a real bucket. The adapter is tested with the real SDK's offline signing and with in-memory stand-ins.
 - Objects whose best-effort deletion fails, or whose intents expired, can remain in the bucket. They are private and unreferenced. An operator sweep is a follow-up.

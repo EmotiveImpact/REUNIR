@@ -351,6 +351,9 @@ export interface ModerationAppeal extends TenantRecord {
     subject: AppealSubject;
     subjectId: Id;
     appellantId: Id;
+    /** The hiding this appeal challenges: who hid the post and when, as recorded on the post when the appeal was made. */
+    hiddenBy: Id | null;
+    hiddenAt: string | null;
     reason: string;
     status: AppealStatus;
     decidedBy: Id | null;

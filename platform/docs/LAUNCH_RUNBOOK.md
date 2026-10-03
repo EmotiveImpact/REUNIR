@@ -96,6 +96,8 @@ These are every variable the server code reads (`apps/api/src/bootstrap.ts`, `ap
 | `CRON_SECRET` | Yes | Bearer secret for `/api/internal/mail`, `/api/internal/digests` and `/api/internal/retention`. The retention job needs it even without mail. | `<generate: openssl rand -base64 48>` |
 | `GCS_BUCKET` | For uploads | Private bucket name. | Section 6 |
 | `GCS_CREDENTIALS_JSON` | For uploads on Vercel | Service-account JSON, as one line. Vercel has no application default credentials. | Section 6 |
+| `CLAMAV_HOST`, `CLAMAV_PORT` | With a bucket | Private address of the clamd virus scanner (port 3310 by default). With a bucket and no scanner, the production server refuses to start. | Section 6 |
+| `UPLOAD_SCANNING` | Optional | `required` (the production default when unset) or `optional`. Set `optional` only deliberately. | `required` |
 
 Never on the deployed runtime: `MIGRATION_DATABASE_URL`, `BOOTSTRAP_EMAIL`, `BOOTSTRAP_NAME`, `BOOTSTRAP_PASSWORD`, `DB_RUNTIME_PASSWORD`, `ALLOW_FICTIONAL_SEED`. Startup refuses the credential ones in production. `HOST`, `PORT`, `COMMUNITY_*`, `ERASE`, `PRUNE` and `AUTHORISED_BY` are for self-hosting or local operator commands only. `VERCEL` is set by the platform.
 
@@ -123,7 +125,9 @@ Detail: SETUP.md section 6. Without a bucket, text and link features still work;
 - [ ] Create a service account used only by REUNIR, granted object create, read and delete on **this bucket only**. With a JSON key it can sign URLs itself; without one it also needs permission to sign as itself.
 - [ ] Do not add a lifecycle rule that deletes `lesson-resources/` objects: revision history refers to them.
 - [ ] Put the bucket name in `GCS_BUCKET` and, on Vercel, the key JSON in `GCS_CREDENTIALS_JSON` as a sensitive server variable. Never commit or share the key file; delete the local copy once stored.
-- [ ] After deploy, `/api/health` reports `"storage":"configured"` and `/api/account/capabilities` reports `resourceUploads: true`. Then test a real upload, download and cover (section 9).
+- [ ] Run ClamAV's clamd for virus scanning (decision 023; SETUP.md section 6, "Virus scanning"). Vercel functions cannot run it, so use a small always-on container (for example the official `clamav/clamav` image, which keeps its signatures current) on a private network the API can reach, never exposed to the public internet. Keep its `StreamMaxLength` at 10 MB or more. Put its address in `CLAMAV_HOST` (and `CLAMAV_PORT` if not 3310).
+- [ ] From a machine on that network, `npm run scan:check` passes: clamd answers, a harmless sample is clean and the EICAR test file is flagged.
+- [ ] After deploy, `/api/health` reports `"storage":"configured"` and `/api/account/capabilities` reports `resourceUploads: true` and `uploadScanning: true`. Then test a real upload, download and cover (section 9).
 
 ## 7. Mail provider (Resend) and sender verification
 

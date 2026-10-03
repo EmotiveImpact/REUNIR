@@ -4,7 +4,7 @@ import { Scale } from 'lucide-react';
 import { useWorkspace } from '../lib/context';
 import { Empty, Modal, PageHeading, PersonLink, Pill, date } from '../components/ui';
 import { AppealDialog, currentAppeal } from '../components/appeals';
-import { appealDeciders, appealPost, decisionBlock } from '../../../../packages/domain/src/appeals';
+import { appealDeciders, appealIsCurrent, appealPost, decisionBlock } from '../../../../packages/domain/src/appeals';
 import { isAdmin } from '../../../../packages/domain/src/access';
 import { APPEAL_TEXT_MAX } from '../../../../packages/contracts/src/appeals';
 import type { ModerationAppeal, Post } from '../../../../packages/contracts/src/index';
@@ -19,6 +19,7 @@ export function AppealsPage() {
     const hidden = data.posts.filter(p => p.hidden && p.authorId === me.userId && !currentAppeal(mine, p));
     const others = isAdmin(me) ? data.moderationAppeals.filter(a => a.appellantId !== me.userId).sort(newest) : [];
     const waiting = others.filter(a => a.status === 'pending'), closed = others.filter(a => a.status !== 'pending');
+    const current = waiting.filter(a => appealIsCurrent(data, a)).length;
     return <>
         <PageHeading eyebrow="A SECOND LOOK" title="Appeals" body="When a moderator hides your post, you can ask for a second look. An owner or administrator who did not hide it decides. Appeals are private to you and the community’s owners and administrators."/>
         <div className="reading-width appeals-page">
@@ -31,7 +32,7 @@ export function AppealsPage() {
                 {mine.length ? mine.map(a => <AppealCard key={a.id} appeal={a} own/>) : <p className="muted">You have not appealed anything. Suspension of community access is not appealed here.</p>}
             </section>
             {isAdmin(me) && <section className="panel" aria-labelledby="appeals-queue">
-                <h2 id="appeals-queue">Appeals to decide <span className="muted">{waiting.length}</span></h2>
+                <h2 id="appeals-queue">Appeals to decide <span className="muted">{current}</span></h2>
                 {waiting.length ? waiting.map(a => <AppealCard key={a.id} appeal={a}/>) : <Empty title="No appeals are waiting." body="When a member appeals a hidden post, it appears here."/>}
                 {closed.length > 0 && <><h3>Decided appeals</h3>{closed.map(a => <AppealCard key={a.id} appeal={a}/>)}</>}
             </section>}
@@ -54,15 +55,16 @@ function AppealCard({ appeal, own = false }: { appeal: ModerationAppeal; own?: b
     const post = appealPost(data, appeal);
     const person = (userId: string | null | undefined) => data.members.find(m => m.userId === userId);
     const block = own ? null : decisionBlock(data, me, appeal);
-    const nobody = appeal.status === 'pending' && appealDeciders(data, appeal).length === 0;
+    const outdated = appeal.status === 'pending' && !appealIsCurrent(data, appeal);
+    const nobody = appeal.status === 'pending' && !outdated && appealDeciders(data, appeal).length === 0;
     const day = (value: string) => date(value, { day: 'numeric', month: 'long', year: 'numeric' });
     return <article className="appeal-card" aria-label={`Appeal about ${post?.title || 'a post'}`}>
         <div className="appeal-head"><strong>{post?.title || (post ? 'A post without a title' : 'A post you can no longer see')}</strong><Pill>{STATUS[appeal.status]}</Pill></div>
-        <p className="muted small">{own ? 'You appealed' : <><PersonLink member={person(appeal.appellantId)}/> appealed</>} on {day(appeal.createdAt)}.{post?.moderatedBy ? <> Hidden by <PersonLink member={person(post.moderatedBy)}/>{post.moderatedAt ? ` on ${day(post.moderatedAt)}` : ''}.</> : ''}</p>
+        <p className="muted small">{own ? 'You appealed' : <><PersonLink member={person(appeal.appellantId)}/> appealed</>} on {day(appeal.createdAt)}.{appeal.hiddenBy ? <> Hidden by <PersonLink member={person(appeal.hiddenBy)}/>{appeal.hiddenAt ? ` on ${day(appeal.hiddenAt)}` : ''}.</> : ''}</p>
         {!own && post && <blockquote className="appeal-quote preline">{post.body}</blockquote>}
         <p className="preline"><span className="sr-only">Reason: </span>{appeal.reason}</p>
         {appeal.status === 'pending' && <p className="sample-note" role="status">{[
-            own ? null : block,
+            own ? (outdated ? 'The post was moderated again after you appealed, so this appeal no longer applies. You can withdraw it, or appeal the current decision.' : null) : block,
             nobody ? 'Nobody can decide this yet: the only owners or administrators are the person who hid the post or the person appealing. It waits until another owner or administrator can decide.' : null,
         ].filter(Boolean).join(' ') || (own ? 'Waiting for an owner or administrator who did not hide the post.' : 'You can decide this appeal.')}</p>}
         {(appeal.status === 'upheld' || appeal.status === 'reversed') && <div className="appeal-response"><strong>{appeal.decidedBy === me.userId ? 'Your response' : <>Response from <PersonLink member={person(appeal.decidedBy)}/></>}{appeal.decidedAt ? `, ${day(appeal.decidedAt)}` : ''}</strong><p className="preline">{appeal.response}</p></div>}
@@ -71,11 +73,11 @@ function AppealCard({ appeal, own = false }: { appeal: ModerationAppeal; own?: b
             {!own && appeal.status === 'pending' && !block && <button type="button" className="button primary" onClick={() => setDeciding(true)}>Decide</button>}
             {post && (!post.hidden || own || isAdmin(me)) && <Link className="text-link" to={`/post/${post.id}`}>Read the post</Link>}
         </div>
-        {deciding && <DecideDialog appeal={appeal} post={post} onClose={() => setDeciding(false)}/>}
+        {deciding && <DecideDialog appeal={appeal} onClose={() => setDeciding(false)}/>}
     </article>;
 }
 
-function DecideDialog({ appeal, post, onClose }: { appeal: ModerationAppeal; post?: Post; onClose: () => void }) {
+function DecideDialog({ appeal, onClose }: { appeal: ModerationAppeal; onClose: () => void }) {
     const { command, busy } = useWorkspace();
     const [response, setResponse] = useState(''), [error, setError] = useState('');
     const field = useId();
@@ -90,8 +92,8 @@ function DecideDialog({ appeal, post, onClose }: { appeal: ModerationAppeal; pos
             <textarea id={field} required rows={4} maxLength={APPEAL_TEXT_MAX} value={response} onChange={e => setResponse(e.target.value)}/>
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="review-actions">
-                <button type="button" className="button secondary" disabled={busy || !response.trim() || !post?.hidden} onClick={() => void decide('upheld')}>Keep hidden</button>
-                <button type="button" className="button primary" disabled={busy || !response.trim()} onClick={() => void decide('reversed')}>{post?.hidden ? 'Restore the post' : 'Close: already restored'}</button>
+                <button type="button" className="button secondary" disabled={busy || !response.trim()} onClick={() => void decide('upheld')}>Keep hidden</button>
+                <button type="button" className="button primary" disabled={busy || !response.trim()} onClick={() => void decide('reversed')}>Restore the post</button>
             </div>
         </div>
     </Modal>;
