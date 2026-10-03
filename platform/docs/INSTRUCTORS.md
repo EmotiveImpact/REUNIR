@@ -17,7 +17,11 @@ An instructor sees **Teaching** in the sidebar. The teaching page lists the trac
 
 The same dialogue has **Invite someone new to teach**. An owner or administrator enters the email address of someone who is not yet a member; the person receives the usual personal invitation, which also names the track. Accepting it, with a new account or an existing one using that address, makes them an ordinary member and that track's instructor, recorded in the inviting administrator's name, with an audit entry for the grant. If the sender is no longer an active owner or administrator when the invitation is accepted, the person joins as a member only and an administrator can add them later. Member access lists the invitation with "To teach" and the track. People who are already members are added from the list instead. Migration `0020_instructor_invitations.sql` (additive) adds the invitation's optional track and one insert policy for the grant (decision 020).
 
-An instructor cannot create tracks, choose instructors, change other tracks or open Community studio, member access or community settings. Owners and administrators keep doing everything on every track.
+### Contributors (Alpha 25)
+
+When adding someone in the same dialogue, choose **Instructor** or **Contributor**; each person on the list has a role menu to change it. A contributor writes the track's lesson drafts and files for its instructors to publish: they open, save, preview and restore drafts, upload and attach lesson files, and see the track's drafts, history and upload records. They cannot publish, archive, reorder, change the cover, see learners' knowledge-check attempts or review them. Their Teaching page lists the track as "Contributor" without the review queue, and their creator studio has no publish, archive or ordering controls. Changing a role replaces the grant in the acting administrator's name. Migration `0023_contributor_roles.sql` (additive) adds the role and makes the published-revision, attempt and invitation policies require an instructor (decision 025).
+
+An instructor or contributor cannot create tracks, choose instructors, change other tracks or open Community studio, member access or community settings. Owners and administrators keep doing everything on every track.
 
 ## Rules
 

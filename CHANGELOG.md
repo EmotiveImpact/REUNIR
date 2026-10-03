@@ -23,6 +23,19 @@ Details:
 - The launch preflight also checks `EMAIL_VERIFICATION`.
 - No migration and no new runtime dependency: Better Auth's own email verification and change-email flows, through the encrypted outbox.
 
+### 0.25.0-alpha.1 (Alpha 25): contributor roles for teaching, 3 October 2026
+
+On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass. Alpha 26 (PR #18) reached main first, so the application version stays 0.26.0-alpha.1 when this release merges.
+
+**In plain language:** when you add someone to teach a track you can now make them a contributor instead of an instructor. Contributors write and save lesson drafts and attach files; the track's instructors decide when to publish them. Contributors do not see learners' quiz answers.
+
+Details:
+
+- **Instructor or Contributor** in a track's Instructors dialogue, with a role menu for each person. Instructor stays the default.
+- Publishing, archiving, reordering, the track cover and knowledge-check review need an instructor or administrator (`INSTRUCTOR_REQUIRED`, decision 025).
+- Additive migration 0023 adds `track_instructors.role` and role-aware policies for published revisions, attempts and invitations. Every existing grant stays an instructor's. No grant change.
+- Database upgrade tests now count the migration files instead of a fixed number.
+
 ### Planned
 
 - Data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.

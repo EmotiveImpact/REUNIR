@@ -73,7 +73,7 @@ try {
         await signIn(ownerPage, 'owner@example.test'); await open(ownerPage, `/learn/${taught}`);
         await ownerPage.getByRole('button', { name: 'Instructors', exact: true }).click();
         const dialog = ownerPage.locator('dialog[open]');
-        await dialog.getByLabel('Add an instructor').selectOption({ label: 'Pilot Instructor' });
+        await dialog.getByLabel('Add someone to teach').selectOption({ label: 'Pilot Instructor' });
         await dialog.getByRole('button', { name: 'Add', exact: true }).click();
         await expect(dialog.locator('.instructor-list li')).toContainText('Pilot Instructor');
         expect(await grants()).toEqual([{ track_id: taught, user_id: instructor.id, granted_by: owner.id }]);
@@ -114,11 +114,11 @@ try {
     await check('revoking the grant closes the studio and teaching page at once', async () => {
         await open(ownerPage, `/learn/${taught}`);
         await ownerPage.getByRole('button', { name: 'Instructors', exact: true }).click();
-        await ownerPage.locator('dialog[open]').getByRole('button', { name: 'Remove Pilot Instructor as an instructor', exact: true }).click();
+        await ownerPage.locator('dialog[open]').getByRole('button', { name: 'Remove Pilot Instructor from this track', exact: true }).click();
         await expect(ownerPage.locator('dialog[open]')).toContainText('No instructors yet.');
         expect(await grants()).toEqual([]);
         await open(instructorPage, '/teaching');
-        await expect(instructorPage.locator('.empty-state')).toContainText('Teaching opens when you are an instructor.');
+        await expect(instructorPage.locator('.empty-state')).toContainText('Teaching opens when you are an instructor or contributor.');
         expect((await command(instructorPage, { type: 'lesson.draft.create', trackId: taught })).status()).toBe(403);
         expect((await (await instructorPage.request.get(`${origin}/api/organisations/pilot/workspace`)).json()).lessonDrafts).toEqual([]);
     });
