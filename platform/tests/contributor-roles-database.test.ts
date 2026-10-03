@@ -34,7 +34,7 @@ after(async () => db?.close());
 test('the upgrade keeps every existing grant as an instructor’s', async () => {
     const old = await openDatabase('pglite:memory');
     try {
-        await migrate(old, '0021'); await seedBeforeProjectWork(old);
+        await migrate(old, '0022'); await seedBeforeProjectWork(old);
         await old.query("INSERT INTO track_instructors(id,organization_id,created_at,track_id,user_id,granted_by) VALUES('g_old',$1,now(),'track_product',$2,$3)", [ORG, IDRIS, DEMO_ADMIN]);
         await migrate(old);
         assert.deepEqual((await old.query('SELECT user_id,role FROM track_instructors')).rows, [{ user_id: IDRIS, role: 'instructor' }]);

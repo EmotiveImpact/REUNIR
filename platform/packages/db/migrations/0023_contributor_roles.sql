@@ -1,6 +1,6 @@
 -- Additive teaching roles. A grant is for an instructor, who publishes and reviews, or a contributor, who writes the
 -- track's drafts and files for an instructor to publish. Every existing grant stays an instructor's: nobody loses or gains
--- anything on upgrade. Grants are still never updated in place; changing a role replaces the row. 0001 to 0021 are unchanged.
+-- anything on upgrade. Grants are still never updated in place; changing a role replaces the row. 0001 to 0022 are unchanged.
 ALTER TABLE track_instructors ADD COLUMN role text NOT NULL DEFAULT 'instructor' CHECK (role IN ('instructor','contributor'));
 -- Drafts, history reads and lesson files keep the 0012 policies, which admit any grant for the row's own track.
 -- Publishing writes a published revision: instructors only. A contributor opening the first draft of an existing lesson

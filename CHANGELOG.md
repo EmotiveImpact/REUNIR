@@ -18,12 +18,29 @@ Details:
 
 - **Instructor or Contributor** in a track's Instructors dialogue, with a role menu for each person. Instructor stays the default.
 - Publishing, archiving, reordering, the track cover and knowledge-check review need an instructor or administrator (`INSTRUCTOR_REQUIRED`, decision 025).
-- Additive migration 0022 adds `track_instructors.role` and role-aware policies for published revisions, attempts and invitations. Every existing grant stays an instructor's. No grant change.
+- Additive migration 0023 adds `track_instructors.role` and role-aware policies for published revisions, attempts and invitations. Every existing grant stays an instructor's. No grant change.
 - Database upgrade tests now count the migration files instead of a fixed number.
 
-### Launch kit (no version change), 3 October 2026
+### 0.24.0-alpha.1 (Alpha 24): group conversations, 3 October 2026
 
-On a pull request from `claude/build-out-tvzn40`, to be merged once its checks pass.
+On a pull request from `claude/group-conversations-5arqv6`, to be merged once its checks pass.
+
+**In plain language:** you can now start a private group conversation in Messages with two or more people from your community, up to 20 in all. Anyone in the group can add people and rename it, and anyone can leave. Someone added later only sees what is written after they join.
+
+Details:
+
+- **New group** in Messages: a name and at least two other active members. Groups show in the inbox by name, each message shows who wrote it, and **People** lists everyone, adds people, renames the group and leaves it. Only the person who started a group can remove others.
+- Only the people in a group can read it; owners, administrators and moderators have no access to groups they are not in. A block stops two people adding each other but never pauses a group they share. Reporting a message in a group works as before.
+- Additive migration 0022 adds `kind`, `title` and `created_by` to conversations, the `conversation_joins` table and row-security policies for late joiners and leaving (decision 024). Run `npm run db:grant-runtime` after migrating, for the new table's grant.
+- No new runtime dependency.
+
+### Planned
+
+- Virus scanning of uploads, and email verification and change.
+
+## Launch kit (no version change), 3 October 2026
+
+On main through [PR #17](https://github.com/EmotiveImpact/REUNIR/pull/17), merged as `f5ec8d3`.
 
 **In plain language:** a step-by-step launch guide and an offline check of the launch settings, so the app is ready to switch on when you decide. Nothing was provisioned and nothing is live.
 
@@ -32,10 +49,6 @@ Details:
 - `platform/docs/LAUNCH_RUNBOOK.md` walks through every launch step in order: the Neon database and restricted runtime role, migrations, the first owner, server settings, storage, mail, Vercel, hosted privacy checks, the mail and digest scheduler, backups with a restore rehearsal, monitoring, rollback, and the written approvals needed before inviting pilot members.
 - `npm run launch:preflight` checks the shape of a production environment without printing a value or opening a connection, including `ADMIN_TWO_FACTOR`.
 - No migration, no runtime code change, no new dependency.
-
-### Planned
-
-- Virus scanning of uploads, group conversations, and email verification and change.
 
 ## 0.22.0-alpha.1 (Alpha 22): cover picture descriptions, 3 October 2026
 
