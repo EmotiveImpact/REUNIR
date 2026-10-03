@@ -40,6 +40,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 32 | The author of a hidden post is told, still sees it, and can appeal; an owner or administrator who did not hide it decides, replies, and restores or keeps it hidden | Hidden posts only; one level of appeal; no time limit; suspension and message reports are not appealable here |
 | Alpha 35 | A teaching grant covers the whole track or lessons an administrator chooses; drafts, publishing and answer review follow the chosen lessons | No lesson grants by invitation; new lessons, order and cover stay with whole-track grants |
 | Alpha 39 | Administrators rename and tag cover library pictures (up to 60); the picker filters by name or tag; cards and lists load a 480-pixel copy checked by the server | No stock search or backfilled copies for existing covers; real bucket signing for the second policy unverified |
+| Alpha 33 | Authors ask to correct reviewed evidence and a reviewer decides; authors or administrators withdraw it with a reason; each item keeps its history | Withdrawal cannot be undone; mission proof has no correction history; no community-wide change log |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 
@@ -61,7 +62,7 @@ The user will clone, deploy and run hosted tests later. Continue product develop
 
 **Everyday reliability:** cursor pagination for posts and tasks (notices, review queues and the audit trail page since Alpha 18), notification preferences and digests (Alpha 19), and collections of useful content chosen by owners, administrators and moderators, with a featured "Start here" on Home (Alpha 28, see CURATION.md). Course and project art is now uploaded by each community (Alpha 11); smaller renditions for thumbnails can follow real usage. Shared loading, error and empty screens are in place (Alpha 27, `STATES.md`): shell-preserving loading, route error boundaries with Retry, a Not found page, offline and failed-refresh notices, marked command failures and role-aware empty states. Refine them through real pilot observations.
 
-**Account and trust operations:** data retention rules (Alpha 31; self-service account deletion with Former member attribution arrived in Alpha 15, after the learning record download and answer erasure in Alpha 14, and ownership transfer, which lets owners delete their accounts too, in Alpha 16, two-step sign-in for owners and administrators in Alpha 21, and email confirmation and change in Alpha 26), appeals of hidden posts (Alpha 32), reviewed-evidence correction/revocation history and consented multi-contributor credits.
+**Account and trust operations:** data retention rules (Alpha 31; self-service account deletion with Former member attribution arrived in Alpha 15, after the learning record download and answer erasure in Alpha 14, and ownership transfer, which lets owners delete their accounts too, in Alpha 16, two-step sign-in for owners and administrators in Alpha 21, and email confirmation and change in Alpha 26), appeals of hidden posts (Alpha 32), reviewed-evidence correction and withdrawal history (Alpha 33) and consented multi-contributor credits.
 
 ## Commercial platform stage
 

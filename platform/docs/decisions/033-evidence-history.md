@@ -1,4 +1,4 @@
-# Decision NNN: a history for correcting or withdrawing reviewed evidence
+# Decision 033: a history for correcting or withdrawing reviewed evidence
 
 Status: implemented on a feature branch, verified locally; not deployed. Date: 3 October 2026.
 

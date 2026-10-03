@@ -1,6 +1,6 @@
 # Evidence history: corrections and withdrawals
 
-Reviewed evidence (recognised contributions and verified outcomes) can be corrected or withdrawn without rewriting what was reviewed. See decisions/0NN-evidence-history.md.
+Reviewed evidence (recognised contributions and verified outcomes) can be corrected or withdrawn without rewriting what was reviewed. See decisions/033-evidence-history.md.
 
 ## Behaviour
 
