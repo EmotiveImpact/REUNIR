@@ -8,21 +8,9 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### Launch kit (no version change), 3 October 2026
-
-On a pull request from `claude/build-out-tvzn40`, to be merged once its checks pass.
-
-**In plain language:** a step-by-step launch guide and an offline check of the launch settings, so the app is ready to switch on when you decide. Nothing was provisioned and nothing is live.
-
-Details:
-
-- `platform/docs/LAUNCH_RUNBOOK.md` walks through every launch step in order: the Neon database and restricted runtime role, migrations, the first owner, server settings, storage, mail, Vercel, hosted privacy checks, the mail and digest scheduler, backups with a restore rehearsal, monitoring, rollback, and the written approvals needed before inviting pilot members.
-- `npm run launch:preflight` checks the shape of a production environment without printing a value or opening a connection, including `ADMIN_TWO_FACTOR`.
-- No migration, no runtime code change, no new dependency.
-
 ### 0.26.0-alpha.1 (Alpha 26): loading, error and empty screens, 3 October 2026
 
-On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass. Alpha 23 to 25 are claimed by other open pull requests, so this release takes the next free number.
+On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass. Alpha 23 and 25 are claimed by other open pull requests and Alpha 24 is taken, so this release takes the next free number.
 
 **In plain language:** the app now shows calm loading outlines instead of blank areas, and keeps its navigation when a page fails. Failures are explained in plain words with a Try again button, and there is a proper Not found page. Losing the connection, an ended session or a refused change is said clearly instead of silently. Empty lists tell "nothing here yet" apart from "nothing matches", and only offer a next step the person is actually allowed to take.
 
@@ -36,7 +24,32 @@ Details:
 
 ### Planned
 
-- Virus scanning of uploads, group conversations, and email verification and change.
+- Virus scanning of uploads, email verification and change, content curation, task files with live updates and shared form components.
+
+## 0.24.0-alpha.1 (Alpha 24): group conversations, 3 October 2026
+
+On main through [PR #19](https://github.com/EmotiveImpact/REUNIR/pull/19), merged as `d62424d`.
+
+**In plain language:** you can now start a private group conversation in Messages with two or more people from your community, up to 20 in all. Anyone in the group can add people and rename it, and anyone can leave. Someone added later only sees what is written after they join.
+
+Details:
+
+- **New group** in Messages: a name and at least two other active members. Groups show in the inbox by name, each message shows who wrote it, and **People** lists everyone, adds people, renames the group and leaves it. Only the person who started a group can remove others.
+- Only the people in a group can read it; owners, administrators and moderators have no access to groups they are not in. A block stops two people adding each other but never pauses a group they share. Reporting a message in a group works as before.
+- Additive migration 0022 adds `kind`, `title` and `created_by` to conversations, the `conversation_joins` table and row-security policies for late joiners and leaving (decision 024). Run `npm run db:grant-runtime` after migrating, for the new table's grant.
+- No new runtime dependency.
+
+## Launch kit (no version change), 3 October 2026
+
+On main through [PR #17](https://github.com/EmotiveImpact/REUNIR/pull/17), merged as `f5ec8d3`.
+
+**In plain language:** a step-by-step launch guide and an offline check of the launch settings, so the app is ready to switch on when you decide. Nothing was provisioned and nothing is live.
+
+Details:
+
+- `platform/docs/LAUNCH_RUNBOOK.md` walks through every launch step in order: the Neon database and restricted runtime role, migrations, the first owner, server settings, storage, mail, Vercel, hosted privacy checks, the mail and digest scheduler, backups with a restore rehearsal, monitoring, rollback, and the written approvals needed before inviting pilot members.
+- `npm run launch:preflight` checks the shape of a production environment without printing a value or opening a connection, including `ADMIN_TWO_FACTOR`.
+- No migration, no runtime code change, no new dependency.
 
 ## 0.22.0-alpha.1 (Alpha 22): cover picture descriptions, 3 October 2026
 
