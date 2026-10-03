@@ -1757,6 +1757,28 @@ tables.push({key:'notificationPreferences',table:'notification_preferences',fiel
 
 // Alpha 25: a teaching grant names its role. Changing a role replaces the grant; it is never rewritten in place.
 tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'role',column:'role',type:'text'});
+// Appeals against moderation. Posts record who last hid or restored them; an appeal changes only its decision fields.
+tables.find(t => t.key === 'posts')!.fields.push({property:'moderatedBy',column:'moderated_by',type:'text'},{property:'moderatedAt',column:'moderated_at',type:'timestamptz'});
+tables.push({key:'moderationAppeals',table:'moderation_appeals',mutable:['status','decidedBy','decidedAt','response'],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'subject',column:'subject',type:'text'},{property:'subjectId',column:'subject_id',type:'text'},{property:'appellantId',column:'appellant_id',type:'text'},
+    {property:'hiddenBy',column:'hidden_by',type:'text'},{property:'hiddenAt',column:'hidden_at',type:'timestamptz'},
+    {property:'reason',column:'reason',type:'text'},{property:'status',column:'status',type:'text'},{property:'decidedBy',column:'decided_by',type:'text'},
+    {property:'decidedAt',column:'decided_at',type:'timestamptz'},{property:'response',column:'response',type:'text'}]});
+// Evidence history: corrections and withdrawals of reviewed evidence. A change is never rewritten; only its decision is recorded.
+tables.push({key:'evidenceChanges',table:'evidence_changes',mutable:['status','decidedBy','decidedAt','response'],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'subject',column:'subject',type:'text'},{property:'subjectId',column:'subject_id',type:'text'},{property:'kind',column:'kind',type:'text'},
+    {property:'requestedBy',column:'requested_by',type:'text'},{property:'reason',column:'reason',type:'text'},
+    {property:'previous',column:'previous',type:'jsonb'},{property:'proposed',column:'proposed',type:'jsonb'},{property:'previousStatus',column:'previous_status',type:'text'},
+    {property:'status',column:'status',type:'text'},{property:'decidedBy',column:'decided_by',type:'text'},{property:'decidedAt',column:'decided_at',type:'timestamptz'},
+    {property:'response',column:'response',type:'text'}]});
+// Credits on a contribution, with the credited person's consent. Only the answer and a withdrawal change a credit.
+tables.push({key:'contributionCredits',table:'contribution_credits',mutable:['status','respondedAt','withdrawnBy','withdrawnAt'],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'contributionId',column:'contribution_id',type:'text'},{property:'projectId',column:'project_id',type:'text'},{property:'userId',column:'user_id',type:'text'},
+    {property:'invitedBy',column:'invited_by',type:'text'},{property:'role',column:'role',type:'text'},{property:'status',column:'status',type:'text'},
+    {property:'respondedAt',column:'responded_at',type:'timestamptz'},{property:'withdrawnBy',column:'withdrawn_by',type:'text'},{property:'withdrawnAt',column:'withdrawn_at',type:'timestamptz'}]});
 
 // Alpha 35: a grant may cover only some of a track's lessons. NULL keeps the whole track.
 tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'lessonIds',column:'lesson_ids',type:'jsonb'});

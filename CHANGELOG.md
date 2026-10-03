@@ -25,7 +25,7 @@ Details:
 
 ### Planned
 
-- Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+- Nothing further is planned for accounts and trust in this round. Removing someone from a project team, credits on outcomes and appeals against suspension remain undecided.
 
 ## Alpha 36: instructors start their own tracks (no version change), 3 October 2026
 
@@ -39,6 +39,50 @@ Details:
 - The track starts unpublished, authored by its starter, with their own whole-track instructor grant. Only its teachers and the community's owners and administrators see it, marked **Not published**.
 - **Publish track** (`track.publish`, owners and administrators) makes it visible, records `track.published` in the audit and tells the starter (decision 036).
 - Additive migration 0035 adds one INSERT policy, `instructor_own_track`, that admits only that self-grant. No grant change.
+
+## Alpha 34: crediting teammates on a contribution (no version change), 3 October 2026
+
+On main through [PR #30](https://github.com/EmotiveImpact/REUNIR/pull/30), merged as `5f7b827`. This thread holds Alpha 31 to 34 and migrations 0030 to 0033, so this is Alpha 34 with decision 034 and migration 0033. Alpha 39 reached main first, so the application version stays 0.39.0-alpha.1.
+
+**In plain language:** when you record a contribution to a project, you can now credit the teammates who did the work with you. Each person is asked first and only appears once they accept. Accepted credits show on the contribution ("With Nia James") and on the person's profile under Credited on. A credit is a thank-you, not evidence: it never counts towards milestones, goals, outcomes or roles.
+
+Details:
+
+- **Credit a teammate** on your own contribution: an active member of the project's team, with an optional short description such as "co-author". They accept or decline; either of you can later remove an accepted credit.
+- Invitations, refusals and withdrawals are private to the two people involved. Administrators do not see them.
+- Someone who declined, or removed their own credit, cannot be asked again by the author. At most 10 live credits per contribution.
+- A person credited on a contribution cannot review it.
+- Additive migration 0033: `contribution_credits` under forced row security, with column-level updates on the answer and withdrawal fields only. Deleting your account deletes every credit naming you.
+- Community review, not accreditation (decision 034).
+
+## Alpha 33: correcting and withdrawing reviewed evidence (no version change), 3 October 2026
+
+On main through [PR #29](https://github.com/EmotiveImpact/REUNIR/pull/29), merged as `e930e39`. This thread holds Alpha 31 to 34 and migrations 0030 to 0033, so this is Alpha 33 with decision 033 and migration 0032. Alpha 39 reached main first, so the application version stays 0.39.0-alpha.1.
+
+**In plain language:** you can now ask to correct a recognised contribution or verified outcome, and a reviewer decides, just as they did the first time. You or an administrator can also withdraw reviewed evidence that turned out to be wrong. Nothing is rewritten in secret: each item keeps a history of the wording that was reviewed, what changed, when and why.
+
+Details:
+
+- **Correct…** on a recognised contribution or verified outcome (author only). The project owner and administrators review a contribution's correction; administrators review an outcome's. Nobody reviews their own. The reviewed version stays until the correction is accepted, and a published output follows its outcome.
+- **Withdraw…** (author or administrator, with a reason) is immediate and final. Withdrawn evidence stays visible, marked withdrawn, and stops counting towards path milestones, profiles, goals and the output archive. Outcomes built on a withdrawn contribution are withdrawn too, and a goal completed with one reopens.
+- **History** on each item lists corrections, declined corrections and withdrawals with their reasons and responses. Waiting corrections are visible only to the author and the reviewers.
+- Additive migration 0032: `withdrawn` joins the contribution and outcome statuses, and `evidence_changes` sits under forced row security. The runtime role may add a change and record its decision, never reword or delete one.
+- Community review, not accreditation (decision 033).
+
+## Alpha 32: appealing a hidden post (no version change), 3 October 2026
+
+On main through [PR #26](https://github.com/EmotiveImpact/REUNIR/pull/26), merged as `f3efa39`. This thread holds Alpha 31 to 34 and migrations 0030 to 0033, so this is Alpha 32 with decision 032 and migration 0031. Alpha 39 (PR #21) reached main first, so the application version stays 0.39.0-alpha.1.
+
+**In plain language:** when a moderator hides your post, you are now told, you can still see it, and you can ask for it to be looked at again. An owner or administrator who did not hide it decides, writes you a reply, and either restores the post or keeps it hidden. Appeals are private to you and the people who decide them.
+
+Details:
+
+- New **Appeals** page: your hidden posts, your appeals and their outcomes, and for owners and administrators the appeals waiting for a decision. The Moderation tab in the community studio lists open appeals.
+- The person who hid the post, and the appellant, can never decide the appeal. If nobody else can, the appeal waits and both sides are told why.
+- One open appeal per hiding; withdrawing allows another; a decided appeal closes that hiding.
+- Additive migration 0031: `posts.moderated_by` and `posts.moderated_at`, and `moderation_appeals` under forced row security, with column-level updates on the decision fields only. Existing posts are not backfilled.
+- Deleting your account removes your appeals; the decisions stay in the audit trail.
+- Suspension, task-note removal and message reports are not appealable here (decision 032).
 
 ## Alpha 35: teaching grants for chosen lessons (no version change), 3 October 2026
 

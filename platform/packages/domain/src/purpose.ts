@@ -3,10 +3,10 @@ import { actorFor, canSeeSpace, isAdmin, isFormer } from './access';
 
 /** Additive browser-state upgrade. Never invent a purpose or evidence for existing user data. */
 export function normalisePurposeState(s: Workspace): Workspace {
-    s.collections ??= []; s.collectionItems ??= []; s.notificationPreferences ??= []; s.coverLibrary ??= []; for (const item of s.coverLibrary) item.tags ??= []; s.trackInstructors ??= []; s.quizAttempts ??= []; s.uploads ??= []; s.lessonDrafts ??= []; s.lessonRevisions ??= [];
+    s.collections ??= []; s.collectionItems ??= []; s.moderationAppeals ??= []; s.notificationPreferences ??= []; s.coverLibrary ??= []; for (const item of s.coverLibrary) item.tags ??= []; s.trackInstructors ??= []; s.quizAttempts ??= []; s.uploads ??= []; s.lessonDrafts ??= []; s.lessonRevisions ??= [];
     s.projectTasks ??= []; s.taskNotes ??= [];
     s.purposes ??= []; s.paths ??= []; s.milestones ??= []; s.pathEnrolments ??= [];
-    s.contributions ??= []; s.outcomes ??= []; s.communityOutputs ??= []; s.memberGoals ??= [];
+    s.contributions ??= []; s.contributionCredits ??= []; s.outcomes ??= []; s.evidenceChanges ??= []; s.communityOutputs ??= []; s.memberGoals ??= [];
     for (const p of s.projects) p.purposeId ??= null;
     for (const g of s.memberGoals) g.outcomeId ??= null;
     return s;
@@ -25,9 +25,11 @@ export function filterPurposeWorkspace(s: Workspace, ctx: TenantContext, actor: 
     s.pathEnrolments = tenant(s.pathEnrolments).filter(x => paths.has(x.pathId) && x.userId === ctx.userId);
     s.memberGoals = tenant(s.memberGoals).filter(g => purposes.has(g.purposeId) && (!g.pathId || paths.has(g.pathId)) && (g.userId === ctx.userId || g.visibility === 'members'));
     const teamProof = new Set(s.projectTasks.filter(t => t.organizationId === ctx.organizationId && projects.has(t.projectId) && (isAdmin(actor) || s.projects.some(p=>p.id===t.projectId&&p.ownerId===ctx.userId) || s.projectMembers.some(m=>m.projectId===t.projectId&&m.userId===ctx.userId&&m.organizationId===ctx.organizationId))).map(t=>t.contributionId));
-    s.contributions = tenant(s.contributions).filter(c => projects.has(c.projectId) && (teamProof.has(c.id) || c.status === 'recognised' || c.userId === ctx.userId || isAdmin(actor) || s.projects.some(p => p.id === c.projectId && p.ownerId === ctx.userId)));
+    // A person the author credits or invites may read that contribution, so they can decide whether to accept.
+    const credited = new Set((s.contributionCredits ?? []).filter(k => k.organizationId === ctx.organizationId && k.userId === ctx.userId && (k.status === 'invited' || k.status === 'accepted')).map(k => k.contributionId));
+    s.contributions = tenant(s.contributions).filter(c => projects.has(c.projectId) && (teamProof.has(c.id) || c.status === 'recognised' || c.status === 'withdrawn' || c.userId === ctx.userId || credited.has(c.id) || isAdmin(actor) || s.projects.some(p => p.id === c.projectId && p.ownerId === ctx.userId)));
     const contributions = new Set(s.contributions.map(x => x.id)), submissions = new Set(s.submissions.map(x => x.id));
-    s.outcomes = tenant(s.outcomes).filter(o => purposes.has(o.purposeId) && (!o.projectId || projects.has(o.projectId)) && (o.contributionId ? contributions.has(o.contributionId) : !!o.submissionId && submissions.has(o.submissionId)) && (o.status === 'verified' || o.authorId === ctx.userId || isAdmin(actor)));
+    s.outcomes = tenant(s.outcomes).filter(o => purposes.has(o.purposeId) && (!o.projectId || projects.has(o.projectId)) && (o.contributionId ? contributions.has(o.contributionId) : !!o.submissionId && submissions.has(o.submissionId)) && (o.status === 'verified' || o.status === 'withdrawn' || o.authorId === ctx.userId || isAdmin(actor)));
     const outcomes = new Set(s.outcomes.filter(o => o.status === 'verified').map(x => x.id));
     s.memberGoals = s.memberGoals.filter(g=>!g.outcomeId || outcomes.has(g.outcomeId));
     s.communityOutputs = tenant(s.communityOutputs).filter(o => outcomes.has(o.outcomeId) && purposes.has(o.purposeId) && (!o.projectId || projects.has(o.projectId)));
@@ -153,7 +155,7 @@ export function applyPurposeCommand(s: Workspace, ctx: TenantContext, cmd: Comma
         }
         case 'contribution.review': {
             const c=find(s.contributions,cmd.contributionId),p=project(c.projectId);if(p.ownerId!==ctx.userId&&!isAdmin(actor))forbidden('A project owner or community administrator is required.');
-            if(c.userId===ctx.userId)forbidden('You cannot recognise your own contribution.');if(c.status!=='submitted')conflict('NOT_PENDING','This contribution is no longer awaiting review.');
+            if(c.userId===ctx.userId)forbidden('You cannot recognise your own contribution.');if((s.contributionCredits??[]).some(k=>k.contributionId===c.id&&k.userId===ctx.userId&&k.status==='accepted'))forbidden('You are credited on this contribution, so another reviewer recognises it.');if(c.status!=='submitted')conflict('NOT_PENDING','This contribution is no longer awaiting review.');
             c.status=cmd.decision;c.reviewerId=ctx.userId;c.reviewedAt=now;c.feedback=cmd.feedback;notify(c.userId,cmd.decision==='recognised'?'Your contribution was recognised':'Feedback on your contribution',cmd.feedback,`/projects/${p.id}`);
             return result(c.id,cmd.decision==='recognised'?'Contribution recognised. Its evidence now counts towards the path.':'Feedback sent. The author can revise the contribution.',true);
         }

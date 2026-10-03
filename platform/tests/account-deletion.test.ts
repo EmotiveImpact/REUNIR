@@ -36,7 +36,7 @@ test('the membership is scrubbed to Former member, and posts, comments and proje
     assert.ok(comments > 0, 'the seed has a comment by the person');
     assert.deepEqual(after.projectMembers.filter(x => x.userId === DEMO_USER), before.projectMembers.filter(x => x.userId === DEMO_USER), 'team places stay with the project work');
     for (const key of PERSONAL_COLLECTIONS) assert.equal(mine(after, key), 0, `${key} are removed`);
-    assert.deepEqual(removed, { memberGoals: 1, bookmarks: 0, notifications: 2, reactions: 1, rsvps: 0, enrolments: 1, completions: 1, pathEnrolments: 1, quizAttempts: 0, reputation: 1, spaceMembers: 0, trackInstructors: 0, notificationPreferences: 0 });
+    assert.deepEqual(removed, { memberGoals: 1, bookmarks: 0, notifications: 3, reactions: 1, rsvps: 0, enrolments: 1, completions: 1, pathEnrolments: 1, quizAttempts: 0, reputation: 1, spaceMembers: 0, trackInstructors: 0, notificationPreferences: 0, moderationAppeals: 0, contributionCredits: 0 });
     assert.equal(after.revision, before.revision + 1);
     const entry = after.audit.at(-1)!;
     assert.deepEqual([entry.action, entry.actorId, entry.objectId], ['member.account.deleted', DEMO_USER, memberId]);
