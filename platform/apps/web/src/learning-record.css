@@ -1,0 +1,3 @@
+/* Your learning record: a quiet panel on your own profile. */
+.learning-record h2{font-size:15px;margin:0}
+.learning-record p{margin:8px 0 14px;font-size:12px;line-height:1.7;color:var(--muted)}

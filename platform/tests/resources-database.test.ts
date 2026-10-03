@@ -56,9 +56,9 @@ test('0009 upgrade keeps lessons, drafts, history, completions and member upload
         }
         assert.deepEqual(await read('completions'), before.completions);
         const uploads = await read('upload_intents');
-        assert.deepEqual(strip(uploads, ['purpose', 'track_id', 'completed_at', 'generation']), before.uploads);
+        assert.deepEqual(strip(uploads, ['purpose', 'track_id', 'completed_at', 'generation', 'cover_track_id', 'cover_project_id']), before.uploads);
         assert.deepEqual(uploads.map(u => [u.purpose, u.track_id, u.completed_at, u.generation]), [['member', null, null, null]]);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 10);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 14);
     } finally { await old.close(); }
 });
 test('the restricted runtime role records, verifies, attaches and publishes a lesson file', async () => {

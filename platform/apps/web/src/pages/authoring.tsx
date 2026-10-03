@@ -12,7 +12,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowDown, ArrowUp, ArrowUpRight, BookOpen, Check, Eye, History, LockKeyhole, Pencil, Plus, Save } from 'lucide-react';
 import { type LessonDraft, type MutationResult, safeUrl } from '../../../../packages/contracts/src/index';
 import { lessonContent, type EditableLessonContent } from '../../../../packages/domain/src/authoring';
-import { isAdmin } from '../../../../packages/domain/src/access';
+import { teaches } from '../../../../packages/domain/src/instructors';
 import { useWorkspace } from '../lib/context';
 import { Empty, PageHeading, Pill } from '../components/ui';
 
@@ -20,7 +20,7 @@ export function AuthoringPage() {
     const {id}=useParams(); const {data,me,busy,command}=useWorkspace();
     const [selected,select]=useState<string|null>(null); const [archived,showArchived]=useState(false);
     const track=data.tracks.find(t=>t.id===id);
-    if(!isAdmin(me)||!track)return <Empty title="The creator studio is private." body="A community owner or administrator can author lessons here."/>;
+    if(!track||!teaches(data,me,track.id))return <Empty title="The creator studio is private." body="The track's instructors and the community's owners and administrators author lessons here."/>;
     const lessons=data.lessons.filter(l=>l.trackId===track.id).sort((a,b)=>a.position-b.position);
     const drafts=data.lessonDrafts.filter(d=>d.trackId===track.id&&(archived||!d.archived));
     const current=data.lessonDrafts.find(d=>d.trackId===track.id&&d.id===selected);

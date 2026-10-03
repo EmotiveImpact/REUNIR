@@ -1,6 +1,6 @@
 # REUNIR platform
 
-Current release: 0.10.0-alpha.1, knowledge checks. Start with the repository root README, SESSION_HANDOFF.md and docs/BUILD_STATUS.md; docs/ASSESSMENTS.md describes the newest feature and docs/LESSON_RESOURCES.md the one before it. The Alpha 05 notes below are kept as history.
+Current release: 0.14.0-alpha.1, learner records. Start with the repository root README, SESSION_HANDOFF.md and docs/BUILD_STATUS.md; docs/LEARNER_RECORDS.md describes the newest feature and docs/COVERS.md the one before it (uploaded covers and the cover library). The Alpha 05 notes below are kept as history.
 
 ```sh
 npm ci

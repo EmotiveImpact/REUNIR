@@ -33,6 +33,10 @@ Check provider delivery, spam placement, sender ownership and failed-job handlin
 The browser demo is local fiction, not encrypted storage. Do not put real member information into the downloadable preview.
 
 
+## Learner requests: records and erasure
+
+A member can download their own learning record from their profile without anyone's help. To erase a learner's knowledge-check answers on request, or to clear unused cover files, follow LEARNER_RECORDS.md: both commands run on the migration connection, need an active owner's authorisation and are dry runs until confirmed. Record the request reference you pass; the audit entry keeps it with counts only. Account deletion is not yet available.
+
 ## Owner console and read-only diagnostics
 
 The owner-only Pilot console summarises this community's invitation delivery without exposing recipients or links. The application-wide worker timestamp is a minimal service observation, not another tenant's queue or member activity. Open the console as the actual owner; being an administrator alone is insufficient. In the offline demo it stays explicitly unconnected.

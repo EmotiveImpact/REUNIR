@@ -1,6 +1,7 @@
 import { lessonDocumentSchema, type LessonDocument } from './lesson-document';
 import { lessonResourcesInput, type LessonResource } from './lesson-resources';
 import { lessonQuizSchema, quizAnswersInput, quizFingerprintInput, quizMarksInput, type LessonQuiz, type QuizAnswer, type QuizResult } from './assessments';
+import { coverChange, coverLibraryLabel, type CoverImage, type CoverImageType } from './covers';
 import { z } from 'zod';
 export type Id = string;
 export type Role = 'owner' | 'admin' | 'moderator' | 'member';
@@ -90,7 +91,10 @@ export interface Track extends TenantRecord {
     category: string;
     level: string;
     colour: string;
+    /** Legacy art name, kept for stored data. Covers now come only from `coverImage`. */
     cover: string;
+    /** Uploaded cover, or none for the plain panel. */
+    coverImage?: CoverImage | null;
     authorId: Id;
     published: boolean;
 }
@@ -123,9 +127,10 @@ export interface LessonRevision extends TenantRecord, LessonContent {
     trackId: Id; lessonId: Id; draftId: Id; sequence: number;
     kind: 'captured' | 'published'; actorId: Id;
 }
-/** The existing upload intent. Lesson files are scoped to one track; storage keys never leave the server. */
+/** The existing upload intent. Lesson files are scoped to one track and covers to one track or project; storage keys never leave the server. */
 export interface Upload extends TenantRecord {
-    userId: Id; purpose: 'member' | 'lesson_resource'; trackId: Id | null;
+    userId: Id; purpose: 'member' | 'lesson_resource' | 'cover_image' | 'cover_library'; trackId: Id | null;
+    coverTrackId?: Id | null; coverProjectId?: Id | null;
     originalName: string; contentType: string; sizeBytes: number;
     status: 'pending' | 'ready' | 'rejected';
     objectKey: string; completedAt: string | null; generation: string | null;
@@ -144,6 +149,15 @@ export interface QuizAttempt extends TenantRecord {
 export interface Enrolment extends TenantRecord {
     trackId: Id;
     userId: Id;
+}
+/**
+ * An explicit grant, made by an active owner or administrator, to author and review one track. It never follows from
+ * being named as a track's author, and it ends while the member is inactive.
+ */
+export interface TrackInstructor extends TenantRecord {
+    trackId: Id;
+    userId: Id;
+    grantedBy: Id;
 }
 export interface Completion extends TenantRecord {
     trackId: Id;
@@ -181,7 +195,10 @@ export interface Project extends TenantRecord {
     skills: string[];
     ownerId: Id;
     status: 'idea' | 'building' | 'launched';
+    /** Legacy art name, kept for stored data. Covers now come only from `coverImage`. */
     cover: string;
+    /** Uploaded cover, or none for the plain panel. */
+    coverImage?: CoverImage | null;
 }
 export interface ProjectMember extends TenantRecord {
     projectId: Id;
@@ -284,7 +301,17 @@ export interface MemberGoal extends TenantRecord {
     userId: Id; purposeId: Id; pathId: Id | null; outcomeId: Id | null; title: string;
     visibility: 'private' | 'members'; status: 'active' | 'paused' | 'completed'; completedAt: string | null;
 }
+/** A picture in the community's cover library. Type and size are copied from the verified upload. */
+export interface CoverLibraryItem extends TenantRecord {
+    fileId: Id;
+    label: string;
+    contentType: CoverImageType;
+    sizeBytes: number;
+    addedBy: Id;
+}
 export interface Workspace {
+    coverLibrary: CoverLibraryItem[];
+    trackInstructors: TrackInstructor[];
     quizAttempts: QuizAttempt[];
     uploads: Upload[];
     lessonDrafts: LessonDraft[];
@@ -358,6 +385,11 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({type:z.literal('lesson.draft.restore'),draftId:id,expectedVersion,revisionId:id}).strict(),
     z.object({type:z.literal('track.lessons.reorder'),trackId:id,
         expectedOrder:z.array(id).max(200),lessonIds:z.array(id).max(200)}).strict(),
+    z.object({type:z.literal('track.cover.set'),trackId:id,...coverChange}).strict(),
+    z.object({type:z.literal('track.instructor.add'),trackId:id,userId:id}).strict(),
+    z.object({type:z.literal('cover.library.add'),fileId:id,label:coverLibraryLabel}).strict(),
+    z.object({type:z.literal('track.instructor.remove'),trackId:id,userId:id}).strict(),
+    z.object({type:z.literal('project.cover.set'),projectId:id,...coverChange}).strict(),
     z.object({type:z.literal('task.create'),projectId:id,...taskFields}).strict(),
     z.object({type:z.literal('task.edit'),taskId:id,expectedVersion,...taskFields}).strict(),
     z.object({type:z.literal('task.claim'),taskId:id,expectedVersion}).strict(),

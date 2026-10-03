@@ -1,17 +1,166 @@
-# Current continuation: Alpha 10 knowledge checks
+# Current continuation: Alpha 14 learner records
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, ASSESSMENTS.md, ROADMAP.md and research/notes/15_ASSESSMENTS.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, LEARNER_RECORDS.md, COVERS.md, ASSESSMENTS.md, ROADMAP.md and research/notes/19_LEARNER_RECORDS.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `788e5d70df7083a07c6a254b315e7aa97965fd5a`, the merge of PR #3 (Alpha 09 private lesson resources), whose tree matches the tested PR head exactly. No other open pull requests existed when this slice started.
-- This slice: branch `claude/stoic-euler-lx2zk7`, restarted from that main by fast-forward. The publication receipt in BUILD_STATUS.md records the pushed commit, the pull request, the CI runs and whether it was merged.
+- Base: main `365e1c9a822297ce471083d891eea1f1256e0c63`, the merge of PR #4 (Alpha 10 knowledge checks). Main had not moved when this slice was pushed.
+- This slice and the three before it: branch `claude/laughing-goodall-2p7z0v`, [PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5). Alpha 11 (receipt `bffa3b7`), Alpha 12 (receipt `98fcee5`) and Alpha 13 (receipt `0fb6903`; CI runs 37098543959 and 37098546160 green on `be9c6c8`) were verified, pushed and recorded first. Alpha 14 learner records follows on the same branch; its head `d52fbcd` passed CI runs 37100233918 (push) and 37100236985 (pull request), recorded in the BUILD_STATUS.md receipt. The owner approved merging PR #5 into main on 3 October 2026 once CI is green.
 
 ## What is done
 
-Knowledge checks are implemented and verified locally (see BUILD_STATUS.md for exact counts): one optional quiz per lesson with single choice, multiple choice, short answer and written questions, authored in the private draft and released by publication; server-side scoring; answer keys withheld until the author's reveal rule allows; stale answers refused by fingerprint; immutable attempts with one review by an active owner or administrator who is not the learner; a review queue in Community studio; forced RLS and column-level grants in depth. Migration 0010 is additive and 0001 to 0009 are unchanged. A pre-existing bug that left `npm run dev` on a blank page is fixed and guarded by a test.
+Learner records are implemented and verified locally (see BUILD_STATUS.md for exact counts). A member downloads their own learning record for one community from their profile: everything that is theirs, with titles, names and answer keys exactly as their screen shows them. Operators can erase one member's knowledge-check answers on a request an active owner authorised (`npm run db:erase-learner`, dry run unless `ERASE=yes`, audit of reference and counts only) and clear unused cover files (`npm run db:prune-covers`). Review queues show 20 at a time with exact totals. Migration 0014 adds one owner-scoped delete policy on attempts; 0001 to 0013 are unchanged; the runtime role still cannot delete attempts.
 
 ## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Open your profile from the account menu and choose Download your learning record. Preview as admin and open Community studio → Knowledge checks for the paged queue. The operator commands need a database; see LEARNER_RECORDS.md. For PostgreSQL: `npm run db:migrate`, then `npm run db:grant-runtime`.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (the `assessments` and `assessments-connected` suites include the record download and queue paging), and `npm run test:postgres` against a disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+## Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure, tenant isolation and role checks current, private goals, messages and scores private. Authority is granted, never inferred from attribution or engagement. Pictures keep their own colours and carry no words; the interface stays black, white and neutral grey. Community review is not accreditation.
+
+## Next
+
+1. Merge PR #5 (Alpha 11 to 14) into main, as the owner approved, and read back main.
+2. Account deletion, as the owner decided: posts, comments and project work stay, shown as "Former member"; name, photo and profile are removed; private things (goals, notes, the learning record) are deleted; direct messages stay for the other person. Owners cannot delete their account until ownership can be handed over.
+3. Server-side pagination for review queues and other long lists, beyond the bounded workspace snapshot.
+4. Deployment remains deferred by the user: Neon, Vercel, bucket, sender and scheduler are all unprovisioned.
+
+---
+## Historical Alpha 13 handover: cover library
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, INSTRUCTORS.md, ROADMAP.md and research/notes/18_COVER_LIBRARY.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source was
+
+- Base: main `365e1c9a822297ce471083d891eea1f1256e0c63`, the merge of PR #4 (Alpha 10 knowledge checks). Main had not moved when this slice was pushed.
+- This slice and the two before it: branch `claude/laughing-goodall-2p7z0v`, [PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5). Alpha 11 cover images (receipt `bffa3b7`; CI runs 37094420188 and 37094422988 green on `108f0ce`) and Alpha 12 track instructors (receipt `98fcee5`; CI runs 37096048793 and 37096051607 green on `a941245`) were verified, pushed and recorded first. Alpha 13 cover library follows on the same branch; its head `be9c6c8` passed CI runs 37098543959 (push) and 37098546160 (pull request), recorded in the BUILD_STATUS.md receipt. Merging into main needs the owner's approval.
+
+### What is done
+
+The cover library is implemented and verified locally (see BUILD_STATUS.md for exact counts). Owners and administrators keep up to 24 named pictures under Community settings → Cover library. Anyone who may change a track or project cover can upload their own picture or choose a library one, which keeps its own focal point and is not copied. A picture in use cannot be removed; removing an unused one deletes its stored file. Every active member sees library pictures; other communities, visitors and unlisted uploads do not. Migration 0013 is additive with forced RLS; 0001 to 0012 are unchanged. The connected cover check now runs the live API under the restricted runtime role.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Use the account menu's Preview as admin, then Community settings → Cover library to add or remove a picture. Open a track and choose Add a cover → Community library to pick one by name. Preview as instructor offers the same choice on Idris Cole's product track. The demo library starts with Mountain ridge, the bundled landscape cropped so its caption does not show. For PostgreSQL: `npm run db:migrate`, then `npm run db:grant-runtime`.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (the `covers` and `covers-connected` suites include the library), and `npm run test:postgres` against a disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+### Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable, tenant isolation and role checks current, private goals, messages and scores private. Authority is granted, never inferred from attribution or engagement. Pictures keep their own colours and carry no words; the interface stays black, white and neutral grey. Community review is not accreditation.
+
+### Next, as recorded then
+
+1. Owner review of PR #5 (Alpha 11, 12 and 13) in the demo, then merge with the owner's approval and read back main.
+2. A paginated review queue and a learner's export of their own attempts.
+3. An operator procedure for erasing a learner's answers and removed covers on request.
+4. Deployment remains deferred by the user: Neon, Vercel, bucket, sender and scheduler are all unprovisioned.
+
+---
+## Historical Alpha 12 handover: track instructors
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, COVERS.md, ROADMAP.md and research/notes/17_TRACK_INSTRUCTORS.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source was
+
+- Base: main `365e1c9a822297ce471083d891eea1f1256e0c63`, the merge of PR #4 (Alpha 10 knowledge checks). Main had not moved when this slice was pushed.
+- This slice and the one before it: branch `claude/laughing-goodall-2p7z0v`, [PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5). Alpha 11 cover images was verified, pushed and recorded first (receipt commit `bffa3b7`, CI runs 37094420188 and 37094422988 green on `108f0ce`); Alpha 12 track instructors follows on the same branch; its head `a941245` passed CI runs 37096048793 (push) and 37096051607 (pull request), recorded in the BUILD_STATUS.md receipt. Merging into main needs the owner's approval.
+
+### What is done
+
+Track instructors are implemented and verified locally (see BUILD_STATUS.md for exact counts): owners and administrators name instructors per track; instructors author that track's lessons, files, knowledge checks and cover and mark its knowledge checks from a teaching page, never their own attempts; other tracks stay invisible to them; suspension ends access at once. Rights come only from explicit grants, never from being shown as a track's author. Migration 0012 is additive with forced RLS and instructor policies; 0001 to 0011 are unchanged. The connected instructor check runs the live API under the restricted runtime role with forced RLS.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Use the account menu's Preview as instructor (Idris Cole, product track) to open Teaching, mark Sofia Chen's waiting answer and write a lesson in Creator studio. Preview as admin, open a track and choose Instructors to add or remove one. For PostgreSQL: `npm run db:migrate`, then `npm run db:grant-runtime`.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script including `instructors` and `instructors-connected`, and `npm run test:postgres` against a disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+### Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable, tenant isolation and role checks current, private goals, messages and scores private. Authority is granted, never inferred from attribution or engagement. Pictures keep their own colours; the interface stays black, white and neutral grey. Community review is not accreditation.
+
+### Next, as recorded then
+
+1. Owner review of PR #5 (Alpha 11 and Alpha 12) in the demo, then merge with the owner's approval and read back main.
+2. A paginated review queue and a learner's export of their own attempts.
+3. An operator procedure for erasing a learner's answers and removed covers on request.
+4. Deployment remains deferred by the user: Neon, Vercel, bucket, sender and scheduler are all unprovisioned.
+
+---
+## Historical Alpha 11 handover: cover images
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, ROADMAP.md and research/notes/16_COVER_IMAGES.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source was
+
+- Base: main `365e1c9a822297ce471083d891eea1f1256e0c63`, the merge of PR #4 (Alpha 10 knowledge checks), whose tree is identical to the tested PR head `abbb51f`. PR #5 was the only open pull request when this slice started.
+- This slice: branch `claude/laughing-goodall-2p7z0v`, [PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5). It began as the cover contrast follow-up (built from main `788e5d7`, merged with main `365e1c9`), and then, at the owner's request, replaced the decorative covers with uploaded ones. The publication receipt in BUILD_STATUS.md records the pushed commit, the CI runs and whether it was merged. Merging into main needs the owner's approval.
+
+### What is done
+
+Cover images are implemented and verified locally (see BUILD_STATUS.md for exact counts): communities upload their own track and project covers, set a focal point and preview the crops, or a plain neutral panel shows; no text sits on a picture. Administrators set track covers, and a project's owner or an administrator sets its cover. Pictures are resized in the browser, verified on the pinned generation and served through an access-checked same-origin route, with a restrictive RLS policy in depth. Migration 0011 is additive and 0001 to 0010 are unchanged. The earlier decorative art and its contrast patch are gone, so the knowledge-check connected scan covers the whole page again.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Every card starts with the plain panel. Use the account menu's Preview as admin, open Paths & learning, Course library, a track, then **Add a cover**; or open Projects, a project, then **Add a cover**. As a member, start a project to give your own project a cover. For PostgreSQL: `npm run db:migrate`, then `npm run db:grant-runtime`.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script including `covers` and `covers-connected`, and `npm run test:postgres` against a disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+### Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable, tenant isolation and role checks current, private goals, messages and scores private. Pictures keep their own colours; the interface stays black, white and neutral grey, and nothing is written on a picture. Community review is not accreditation.
+
+### Next recorded at the time
+
+1. Owner review of PR #5 in the demo, then merge with the owner's approval and read back main.
+2. Instructor-scoped authoring and review: let a track's instructor author and mark without community-wide administrator rights, with the same RLS depth.
+3. A paginated review queue and a learner's export of their own attempts; an operator procedure for erasing a learner's answers and removed covers on request.
+4. Deployment remains deferred by the user: Neon, Vercel, bucket, sender and scheduler are all unprovisioned.
+
+---
+## Historical Alpha 10 handover: knowledge checks
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, ASSESSMENTS.md, ROADMAP.md and research/notes/15_ASSESSMENTS.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source was
+
+- Base: main `788e5d70df7083a07c6a254b315e7aa97965fd5a`, the merge of PR #3 (Alpha 09 private lesson resources), whose tree matches the tested PR head exactly. No other open pull requests existed when this slice started.
+- This slice: branch `claude/stoic-euler-lx2zk7`, restarted from that main by fast-forward. The publication receipt in BUILD_STATUS.md records the pushed commit, the pull request, the CI runs and whether it was merged. Main `365e1c9` merges PR #4, and its tree is identical to the PR head `abbb51f` (read back 3 October 2026).
+- Follow-up: branch `claude/laughing-goodall-2p7z0v` fixes the contrast of text on custom covers, returns the connected resources scan to the whole learner page and adds a custom cover check to the monochrome suite. It was built from main `788e5d7` and merged with main `365e1c9`; not yet merged into main. See "Follow-up: cover contrast" in BUILD_STATUS.md.
+
+### What is done
+
+Knowledge checks are implemented and verified locally (see BUILD_STATUS.md for exact counts): one optional quiz per lesson with single choice, multiple choice, short answer and written questions, authored in the private draft and released by publication; server-side scoring; answer keys withheld until the author's reveal rule allows; stale answers refused by fingerprint; immutable attempts with one review by an active owner or administrator who is not the learner; a review queue in Community studio; forced RLS and column-level grants in depth. Migration 0010 is additive and 0001 to 0009 are unchanged. A pre-existing bug that left `npm run dev` on a blank page is fixed and guarded by a test.
+
+### Run it
 
 ```sh
 cd platform
@@ -23,15 +172,15 @@ As a member (the default), open Paths & learning, From idea to first version, th
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script including `assessments` and `assessments-connected`, and `npm run test:postgres` against a disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable, tenant isolation and role checks current, private goals, messages and scores private. Attempts, downloads and scores must not become engagement points, reputation or credentials. Community review is not accreditation.
 
-## Next
+### Next recorded at the time
 
 1. Instructor-scoped authoring and review: let a track's instructor author and mark without community-wide administrator rights, with the same RLS depth.
 2. A paginated review queue and a learner's export of their own attempts; an operator procedure for erasing a learner's answers on request.
-3. Queued follow-up: contrast of decorative cover text on newly created tracks (outside these slices).
+3. Cover contrast: superseded by Alpha 11 cover images, which removed the decorative art; both open items there are resolved.
 4. Deployment remains deferred by the user: Neon, Vercel, bucket, sender and scheduler are all unprovisioned.
 
 ---

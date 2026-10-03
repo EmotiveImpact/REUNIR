@@ -1,6 +1,6 @@
 {
   "name": "reunir",
-  "version": "0.10.0-alpha.1",
+  "version": "0.14.0-alpha.1",
   "description": "Purposeful communities. People, purpose, progress, projects and proof.",
   "scripts": {
     "dev": "tsx scripts/dev.ts",
@@ -21,6 +21,8 @@
     "db:runtime-role": "tsx scripts/database.ts runtime-role",
     "db:check": "tsx scripts/database.ts check",
     "db:grant-runtime": "tsx scripts/database.ts grant-runtime",
+    "db:erase-learner": "tsx scripts/database.ts erase-learner",
+    "db:prune-covers": "tsx scripts/database.ts prune-covers",
     "test:browser:purpose": "tsx scripts/purpose-browser-check.ts",
     "mail:drain": "tsx scripts/drain-mail.ts",
     "test:browser:pilot": "tsx scripts/pilot-browser-check.ts",
@@ -37,7 +39,11 @@
     "test:browser:resources": "tsx scripts/resources-browser-check.ts",
     "test:browser:resources-connected": "tsx scripts/resources-connected-check.ts",
     "test:browser:assessments": "tsx scripts/assessments-browser-check.ts",
-    "test:browser:assessments-connected": "tsx scripts/assessments-connected-check.ts"
+    "test:browser:assessments-connected": "tsx scripts/assessments-connected-check.ts",
+    "test:browser:covers": "tsx scripts/covers-browser-check.ts",
+    "test:browser:covers-connected": "tsx scripts/covers-connected-check.ts",
+    "test:browser:instructors": "tsx scripts/instructors-browser-check.ts",
+    "test:browser:instructors-connected": "tsx scripts/instructors-connected-check.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.13.0",

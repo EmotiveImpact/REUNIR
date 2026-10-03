@@ -1,3 +1,46 @@
+# 0.14.0-alpha.1: learner records
+
+- Download your learning record: on your own profile, a dated JSON file of the tracks you joined, the lessons you completed, your knowledge-check answers with marks, feedback and reviewer, and your mission work in that community. It includes everything that is yours, with titles, names and answer keys exactly as your screen shows them, and nothing about other members beyond who reviewed you.
+- Owner-authorised erasure: `npm run db:erase-learner` erases one member's knowledge-check answers and the feedback notices about them on request, as a dry run unless `ERASE=yes`, refusing partial erasure and auditing the reference and counts only.
+- `npm run db:prune-covers` lists and clears cover and library uploads nothing uses, deleting stored files before records and keeping anything chosen again.
+- Review queues show 20 at a time, waiting answers oldest first, with exact totals beside each heading; focus moves to the first new item. The scored and reviewed lists no longer stop at 30.
+- Additive migration 0014: one delete policy on attempts for the owner-authorised erasure, so it works under forced row security without bypass; the runtime role still cannot delete attempts. Migrations 0001 to 0013 unchanged. No new runtime dependency.
+- Deployment remains deferred by the user.
+
+# 0.13.0-alpha.1: cover library
+
+- Covers can now come from a community cover library as well as an upload. The cover dialogue offers **Upload your own** or **Community library** whenever the library holds a picture; choosing one keeps its own focal point and does not copy the picture.
+- Owners and administrators keep up to 24 named pictures under Community settings → Cover library: add one through the same in-browser preparation as covers, see how many covers use each, and remove unused ones, which deletes the stored file.
+- Every active member can see library pictures; other communities, visitors and unlisted uploads cannot. A picture in use cannot be removed.
+- Library options are native radio buttons named after their pictures, so they work from the keyboard and read clearly to screen readers.
+- Additive migration 0013 with forced row security for the library and a restrictive policy for unlisted library uploads; migrations 0001 to 0012 unchanged. No new runtime dependency, no stock photo service.
+- The demo library has one fictional picture: the bundled landscape, cropped so its caption does not show.
+- The connected cover check now runs the live API under the restricted runtime role with forced row security.
+- Deployment remains deferred by the user.
+
+# 0.12.0-alpha.1: track instructors
+
+- Owners and administrators name instructors for a track from an Instructors dialogue on the track page. The new instructor is notified.
+- Instructors author their track's lessons, files, knowledge checks and cover, and mark its knowledge checks, from a new Teaching page. They cannot change other tracks, choose instructors or open Community studio.
+- Rights come only from explicit grants; being shown as a track's author grants nothing, and upgrading grants nothing.
+- One per-track rule in the domain and in row security; other tracks stay invisible to an instructor; suspension ends access at once; grants are added or removed, never rewritten.
+- Additive migration 0012; migrations 0001 to 0011 unchanged. No new runtime dependency.
+- The demo adds Preview as instructor (Idris Cole, product track).
+- The connected instructor check runs the live API under the restricted runtime role with forced row security.
+- Deployment remains deferred by the user.
+
+# 0.11.0-alpha.1: cover images
+
+- Upload your own cover for a track or project. Administrators set track covers; a project's owner or an administrator sets its cover.
+- Choose or drop a picture, set the focal point by clicking or with keyboard-operable sliders, preview the banner, card and small crops, then save or remove.
+- The browser resizes each picture to 1,600 pixels before upload, which also drops metadata such as location. PNG stays PNG when it fits, so transparent logos keep their transparency.
+- Without a cover, a plain neutral panel with one muted icon shows. The generated art, its shapes and every word written on it are retired; titles stay below the picture.
+- Uploads reuse the verified private pipeline: subject-bound intents, exact signed POST policies, signature and dimension checks on the pinned generation. Bytes come from an access-checked same-origin route with private caching and a sandboxing content security policy.
+- Additive migration 0011 with a restrictive RLS policy for cover uploads; migrations 0001 to 0010 unchanged. No new runtime dependency.
+- The connected resources and knowledge-check scans cover the whole learner page again, the monochrome suite checks the plain panel on a new track, and the design contract now checks every web stylesheet. This replaces the earlier contrast patch for text on custom covers, which never reached main.
+- Fix: a project post in the feed always linked to Common Ground; it now links to the project it names.
+- Deployment remains deferred by the user.
+
 # 0.10.0-alpha.1: knowledge checks
 
 - Add one optional knowledge check per lesson: single choice, multiple choice, short answer and written response, with an optional pass mark, attempt limit and answer-reveal rule.

@@ -1,4 +1,303 @@
-# Alpha 10 knowledge checks
+# Alpha 14 learner records
+
+3 October 2026. Application 0.14.0-alpha.1. Members download their own learning record from their profile. Operators can erase a learner's knowledge-check answers on a request an active owner authorised, and clear unused cover files. Review queues show 20 at a time with exact totals. See LEARNER_RECORDS.md and decisions/014-learner-records.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)), after Alpha 11 to 13 on the same branch |
+| Verified locally | Yes: every suite, from a clean worktree of tested commit `2252441` after `npm ci` (see below) |
+| Verified remotely (GitHub Actions) | Yes: both jobs passed on `d52fbcd` in the push and pull request runs (publication receipt below) |
+| Merged | Approved by the owner on 3 October 2026, to follow once CI is green on the receipt commit; the merge and main's read-back are recorded in the next status update |
+| Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- **Your learning record.** A profile panel downloads a dated JSON file of the member's own tracks, completed lessons, knowledge-check attempts (answers, results, marks, feedback, reviewer) and mission work in that community, from `GET /api/organisations/:slug/me/learning-record` (attachment, `no-store`) or, in the demo, built in the browser. It includes every record that is the member's own, but titles, names and answer keys follow the member's own view.
+- **Owner-authorised erasure.** `npm run db:erase-learner` (migration connection, `AUTHORISED_BY` an active owner, `ERASURE_REFERENCE`, dry run unless `ERASE=yes`) erases one member's attempts and the feedback notices about them, refuses a partial erasure, bumps the revision and audits the reference and counts only. Migration `0014_operator_erasure.sql` (additive) adds one delete policy on attempts that admits only the member named in `app.erasure_subject` when the acting user is an active owner, so forced row security still applies to a migration role without bypass. The runtime role still has no DELETE on attempts. Migrations 0001 to 0013 are byte-identical.
+- **Unused cover files.** `npm run db:prune-covers` lists cover and library uploads nothing shows or lists that were rejected or are over an hour old; `PRUNE=yes` deletes stored files first, then only records still unused.
+- **Paged review queues.** 20 at a time, waiting answers oldest first, exact totals beside each heading, focus moved to the first new item. The scored and reviewed lists no longer stop at 30 or report 30 as their count.
+- No new runtime dependency. Release constant and package version are 0.14.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, `npm ci` from the committed lockfile in a clean worktree of tested commit `2252441`, Playwright with Chromium 141 at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16.14 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 544 passed, 0 failed (529 existing plus 6 learning-record domain, 3 learning-record HTTP and 6 erasure database tests) |
+| `npm run test:http` | 17 passed |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Existing demo-browser suites | 249 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 covers, 9 instructors, 16 monochrome, 20 v4 |
+| `npm run test:browser:assessments` | 16 passed (14 existing plus 2): the learner downloads their own record with every attempt, mark and piece of feedback, and keys only where unlocked; a queue of 45 fictional waiting answers opens 20 at a time, oldest first, with exact counts, and focus moves to the new answers |
+| Existing connected-browser suites | 40 passed: 12 connected, 9 resources, 13 covers, 6 instructors |
+| `npm run test:browser:assessments-connected` | 9 passed (8 existing plus 1): the learner downloads their own record through the live API with Better Auth cookies; other communities and visitors cannot |
+| `npm run test:postgres` | 13 passed on PostgreSQL 16.14, including the owner-authorised erasure through a role without row-security bypass. A 14th check, for clearing unused cover files, was added in the following test-only commit and passed on PostgreSQL 16.14 too |
+| Python helpers, `scripts/check_research.py` | 34 passed; the register validates with 47 pinned sources and 16 decisions at the documentation commit (42 and 15 at the tested commit, before the Alpha 14 review was recorded) |
+
+Tests changed rather than added: eight migration-count assertions moved from 13 to 14. No business assertion was weakened.
+
+## Corrections made while verifying
+
+- The first export built everything from the member's visible view, which silently dropped their own enrolments and attempts on a track that had since been unpublished. The record now takes every record that is the member's own from the full state of their community, and only titles, names and answer keys from their view.
+- Without migration 0014, an erasure run as a hosted migration role (no superuser, no row-security bypass) would have deleted nothing, because attempts have forced row security and had no delete policy. A throwaway database with the policy dropped confirmed the command now refuses rather than reporting success.
+- A test expected a non-member to get 403 for the record; the API answers 404 to non-members everywhere, so as not to reveal that a community exists, and the test now says so.
+- The queue paging check first injected its fictional state into the standalone preview's storage, which a loaded page replaced; the check now serves the same preview at a stand-in address inside the browser, where storage works normally.
+- Reviewing the diff before pushing showed the cover pruning methods were covered on PGlite only. A real PostgreSQL check was added after the clean run, in test-only commit `440c1b7`, and passed on PostgreSQL 16.14; CI runs it on PostgreSQL 17.
+
+## Not verified, and why
+
+- Hosted behaviour on Neon and Vercel, a real bucket's deletion permissions for `db:prune-covers`, email and backups remain deferred by the user. The operator commands were exercised through the repository methods and a PostgreSQL role without bypass, not against a hosted database.
+- Account deletion, identity scrubbing and reviewers' notices that name a learner are outside this slice.
+- Queue paging is in the interface; attempts still arrive in the bounded workspace snapshot.
+
+## Preview
+
+The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `http://127.0.0.1:5173`, reachable only from inside the container. Open your profile from the account menu and choose **Download your learning record**; Preview as admin and open Community studio → Knowledge checks for the queue. Clone the branch and run `npm ci && npm run dev` from `platform/`.
+
+## Publication receipt
+
+Pushed to `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)). The remote ref was fetched back and matched the local commit and tree: head `d52fbcddf9f16a738c279d826ebf8e1ae97a84ad` (tree `6d6e0d5d7172395b41f98b2e51c1abe299b36c67`), which is tested commit `2252441`, the test-only PostgreSQL check `440c1b7`, documentation and the source manifest.
+
+Both jobs passed on that head in [run 37100233918](https://github.com/EmotiveImpact/REUNIR/actions/runs/37100233918) (push) and [run 37100236985](https://github.com/EmotiveImpact/REUNIR/actions/runs/37100236985) (pull request). The application job ran the research checker, typecheck, all application tests, 17 HTTP checks, both builds, every demo-browser suite including the record download and queue paging, every connected-browser suite including the live download, and the Python helpers; the PostgreSQL 17 job ran the 14 restricted-role checks, including erasure and cover pruning through a role without row-security bypass.
+
+This receipt commit changes only documentation and source hashes. The owner approved merging PR #5 into main once CI is green.
+
+## Next actions
+
+1. Merge PR #5 (Alpha 11 to 14) into main as the owner approved in the demo; merge only with the owner's approval, then read back main.
+2. Account deletion and identity scrubbing across communities, designed for shared accounts.
+3. Server-side pagination for review queues and other long lists.
+4. When deployment resumes: Neon staging with fourteen migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests.
+
+---
+## Historical Alpha 13 evidence: cover library
+
+3 October 2026. Application 0.13.0-alpha.1. Covers can come from a community cover library as well as an upload. Owners and administrators keep up to 24 named pictures in Community settings; anyone who may change a track or project cover chooses one in the cover dialogue, with its own focal point, without copying it. A picture stays in the library while any cover shows it. See COVERS.md and decisions/013-cover-library.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)), after Alpha 11 and Alpha 12 on the same branch |
+| Verified locally | Yes: every suite, from a clean worktree of tested commit `208e9be` after `npm ci` (see below) |
+| Verified remotely (GitHub Actions) | Yes: both jobs passed on `be9c6c8` in the push and pull request runs (publication receipt below) |
+| Merged | No. Merging into main needs the owner's approval |
+| Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- Migration `0013_cover_library.sql` (additive): library uploads (`purpose='cover_library'`, no track or project, a generation once ready, at most 3 MB); a `cover_library` table with forced RLS (read in the tenant; inserted only by an active owner or administrator in their own name; deleted only by them; each upload listed once; foreign keys to the upload and the adding member); and a restrictive `cover_library_read` policy that keeps unlisted library uploads with their active uploader and active owners and administrators. Migrations 0001 to 0012 are byte-identical. `npm run db:grant-runtime` grants the table without UPDATE.
+- Command `cover.library.add`; upload purpose `cover_library` under `organisations/{organisation}/covers/library/`; `GET /api/organisations/:slug/cover-library/:itemId` serves the verified bytes with the cover headers; `POST .../cover-library/:itemId/remove` deletes the row, the upload record and the stored object, and answers 409 `COVER_IN_USE` while any cover shows the picture. Choosing a library picture for a cover uses the existing `track.cover.set` and `project.cover.set` commands and rights.
+- The cover dialogue offers **Upload your own** or **Community library** whenever the library holds a picture; pictures are native radio buttons named after their pictures. Community settings gains a Cover library section for owners and administrators: add a named picture, see how many covers use each, remove unused ones.
+- The demo library seeds one picture, Mountain ridge: the bundled landscape cropped to 440 × 288 so its caption does not show.
+- The connected cover suite now runs the live API under the restricted runtime role with forced RLS, as the instructor suite does.
+- No new runtime dependency. Release constant and package version are 0.13.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, `npm ci` from the committed lockfile in a clean worktree of tested commit `208e9be`, Playwright with Chromium 141 at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16.14 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 529 passed, 0 failed (507 existing plus 11 domain, 6 database and 5 HTTP library tests) |
+| `npm run test:http` | 17 passed |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Existing demo-browser suites | 247 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 14 knowledge checks, 9 instructors, 16 monochrome (its settings check now includes the library section), 20 v4 |
+| `npm run test:browser:covers` | 16 passed (11 existing plus 5 for the library): adding a named picture in Community settings through an accessible dialogue; choosing a library picture by pointer and by keyboard, with its own focal point; a picture in use stays until its covers change, then is removed; an instructor choosing one for their own track; members seeing library covers with no controls |
+| Existing connected-browser suites | 35 passed: 12 connected, 9 resources, 8 knowledge checks, 6 instructors |
+| `npm run test:browser:covers-connected` | 13 passed (9 existing plus 4 for the library), now with the API under the restricted runtime role and forced RLS: the owner's picture reaches the bucket under the community key without photo metadata; a member chooses it for their own project; members cannot add pictures and other communities and visitors cannot read them; removal waits until nothing shows the picture and then deletes the stored object |
+| `npm run test:postgres` | 12 passed on PostgreSQL 16.14, including the new restricted-role library check |
+| Python helpers, `scripts/check_research.py` | 34 passed; the register validates with 42 pinned sources and 15 decisions at the documentation commit (35 and 14 at the tested commit, before the Alpha 13 review was recorded) |
+
+Tests changed rather than added: seven migration-count assertions moved from 12 to 13; the lesson file pruning test now expects the seeded library picture and so also checks that pruning leaves it alone; the old-schema fixture skips the new table; the connected cover suite's API moved from the owner connection to the restricted runtime role. No business assertion was weakened.
+
+## Corrections made while verifying
+
+- The bundled landscape photograph carries a caption ("DISCIPLINE TODAY. A BRI…") along its bottom rows, and a cover must carry no words. The demo library uses a copy cropped above it; the original stays where the purpose page uses it. A unit test ties the seeded size, type and dimensions to the real file and checks it has no camera metadata.
+- In the Add a library picture dialogue the name hint sat inside the label, which made the field's accessible name a whole sentence. The hint is now attached with `aria-describedby`.
+- A new test expected a rejected library upload to survive until an hour had passed; the code prunes rejected uploads at the next start, as it does for covers, and the test now says so.
+- Before the library checks were trusted, the restrictive policy was dropped in a throwaway database to confirm a member could then see an unlisted upload, so the test fails when the policy is missing.
+
+## Not verified, and why
+
+- Hosted behaviour on Neon and Vercel, a real bucket's signing, IAM and CORS, email and backups remain deferred by the user.
+- Library pictures, like covers, are served at one size.
+- In connected development against the seeded database, the seeded library picture has no stored object, so it shows the plain panel, as the seeded lesson worksheet cannot be downloaded there.
+
+## Preview
+
+The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `http://127.0.0.1:5173`, reachable only from inside the container. Use the account menu's **Preview as admin**, then **Community settings → Cover library** to add or remove a picture; open a track and choose **Add a cover → Community library** to pick one. Clone the branch and run `npm ci && npm run dev` from `platform/`.
+
+## Publication receipt
+
+Pushed to `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)). The remote ref was fetched back and matched the local commit and tree: head `be9c6c89b5d62051396480bd752c9fa190739abc` (tree `5ac771fdbbca619dc310589a43a5e2facea5b25d`), which is tested commit `208e9be` plus documentation and the source manifest.
+
+Both jobs passed on that head in [run 37098543959](https://github.com/EmotiveImpact/REUNIR/actions/runs/37098543959) (push) and [run 37098546160](https://github.com/EmotiveImpact/REUNIR/actions/runs/37098546160) (pull request). The application job ran the research checker, typecheck, all application tests, 17 HTTP checks, both builds, every demo-browser suite including the cover library, every connected-browser suite including the cover library under the restricted runtime role, and the Python helpers; the PostgreSQL 17 job ran the 12 restricted-role checks, including the library.
+
+This receipt commit changes only documentation and source hashes. Merging into main needs the owner's approval.
+
+## Next actions
+
+1. Owner review of PR #5 (Alpha 11, 12 and 13) in the demo; merge only with the owner's approval, then read back main.
+2. A paginated review queue and a learner's export of their own attempts.
+3. An operator erasure procedure covering a learner's answers and removed covers.
+4. When deployment resumes: Neon staging with thirteen migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests.
+
+---
+## Historical Alpha 12 evidence: track instructors
+
+3 October 2026. Application 0.12.0-alpha.1. Owners and administrators name instructors for a track; an instructor authors that track's lessons, files, knowledge checks and cover, and marks its knowledge checks, from a teaching page, without community-wide administrator rights. Being shown as a track's author grants nothing. See INSTRUCTORS.md and decisions/012-track-instructors.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)), after Alpha 11 cover images on the same branch |
+| Verified locally | Yes: every suite, from a clean worktree of tested commit `75e89f6` after `npm ci` (see below) |
+| Verified remotely (GitHub Actions) | Yes: both jobs passed on `a941245` in the push and pull request runs (publication receipt below) |
+| Merged | No. Merging into main needs the owner's approval |
+| Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- Migration `0012_track_instructors.sql` (additive): a `track_instructors` table with forced RLS (read in the tenant; inserted only by an active owner or administrator in their own name; deleted only by them), instructor policies on lesson drafts, revisions and knowledge-check attempts, and the restrictive lesson file read policy recreated to admit instructors of the file's own track. Migrations 0001 to 0011 are byte-identical. `npm run db:grant-runtime` grants the table without UPDATE.
+- Commands `track.instructor.add` and `track.instructor.remove`, administrator-only. One domain rule, `teaches`, decides drafts, history, lesson files, answer keys, attempts, reviews and the track cover; other tracks stay invisible to an instructor; suspension ends access at once. The repository now refuses to change rows that have no mutable properties in place.
+- A Teaching page (sidebar link for instructors who are not administrators) with their tracks and review queue; Creator studio, cover and file tools on their own tracks; an Instructors dialogue for administrators; Preview as instructor in the demo (Idris Cole on the product track). The review queue now lists only attempts on tracks the reviewer teaches and never their own.
+- No new runtime dependency. Release constant and package version are 0.12.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium 141 at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16.14 in a disposable loopback cluster (CI uses PostgreSQL 17). Run in this workspace on the source of feature commit `974fa36`; `75e89f6` only changes the version number.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 507 passed, 0 failed (486 existing plus 9 domain, 8 database and 4 HTTP instructor tests) |
+| `npm run test:browser:instructors` (new) | 9 passed: no teaching tools for members, the instructor's teaching page, feedback on a waiting answer, a lesson written and published on their own track, no tools on another track, the administrators' Instructors dialogue, the review on record, axe scans and no overflow at 390px |
+| `npm run test:browser:instructors-connected` (new) | 6 passed: live build and Better Auth sessions with the API under the restricted runtime role and forced RLS; grant from the live track page, teaching page, review in the instructor's name, publishing on their track, refusals, revocation |
+| `npm run test:postgres` | 11 passed, including the new restricted-role instructor check |
+| Python helpers, `scripts/check_research.py` | 34 passed; 35 pinned sources, 14 decisions |
+
+The full run from a clean worktree of `75e89f6`, after `npm ci` from the committed lockfile, finished after that commit and passed all 24 steps: the research checker, typecheck, `npm test` (507), `npm run test:http` (17), both builds, 258 demo-browser checks (85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 14 knowledge checks, 11 covers, 9 instructors, 16 monochrome, 20 v4), 44 connected-browser checks (12 connected, 9 resources, 8 knowledge checks, 9 covers, 6 instructors) and 34 Python helpers.
+
+Tests changed rather than added: six migration-count assertions moved from 11 to 12, the old-schema fixture skips the new table, and the knowledge-check notification test now expects the seeded product-track instructor to be told as well as the owner, on their teaching page. No business assertion was weakened.
+
+## Corrections made while verifying
+
+- The repository writes ordinary rows with an upsert, which needs UPDATE; grants deliberately have none. Grants are now append-only rows, and changing any row without mutable properties in place raises an error instead of silently upserting.
+- The teaching page's track cover and the dialogue's portraits stretched because a child selector also matched them. Each text block now has its own class.
+
+## Not verified, and why
+
+- Hosted behaviour on Neon and Vercel, real sessions over the internet, email and backups remain deferred by the user.
+- Instructors receive notifications in the application only; no email is sent for a grant.
+
+## Preview
+
+The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `http://127.0.0.1:5173`, reachable only from inside the container. Use the account menu's **Preview as instructor** to see the teaching page, or **Preview as admin** and **Instructors** on a track to add or remove one. Clone the branch and run `npm ci && npm run dev` from `platform/`.
+
+## Publication receipt
+
+Pushed to `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)). The remote ref was fetched back and matched the local commit and tree: head `a94124599ef821836618f56cc0d41547010db6f7` (tree `1c128d48ac69b2661ac0f8c52313b22003158eed`), which is tested commit `75e89f6` plus documentation and the source manifest.
+
+Both jobs passed on that head in [run 37096048793](https://github.com/EmotiveImpact/REUNIR/actions/runs/37096048793) (push) and [run 37096051607](https://github.com/EmotiveImpact/REUNIR/actions/runs/37096051607) (pull request). The application job ran the research checker, typecheck, all application tests, 17 HTTP checks, both builds, every demo-browser suite including instructors, every connected-browser suite including instructors, and the Python helpers; the PostgreSQL 17 job ran the 11 restricted-role checks, including instructors.
+
+This receipt commit changes only documentation and source hashes. Merging into main needs the owner's approval.
+
+## Next actions
+
+1. Owner review of PR #5 (Alpha 11 and Alpha 12) in the demo; merge only with the owner's approval, then read back main.
+2. A paginated review queue and a learner's export of their own attempts.
+3. An operator erasure procedure covering a learner's answers and removed covers.
+4. When deployment resumes: Neon staging with twelve migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests.
+
+---
+## Historical Alpha 11 evidence: cover images
+
+3 October 2026. Application 0.11.0-alpha.1. Communities upload their own track and project covers, or a plain neutral panel shows. The generated cover art and every word written on it are retired; titles stay below pictures. Administrators set track covers; a project's owner or an administrator sets its cover. See COVERS.md and decisions/011-cover-images.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)), built from main `788e5d7` and merged with main `365e1c9` |
+| Verified locally | Yes, every suite below, in this cloud workspace, from a clean worktree of the tested commit |
+| Verified remotely (GitHub Actions) | See the publication receipt below |
+| Merged | No. Merging into main needs the owner's approval |
+| Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- Migration `0011_cover_images.sql` (additive): a nullable, size-bounded `cover_image` object on tracks and projects; `upload_intents` accepts the `cover_image` purpose with `cover_track_id` or `cover_project_id` (exactly one, foreign keys to the tenant's track or project), a generation once ready and at most 3 MB; and a restrictive `cover_image_read` row policy. Migrations 0001 to 0010 are byte-identical.
+- Uploads reuse the verified private pipeline: subject-bound intents, five-minute signed POST policies for an exact key, type and size, and completion that checks size, type, signature and declared dimensions (16 to 4,096 pixels) on the pinned generation, deleting refused objects. Commands `track.cover.set` and `project.cover.set` set, refocus or remove a cover. `GET /api/organisations/:slug/covers/:kind/:subjectId/:fileId` serves bytes after checking access, with private caching, `nosniff` and a sandboxing content security policy.
+- The web `Cover` component shows the picture with its focal point as the object position, or the plain panel, on every card, detail page, feed post, profile and home list. The cover dialogue resizes pictures in the browser to 1,600 pixels (dropping metadata such as location), sets the focal point by click, drag or keyboard sliders, previews three crops and saves or removes.
+- The decorative shapes, labels, art variants and the earlier `.art-custom` contrast patch are removed from the stylesheets. The project post in the feed now links to the project it names, not always to Common Ground.
+- No new runtime dependency. Release constant and package version are 0.11.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, `npm ci` from the committed lockfile in a clean worktree of tested commit `f62d5134c30f2e6c9cd37d4729aa7c1a7419041b`, Playwright with Chromium 141 at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16.14 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 486 passed, 0 failed (466 existing plus 9 domain, 5 database and 6 HTTP cover tests) |
+| `npm run test:http` | 17 passed |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Existing demo-browser suites | 238 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 14 knowledge checks, 16 monochrome, 20 v4 |
+| `npm run test:browser:covers` (new) | 11 passed: plain panels, member permissions, labelled dialogue with keyboard focus return, focal point by click and keyboard, metadata removed, 1,600-pixel resizing, PNG transparency kept, focus-only change, unreadable file refused, project owner journey, axe scans and no overflow at 390px |
+| Existing connected-browser suites | 29 passed: 12 connected, 9 resources, 8 knowledge checks (whole-page axe scan) |
+| `npm run test:browser:covers-connected` (new) | 9 passed: live build, Better Auth sessions, PGlite, stand-in bucket on a second origin; real Chrome JPEG output verified by the server, no cookies or metadata reaching storage, headers, other tenants and visitors refused, unpublished track hidden, removal |
+| `npm run test:postgres` | 10 passed, including the new restricted-role cover check (run on the same source before the commit that only changes the version number) |
+| Python helpers, `scripts/check_research.py` | 34 passed; 30 pinned sources, 13 decisions |
+
+Negative control: with `cover_image_read` dropped inside a rolled-back transaction, a member's restricted-role transaction saw 1 unused cover upload instead of 0.
+
+Tests changed rather than added: the old-schema fixture skips the new property, five migration-count assertions moved from 10 to 11, the project-work upgrade test from 0005 asserts the new `cover_image` column is null before comparing rows, the 0009 upgrade test also strips the two new upload columns, the monochrome check for text on custom covers now checks the plain panel on a new track, and the knowledge-check connected axe scan is no longer limited to `.lesson-content`. No business assertion was weakened.
+
+## Corrections made while verifying
+
+- The cover dialogue first rendered inside the page heading, so heading paragraph styles reached into it. It now renders at the document root.
+- The slider values used `<output>`, which is a live region, so each step would have been announced twice. They are hidden text now; the sliders announce their own values.
+- A failed capability request made the dialogue say storage was not configured. It now says availability could not be checked.
+- In the demo, the note about browser-only storage appeared twice after saving. It appears once.
+
+## Not verified, and why
+
+- Real Google Cloud Storage signing, IAM and bucket CORS for cover uploads, as for lesson files; hosted behaviour is deferred by the user.
+- Photos straight from phones: HEIC decoding on Safari, EXIF rotation and very large images on low-memory devices. The checks use desktop Chromium with JPEG and PNG.
+- Removed pictures are pruned only by a later cover upload in the same community, after an hour; there is no operator erasure procedure yet. A browser can show a cached cover for up to an hour after access ends.
+- One 1,600-pixel file serves every size, including small thumbnails; smaller renditions are a follow-up.
+
+## Preview
+
+The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `http://127.0.0.1:5173`, reachable only from inside the container. Use the account menu's Preview as admin, open a track or project and choose **Add a cover**. This environment does not publish a public preview URL. Clone the branch and run `npm ci && npm run dev` from `platform/`.
+
+## Publication receipt
+
+Pushed to `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)). The remote ref was fetched back and matched the local commit and tree: head `108f0cebabfa0328812a883ca5b328accc2680d8` (tree `a551ccc8efbcdfabd840f17dfe2faffcef08c36a`), which is tested commit `f62d513` plus documentation and the source manifest.
+
+Both jobs passed on that head in [run 37094420188](https://github.com/EmotiveImpact/REUNIR/actions/runs/37094420188) (push) and [run 37094422988](https://github.com/EmotiveImpact/REUNIR/actions/runs/37094422988) (pull request). The application job ran the research checker, typecheck, all application tests, 17 HTTP checks, both builds, every demo-browser suite including covers, every connected-browser suite including covers, and the Python helpers; the PostgreSQL 17 job ran the 10 restricted-role checks, including covers. The automated Codex review ran when the pull request was opened, on `8d87020`, and reported no findings; later pushes do not trigger it.
+
+This receipt commit changes only documentation and source hashes. Merging into main needs the owner's approval.
+
+## Next actions
+
+1. Owner review of PR #5 in the demo; merge only with the owner's approval, then read back main.
+2. Instructor-scoped authoring and review permissions, a paginated review queue and a learner export of their own attempts.
+3. An operator erasure procedure covering removed covers and a learner's attempts.
+4. When deployment resumes: Neon staging with eleven migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests.
+
+---
+## Historical Alpha 10 evidence: knowledge checks
 
 2 October 2026. Application 0.10.0-alpha.1. Creators add an optional knowledge check to a lesson in the private draft; learners answer it and the server scores it; owners and administrators mark written answers and send feedback. Scores are private feedback, not reputation, completion or credentials. See ASSESSMENTS.md and decisions/010-knowledge-checks.md.
 
@@ -9,6 +308,8 @@
 | Implemented | Yes, on `claude/stoic-euler-lx2zk7`, restarted from main `788e5d7` after PR #3 merged |
 | Verified locally | Yes, every suite below, in this cloud workspace |
 | Verified remotely (GitHub Actions) | See the publication receipt below |
+| Merged | Yes: main `365e1c9` merges PR #4, and its tree is identical to `abbb51f` (read back 3 October 2026) |
+| Follow-up | Cover contrast on `claude/laughing-goodall-2p7z0v`, not yet merged; see "Follow-up: cover contrast" |
 | Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
 | Operated with real members | No |
 
@@ -68,9 +369,25 @@ This receipt commit changes only documentation and source hashes; the merge into
 
 ## Next actions
 
-1. Merge this slice once GitHub Actions passes, then read back main.
+1. Done: merged as main `365e1c9`. Next, merge the cover contrast follow-up on `claude/laughing-goodall-2p7z0v`, then read back main.
 2. Instructor-scoped authoring and review permissions, a paginated review queue and a learner export of their own attempts.
 3. When deployment resumes: Neon staging with ten migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests.
+
+## Follow-up: cover contrast
+
+Superseded by Alpha 11 above: the decorative cover art, including the custom cover patched here, was removed and replaced by uploaded covers and a plain panel. Both items listed as still open below are resolved there. The record is kept as history.
+
+Branch `claude/laughing-goodall-2p7z0v`, built from main `788e5d7` and merged with main `365e1c9`. It resolves the decorative cover finding recorded under Alpha 09.
+
+Tracks and projects created in the app get the `custom` cover. It has no art rule of its own, so it uses the default translucent shapes, and these cross the text on narrow covers, above all the track detail cover (285px wide above 1080px, 190px at or below, hidden at 760px and below). axe measured the 6px footer at 4.25:1 (`#ececec` on `#6f6f6f`) at every detail width, and the 9px label too at 1080px and below. axe approximates the rotated shape by its bounding box, so the rendered pixels behind the glyphs were also sampled: the footer fell to 3.44:1, the label to 2.77:1 and the large title to 2.77:1, where large text needs 3:1. Seeded tracks use named covers, which is why the demo suites passed.
+
+- `styles.css`, `.art-custom` only: white lettering; the label and footer sit on the cover's own ground (`#5d5d5d`) with a 3px knockout and 2px radius, and the label hugs its text so the knockout stays local. Named covers and layout are unchanged. Neutral colours only, with no gradient and no recolouring of images.
+- `resources-connected-check.ts`: the axe scan is no longer limited to `.lesson-content`, and the check is renamed "the connected learner page with files passes automated accessibility checks".
+- `monochrome-browser-check.ts`: a new check creates a track through the real form, then runs the neutral colour check and full-page axe scans on its page at 1512px and 1000px.
+
+Before the merge with main, tested commit `43bdf4a` passed every local suite in a clean worktree (425 application tests, 224 demo-browser and 21 connected-browser checks, 32 helper tests), both negative controls (the full-page scans fail on `.cover-foot > span:nth-child(2)` at 4.25:1 with main's `styles.css`) and GitHub Actions [run 37062824183](https://github.com/EmotiveImpact/REUNIR/actions/runs/37062824183). A scratch contrast sweep of every cover type at 35 widths from 360px to 1640px found 63 failing text samples and 51 axe violation nodes on custom covers before the change and none after; named covers measured identically.
+
+Still open: `assessments-connected-check.ts`, added in Alpha 10, limits its axe scan to `.lesson-content` for the same reason, and the seeded `notes` cover pairs `#eaeaea` with `#8c8c8c` at 2.79:1, so full-page scans of the demo `/projects` page and of that project fail.
 
 ---
 ## Historical Alpha 09 evidence: private lesson resources
@@ -120,7 +437,7 @@ Tests changed rather than added: the old-schema fixture now skips the new collec
 - The database run showed that restricted-role RLS already hides a pending file from members, returning 404 before the role check. The domain now checks the author role first, so members get the same clear 403 in every mode.
 - An object overwritten between the metadata read and the pinned signature read surfaced as a 500. It now returns a retryable 409 `UPLOAD_CHANGED` and leaves the intent pending.
 - The connected harness navigated to the same hash URL without reloading, so the learner saw a cached workspace. The harness now reloads. Live mode refreshes every 30 seconds in normal use.
-- A full-page axe scan of a newly created connected track flagged 6px decorative cover text at 4.25:1. The cover is `aria-hidden` and outside this slice, so the connected scan covers the lesson article, and the cover fix is queued as a separate task. The demo learner page with files passes a full-page scan.
+- A full-page axe scan of a newly created connected track flagged 6px decorative cover text at 4.25:1. The cover is `aria-hidden` and outside this slice, so the connected scan covers the lesson article, and the cover fix is queued as a separate task. The demo learner page with files passes a full-page scan. Resolved by the cover contrast follow-up above.
 
 ## Not verified, and why
 

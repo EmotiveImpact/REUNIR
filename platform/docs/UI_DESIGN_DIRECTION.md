@@ -27,10 +27,10 @@ The account menu uses Radix's supported non-modal mode, with keyboard navigation
 
 The static mock's 62% is replaced by calculated evidenced progress. Past sample events do not pretend to be upcoming. Existing private goals retain explicit visibility, and role-switching is demo-only. Product navigation is permission-filtered; hidden UI is not an authorisation boundary. No migrations or permission rules are changed for presentation.
 
-The seven sample portrait JPEGs and hero crop originate in the supplied reference. They are fictional preview assets. Production photography and rights review are still required before public launch. Course/project thumbnail artwork remains the existing placeholder where no content photo exists.
+The seven sample portrait JPEGs and hero crop originate in the supplied reference. They are fictional preview assets. Production photography and rights review are still required before public launch. Track and project covers are pictures uploaded by the community, cropped around a stored focal point and kept in their natural colours, or a plain neutral panel with one muted icon. No text is placed on a picture: titles and details stay below or beside it, and only opaque status labels may sit on it. The earlier generated cover art is retired and must not return.
 
 ## Acceptance
 
-Run `test:browser:v4`, the retained community/purpose/pilot/work/authoring suites, and the monochrome suite. Verify desktop and narrow viewports, one account trigger, no repeated bottom avatars, all routes, real progress, image fallbacks, access boundaries, menu/drawer focus and no horizontal overflow. Preserve original image colours; do not grayscale the entire page.
+Run `test:browser:v4`, the retained community/purpose/pilot/work/authoring suites, the monochrome suite and, for anything that touches covers, `test:browser:covers`. Verify desktop and narrow viewports, one account trigger, no repeated bottom avatars, all routes, real progress, image fallbacks, access boundaries, menu/drawer focus and no horizontal overflow. Preserve original image colours; do not grayscale the entire page.
 
 This implementation is not a hosted deployment or proof of a GitHub merge. Those require their own verified receipts.

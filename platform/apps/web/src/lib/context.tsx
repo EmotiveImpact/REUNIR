@@ -17,7 +17,8 @@ interface Ctx {
     userId: string;
     setUserId: (s: string) => void;
     busy: boolean;
-    command: (c: CommandInput) => Promise<MutationResult | undefined>;
+    /** Reports failure through `onError` when given (for example inside a dialogue), otherwise as a toast. */
+    command: (c: CommandInput, options?: { onError?: (message: string) => void }) => Promise<MutationResult | undefined>;
     /** Private lesson files. Each reports its own outcome and leaves the global busy state alone. */
     uploadResource: (trackId: string, file: File) => Promise<Upload | undefined>;
     discardUpload: (uploadId: string) => Promise<boolean>;
@@ -45,7 +46,7 @@ export function WorkspaceProvider({ children }: {
     const key = ['workspace', activeSlug, userId];
     const query = useQuery({ queryKey: key, queryFn: () => loadWorkspace(activeSlug, userId), enabled: !!ident.data && !!userId, retry: false, refetchInterval: mode==='live'?30000:false, refetchOnWindowFocus: mode === 'live' });
     const toast = useCallback((s: string) => { setNotice(s); window.setTimeout(() => setNotice(n => n === s ? '' : n), 4800); }, []);
-    const command = async (c: CommandInput) => { if (busy)
+    const command = async (c: CommandInput, options: { onError?: (message: string) => void } = {}) => { if (busy)
         return; setBusy(true); try {
         const r = await sendCommand(activeSlug, userId, c);
         cache.removeQueries({ queryKey: ['workspace', activeSlug], predicate: q => q.queryKey[2] !== userId });
@@ -54,7 +55,8 @@ export function WorkspaceProvider({ children }: {
         return r;
     }
     catch (e) {
-        toast(displayError(e));
+        if (options.onError) options.onError(displayError(e));
+        else toast(displayError(e));
         return undefined;
     }
     finally {

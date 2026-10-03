@@ -110,3 +110,7 @@ textarea.quiz-text {min-height:96px}
   .quiz-settings {grid-template-columns:1fr}
   .quiz-editor-head {flex-direction:column;gap:12px}
 }
+
+/* Long review lists: a page at a time, with the full count beside each heading. */
+.review-more {display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:16px 0 4px;font-size:12px;color:var(--muted)}
+.quiz-review-card h2:focus, .quiz-reviewed p:focus {outline:2px solid #f1f1f1;outline-offset:4px}

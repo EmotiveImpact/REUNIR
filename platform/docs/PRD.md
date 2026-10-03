@@ -1,6 +1,6 @@
 # REUNIR · Product Requirements Document
 
-Version 0.10 · 2 October 2026 · Knowledge checks, Alpha 10 (application 0.10.0-alpha.1), on the approved v4 design. Requirements and actual delivery are distinguished below.
+Version 0.12 · 3 October 2026 · Track instructors, Alpha 12 (application 0.12.0-alpha.1), on the approved v4 design. Requirements and actual delivery are distinguished below.
 
 ## 1. Product
 
@@ -391,4 +391,73 @@ Creators add one optional knowledge check to a lesson inside the existing privat
 | K09 | Existing lessons, drafts, revisions and completions upgrade unchanged | Migration 0010 upgrade test |
 | K10 | The fictional demo runs the same rules, including a seeded review queue | Demo browser journey |
 
-Question banks, timers, partial credit, file answers, exports and an erasure procedure for attempts are outside this release.
+Question banks, timers, partial credit, file answers, exports and an erasure procedure for attempts are outside this release. (Alpha 14 later added the learner's own export and an owner-authorised erasure procedure.)
+
+## Alpha 11: cover images
+
+Tracks and projects show a picture their community uploads, or a plain neutral panel. The decorative generated art and its text are retired: titles, categories and people always sit outside the picture, and only opaque status labels appear on it. Administrators set track covers; a project's owner or an administrator sets its cover. The browser resizes each picture to 1,600 pixels before upload, dropping metadata such as location, and a stored focal point keeps the chosen part in view at every size. See `COVERS.md` and `decisions/011-cover-images.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| C01 | Only active owners/admins change track covers; a project's owner or an active owner/admin changes its cover | Domain, HTTP, database, demo and connected browser tests |
+| C02 | Covers are visible only where their track or project is: tenant, space access and track publication | Domain matrix, RLS, HTTP, connected browser and PostgreSQL tests |
+| C03 | Uploads are bound to one subject and an exact key, type and size; completion checks signature and declared dimensions on the pinned generation, and refused objects are deleted | Domain, HTTP and connected browser tests |
+| C04 | Pictures are resized in the browser and metadata such as location never reaches storage | Demo and connected browser tests |
+| C05 | No text is drawn on a picture; the plain panel has no words; colours stay neutral and pictures keep their own colours | Monochrome, cover and design contract checks |
+| C06 | The cover dialogue is labelled, keyboard operable and passes automated accessibility checks at desktop and phone widths | Demo and connected browser tests with axe |
+| C07 | Removing a cover stops serving its bytes at once | HTTP and connected browser tests |
+| C08 | Existing tracks, projects and uploads upgrade unchanged | Migration 0011 upgrade test |
+| C09 | The fictional demo runs the same rules with browser-local bytes | Demo browser journey |
+
+Server-side thumbnails, alt text fields, cropping tools, remote image URLs and covers for spaces, paths or events are outside this release. Removed pictures are pruned later rather than deleted at once; an operator erasure procedure is still open.
+
+## Alpha 12: track instructors
+
+Owners and administrators name instructors for a track. An instructor authors that track's lessons, files, knowledge checks and cover, and marks its knowledge checks, from a teaching page, without community-wide administrator rights. Being shown as a track's author grants nothing. See `INSTRUCTORS.md` and `decisions/012-track-instructors.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| I01 | Only active owners and administrators add or remove instructors, recorded in their own name | Domain, database, HTTP and both browser suites |
+| I02 | Rights come only from explicit grants, never from being named as a track's author; upgrading grants nothing | Domain and migration 0012 upgrade tests |
+| I03 | An instructor authors, publishes, reorders and manages files and the cover of their own tracks only | Domain, database, HTTP, demo and connected browser tests |
+| I04 | An instructor sees answer keys and attempts, and reviews once, on their own tracks only, never their own attempt | Domain, database (forced RLS), HTTP, browser and PostgreSQL tests |
+| I05 | Other tracks' drafts, files and attempts stay invisible to an instructor (not available, 404) | Domain, database and HTTP tests |
+| I06 | Suspension ends an instructor's access at once; grants are added or removed, never rewritten | Domain, database, grants and PostgreSQL tests |
+| I07 | No cross-tenant grants or access | Domain and database tests |
+| I08 | Instructors work from an accessible teaching page; Community studio stays for the community team | Demo and connected browser tests with axe |
+| I09 | The fictional demo previews an instructor with the same rules | Demo browser journey |
+
+Invitations to accept, contributor roles beyond instructor, per-lesson grants and instructor-created tracks are outside this release.
+
+## Alpha 13: cover library
+
+People who may change a cover can upload their own picture or choose one from a small library their community supplies. Owners and administrators add up to 24 named pictures in Community settings and remove ones nothing uses. Choosing does not copy the picture, and each cover keeps its own focal point. See `COVERS.md` and `decisions/013-cover-library.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| L01 | Only active owners and administrators add or remove library pictures, recorded in their own name | Domain, database (forced RLS), HTTP, both browser suites and PostgreSQL tests |
+| L02 | Anyone who may change a cover can choose a library picture; nobody else gains a cover right | Domain, HTTP, demo and connected browser tests |
+| L03 | Every active member sees library pictures; other communities, visitors and unlisted uploads do not | Domain, RLS, HTTP and connected browser tests |
+| L04 | Library uploads follow the verified pipeline: browser resize without metadata, exact policy, signature and dimension checks, deletion of refused files | Domain, HTTP and connected browser tests |
+| L05 | A picture in use cannot be removed; removing an unused one deletes its record, upload and stored file | Domain, database, HTTP and both browser suites |
+| L06 | Each picture has a short name that is its accessible name; choosing works by pointer and keyboard; the dialogues pass automated accessibility checks | Demo and connected browser tests with axe |
+| L07 | Existing tracks, projects, covers and uploads upgrade unchanged | Migration 0013 upgrade test |
+| L08 | The fictional demo offers one wordless library picture with the same rules | Demo browser journey and asset test |
+
+Stock photo search, remote image addresses, renaming, tagging or searching the library, and libraries for other kinds of picture are outside this release.
+
+## Alpha 14: learner records
+
+Members download their own learning record from their profile. Operators can erase a learner's knowledge-check answers on a request an active owner authorised, and clear unused cover files. Review queues show 20 at a time with exact totals. See `LEARNER_RECORDS.md` and `decisions/014-learner-records.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| R01 | A member downloads only their own record for one community; nobody else, no visitor and no other community can | Domain, HTTP under the restricted role, demo and connected browser tests |
+| R02 | The record includes every record that is the member's own, with titles, names and answer keys exactly as their screen shows them | Domain tests and the demo download check |
+| R03 | Erasure needs an active owner's authorisation and a request reference, is a dry run unless confirmed, refuses partial erasure and keeps an audit entry with counts only | Database and PostgreSQL tests |
+| R04 | Erasure works under forced row security without bypass; the runtime role can never delete attempts | Database tests with a role without bypass, migration 0014 test, PostgreSQL check |
+| R05 | Unused cover files are deleted before their records, and anything chosen again is kept | Database test |
+| R06 | Review queues page 20 at a time, waiting answers oldest first, with exact totals and focus moved to new items | Demo browser check with 45 waiting answers |
+| R07 | Existing rows upgrade unchanged | Migration 0014 upgrade test |
+
+Account deletion, identity scrubbing, administrator exports of someone else's data and server-side queue pagination are outside this release.

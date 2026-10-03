@@ -79,5 +79,80 @@ try{
         assert.equal((await rows('org_code_black',DEMO_USER,"UPDATE quiz_attempts SET feedback='Forged' WHERE id='attempt_sofia' RETURNING id")).length,0);
         assert.equal((await rows('org_code_black',DEMO_ADMIN,"UPDATE quiz_attempts SET feedback='Rewritten',score=0,version=2 WHERE id='attempt_sofia' RETURNING id")).length,0,'a finished review cannot be rewritten');
     });
+    await check('covers verify, display and stay tenant-scoped through a restricted PostgreSQL connection',async()=>{
+        const repo=new WorkspaceRepository(runtime!);
+        const {upload}=await repo.beginCoverUpload('code-black',DEMO_ADMIN,{purpose:'cover_image',subject:'track',subjectId:'track_story',contentType:'image/png',sizeBytes:4096},(org,id)=>`organisations/${org}/covers/tracks/track_story/${id}.png`,'covers-postgres');
+        assert.equal((await repo.completeCoverUpload('code-black',DEMO_ADMIN,upload.id,{sizeBytes:4096,contentType:'image/png',generation:'1712345678909999',bytesAcceptable:true},'covers-postgres')).outcome,'ready');
+        const covers=(org:string,user:string)=>runtime!.transaction(async tx=>{await setContext(tx,org,user);return (await tx.query<{id:string}>("SELECT id FROM upload_intents WHERE purpose='cover_image'")).rows.map(x=>x.id);});
+        assert(!(await covers('org_code_black',DEMO_USER)).includes(upload.id),'members cannot read a cover nothing displays');
+        await assert.rejects(()=>repo.coverImage('code-black',DEMO_USER,'track','track_story',upload.id),{code:'NOT_FOUND'});
+        await assert.rejects(()=>repo.execute('code-black',DEMO_USER,{type:'track.cover.set',trackId:'track_story',fileId:upload.id},randomUUID(),'covers-postgres'),{code:'COVER_EDITOR_REQUIRED'});
+        await repo.execute('code-black',DEMO_ADMIN,{type:'track.cover.set',trackId:'track_story',fileId:upload.id,focusX:40,focusY:60},randomUUID(),'covers-postgres');
+        assert((await covers('org_code_black',DEMO_USER)).includes(upload.id));assert.deepEqual(await covers('org_studio_north',DEMO_ADMIN),[]);
+        assert.deepEqual(await repo.coverImage('code-black',DEMO_USER,'track','track_story',upload.id),{objectKey:`organisations/org_code_black/covers/tracks/track_story/${upload.id}.png`,generation:'1712345678909999',contentType:'image/png',sizeBytes:4096});
+        await assert.rejects(()=>repo.coverImage('studio-north',DEMO_USER,'track','track_story',upload.id),{code:'NOT_FOUND'});
+        await repo.execute('code-black',DEMO_ADMIN,{type:'track.cover.set',trackId:'track_story',fileId:null},randomUUID(),'covers-postgres');
+        assert(!(await covers('org_code_black',DEMO_USER)).includes(upload.id),'a removed cover is private again');
+    });
+    await check('track instructors author and review only their own track through a restricted PostgreSQL connection',async()=>{
+        const repo=new WorkspaceRepository(runtime!),IDRIS='member_idris';
+        const exec=(cmd:unknown,user:string)=>repo.execute('code-black',user,cmd,randomUUID(),'instructors-postgres');
+        const rows=(user:string,sql:string)=>runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',user);return (await tx.query<Record<string,unknown>>(sql)).rows;});
+        await exec({type:'lesson.draft.create',trackId:'track_product'},IDRIS);
+        await assert.rejects(()=>exec({type:'lesson.draft.create',trackId:'track_story'},IDRIS),{code:'NOT_FOUND'});
+        assert.deepEqual((await rows(IDRIS,'SELECT DISTINCT track_id FROM lesson_drafts')).map(r=>r.track_id),['track_product']);
+        assert.deepEqual(await rows(DEMO_USER,'SELECT id FROM lesson_drafts'),[]);
+        const seen=(await repo.snapshot('code-black',DEMO_USER)).lessons.find(l=>l.id==='lesson_6')!.quiz!;
+        const attempt=(await exec({type:'quiz.attempt.submit',lessonId:'lesson_6',fingerprint:quizFingerprint(seen),answers:[{questionId:'q6_watch',optionIds:['a']},{questionId:'q6_change',text:'Autosave, because people lost their work.'}]},DEMO_USER)).objectId!;
+        await exec({type:'quiz.attempt.review',attemptId:attempt,expectedVersion:1,marks:[{questionId:'q6_change',points:2}],feedback:'Observed and specific.'},IDRIS);
+        assert.deepEqual(await rows(IDRIS,`SELECT status,reviewer_id FROM quiz_attempts WHERE id='${attempt}'`),[{status:'reviewed',reviewer_id:IDRIS}]);
+        await assert.rejects(()=>rows(IDRIS,"INSERT INTO track_instructors(id,organization_id,created_at,track_id,user_id,granted_by) VALUES('g_pg','org_code_black',now(),'track_story','member_idris','member_idris')"),/row-level security/);
+        await assert.rejects(()=>rows(DEMO_ADMIN,"UPDATE track_instructors SET track_id='track_story'"),/permission denied/);
+    });
+    await check('the cover library lists, serves and removes pictures through a restricted PostgreSQL connection',async()=>{
+        const repo=new WorkspaceRepository(runtime!),key=(org:string,id:string)=>`organisations/${org}/covers/library/${id}.png`;
+        const exec=(cmd:unknown,user:string)=>repo.execute('code-black',user,cmd,randomUUID(),'library-postgres');
+        const rows=(user:string,sql:string)=>runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',user);return (await tx.query<Record<string,unknown>>(sql)).rows;});
+        await assert.rejects(()=>repo.beginCoverLibraryUpload('code-black',DEMO_USER,{purpose:'cover_library',contentType:'image/png',sizeBytes:4096},key,'library-postgres'),{code:'ADMIN_REQUIRED'});
+        const {upload}=await repo.beginCoverLibraryUpload('code-black',DEMO_ADMIN,{purpose:'cover_library',contentType:'image/png',sizeBytes:4096},key,'library-postgres');
+        assert.equal((await repo.completeCoverUpload('code-black',DEMO_ADMIN,upload.id,{sizeBytes:4096,contentType:'image/png',generation:'1712345678908888',bytesAcceptable:true},'library-postgres')).outcome,'ready');
+        const unlisted=async()=>(await rows(DEMO_USER,"SELECT id FROM upload_intents WHERE purpose='cover_library'")).map(r=>r.id);
+        assert(!(await unlisted()).includes(upload.id),'members cannot read an unlisted picture');
+        const item=(await exec({type:'cover.library.add',fileId:upload.id,label:'Harbour'},DEMO_ADMIN)).objectId!;
+        assert((await unlisted()).includes(upload.id));
+        assert.deepEqual(await repo.coverLibraryPicture('code-black',DEMO_USER,item),{objectKey:key('org_code_black',upload.id),generation:'1712345678908888',contentType:'image/png',sizeBytes:4096});
+        await assert.rejects(()=>repo.coverLibraryPicture('studio-north',DEMO_USER,item),{code:'NOT_FOUND'});
+        await exec({type:'project.cover.set',projectId:'project_still',fileId:upload.id},'member_jordan');
+        await assert.rejects(()=>repo.removeCoverLibraryItem('code-black',DEMO_ADMIN,item,'library-postgres'),{code:'COVER_IN_USE'});
+        await assert.rejects(()=>rows(DEMO_USER,`INSERT INTO cover_library(id,organization_id,created_at,file_id,label,content_type,size_bytes,added_by) VALUES('l_pg','org_code_black',now(),'${upload.id}','x','image/png',4096,'${DEMO_USER}')`),/row-level security/);
+        await assert.rejects(()=>rows(DEMO_ADMIN,"UPDATE cover_library SET label='Renamed'"),/permission denied/);
+        await exec({type:'project.cover.set',projectId:'project_still',fileId:null},'member_jordan');
+        assert.deepEqual(await repo.removeCoverLibraryItem('code-black',DEMO_ADMIN,item,'library-postgres'),{id:item,objectKey:key('org_code_black',upload.id)});
+        assert.deepEqual(await rows(DEMO_ADMIN,`SELECT id FROM upload_intents WHERE id='${upload.id}'`),[]);
+    });
+    await check('an owner-authorised erasure removes one member\u2019s answers through a role without row-security bypass',async()=>{
+        // A stand-in for a hosted migration role: table privileges, but no superuser and no BYPASSRLS.
+        await admin.query('CREATE ROLE reunir_operator NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS');
+        await admin.query('GRANT USAGE ON SCHEMA public TO reunir_operator');await admin.query('GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO reunir_operator');
+        const scoped=Object.create(admin) as typeof admin;scoped.transaction=fn=>admin.transaction(async tx=>{await tx.query('SET LOCAL ROLE reunir_operator');return fn(tx);});
+        const operator=new WorkspaceRepository(scoped),left=async()=>(await admin.query<{n:number}>("SELECT count(*)::int AS n FROM quiz_attempts WHERE organization_id='org_code_black' AND user_id='member_sofia'")).rows[0].n;
+        const planned=await operator.eraseLearnerAnswers('code-black',DEMO_ADMIN,'member_sofia','request pg-1',false);
+        assert(planned.attempts>=1);assert.equal(await left(),planned.attempts,'a dry run changes nothing');
+        await assert.rejects(()=>operator.eraseLearnerAnswers('code-black',DEMO_USER,'member_sofia','request pg-1',true),{code:'OWNER_REQUIRED'});
+        assert.deepEqual(await operator.eraseLearnerAnswers('code-black',DEMO_ADMIN,'member_sofia','request pg-1',true),{...planned,applied:true});
+        assert.equal(await left(),0);
+        assert.deepEqual((await admin.query("SELECT metadata FROM audit WHERE action='learner.answers.erased' AND object_id='member_sofia'")).rows,[{metadata:{reference:'request pg-1',attempts:planned.attempts,notifications:planned.notifications}}]);
+        await assert.rejects(()=>runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',DEMO_ADMIN);await tx.query("SELECT set_config('app.erasure_subject','member_alex',true)");await tx.query("DELETE FROM quiz_attempts WHERE user_id='member_alex'");}),/permission denied/);
+    });
+    await check('unused cover files are listed and cleared through a role without row-security bypass',async()=>{
+        const scoped=Object.create(admin) as typeof admin;scoped.transaction=fn=>admin.transaction(async tx=>{await tx.query('SET LOCAL ROLE reunir_operator');return fn(tx);});
+        const operator=new WorkspaceRepository(scoped);
+        await admin.query("INSERT INTO upload_intents(organization_id,id,user_id,object_key,content_type,size_bytes,original_name,created_at,status,purpose,cover_track_id) VALUES('org_code_black','pg_stale_cover','member_amina','k-pg-stale','image/png',10,'c',now()-interval '2 hours','pending','cover_image','track_story'),('org_code_black','pg_fresh_cover','member_amina','k-pg-fresh','image/png',10,'c',now(),'pending','cover_image','track_story')");
+        await assert.rejects(()=>operator.staleCoverUploads('code-black',DEMO_USER),{code:'OWNER_REQUIRED'});
+        const stale=(await operator.staleCoverUploads('code-black',DEMO_ADMIN)).map(u=>u.id);
+        assert(stale.includes('pg_stale_cover')&&!stale.includes('pg_fresh_cover'));
+        assert.deepEqual(await operator.removeStaleCoverUploads('code-black',DEMO_ADMIN,['pg_stale_cover','pg_fresh_cover']),['pg_stale_cover']);
+        assert.deepEqual((await admin.query("SELECT id FROM upload_intents WHERE id IN ('pg_stale_cover','pg_fresh_cover')")).rows,[{id:'pg_fresh_cover'}]);
+    });
     await mkdir('evidence/alpha04',{recursive:true});await writeFile('evidence/alpha04/postgres-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Disposable local PostgreSQL service, not Neon.',results},null,2));
 }finally{await runtime?.close();await admin.close();}

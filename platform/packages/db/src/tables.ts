@@ -1712,12 +1712,14 @@ for (const key of ['lessons','lessonDrafts','lessonRevisions']) tables.find(t=>t
 
 // Alpha 09: lesson files reuse the existing upload intents. Member-private uploads stay outside workspace reads.
 for (const key of ['lessons','lessonDrafts','lessonRevisions']) tables.find(t=>t.key===key)!.fields.push({property:'resources',column:'resources',type:'jsonb'});
-tables.push({key:'uploads',table:'upload_intents',where:"purpose='lesson_resource'",fields:[
+tables.push({key:'uploads',table:'upload_intents',where:"purpose IN ('lesson_resource','cover_image','cover_library')",fields:[
     {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
     {property:'userId',column:'user_id',type:'text'},{property:'purpose',column:'purpose',type:'text'},{property:'trackId',column:'track_id',type:'text'},
     {property:'originalName',column:'original_name',type:'text'},{property:'contentType',column:'content_type',type:'text'},{property:'sizeBytes',column:'size_bytes',type:'integer'},
     {property:'status',column:'status',type:'text'},{property:'objectKey',column:'object_key',type:'text'},{property:'completedAt',column:'completed_at',type:'timestamptz'},
-    {property:'generation',column:'generation',type:'text'}]});
+    {property:'generation',column:'generation',type:'text'},
+    // Alpha 11: cover uploads name exactly one track or project.
+    {property:'coverTrackId',column:'cover_track_id',type:'text'},{property:'coverProjectId',column:'cover_project_id',type:'text'}]});
 
 // Alpha 10: knowledge checks live in lesson content; attempts are immutable apart from review fields.
 for (const key of ['lessons','lessonDrafts','lessonRevisions']) tables.find(t=>t.key===key)!.fields.push({property:'quiz',column:'quiz',type:'jsonb'});
@@ -1728,3 +1730,17 @@ tables.push({key:'quizAttempts',table:'quiz_attempts',mutable:['results','score'
     {property:'results',column:'results',type:'jsonb'},{property:'score',column:'score',type:'integer'},{property:'maxScore',column:'max_score',type:'integer'},
     {property:'status',column:'status',type:'text'},{property:'passed',column:'passed',type:'boolean'},{property:'feedback',column:'feedback',type:'text'},
     {property:'reviewerId',column:'reviewer_id',type:'text'},{property:'reviewedAt',column:'reviewed_at',type:'timestamptz'},{property:'version',column:'version',type:'integer'}]});
+
+// Alpha 11: uploaded covers replace the decorative art. NULL keeps the plain panel.
+for (const key of ['tracks','projects']) tables.find(t=>t.key===key)!.fields.push({property:'coverImage',column:'cover_image',type:'jsonb'});
+
+// Alpha 12: explicit track instructors. Grants are never updated in place; revoking deletes the row.
+tables.push({key:'trackInstructors',table:'track_instructors',mutable:[],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'trackId',column:'track_id',type:'text'},{property:'userId',column:'user_id',type:'text'},{property:'grantedBy',column:'granted_by',type:'text'}]});
+
+// Alpha 13: the community cover library. Pictures are added or removed, never rewritten in place.
+tables.push({key:'coverLibrary',table:'cover_library',mutable:[],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'fileId',column:'file_id',type:'text'},{property:'label',column:'label',type:'text'},{property:'contentType',column:'content_type',type:'text'},
+    {property:'sizeBytes',column:'size_bytes',type:'integer'},{property:'addedBy',column:'added_by',type:'text'}]});

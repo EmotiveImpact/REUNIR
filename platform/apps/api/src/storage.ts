@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { DomainError } from '../../../packages/contracts/src/index';
 import { attachmentDisposition, lessonResourceTypes, type LessonResourceType } from '../../../packages/contracts/src/lesson-resources';
+import { coverImageTypes, type CoverImageType, type CoverSubject } from '../../../packages/contracts/src/covers';
 const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'] as const;
 export const uploadSchema = z.object({ name: z.string().trim().min(1).max(160).refine(n => !/[\x00-\x1f\\/]/.test(n), 'Use a filename, not a path.'), contentType: z.enum(allowed), sizeBytes: z.number().int().positive().max(10 * 1024 * 1024) }).strict();
 const extensions = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'application/pdf': 'pdf' };
@@ -17,6 +18,16 @@ export function objectKey(organizationId: string, userId: string, contentType: k
 export function resourceObjectKey(organizationId: string, trackId: string, contentType: LessonResourceType, id: string = randomUUID()) {
     scope(organizationId, trackId, id);
     return `organisations/${organizationId}/lesson-resources/${trackId}/${id}.${lessonResourceTypes[contentType].extension}`;
+}
+/** Covers sit under their track or project, never under the uploader, so ownership changes do not move them. */
+export function coverObjectKey(organizationId: string, subject: CoverSubject, subjectId: string, contentType: CoverImageType, id: string = randomUUID()) {
+    scope(organizationId, subjectId, id);
+    return `organisations/${organizationId}/covers/${subject}s/${subjectId}/${id}.${coverImageTypes[contentType]}`;
+}
+/** Library pictures belong to the community, not to a track, project or uploader. */
+export function coverLibraryObjectKey(organizationId: string, contentType: CoverImageType, id: string = randomUUID()) {
+    scope(organizationId, id);
+    return `organisations/${organizationId}/covers/library/${id}.${coverImageTypes[contentType]}`;
 }
 export interface DownloadOptions {
     /** Suggested download name. Disposition is always attachment. */

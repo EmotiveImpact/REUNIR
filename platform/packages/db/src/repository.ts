@@ -3,6 +3,9 @@ import { applyCommand, visibleWorkspace, actorFor } from '../../domain/src/engin
 import { DomainError, commandSchema, type Workspace, type TenantContext, type MutationResult } from '../../contracts/src/index';
 import type { ResourceRef, ResourceUploadRequest } from '../../contracts/src/lesson-resources';
 import { beginResourceUpload, completeResourceUpload, discardResourceUpload, resolveResourceDownload, type StoredObservation } from '../../domain/src/resources';
+import { beginCoverLibraryUpload, beginCoverUpload, completeCoverUpload, removeCoverLibraryItem, resolveCoverImage, resolveLibraryPicture, staleCoverUploads, type CoverObservation } from '../../domain/src/covers';
+import type { CoverLibraryUploadRequest, CoverSubject, CoverUploadRequest } from '../../contracts/src/covers';
+import { learningRecord } from '../../domain/src/learning-record';
 import { tables, type TableSpec, type CollectionKey } from './tables';
 import type { Database, SQL } from './connection';
 const slugPattern = /^[a-z0-9][a-z0-9-]{0,99}$/;
@@ -20,6 +23,8 @@ async function putRow(sql: SQL, spec: TableSpec, row: Record<string, unknown>, e
             return;
         }
         const fields = spec.fields.filter(f => spec.mutable!.includes(f.property));
+        // A record with no mutable properties is added or deleted, never changed in place.
+        if (!fields.length) throw new Error(`${spec.table} rows cannot be changed in place.`);
         const values = fields.map(f => f.type === 'jsonb' && row[f.property] != null ? JSON.stringify(row[f.property]) : row[f.property] ?? null);
         await sql.query(`UPDATE ${spec.table} SET ${fields.map((f, i) => `${f.column}=$${i + 3}`).join(',')} WHERE organization_id=$1 AND id=$2`, [row.organizationId, row.id, ...values]);
         return;
@@ -189,6 +194,106 @@ export class WorkspaceRepository {
             await saveChanges(sql, before, result.workspace);
             return { id: result.id, objectKey: result.objectKey };
         });
+    }
+    /** Cover images follow the same split: domain rules inside the tenant transaction, storage calls outside it. */
+    async beginCoverUpload(slug: string, userId: string, request: CoverUploadRequest, key: (organizationId: string, id: string) => string, requestId: string) {
+        return this.within(slug, userId, true, async (sql, org) => {
+            const before = await readAll(sql, org), orgId = String(org.id), id = randomUUID();
+            const result = beginCoverUpload(before, context(orgId, userId, requestId), request, { id, objectKey: key(orgId, id) }, new Date().toISOString());
+            await saveChanges(sql, before, result.workspace);
+            return { upload: result.upload, expired: result.expired };
+        });
+    }
+    async completeCoverUpload(slug: string, userId: string, id: string, observed: CoverObservation, requestId: string) {
+        return this.within(slug, userId, true, async (sql, org) => {
+            const before = await readAll(sql, org);
+            const result = completeCoverUpload(before, context(String(org.id), userId, requestId), id, observed, new Date().toISOString());
+            if (result.outcome !== 'unchanged') await saveChanges(sql, before, result.workspace);
+            return { upload: result.upload, outcome: result.outcome };
+        });
+    }
+    /** Library pictures: only active owners and administrators add or remove them; every member may show one. */
+    async beginCoverLibraryUpload(slug: string, userId: string, request: CoverLibraryUploadRequest, key: (organizationId: string, id: string) => string, requestId: string) {
+        return this.within(slug, userId, true, async (sql, org) => {
+            const before = await readAll(sql, org), orgId = String(org.id), id = randomUUID();
+            const result = beginCoverLibraryUpload(before, context(orgId, userId, requestId), request, { id, objectKey: key(orgId, id) }, new Date().toISOString());
+            await saveChanges(sql, before, result.workspace);
+            return { upload: result.upload, expired: result.expired };
+        });
+    }
+    async removeCoverLibraryItem(slug: string, userId: string, itemId: string, requestId: string) {
+        return this.within(slug, userId, true, async (sql, org) => {
+            const before = await readAll(sql, org);
+            const result = removeCoverLibraryItem(before, context(String(org.id), userId, requestId), itemId, new Date().toISOString());
+            await saveChanges(sql, before, result.workspace);
+            return { id: result.item.id, objectKey: result.objectKey };
+        });
+    }
+    async coverLibraryPicture(slug: string, userId: string, itemId: string) {
+        return this.within(slug, userId, false, async (sql, org) => {
+            const { upload } = resolveLibraryPicture(await readAll(sql, org), context(String(org.id), userId), itemId);
+            return { objectKey: upload.objectKey, generation: upload.generation!, contentType: upload.contentType, sizeBytes: upload.sizeBytes };
+        });
+    }
+    async coverImage(slug: string, userId: string, kind: CoverSubject, subjectId: string, fileId: string) {
+        return this.within(slug, userId, false, async (sql, org) => {
+            const { upload } = resolveCoverImage(await readAll(sql, org), context(String(org.id), userId), kind, subjectId, fileId);
+            return { objectKey: upload.objectKey, generation: upload.generation!, contentType: upload.contentType, sizeBytes: upload.sizeBytes };
+        });
+    }
+    /**
+     * Operator procedures, for the migration connection only. Each runs inside the tenant transaction of an active owner
+     * who authorised it, so forced row security still applies; the runtime role cannot delete attempts at all.
+     */
+    private async requireOwner(sql: SQL, organizationId: string, userId: string) {
+        const found = await sql.query("SELECT 1 FROM members WHERE organization_id=$1 AND user_id=$2 AND status='active' AND role='owner'", [organizationId, userId]);
+        if (!found.rows[0]) throw new DomainError('OWNER_REQUIRED', 'An active owner of this community must authorise this.', 403);
+    }
+    /** Erase one member's knowledge-check attempts and the feedback notices about them. Counts only unless `apply`. */
+    async eraseLearnerAnswers(slug: string, authorisedBy: string, subjectUserId: string, reference: string, apply: boolean) {
+        if (!/^[\w .:#/-]{3,80}$/.test(reference)) throw new DomainError('VALIDATION', 'Give the request a short reference, such as a ticket number.', 400);
+        return this.within(slug, authorisedBy, apply, async (sql, org) => {
+            const orgId = String(org.id);
+            await this.requireOwner(sql, orgId, authorisedBy);
+            if (!(await sql.query('SELECT 1 FROM members WHERE organization_id=$1 AND user_id=$2', [orgId, subjectUserId])).rows[0])
+                throw new DomainError('NOT_FOUND', 'That person has no membership record in this community.', 404);
+            await sql.query("SELECT set_config('app.erasure_subject',$1,true)", [subjectUserId]);
+            const count = async (query: string) => (await sql.query<{ n: number }>(query, [orgId, subjectUserId])).rows[0].n;
+            const feedback = "title='Feedback on your knowledge check'";
+            const planned = { attempts: await count('SELECT count(*)::int AS n FROM quiz_attempts WHERE organization_id=$1 AND user_id=$2'), notifications: await count(`SELECT count(*)::int AS n FROM notifications WHERE organization_id=$1 AND user_id=$2 AND ${feedback}`) };
+            if (!apply) return { ...planned, applied: false };
+            const attempts = (await sql.query('DELETE FROM quiz_attempts WHERE organization_id=$1 AND user_id=$2 RETURNING id', [orgId, subjectUserId])).rows.length;
+            // Row security would silently skip rows it does not admit; a partial erasure is refused and rolled back.
+            if (attempts !== planned.attempts) throw new Error('Row security admitted only part of the erasure, so nothing was changed. Check the migration role and owner.');
+            const notifications = (await sql.query(`DELETE FROM notifications WHERE organization_id=$1 AND user_id=$2 AND ${feedback} RETURNING id`, [orgId, subjectUserId])).rows.length;
+            await sql.query('INSERT INTO audit(id,organization_id,created_at,actor_id,action,object_id,metadata) VALUES($1,$2,now(),$3,$4,$5,$6)', [randomUUID(), orgId, authorisedBy, 'learner.answers.erased', subjectUserId, JSON.stringify({ reference, attempts, notifications })]);
+            await sql.query('UPDATE organisations SET revision=revision+1 WHERE id=$1', [orgId]);
+            return { attempts, notifications, applied: true };
+        });
+    }
+    /** Cover and library uploads nothing shows or lists, rejected or over an hour old, with their storage keys. */
+    async staleCoverUploads(slug: string, authorisedBy: string) {
+        return this.within(slug, authorisedBy, false, async (sql, org) => {
+            await this.requireOwner(sql, String(org.id), authorisedBy);
+            return staleCoverUploads(await readAll(sql, org), String(org.id), new Date().toISOString()).map(u => ({ id: u.id, objectKey: u.objectKey, purpose: u.purpose, status: u.status, createdAt: u.createdAt }));
+        });
+    }
+    /** Delete the records of uploads whose stored files are gone, if they are still unused. Returns the IDs removed. */
+    async removeStaleCoverUploads(slug: string, authorisedBy: string, ids: string[]) {
+        return this.within(slug, authorisedBy, true, async (sql, org) => {
+            const orgId = String(org.id);
+            await this.requireOwner(sql, orgId, authorisedBy);
+            const stale = new Set(staleCoverUploads(await readAll(sql, org), orgId, new Date().toISOString()).map(u => u.id));
+            const removable = ids.filter(id => stale.has(id));
+            if (!removable.length) return [];
+            const removed = (await sql.query<{ id: string }>('DELETE FROM upload_intents WHERE organization_id=$1 AND id = ANY($2::text[]) RETURNING id', [orgId, removable])).rows.map(r => r.id);
+            await sql.query('INSERT INTO audit(id,organization_id,created_at,actor_id,action,object_id,metadata) VALUES($1,$2,now(),$3,$4,$5,$6)', [randomUUID(), orgId, authorisedBy, 'cover.uploads.pruned', orgId, JSON.stringify({ removed: removed.length })]);
+            return removed;
+        });
+    }
+    /** The acting member's own learning record, read inside their own tenant transaction. */
+    async learningRecord(slug: string, userId: string) {
+        return this.within(slug, userId, false, async (sql, org) => learningRecord(await readAll(sql, org), context(String(org.id), userId), new Date().toISOString()));
     }
     async resourceDownload(slug: string, userId: string, ref: ResourceRef) {
         return this.within(slug, userId, false, async (sql, org) => {

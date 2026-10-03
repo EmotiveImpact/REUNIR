@@ -1,4 +1,20 @@
-# Research status: Alpha 10
+# Research status: Alpha 14
+
+Alpha 14 (learner records) reviewed how LearnHouse exports, anonymises and deletes a user's data and how Frappe Learning pages quiz submissions, at the same pinned commits; ClassroomIO's account code was searched and offers workspace deletion only. See notes/19_LEARNER_RECORDS.md and the `learner-records` decision in reuse-register.json. Both cited projects are behavioural references only. Imported donor files: zero. New runtime dependencies: none.
+
+## Alpha 13 record
+
+Alpha 13 (cover library) reviewed how Frappe Learning (cover popover and stock photo requests), ClassroomIO (image dialogue, stock photo route and cover widget) and LearnHouse (course thumbnail editor and media library picker) let people choose a cover as well as upload one, at the same pinned commits; see notes/18_COVER_LIBRARY.md and the `cover-library` decision in reuse-register.json. All three are behavioural references only. Imported donor files: zero. New runtime dependencies: none.
+
+## Alpha 12 record
+
+Alpha 12 (track instructors) reviewed how Frappe Learning (course instructors and modify rules), LearnHouse (resource authors and contributor management) and ClassroomIO (course team middleware) scope course staff, at the same pinned commits; see notes/17_TRACK_INSTRUCTORS.md and the `track-instructors` decision in reuse-register.json. All three are behavioural references only. Imported donor files: zero. New runtime dependencies: none.
+
+## Alpha 11 record
+
+Alpha 11 (cover images) reviewed the course card files of Frappe Learning, LearnHouse and ClassroomIO at the same pinned commits, the contrast code of axe-core 4.13.0 (the installed version) and WCAG failure F83 with the contrast understanding document; see notes/16_COVER_IMAGES.md and the `cover-images` decision in reuse-register.json. The learning projects are AGPL at their roots, so they are behavioural references only; axe-core and WCAG were read to understand the checks, not copied. Imported donor files: zero. New runtime dependencies: none.
+
+## Alpha 10 record
 
 Alpha 10 (knowledge checks) reviewed specific files in Frappe Learning, LearnHouse and ClassroomIO at the same pinned commits; see notes/15_ASSESSMENTS.md and the `knowledge-checks` decision in reuse-register.json. All three are AGPL at their roots, so they are behavioural references only. Imported donor files: zero. New runtime dependencies: none. Question banks, partial credit, timers and file answers stay queued under `authoring-next`.
 

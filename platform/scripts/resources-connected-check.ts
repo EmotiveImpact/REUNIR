@@ -110,9 +110,8 @@ try {
         expect(Buffer.compare(await readFile((await download.path())!), PLAN)).toBe(0);
         await expect(learnerPage.locator('.lesson-content h2')).toHaveText('Plan your first interview');
     });
-    await check('the connected lesson article with files passes automated accessibility checks', async () => {
-        // Scoped to the lesson article. The aria-hidden decorative cover on new tracks has a separate, recorded 6px contrast finding.
-        const a = await new AxeBuilder({ page: learnerPage }).include('.lesson-content').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+    await check('the connected learner page with files passes automated accessibility checks', async () => {
+        const a = await new AxeBuilder({ page: learnerPage }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
         await writeFile(dir + '/a11y-learner.json', JSON.stringify({ violations: a.violations }, null, 2)); expect(a.violations.map(v => v.id)).toEqual([]);
         await learnerPage.screenshot({ path: dir + '/connected-learner-files.png', fullPage: true });
     });

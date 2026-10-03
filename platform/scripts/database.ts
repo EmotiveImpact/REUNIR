@@ -5,9 +5,10 @@ import { WorkspaceRepository } from '../packages/db/src/repository';
 import { createSeed } from '../packages/domain/src/seed';
 import { createAuth } from '../apps/api/src/auth';
 import { grantRuntimeTables } from '../packages/db/src/runtime-role';
+import { googleStorage, isMissingObject } from '../apps/api/src/storage';
 const action = process.argv[2];
-if (!['migrate', 'seed', 'owner', 'member', 'runtime-role', 'grant-runtime', 'check'].includes(action))
-    throw new Error('Use migrate, seed, owner, member, runtime-role, grant-runtime or check. See docs/SETUP.md.');
+if (!['migrate', 'seed', 'owner', 'member', 'runtime-role', 'grant-runtime', 'check', 'erase-learner', 'prune-covers'].includes(action))
+    throw new Error('Use migrate, seed, owner, member, runtime-role, grant-runtime, check, erase-learner or prune-covers. See docs/SETUP.md and docs/PILOT_OPERATIONS.md.');
 const url = process.env.MIGRATION_DATABASE_URL || process.env.DATABASE_URL;
 if (!url)
     throw new Error('Set MIGRATION_DATABASE_URL or DATABASE_URL securely in the local environment.');
@@ -67,6 +68,34 @@ try {
         if(db.kind!=='postgres')throw new Error('Use the PostgreSQL migration connection for runtime grants.');
         await db.transaction(grantRuntimeTables);
         console.log('Existing reunir_app role granted only the current application tables. Password unchanged; migration history remains inaccessible.');
+    }
+    // Operator procedures. Both are dry runs unless explicitly confirmed, and both need an active owner who authorised them.
+    if (action === 'erase-learner') {
+        const slug = required('COMMUNITY_SLUG'), subject = required('MEMBER_USER_ID'), owner = required('AUTHORISED_BY'), reference = required('ERASURE_REFERENCE');
+        const apply = process.env.ERASE === 'yes';
+        const r = await repo.eraseLearnerAnswers(slug, owner, subject, reference, apply);
+        console.log(apply
+            ? `Erased ${r.attempts} knowledge-check attempts and ${r.notifications} feedback notices for that member in ${slug}. The audit entry records the reference and counts only.`
+            : `Dry run: ${r.attempts} knowledge-check attempts and ${r.notifications} feedback notices would be erased for that member in ${slug}. Nothing was changed. Set ERASE=yes to erase.`);
+    }
+    if (action === 'prune-covers') {
+        const slug = required('COMMUNITY_SLUG'), owner = required('AUTHORISED_BY');
+        const stale = await repo.staleCoverUploads(slug, owner);
+        if (process.env.PRUNE !== 'yes') {
+            console.log(`Dry run: ${stale.length} cover or library uploads in ${slug} are unused and rejected or over an hour old. Nothing was changed. Set PRUNE=yes to delete them and their stored files.`);
+            for (const u of stale) console.log(`  ${u.purpose} ${u.status} ${u.createdAt} ${u.objectKey}`);
+        }
+        else {
+            const storage = googleStorage(required('GCS_BUCKET'), process.env.GCS_CREDENTIALS_JSON);
+            const gone: string[] = [], kept: string[] = [];
+            // Files first: a record is removed only once its stored file is gone, so nothing is left untracked.
+            for (const u of stale) {
+                try { await storage.remove(u.objectKey); gone.push(u.id); }
+                catch (e) { if (isMissingObject(e)) gone.push(u.id); else kept.push(u.objectKey); }
+            }
+            const removed = await repo.removeStaleCoverUploads(slug, owner, gone);
+            console.log(`Removed ${removed.length} unused cover uploads and their stored files.` + (kept.length ? ` ${kept.length} files could not be deleted, so their records were kept:\n  ${kept.join('\n  ')}` : ''));
+        }
     }
     if (action === 'check') {
         const r = await db.query<{

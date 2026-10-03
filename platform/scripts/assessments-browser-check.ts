@@ -3,7 +3,8 @@ import { chromium, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { switchPreviewRole } from './ui-test-helpers';
+import { openProfile, switchPreviewRole } from './ui-test-helpers';
+import { createSeed } from '../packages/domain/src/seed';
 const root = resolve(import.meta.dirname, '..'), dir = root + '/evidence/knowledge-checks'; await mkdir(dir, { recursive: true });
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, headless: true, args: ['--no-sandbox'] });
 const context = await browser.newContext({ viewport: { width: 1512, height: 1100 } }); const page = await context.newPage(); page.setDefaultTimeout(10000);
@@ -128,6 +129,23 @@ try {
         await expect(kc().locator('.quiz-correct')).toHaveCount(0); await expect(kc()).toContainText('This check does not show correct answers.');
         await expect(kc().getByRole('button', { name: 'Try again' })).toBeVisible();
     });
+    await check('the learner downloads their own learning record with every attempt, mark and piece of feedback', async () => {
+        await openProfile(page);
+        await expect(page.getByRole('heading', { name: 'Your learning record' })).toBeVisible();
+        const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download your learning record', exact: true }).click()]);
+        expect(download.suggestedFilename()).toMatch(/^reunir-learning-record-code-black-\d{4}-\d{2}-\d{2}\.json$/);
+        const record = JSON.parse(await readFile((await download.path())!, 'utf8'));
+        type Attempt = { lesson: string; status: string; feedback: string; reviewedBy: string | null; score: number; maxScore: number; answers: Record<string, unknown>[] };
+        const attempts = (title: string) => (record.knowledgeChecks as Attempt[]).filter(a => a.lesson === title);
+        expect([record.format, record.member.name]).toEqual(['reunir.learning-record', 'Alex Morgan']);
+        expect(attempts('Test before you celebrate').at(-1)).toMatchObject({ status: 'reviewed', feedback: FEEDBACK, reviewedBy: 'Amina Okafor', score: 3, maxScore: 4 });
+        expect(attempts('Test before you celebrate').flatMap(a => a.answers).some(x => 'correctOptions' in x)).toBe(false);
+        expect(attempts('Cut it down to the useful part').length).toBeGreaterThan(1);
+        expect(attempts('Cut it down to the useful part').every(a => a.answers.every(x => 'correctOptions' in x))).toBe(true);
+        expect(JSON.stringify(record)).not.toContain('Sofia');
+        await expect(toast()).toContainText('Your learning record is downloading.');
+        await neutral('.learning-record'); await a11y('learning-record');
+    });
     await check('the studio edits a knowledge check privately and explains what blocks saving', async () => {
         await role('admin'); await studio('Cut it down to the useful part');
         await expect(quiz()).toContainText('3 of 15 questions · 4 points');
@@ -186,6 +204,36 @@ try {
     await check('the second community has no knowledge checks from the first', async () => {
         await page.getByRole('button', { name: 'Open Studio North demo community' }).click(); await lesson('lesson_5');
         await expect(page.locator('.lesson-content')).toBeVisible(); await expect(kc()).toHaveCount(0);
+    });
+    await check('a long review queue opens 20 at a time, oldest first, with exact counts, and moves focus to the new answers', async () => {
+        // A second page starts from fictional demo data with 45 waiting answers, placed in its browser storage before the app loads.
+        const state = createSeed(), first = state.quizAttempts[0];
+        const learners = ['member_alex', 'member_maya', 'member_jordan', 'member_theo', 'member_sofia', 'member_nia'];
+        state.quizAttempts = Array.from({ length: 45 }, (_, i) => ({ ...structuredClone(first), id: `attempt_wait_${String(i).padStart(2, '0')}`, userId: learners[i % learners.length], attemptNumber: 1 + Math.floor(i / learners.length), createdAt: new Date(Date.parse('2026-09-20T09:00:00.000Z') + i * 3600000).toISOString() }));
+        const crowded = await context.newPage(); crowded.setDefaultTimeout(10000); crowded.on('pageerror', e => errors.push(e.message));
+        // The same bundled preview, served at a stand-in address inside this browser so it has its own storage. Nothing leaves the machine.
+        const html = await readFile(root + '/.preview/REUNIR-preview.html', 'utf8');
+        await crowded.route('http://reunir-preview.test/**', route => route.fulfill({ status: 200, contentType: 'text/html', body: html }));
+        await crowded.addInitScript(([key, value]) => { if (!localStorage.getItem(key)) localStorage.setItem(key, value); }, ['reunir.alpha1.v1.code-black', JSON.stringify(state)] as [string, string]);
+        try {
+            await crowded.goto('http://reunir-preview.test/', { waitUntil: 'load' });
+            await switchPreviewRole(crowded, 'admin');
+            await crowded.locator('.sidebar a[href="#/admin"]').click(); await crowded.getByRole('button', { name: /^Knowledge checks · \d+$/ }).click();
+            const queue = crowded.locator('.quiz-review'), cards = queue.locator(':scope > .review-grid .quiz-review-card');
+            await expect(queue.locator('.quiz-review-heading')).toContainText('45');
+            await expect(cards).toHaveCount(20);
+            await expect(queue.locator(':scope > .review-more')).toContainText('Showing 20 of 45 waiting answers.');
+            await expect(cards.first().locator('h2')).toHaveId('quiz-review-attempt_wait_00');
+            await queue.locator(':scope > .review-more').getByRole('button', { name: 'Show 20 more', exact: true }).click();
+            await expect(cards).toHaveCount(40);
+            await expect(crowded.locator('#quiz-review-attempt_wait_20')).toBeFocused();
+            await queue.locator(':scope > .review-more').getByRole('button', { name: 'Show 5 more', exact: true }).click();
+            await expect(cards).toHaveCount(45);
+            await expect(crowded.locator('#quiz-review-attempt_wait_40')).toBeFocused();
+            await expect(queue.locator(':scope > .review-more')).toHaveCount(0);
+            const a = await new AxeBuilder({ page: crowded }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+            expect(a.violations.map(v => v.id)).toEqual([]);
+        } finally { await crowded.close(); }
     });
     await check('the knowledge-check journey causes no unhandled browser exceptions', async () => { expect(errors).toEqual([]); });
     await writeFile(dir + '/browser-results.json', JSON.stringify({ generatedAt: new Date().toISOString(), method: 'Actual bundled React in Chromium with fictional browser-local data; no hosted service.', results, errors }, null, 2));

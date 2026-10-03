@@ -2,7 +2,7 @@
 
 **Purposeful communities: people, purpose, progress, projects and proof.**
 
-The application includes the approved v4 interface in the actual React application, alongside community discussions, learning, private goals, projects, reviewed contributions, messaging and Creator Studio with rich lessons (Alpha 08), private lesson files (Alpha 09) and knowledge checks with reviewed feedback (Alpha 10). Code Black is the first community; REUNIR is the reusable platform.
+The application includes the approved v4 interface in the actual React application, alongside community discussions, learning, private goals, projects, reviewed contributions, messaging and Creator Studio with rich lessons (Alpha 08), private lesson files (Alpha 09), knowledge checks with reviewed feedback (Alpha 10), community-uploaded track and project covers (Alpha 11), track instructors who author and review their own track (Alpha 12), a community cover library to choose covers from (Alpha 13) and learner records: your own download, owner-authorised erasure and paged review queues (Alpha 14). Code Black is the first community; REUNIR is the reusable platform.
 
 The complete source was published in [PR #1](https://github.com/EmotiveImpact/REUNIR/pull/1). Publication commit `5e88b30675832fcedfb0a26491484851d951dd59` is byte-identical to recovered Alpha 07 checkpoint `76b31ab787029126e6462f747f7127a224212899`, with Git tree `5b9d79453d07c75f5d71e0374889d945a3ee1eb8`. The earlier transfer/dependency branches are historical material, not the application.
 
