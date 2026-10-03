@@ -11,11 +11,12 @@ import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
 import { ZodError, z } from 'zod';
 import { createHash, timingSafeEqual, randomUUID } from 'node:crypto';
-import { DomainError } from '../../../packages/contracts/src/index';
+import { DomainError, type Upload } from '../../../packages/contracts/src/index';
 import { WorkspaceRepository } from '../../../packages/db/src/repository';
 import { ScannerUnavailable, type FileScanner } from './scanner';
-import { coverLibraryObjectKey, coverObjectKey, isMissingObject, objectKey, resourceObjectKey, uploadSchema, type PrivateStorage } from './storage';
+import { coverLibraryObjectKey, coverObjectKey, coverThumbnailObjectKey, isMissingObject, objectKey, resourceObjectKey, uploadSchema, type PrivateStorage } from './storage';
 import { clientUpload, type StoredObservation } from '../../../packages/domain/src/resources';
+import type { CoverObservation } from '../../../packages/domain/src/covers';
 import { learningRecordFilename } from '../../../packages/domain/src/learning-record';
 import { SIGNATURE_BYTES, fileSignatureMatches, resourceUploadRequest, type ResourceContext } from '../../../packages/contracts/src/lesson-resources';
 import { accountDeletionRequest } from '../../../packages/contracts/src/account';
@@ -23,7 +24,7 @@ import { pagedList, pageQuery } from '../../../packages/contracts/src/pages';
 import { ownershipTransferRequest } from '../../../packages/contracts/src/ownership';
 import { EMAIL_CHANGE_SENT, EMAIL_CONFIRMED_PATH, EMAIL_LINK_REFUSED_PATH, changeNoticeMail, emailChangeRequest, type EmailVerification } from '../../../packages/contracts/src/email';
 import { TWO_FACTOR_REQUIRED, TWO_FACTOR_REQUIRED_MESSAGE, type AdminTwoFactor } from '../../../packages/contracts/src/two-factor';
-import { COVER_HEAD_BYTES, coverBytesAcceptable, coverLibraryUploadRequest, coverSubject, coverUploadRequest } from '../../../packages/contracts/src/covers';
+import { COVER_HEAD_BYTES, coverBytesAcceptable, coverLibraryDetails, coverLibraryUploadRequest, coverSubject, coverThumbnailAcceptable, coverUploadRequest, imageDimensions, type CoverVariant } from '../../../packages/contracts/src/covers';
 export interface SessionIdentity {
     id: string;
     name: string;
@@ -89,6 +90,14 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         try { await storage?.remove(key); }
         catch { console.error(JSON.stringify({ event: 'storage.remove.failed', requestId })); }
     } };
+    const storedKeysOf = (x: { objectKey: string; thumbnailObjectKey?: string | null }) => [x.objectKey, ...(x.thumbnailObjectKey ? [x.thumbnailObjectKey] : [])];
+    /** Five-minute signed policies for a cover and, when declared, its small copy: exact keys, types and sizes. */
+    const coverPolicies = async (upload: Upload) => {
+        const policy = await storage!.upload(upload.objectKey, upload.contentType, upload.sizeBytes);
+        const thumbnail = upload.thumbnailObjectKey && upload.thumbnailContentType && upload.thumbnailSizeBytes
+            ? await storage!.upload(upload.thumbnailObjectKey, upload.thumbnailContentType, upload.thumbnailSizeBytes) : null;
+        return { id: upload.id, ...policy, method: 'POST', expiresIn: 300, ...(thumbnail ? { thumbnail } : {}) };
+    };
     const scheduled = (c: Context) => {
         const provided=c.req.header('authorization')||'';
         const expected=cronSecret ? 'Bearer '+cronSecret : '';
@@ -259,18 +268,18 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         }
         if (body && typeof body === 'object' && (body as { purpose?: unknown }).purpose === 'cover_image') {
             const input = coverUploadRequest.parse(body);
-            const { upload, expired } = await repository.beginCoverUpload(slug, who.id, input, (organizationId, id) => coverObjectKey(organizationId, input.subject, input.subjectId, input.contentType, id), c.get('requestId'));
-            await removeQuietly(c.get('requestId'), expired.map(x => x.objectKey));
-            const policy = await storage.upload(upload.objectKey, upload.contentType, upload.sizeBytes);
-            return c.json({ id: upload.id, ...policy, method: 'POST', expiresIn: 300 }, 201);
+            const key = (organizationId: string, id: string) => coverObjectKey(organizationId, input.subject, input.subjectId, input.contentType, id);
+            const { upload, expired } = await repository.beginCoverUpload(slug, who.id, input, key, c.get('requestId'), input.thumbnail ? (organizationId, id) => coverThumbnailObjectKey(key(organizationId, id), input.thumbnail!.contentType) : undefined);
+            await removeQuietly(c.get('requestId'), expired.flatMap(storedKeysOf));
+            return c.json(await coverPolicies(upload), 201);
         }
         if (body && typeof body === 'object' && (body as { purpose?: unknown }).purpose === 'cover_library') {
             await requireTwoStepForAdministration(c);
             const input = coverLibraryUploadRequest.parse(body);
-            const { upload, expired } = await repository.beginCoverLibraryUpload(slug, who.id, input, (organizationId, id) => coverLibraryObjectKey(organizationId, input.contentType, id), c.get('requestId'));
-            await removeQuietly(c.get('requestId'), expired.map(x => x.objectKey));
-            const policy = await storage.upload(upload.objectKey, upload.contentType, upload.sizeBytes);
-            return c.json({ id: upload.id, ...policy, method: 'POST', expiresIn: 300 }, 201);
+            const key = (organizationId: string, id: string) => coverLibraryObjectKey(organizationId, input.contentType, id);
+            const { upload, expired } = await repository.beginCoverLibraryUpload(slug, who.id, input, key, c.get('requestId'), input.thumbnail ? (organizationId, id) => coverThumbnailObjectKey(key(organizationId, id), input.thumbnail!.contentType) : undefined);
+            await removeQuietly(c.get('requestId'), expired.flatMap(storedKeysOf));
+            return c.json(await coverPolicies(upload), 201);
         }
         const input = uploadSchema.parse(body);
         const snapshot = await repository.snapshot(slug, who.id);
@@ -326,15 +335,36 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         };
         const FLAGGED = 'This file was flagged by the virus scanner and has been deleted. Nothing was changed.';
         if (intent.purpose === 'cover_image' || intent.purpose === 'cover_library') {
-            let observed = { sizeBytes: 0, contentType: '', generation: null as string | null, bytesAcceptable: false }, infected = false;
+            let observed: CoverObservation = { sizeBytes: 0, contentType: '', generation: null, bytesAcceptable: false }, infected = false;
             if (intent.status === 'pending') {
                 const { meta, matches, head, flagged } = await inspect(COVER_HEAD_BYTES);
                 observed = { sizeBytes: meta.size, contentType: meta.contentType, generation: meta.generation ?? null, bytesAcceptable: matches && !flagged && coverBytesAcceptable(String(intent.content_type), head) };
                 infected = flagged;
+                // The small copy is checked the same way, pinned to its own generation, scanned when a scanner is set, and must be the same picture's shape.
+                const thumbKey = intent.thumbnail_object_key ? String(intent.thumbnail_object_key) : null;
+                if (thumbKey && observed.bytesAcceptable) {
+                    const thumb = await storage.metadata(thumbKey);
+                    if (!thumb) observed.thumbnail = null;
+                    else {
+                        const fits = thumb.size === Number(intent.thumbnail_size_bytes) && thumb.contentType === intent.thumbnail_content_type && !!thumb.generation;
+                        let thumbHead: Uint8Array = new Uint8Array(), thumbClean = true;
+                        if (fits) {
+                            try {
+                                const read = await storage.head(thumbKey, scanner ? thumb.size : Math.min(COVER_HEAD_BYTES, thumb.size), thumb.generation!);
+                                thumbHead = read.subarray(0, COVER_HEAD_BYTES);
+                                if (scanner) thumbClean = await scan(read);
+                            }
+                            catch (error) { if (!isMissingObject(error)) throw error; }
+                        }
+                        const full = imageDimensions(String(intent.content_type), head);
+                        observed.thumbnail = { sizeBytes: thumb.size, contentType: thumb.contentType, generation: thumb.generation ?? null, bytesAcceptable: fits && thumbClean && coverThumbnailAcceptable(String(intent.thumbnail_content_type), thumbHead, full) };
+                    }
+                }
             }
             const result = await repository.completeCoverUpload(slug, who, id, observed, c.get('requestId'));
+            // A refused picture goes with its small copy; a small copy that failed alone, or was flagged, goes and the picture stays.
+            await removeQuietly(c.get('requestId'), result.discarded);
             if (result.outcome === 'rejected') {
-                await removeQuietly(c.get('requestId'), [key]);
                 if (infected)
                     throw new DomainError('FILE_FLAGGED', FLAGGED, 422);
                 throw new DomainError('FILE_MISMATCH', 'This image is not a JPEG, PNG or WebP of a usable size. Nothing was changed.');
@@ -427,26 +457,38 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         return c.body(bytes as Uint8Array<ArrayBuffer>, 200);
     };
     // Cover bytes come through the application so cards need no third-party origin. The URL names the verified file,
-    // so a browser may keep it privately for an hour; access is checked again whenever it asks.
-    app.get('/api/organisations/:slug/covers/:subject/:subjectId/:fileId', async (c) => {
+    // so a browser may keep it privately for an hour; access is checked again whenever it asks. `/thumbnail` serves the
+    // small copy for cards, or the full picture when the cover has none, so older covers keep working.
+    const coverRoute = (variant: CoverVariant) => async (c: Context) => {
         if (!storage)
             throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
         const subject = coverSubject.parse(c.req.param('subject'));
-        const target = await repository.coverImage(c.req.param('slug'), c.get('identity').id, subject, id.parse(c.req.param('subjectId')), id.parse(c.req.param('fileId')));
+        const target = await repository.coverImage(c.req.param('slug')!, c.get('identity').id, subject, id.parse(c.req.param('subjectId')), id.parse(c.req.param('fileId')), variant);
         return sendImage(c, target, 'That cover is not available.');
-    });
-    // A library entry never changes its picture, so its ID is as stable as a file ID for caching.
-    app.get('/api/organisations/:slug/cover-library/:itemId', async (c) => {
+    };
+    app.get('/api/organisations/:slug/covers/:subject/:subjectId/:fileId', coverRoute('full'));
+    app.get('/api/organisations/:slug/covers/:subject/:subjectId/:fileId/thumbnail', coverRoute('thumbnail'));
+    // A library entry never changes its picture, so its ID is as stable as a file ID for caching. Renaming changes only words.
+    const libraryRoute = (variant: CoverVariant) => async (c: Context) => {
         if (!storage)
             throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
-        const target = await repository.coverLibraryPicture(c.req.param('slug'), c.get('identity').id, id.parse(c.req.param('itemId')));
+        const target = await repository.coverLibraryPicture(c.req.param('slug')!, c.get('identity').id, id.parse(c.req.param('itemId')), variant);
         return sendImage(c, target, 'That picture is not in the cover library.');
-    });
+    };
+    app.get('/api/organisations/:slug/cover-library/:itemId', libraryRoute('full'));
+    app.get('/api/organisations/:slug/cover-library/:itemId/thumbnail', libraryRoute('thumbnail'));
     app.post('/api/organisations/:slug/cover-library/:itemId/remove', async (c) => {
         await requireTwoStepForAdministration(c);
         const result = await repository.removeCoverLibraryItem(c.req.param('slug'), c.get('identity').id, id.parse(c.req.param('itemId')), c.get('requestId'));
-        await removeQuietly(c.get('requestId'), result.objectKey ? [result.objectKey] : []);
+        await removeQuietly(c.get('requestId'), [result.objectKey, result.thumbnailObjectKey].filter((k): k is string => !!k));
         return c.json({ id: result.id, status: 'removed' });
+    });
+    // Renaming and tagging are for owners and administrators only, so two-step sign-in applies as it does to removal.
+    app.post('/api/organisations/:slug/cover-library/:itemId/details', async (c) => {
+        await requireTwoStepForAdministration(c);
+        const details = coverLibraryDetails.parse(await c.req.json());
+        const result = await repository.updateCoverLibraryItem(c.req.param('slug'), c.get('identity').id, id.parse(c.req.param('itemId')), details, c.get('requestId'));
+        return c.json({ ...result, status: result.changed ? 'updated' : 'unchanged' });
     });
     // A member's own learning, as a file to keep. Nothing in it belongs to anyone else.
     app.get('/api/organisations/:slug/me/learning-record', async (c) => {

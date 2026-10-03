@@ -3,7 +3,7 @@ import { actorFor, canSeeSpace, isAdmin, isFormer } from './access';
 
 /** Additive browser-state upgrade. Never invent a purpose or evidence for existing user data. */
 export function normalisePurposeState(s: Workspace): Workspace {
-    s.moderationAppeals ??= []; s.notificationPreferences ??= []; s.coverLibrary ??= []; s.trackInstructors ??= []; s.quizAttempts ??= []; s.uploads ??= []; s.lessonDrafts ??= []; s.lessonRevisions ??= [];
+    s.moderationAppeals ??= []; s.notificationPreferences ??= []; s.coverLibrary ??= []; for (const item of s.coverLibrary) item.tags ??= []; s.trackInstructors ??= []; s.quizAttempts ??= []; s.uploads ??= []; s.lessonDrafts ??= []; s.lessonRevisions ??= [];
     s.projectTasks ??= []; s.taskNotes ??= [];
     s.purposes ??= []; s.paths ??= []; s.milestones ??= []; s.pathEnrolments ??= [];
     s.contributions ??= []; s.contributionCredits ??= []; s.outcomes ??= []; s.evidenceChanges ??= []; s.communityOutputs ??= []; s.memberGoals ??= [];
