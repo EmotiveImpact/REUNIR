@@ -1,12 +1,12 @@
 # Alpha 27 loading, error and empty screens
 
-3 October 2026. Application 0.27.0-alpha.1. Shared loading, error and empty states across the web app: shell-preserving loading outlines, route error boundaries with Try again, a Not found page, offline and failed-refresh notices, marked command failures and role-aware empty states. See decisions/027-loading-error-empty-states.md and STATES.md. Alpha 23 and 25 are claimed by other open pull requests, and Alpha 24 (group conversations) and Alpha 26 (email confirmation) are on main, so this slice takes the next free number.
+3 October 2026. Application 0.27.0-alpha.1. Shared loading, error and empty states across the web app: shell-preserving loading outlines, route error boundaries with Try again, a Not found page, offline and failed-refresh notices, marked command failures and role-aware empty states. See decisions/027-loading-error-empty-states.md and STATES.md. Alpha 23 is claimed by another open pull request, and Alpha 24 to 26 are on main, so this slice takes the next free number.
 
 ## Status at a glance
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/everyday-use-4z9rmz`, from main `f5ec8d3` (the launch kit after Alpha 22), with main `9b34cac` (Alpha 24 group conversations and Alpha 26 email confirmation) merged in |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, from main `f5ec8d3` (the launch kit after Alpha 22), with main `fab9510` (Alpha 24 group conversations, Alpha 26 email confirmation and Alpha 25 contributor roles) merged in |
 | Verified locally | Yes: the full suite on the original base `b24095a`, and the checks below again on top of `f5ec8d3` |
 | Verified remotely (GitHub Actions) | Run 37124475400 (application and postgres) passed on `bc37d8c` before main moved; the merge with Alpha 24 is recorded on the pull request |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
@@ -43,6 +43,8 @@ After merging main `d62424d` (Alpha 24 group conversations): typecheck, build an
 
 After merging main `9b34cac` (Alpha 26 email confirmation, which took the number this slice first used, so this slice became Alpha 27 and decision 027): typecheck, build and bundle passed; `npm test` 668 passed, 0 failed; `states` 12, `accounts` 12, `v4` 20 and `monochrome` 16 passed.
 
+After merging main `fab9510` (Alpha 25 contributor roles): typecheck, build and bundle passed; `npm test` 678 passed, 0 failed; `states` 12, `instructors` 11, `authoring` 27, `v4` 20 and `monochrome` 16 passed. The learning, authoring and teaching pages keep Alpha 25's changes with this slice's empty states applied on top.
+
 ## Not verified, and why
 
 - Connected-mode offline, expired-session, failed-refresh and outdated-code screens were not exercised in a browser; their classification is unit-tested and they share components with the browser-checked demo screens.
@@ -53,7 +55,63 @@ After merging main `9b34cac` (Alpha 26 email confirmation, which took the number
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. Content curation, task files with live updates, and the shared form components follow as their own pull requests from the same thread.
 
-## Historical evidence: Alpha 26 confirming and changing your email address
+## Historical evidence: Alpha 25 contributor roles for teaching
+
+3 October 2026. Alpha 26 (PR #18) reached main first, so the application version stays 0.26.0-alpha.1. An owner or administrator adds someone to a track as an instructor or a contributor. Contributors write the track's lesson drafts and files; instructors publish them, and only instructors see and review learners' knowledge-check answers. See decisions/025-contributor-roles.md and INSTRUCTORS.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/courses-teaching-6hum2q`, from main `ec4285d` (the merge of PR #15, Alpha 22), with main `f5ec8d3` (PR #17, the launch kit) main `d62424d` (PR #19, Alpha 24) and main `9b34cac` (PR #18, Alpha 26) merged in |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Passed on `919b352` (run 37125616557) before main moved again; the merge with Alpha 26 is recorded on the pull request |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+Alpha 23 (upload scanning, PR #16) was still open when this slice started, and Alpha 24 was reserved for group conversations, so this slice took the next unreserved number. Group conversations then merged with migration 0022, so this slice's migration became 0023. Email change (PR #18) then merged as Alpha 26 with no migration.
+
+## What changed
+
+- **Instructor or Contributor** when adding someone in a track's Instructors dialogue, and a role menu beside each person. Instructor is the default for the command, the API and every existing grant.
+- Contributors open, save, preview and restore drafts, upload and attach lesson files, and see the track's drafts, history and upload records. Publishing, archiving, reordering, the cover and knowledge-check attempts need an instructor or administrator (`INSTRUCTOR_REQUIRED`, or the existing cover and reviewer refusals).
+- Changing a role replaces the grant in the acting administrator's name; grants are still never updated in place.
+- Additive migration `0023_contributor_roles.sql`: `track_instructors.role` (`instructor` or `contributor`, NOT NULL, default `instructor`), and role-aware replacements for the published-revision, attempt read, attempt review and invitation policies. 0001 to 0022 are byte-identical; no grant change.
+- Database upgrade tests count the migration files (`tests/helpers/migrations.ts`) instead of a fixed number, so additive migrations from parallel slices no longer edit nine tests.
+- The 0014 upgrade test now seeds without teaching grants, whose newer columns do not exist at 0013.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). The final run was on `5882bb6`, this branch with main `d62424d` (Alpha 24 group conversations) merged in.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 664 passed, 0 failed (main's 654 plus 6 contributor domain and 4 contributor database tests) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 271 passed across 15 suites, including 11 group conversation checks from main and 11 instructor checks (1 new: adding a contributor and changing their role) |
+| Connected-browser suites | 60 passed (unchanged; the instructor suite follows the renamed controls) |
+| `npm run test:postgres` | Passed on PostgreSQL 16 |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
+
+## Corrections made while verifying
+
+- Merging main brought group conversations in as migration 0022, so this slice's migration was renamed from 0022 to 0023 before it reached main. The upgrade test now starts from 0022.
+- The first full `npm test` run failed one test, the 0014 upgrade, because it seeded the current fixture (with a teaching role) into a 0013 schema. The test now seeds without grants; the rerun passed.
+
+## Not verified, and why
+
+- Contributor invitations by email are not built: an invitation still makes an instructor, and the 0023 policy refuses any other role on acceptance.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Per-lesson grants, instructor-started tracks and uploaded lesson video, each its own release.
+3. When deployment resumes: follow the launch runbook once it lands.
+
+## Historical Alpha 26 evidence: confirming and changing your email address
 
 3 October 2026. Application 0.26.0-alpha.1. People confirm their email address by a link, and accepting an invitation confirms it. When the server requires it, the production default, an unconfirmed address cannot sign in. Anyone can move their account to a new address with their password and a link sent there. See decisions/026-email-confirmation-and-change.md and ACCOUNTS.md.
 

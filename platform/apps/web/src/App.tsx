@@ -10,7 +10,7 @@ import { isAdmin, isModerator } from '../../../packages/domain/src/engine';
 import { resetDemo, mode as dataMode } from './lib/data';
 import { demoAccountDeleted } from './lib/account';
 import { DEMO_USER, DEMO_ADMIN, DEMO_INSTRUCTOR } from '../../../packages/domain/src/seed';
-import { teachesAny } from '../../../packages/domain/src/instructors';
+import { contributesAny } from '../../../packages/domain/src/instructors';
 import { TwoStepNotice } from './components/two-step';
 import { ConnectionNotice, NotFound, PageBoundary, PageLoading, useOnline } from './components/states';
 import { SimulatedFault } from './components/simulated-fault';
@@ -84,7 +84,7 @@ export default function App() {
       <nav className="spaces-nav">{data.spaces.map(s=><NavLink to={`/spaces/${s.id}`} key={s.id}><span className="space-icon">{s.kind==='learning'?<BookOpen size={17}/>:s.kind==='project'?<Layers size={17}/>:<MessageCircle size={17}/>}</span><span>{s.name}</span>{s.visibility==='private'&&<Lock size={12}/>}</NavLink>)}</nav>
       <div className="sidebar-section-label"><span>YOUR PROGRESS</span></div>
       <div className="sidebar-lower"><NavLink to="/missions"><Target size={17}/>Missions</NavLink><NavLink to="/outputs"><Layers size={17}/>Community outputs</NavLink><NavLink to="/saved"><Bookmark size={17}/>Saved for later</NavLink>
-      {isModerator(me)&&<div className="management-nav"><span className="sidebar-section-label">MANAGE COMMUNITY</span><NavLink to="/admin"><Shield size={17}/>Community studio</NavLink>{isAdmin(me)&&<><NavLink to="/access"><Users size={17}/>Member access</NavLink><NavLink to="/settings"><Settings size={17}/>Community settings</NavLink></>}{me.role==='owner'&&<NavLink to="/operations"><SlidersHorizontal size={17}/>Pilot console</NavLink>}</div>}{!isAdmin(me)&&teachesAny(data,me)&&<div className="management-nav"><span className="sidebar-section-label">YOUR TEACHING</span><NavLink to="/teaching"><GraduationCap size={17}/>Teaching</NavLink></div>}</div>
+      {isModerator(me)&&<div className="management-nav"><span className="sidebar-section-label">MANAGE COMMUNITY</span><NavLink to="/admin"><Shield size={17}/>Community studio</NavLink>{isAdmin(me)&&<><NavLink to="/access"><Users size={17}/>Member access</NavLink><NavLink to="/settings"><Settings size={17}/>Community settings</NavLink></>}{me.role==='owner'&&<NavLink to="/operations"><SlidersHorizontal size={17}/>Pilot console</NavLink>}</div>}{!isAdmin(me)&&contributesAny(data,me)&&<div className="management-nav"><span className="sidebar-section-label">YOUR TEACHING</span><NavLink to="/teaching"><GraduationCap size={17}/>Teaching</NavLink></div>}</div>
     </aside>
     <div className="app-main"><header className="topbar">
       <button className="icon-button mobile-menu" aria-label="Open navigation" aria-expanded={mobile} onClick={()=>M(!mobile)}><Menu size={21}/></button>
