@@ -8,9 +8,26 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### 0.19.0-alpha.1 (Alpha 19): notification settings and email digests, 3 October 2026
+### 0.20.0-alpha.1 (Alpha 20): inviting someone new to teach a track, 3 October 2026
 
 On a pull request from `claude/build-out-tvzn40`, to be merged once its checks pass.
+
+**In plain language:** owners and administrators can now invite someone by email to teach a track. When they accept, they join the community and can teach that track straight away.
+
+Details:
+
+- **Invite someone new to teach** in a track's Instructors dialogue; the invitation email and page name the track, and Member access shows "To teach".
+- The grant is made in the inviting administrator's name, only while they still administer the community.
+- Additive migration 0020 adds the invitation's optional track and one insert policy that also checks the accepting account's address (decision 020).
+- No new runtime dependency.
+
+### Planned
+
+- Two-step sign-in for owners and administrators, and email verification and change.
+
+## 0.19.0-alpha.1 (Alpha 19): notification settings and email digests, 3 October 2026
+
+On main through [PR #12](https://github.com/EmotiveImpact/REUNIR/pull/12), merged as `648df31`.
 
 **In plain language:** you can now choose which kinds of notices you get in each community, and ask for a daily or weekly email listing what you have not read. Notices about your own access always arrive.
 
@@ -20,10 +37,6 @@ Details:
 - Additive migration 0019 adds `notification_preferences`; members write only their own row, and the digest job reads only who is due.
 - `GET /api/internal/digests` and `npm run digests:queue` queue digests through the encrypted outbox; nothing is scheduled or sent until a mail provider and scheduler are configured (decision 019).
 - No new runtime dependency.
-
-### Planned
-
-- Instructor email invitations and two-step sign-in for owners and administrators.
 
 ## 0.18.0-alpha.1 (Alpha 18): server pages for long lists, 3 October 2026
 

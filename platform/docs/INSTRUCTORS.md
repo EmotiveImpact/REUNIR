@@ -13,6 +13,10 @@ An instructor sees **Teaching** in the sidebar. The teaching page lists the trac
 - author knowledge checks, see their answer keys and every attempt on the track's lessons, and mark written answers with feedback, never their own attempts;
 - change the track cover.
 
+### Inviting someone new to teach (Alpha 20)
+
+The same dialogue has **Invite someone new to teach**. An owner or administrator enters the email address of someone who is not yet a member; the person receives the usual personal invitation, which also names the track. Accepting it, with a new account or an existing one using that address, makes them an ordinary member and that track's instructor, recorded in the inviting administrator's name, with an audit entry for the grant. If the sender is no longer an active owner or administrator when the invitation is accepted, the person joins as a member only and an administrator can add them later. Member access lists the invitation with "To teach" and the track. People who are already members are added from the list instead. Migration `0020_instructor_invitations.sql` (additive) adds the invitation's optional track and one insert policy for the grant (decision 020).
+
 An instructor cannot create tracks, choose instructors, change other tracks or open Community studio, member access or community settings. Owners and administrators keep doing everything on every track.
 
 ## Rules

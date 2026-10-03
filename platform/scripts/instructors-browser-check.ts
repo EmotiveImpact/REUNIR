@@ -86,6 +86,17 @@ try {
         await expect(dialog()).toContainText('No instructors yet.');
         await dialog().getByRole('button', { name: 'Done', exact: true }).click(); await expect(dialog()).toHaveCount(0);
     });
+    await check('an administrator invites someone new by email to teach the track; the preview sends nothing', async () => {
+        await page.getByRole('button', { name: 'Instructors', exact: true }).click();
+        await dialog().getByLabel('Invite someone new to teach').fill('new.teacher@example.test');
+        await expect(dialog().getByText('They join Code Black as a member and teach Stories that make people feel only.')).toBeVisible();
+        await dialog().getByRole('button', { name: 'Invite', exact: true }).click();
+        await expect(dialog().getByRole('status')).toHaveText('A fictional invitation for new.teacher@example.test was recorded. The preview never sends email.');
+        await neutral(); await a11y('instructors-invite');
+        await dialog().getByRole('button', { name: 'Done', exact: true }).click(); await expect(dialog()).toHaveCount(0);
+        await go('/access');
+        await expect(page.locator('.invite-row', { hasText: 'new.teacher@example.test' })).toContainText('To teach Stories that make people feel');
+    });
     await check('the instructor’s review is on record for the owner too', async () => {
         await go('/admin'); await page.getByRole('button', { name: /^Knowledge checks · \d+$/ }).click();
         await expect(page.locator('.quiz-review details').filter({ hasText: 'Reviewed' }).locator('summary')).toContainText('1');
