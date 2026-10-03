@@ -5,7 +5,7 @@ import {
     MAX_QUIZ_QUESTIONS, learnerQuiz, lessonQuizSchema, normaliseAnswer, quizAnswersInput, quizFingerprint, quizPercentage, scoreQuiz,
     type AuthoredQuiz, type LessonQuiz, type QuizAnswer,
 } from '../packages/contracts/src/assessments';
-import { applyCommand, visibleWorkspace } from '../packages/domain/src/engine';
+import { visibleRecords, applyCommand, visibleWorkspace } from '../packages/domain/src/engine';
 import { lessonContent } from '../packages/domain/src/authoring';
 import { answersUnlocked, normaliseQuiz } from '../packages/domain/src/assessments';
 import { createSeed, DEMO_ADMIN, DEMO_USER } from '../packages/domain/src/seed';
@@ -260,15 +260,16 @@ test('administrators cannot review their own attempt, and can add feedback to a 
 
 test('attempts are private to the learner and the community’s administrators, within one tenant', () => {
     const s = submit(createSeed(), 'lesson_6', lesson6Answers).workspace;
-    const alex = visibleWorkspace(s, ctx(DEMO_USER)).quizAttempts, sofia = visibleWorkspace(s, ctx('member_sofia')).quizAttempts;
+    const alex = visibleRecords(s, ctx(DEMO_USER)).quizAttempts, sofia = visibleRecords(s, ctx('member_sofia')).quizAttempts;
     assert(alex.every(a => a.userId === DEMO_USER) && alex.length === 1);
     assert(sofia.every(a => a.userId === 'member_sofia') && sofia.length === 1);
-    assert.equal(visibleWorkspace(s, ctx('member_maya')).quizAttempts.length, 0, 'moderators are not reviewers');
-    assert.equal(visibleWorkspace(s, ctx(DEMO_ADMIN)).quizAttempts.length, 2);
+    assert.equal(visibleRecords(s, ctx('member_maya')).quizAttempts.length, 0, 'moderators are not reviewers');
+    assert.equal(visibleRecords(s, ctx(DEMO_ADMIN)).quizAttempts.length, 2);
+    assert.equal(visibleWorkspace(s, ctx(DEMO_ADMIN)).quizAttempts.length, 0, 'the snapshot leaves other people’s attempts to the paged review queue');
     // A row from another tenant never appears and cannot be reviewed.
     const north = createSeed('studio-north');
     north.quizAttempts.push({ ...s.quizAttempts.at(-1)!, id: 'foreign_attempt' });
-    assert.equal(visibleWorkspace(north, { organizationId: 'org_studio_north', userId: DEMO_ADMIN, requestId: 't' }).quizAttempts.length, 0);
+    assert.equal(visibleRecords(north, { organizationId: 'org_studio_north', userId: DEMO_ADMIN, requestId: 't' }).quizAttempts.length, 0);
     assert.throws(() => applyCommand(north, { organizationId: 'org_studio_north', userId: DEMO_ADMIN, requestId: 't' }, { type: 'quiz.attempt.review', attemptId: 'foreign_attempt', expectedVersion: 1, marks: [{ questionId: 'q6_change', points: 1 }], feedback: 'No' }, () => NOW, () => 'x'), (e: { code?: string }) => e.code === 'NOT_FOUND');
 });
 

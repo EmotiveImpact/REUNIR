@@ -3,6 +3,7 @@ import { lessonResourcesInput, type LessonResource } from './lesson-resources';
 import { lessonQuizSchema, quizAnswersInput, quizFingerprintInput, quizMarksInput, type LessonQuiz, type QuizAnswer, type QuizResult } from './assessments';
 import { coverChange, coverLibraryLabel, type CoverImage, type CoverImageType } from './covers';
 import { z } from 'zod';
+import type { WorkspaceSummary } from './pages';
 export type Id = string;
 export type Role = 'owner' | 'admin' | 'moderator' | 'member';
 export interface TenantContext {
@@ -310,6 +311,8 @@ export interface CoverLibraryItem extends TenantRecord {
     addedBy: Id;
 }
 export interface Workspace {
+    /** Exact totals for lists the snapshot shortens (see pages.ts). Absent on stored state. */
+    summary?: WorkspaceSummary;
     coverLibrary: CoverLibraryItem[];
     trackInstructors: TrackInstructor[];
     quizAttempts: QuizAttempt[];

@@ -17,6 +17,7 @@ import { clientUpload, type StoredObservation } from '../../../packages/domain/s
 import { learningRecordFilename } from '../../../packages/domain/src/learning-record';
 import { SIGNATURE_BYTES, fileSignatureMatches, resourceUploadRequest, type ResourceContext } from '../../../packages/contracts/src/lesson-resources';
 import { accountDeletionRequest } from '../../../packages/contracts/src/account';
+import { pagedList, pageQuery } from '../../../packages/contracts/src/pages';
 import { ownershipTransferRequest } from '../../../packages/contracts/src/ownership';
 import { COVER_HEAD_BYTES, coverBytesAcceptable, coverLibraryUploadRequest, coverSubject, coverUploadRequest } from '../../../packages/contracts/src/covers';
 export interface SessionIdentity {
@@ -141,6 +142,13 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     app.get('/api/organisations/:slug/message-reports',async c=>c.json(await messaging.reports(c.req.param('slug'),c.get('identity').id)));
     app.post('/api/organisations/:slug/message-reports/:reportId/resolve',async c=>c.json(await messaging.resolve(c.req.param('slug'),c.get('identity').id,id.parse(c.req.param('reportId')))));
     app.get('/api/organisations/:slug/workspace', async (c) => c.json(await repository.snapshot(c.req.param('slug'), c.get('identity').id)));
+    // Long lists a page at a time: older notices, review queues and the audit trail. The cursor is opaque and keyset-based.
+    app.get('/api/organisations/:slug/pages/:list', async (c) => {
+        const list = pagedList.safeParse(c.req.param('list'));
+        if (!list.success) throw new DomainError('NOT_FOUND', 'That list does not exist.', 404);
+        const query = pageQuery.parse({ cursor: c.req.query('cursor'), limit: c.req.query('limit') ?? undefined });
+        return c.json(await repository.page(c.req.param('slug'), c.get('identity').id, list.data, query));
+    });
     app.post('/api/organisations/:slug/commands', async (c) => {
         const key = c.req.header('idempotency-key');
         if (!key)

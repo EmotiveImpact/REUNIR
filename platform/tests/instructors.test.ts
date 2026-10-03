@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { commandSchema, type Workspace } from '../packages/contracts/src/index';
 import { quizFingerprint, type QuizAnswer } from '../packages/contracts/src/assessments';
-import { applyCommand, visibleWorkspace } from '../packages/domain/src/engine';
+import { visibleRecords, applyCommand, visibleWorkspace } from '../packages/domain/src/engine';
 import { lessonContent } from '../packages/domain/src/authoring';
 import { beginResourceUpload, completeResourceUpload, discardResourceUpload, resolveResourceDownload } from '../packages/domain/src/resources';
 import { beginCoverUpload } from '../packages/domain/src/covers';
@@ -80,7 +80,7 @@ test('an instructor authors, publishes and reorders only their own track', () =>
 
 test('an instructor sees answer keys and attempts for their track only, and reviews them but never their own', () => {
     let s = createSeed();
-    const view = visibleWorkspace(s, ctx(IDRIS));
+    const view = visibleRecords(s, ctx(IDRIS));
     assert('acceptedAnswers' in view.lessons.find(l => l.id === 'lesson_5')!.quiz!.questions[2], 'keys for the taught track');
     assert.deepEqual(view.quizAttempts.map(a => a.id), ['attempt_sofia'], 'attempts on the taught track');
     const r = exec(s, { type: 'quiz.attempt.review', attemptId: 'attempt_sofia', expectedVersion: 1, marks: [{ questionId: 'q6_change', points: 2 }], feedback: 'Specific and observed.' }, IDRIS);
@@ -95,7 +95,7 @@ test('an instructor sees answer keys and attempts for their track only, and revi
 test('an instructor of another track is told nothing about this track’s attempts', () => {
     let s = run(createSeed(), { type: 'track.instructor.remove', trackId: 'track_product', userId: IDRIS }, DEMO_ADMIN);
     s = run(s, { type: 'track.instructor.add', trackId: 'track_story', userId: IDRIS }, DEMO_ADMIN);
-    const view = visibleWorkspace(s, ctx(IDRIS));
+    const view = visibleRecords(s, ctx(IDRIS));
     assert.equal(view.quizAttempts.some(a => a.id === 'attempt_sofia'), false);
     assert.equal('acceptedAnswers' in view.lessons.find(l => l.id === 'lesson_5')!.quiz!.questions[2], false, 'no keys for the product track');
     throwsCode(() => exec(s, { type: 'quiz.attempt.review', attemptId: 'attempt_sofia', expectedVersion: 1, marks: [{ questionId: 'q6_change', points: 2 }], feedback: 'No' }, IDRIS), 'NOT_FOUND');

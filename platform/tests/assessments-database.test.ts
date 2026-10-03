@@ -73,7 +73,9 @@ test('the restricted runtime role records a scored attempt and a member snapshot
     assert.deepEqual(member.quizAttempts.map(a => a.userId), [DEMO_USER]);
     assert(member.quizAttempts[0].quiz.questions[2].acceptedAnswers, 'their own passed attempt is unlocked under the reveal rule');
     assert(!JSON.stringify(member).includes('Three of the five steps were lost'), 'another learner’s written answer stays private');
-    assert(JSON.stringify(await repo.snapshot('code-black', DEMO_ADMIN)).includes('Three of the five steps were lost'), 'administrators can review it');
+    assert(!JSON.stringify(await repo.snapshot('code-black', DEMO_ADMIN)).includes('Three of the five steps were lost'), 'the snapshot leaves it to the review queue');
+    const queue = [...(await repo.page('code-black', DEMO_ADMIN, 'review-waiting')).items, ...(await repo.page('code-black', DEMO_ADMIN, 'review-scored')).items];
+    assert(JSON.stringify(queue).includes('Three of the five steps were lost'), 'administrators can review it');
 });
 
 test('members read only their own attempts; administrators read their own community’s', async () => {
@@ -138,7 +140,8 @@ test('only an active owner or administrator who is not the learner can write a r
 
 test('an administrator reviews through the repository; their own attempt stays out of reach', async () => {
     const r = await exec({ type: 'quiz.attempt.review', attemptId: 'attempt_sofia', expectedVersion: 1, marks: [{ questionId: 'q6_change', points: 2 }], feedback: 'Specific and observed. Say how you would test the change.' }, DEMO_ADMIN);
-    assert.equal(r.workspace.quizAttempts.find(a => a.id === 'attempt_sofia')!.status, 'reviewed');
+    assert.equal((await repo.page('code-black', DEMO_ADMIN, 'review-reviewed')).items.find(a => a.id === 'attempt_sofia')!.status, 'reviewed');
+    assert.equal(r.workspace.summary!.review.waiting, 0);
     const stored = (await db.query<{ status: string; score: number; reviewer_id: string; version: number; answers: QuizAnswer[] }>("SELECT status,score,reviewer_id,version,answers FROM quiz_attempts WHERE id='attempt_sofia'")).rows[0];
     assert.deepEqual([stored.status, stored.score, stored.reviewer_id, stored.version], ['reviewed', 3, DEMO_ADMIN, 2]);
     assert.match(stored.answers[1].text, /^They looked for a way to save/);

@@ -37,7 +37,7 @@ Native dialog handles focus containment and Escape, with explicit focus return. 
 
 ## Deliberate scale limit
 
-The first database implementation reads a bounded workspace rather than querying each page independently. Bounds are 5,000 rows per table and 20,000 total snapshot records. This makes the first product loop testable and transactions comprehensible, but it is not the final read architecture. Use cursor-paginated domain endpoints, batched enrichment and separate analytical projections before larger communities or large activity histories.
+The first database implementation reads a bounded workspace rather than querying each page independently. Bounds are 5,000 rows per table and 20,000 total snapshot records. This makes the first product loop testable and transactions comprehensible, but it is not the final read architecture. Use cursor-paginated domain endpoints, batched enrichment and separate analytical projections before larger communities or large activity histories. Since Alpha 18, notices, the knowledge-check review queues and the audit trail page from `GET /api/organisations/:slug/pages/:list` with keyset cursors; the snapshot carries a window of each plus exact counts, and workspace reads skip the outbox and read only the newest audit entries and the acting person's notices (decision 018).
 
 No heavy video processing, custom WebSocket server, Redis dependency, AI billing loop or arbitrary third-party plugin execution is part of this alpha.
 

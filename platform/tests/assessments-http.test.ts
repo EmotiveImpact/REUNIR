@@ -83,8 +83,10 @@ test('members cannot review, administrators can, and the learner reads the feedb
     let r = await post('/commands', { type: 'quiz.attempt.review', attemptId: 'attempt_sofia', expectedVersion: 1, marks: [{ questionId: 'q6_change', points: 3 }], feedback: 'Self-awarded' });
     assert.equal(r.status, 403); assert.equal(await error(r), 'REVIEWER_REQUIRED');
     as(DEMO_ADMIN);
-    const queue = (await workspace()).quizAttempts.filter(a => a.status === 'awaiting_review');
-    assert.deepEqual(queue.map(a => a.id), ['attempt_sofia']);
+    assert.deepEqual((await workspace()).quizAttempts.filter(a => a.userId !== DEMO_ADMIN), [], 'the snapshot carries only the reviewer’s own attempts');
+    const queue = await (await app.request(base + '/pages/review-waiting')).json();
+    assert.deepEqual([queue.items.map((a: { id: string }) => a.id), queue.total, queue.nextCursor], [['attempt_sofia'], 1, null]);
+    assert.equal((await workspace()).summary!.review.waiting, 1);
     r = await post('/commands', { type: 'quiz.attempt.review', attemptId: 'attempt_sofia', expectedVersion: 1, marks: [{ questionId: 'q6_change', points: 2 }], feedback: 'A clear observation. Next, say how you would know the change worked.' });
     assert.equal(r.status, 200);
     r = await post('/commands', { type: 'quiz.attempt.review', attemptId: 'attempt_sofia', expectedVersion: 1, marks: [{ questionId: 'q6_change', points: 3 }], feedback: 'Second opinion' });

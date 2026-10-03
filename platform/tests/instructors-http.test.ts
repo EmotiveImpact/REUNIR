@@ -52,7 +52,9 @@ test('lesson file uploads follow the grant', async () => {
 test('the seeded instructor reviews the written answer waiting on their track', async () => {
     as('member_idris');
     const ws = await workspace();
-    assert.deepEqual(ws.quizAttempts.map((a: { id: string }) => a.id), ['attempt_sofia']);
+    assert.deepEqual([ws.quizAttempts, ws.summary.waitingByTrack], [[], { track_product: 1 }]);
+    const queue = await (await app.request('/api/organisations/code-black/pages/review-waiting')).json();
+    assert.deepEqual(queue.items.map((a: { id: string }) => a.id), ['attempt_sofia']);
     const r = await command({ type: 'quiz.attempt.review', attemptId: 'attempt_sofia', expectedVersion: 1, marks: [{ questionId: 'q6_change', points: 2 }], feedback: 'Specific and observed.' });
     assert.equal(r.status, 200);
     as(DEMO_USER);

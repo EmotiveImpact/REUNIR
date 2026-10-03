@@ -17,7 +17,7 @@ export function TeachingPage() {
         <ul className="teaching-tracks">{taught.map(t => {
             const lessons = data.lessons.filter(l => l.trackId === t.id && l.published).length;
             const drafts = data.lessonDrafts.filter(d => d.trackId === t.id && !d.archived && d.publishedVersion !== d.version).length;
-            const waiting = data.quizAttempts.filter(a => a.trackId === t.id && a.status === 'awaiting_review' && a.userId !== me.userId).length;
+            const waiting = data.summary?.waitingByTrack[t.id] ?? 0;
             return <li key={t.id} className="panel teaching-track">
                 <Cover kind="track" subject={t} small/>
                 <div className="teaching-track-copy"><h3><Link to={`/learn/${t.id}`}>{t.title}</Link></h3><p>{lessons} published {lessons === 1 ? 'lesson' : 'lessons'} · {drafts} unpublished {drafts === 1 ? 'draft' : 'drafts'} · {waiting} waiting for feedback</p></div>
