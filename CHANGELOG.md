@@ -20,9 +20,26 @@ Details:
 - Drafts, history, draft files, publishing and knowledge-check answers follow the chosen lessons; other drafts are not found (decision 035).
 - Additive migration 0034 adds `track_instructors.lesson_ids` and scopes the draft, history, publishing and attempt policies to the listed lessons. Every existing grant keeps the whole track. No grant change.
 
-### 0.27.0-alpha.1 (Alpha 27): loading, error and empty screens, 3 October 2026
+### Planned
 
-On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass. Alpha 23 and 25 are claimed by other open pull requests, and Alpha 24 and 26 are taken, so this release takes the next free number.
+- Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+
+## 0.31.0-alpha.1 (Alpha 31): data retention rules, 3 October 2026
+
+On main through [PR #23](https://github.com/EmotiveImpact/REUNIR/pull/23), merged as `b80fc04`. Numbering follows the project's allocation of 3 October 2026: this thread holds Alpha 31 to 34, decision records 031 to 034 and migrations 0030 to 0033, so data retention is Alpha 31, decision 031 and migration 0030 (first opened as Alpha 27 with migration 0023).
+
+**In plain language:** REUNIR now clears its own housekeeping on a schedule: expired sign-in sessions and links, old rate counters, technical receipts, records of email already sent and notices people read long ago. What people make, reviewed evidence and the audit trail are never cleared by it. Your account has a new **How long things are kept** panel that says what is kept and for how long.
+
+Details:
+
+- One list of rules (`packages/contracts/src/retention.ts`) serves the job, the panel and `platform/docs/RETENTION.md` (decision 031).
+- `npm run retention:run` is a dry run with exact counts; `RETENTION=apply` clears. An authenticated `GET /api/internal/retention` applies the rules on a schedule, `?dry=1` only counts. Counts per rule only, never contents.
+- Additive migration 0030: a read-only policy so the job lists communities only as its own worker, and an index for read notices. Each community's records are cleared inside that community's tenant context.
+- Nothing is scheduled; the operator chooses a daily schedule.
+
+## 0.27.0-alpha.1 (Alpha 27): loading, error and empty screens, 3 October 2026
+
+On main through [PR #22](https://github.com/EmotiveImpact/REUNIR/pull/22), merged as `f9f32d6`.
 
 **In plain language:** the app now shows calm loading outlines instead of blank areas, and keeps its navigation when a page fails. Failures are explained in plain words with a Try again button, and there is a proper Not found page. Losing the connection, an ended session or a refused change is said clearly instead of silently. Empty lists tell "nothing here yet" apart from "nothing matches", and only offer a next step the person is actually allowed to take.
 
@@ -34,9 +51,9 @@ Details:
 - Empty states distinguish first run from no results, and actions appear only for roles that may take them.
 - New demo browser suite `npm run test:browser:states`. No migration, no grant change, no new dependency.
 
-### 0.26.0-alpha.1 (Alpha 26): confirming and changing your email address, 3 October 2026
+## 0.26.0-alpha.1 (Alpha 26): confirming and changing your email address, 3 October 2026
 
-On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. Alpha 23 is claimed by open pull requests (#16, #21), Alpha 24 (group conversations, PR #19) reached main first, and Alpha 25 is on PR #20, so this release is Alpha 26 with decision 026.
+On main through [PR #18](https://github.com/EmotiveImpact/REUNIR/pull/18), merged as `9b34cac`.
 
 **In plain language:** people can now confirm their email address with a link, and accepting an invitation confirms it automatically. Once the app is live, an address has to be confirmed before it can sign in. Anyone can also move their account to a new email address: they enter their password, open the link sent to the new address, and their old address is told.
 
@@ -48,11 +65,6 @@ Details:
 - Changing or resetting the password cancels any change link asked for before it.
 - The launch preflight also checks `EMAIL_VERIFICATION`.
 - No migration and no new runtime dependency: Better Auth's own email verification and change-email flows, through the encrypted outbox.
-
-### Planned
-
-- Data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
-- Virus scanning of uploads, content curation, task files with live updates and shared form components.
 
 ## 0.25.0-alpha.1 (Alpha 25): contributor roles for teaching, 3 October 2026
 

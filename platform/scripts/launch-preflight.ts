@@ -109,8 +109,8 @@ export function inspectLaunch(env: Environment): Finding[] {
     const enc = secretShape('EMAIL_ENCRYPTION_KEY', env.EMAIL_ENCRYPTION_KEY, mail, 'Production mail requires an independent key.');
     out.push(enc.state === 'warn' ? { ...enc, message: 'EMAIL_ENCRYPTION_KEY is not set. Required once mail is configured.' } : enc);
 
-    if (mail || filled(env.CRON_SECRET)) out.push(secretShape('CRON_SECRET', env.CRON_SECRET, mail, 'Mail is queued but nothing can drain it.'));
-    else add('CRON_SECRET', 'warn', 'CRON_SECRET is not set. Required once mail is configured, so the scheduled routes can run.');
+    // The daily retention job needs the scheduler secret whether or not mail is configured.
+    out.push(secretShape('CRON_SECRET', env.CRON_SECRET, true, mail ? 'Mail is queued but nothing can drain it, and the retention job cannot run.' : 'The scheduled retention job cannot run, so housekeeping records would never be cleared.'));
 
     const secrets = (['BETTER_AUTH_SECRET', 'EMAIL_ENCRYPTION_KEY', 'CRON_SECRET'] as const).filter(k => filled(env[k]));
     const reused: string[] = [];

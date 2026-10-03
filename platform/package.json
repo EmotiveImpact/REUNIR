@@ -26,6 +26,7 @@
     "test:browser:purpose": "tsx scripts/purpose-browser-check.ts",
     "mail:drain": "tsx scripts/drain-mail.ts",
     "digests:queue": "tsx scripts/queue-digests.ts",
+    "retention:run": "tsx scripts/apply-retention.ts",
     "test:browser:pilot": "tsx scripts/pilot-browser-check.ts",
     "test:http": "tsx scripts/pilot-http-check.ts",
     "test:browser:connected": "tsx scripts/pilot-connected-check.ts",

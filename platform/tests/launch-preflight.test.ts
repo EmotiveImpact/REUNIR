@@ -76,9 +76,9 @@ test('mail requires its pair, an independent key and a scheduler secret', () => 
     assert.deepEqual(failures({ ...good, CRON_SECRET: undefined }), ['CRON_SECRET']);
     assert.deepEqual(failures({ ...good, EMAIL_FROM: 'not an address' }), ['EMAIL_FROM']);
     const noMail = inspectLaunch({ ...good, RESEND_API_KEY: undefined, EMAIL_FROM: undefined, EMAIL_ENCRYPTION_KEY: undefined, CRON_SECRET: undefined });
-    assert.deepEqual(noMail.filter(f => f.state === 'fail'), []);
+    assert.deepEqual(noMail.filter(f => f.state === 'fail').map(f => f.key), ['CRON_SECRET'], 'the retention job needs the scheduler secret even without mail');
     assert.equal(state(noMail, 'mail-pair'), 'warn');
-    assert.equal(state(noMail, 'CRON_SECRET'), 'warn');
+    assert.deepEqual(inspectLaunch({ ...good, RESEND_API_KEY: undefined, EMAIL_FROM: undefined, EMAIL_ENCRYPTION_KEY: undefined }).filter(f => f.state === 'fail'), []);
     // A configured but weak scheduler secret is fatal at startup, so it fails here even without mail.
     assert.ok(failures({ ...good, RESEND_API_KEY: undefined, EMAIL_FROM: undefined, CRON_SECRET: 'weak' }).includes('CRON_SECRET'));
 });
