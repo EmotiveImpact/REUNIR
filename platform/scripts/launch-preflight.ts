@@ -13,6 +13,7 @@ import { pathToFileURL } from 'node:url';
 import { parseEnv } from 'node:util';
 import { adminTwoFactorSetting } from '../packages/contracts/src/two-factor';
 import { emailVerificationSetting } from '../packages/contracts/src/email';
+import { uploadScanningSetting } from '../apps/api/src/config';
 
 export type Environment = Readonly<Record<string, string | undefined>>;
 export type FindingState = 'pass' | 'warn' | 'fail';
@@ -132,6 +133,14 @@ export function inspectLaunch(env: Environment): Finding[] {
             add('GCS_CREDENTIALS_JSON', shape ? 'pass' : 'fail', shape ? 'GCS_CREDENTIALS_JSON parses and has a client identity and signing key.' : 'GCS_CREDENTIALS_JSON is not service-account JSON with client_email and private_key.');
         }
     }
+    // Virus scanning (decision 023): with a bucket, production refuses to start without a scanner unless it is made optional.
+    const scanning = uploadScanningSetting(env), clamHost = filled(env.CLAMAV_HOST), clamPort = env.CLAMAV_PORT?.trim();
+    if (!scanning) add('UPLOAD_SCANNING', 'fail', 'UPLOAD_SCANNING must be required or optional. The server refuses to start otherwise.');
+    else if (clamPort && !(/^\d+$/.test(clamPort) && Number(clamPort) >= 1 && Number(clamPort) <= 65535)) add('CLAMAV_PORT', 'fail', 'CLAMAV_PORT must be a TCP port number. The server refuses to start otherwise.');
+    else if (!bucket) { if (clamHost) add('upload-scanning', 'warn', 'CLAMAV_HOST is set without GCS_BUCKET, so there are no uploads to scan.'); }
+    else if (clamHost) add('upload-scanning', 'pass', 'A ClamAV scanner is configured. Confirm it answers with npm run scan:check from the same network.');
+    else if (scanning === 'required') add('upload-scanning', 'fail', 'Uploads must be scanned, but CLAMAV_HOST is not set. The server refuses to start; run clamd and set CLAMAV_HOST, or set UPLOAD_SCANNING=optional deliberately.');
+    else add('upload-scanning', 'warn', 'UPLOAD_SCANNING=optional with no scanner: uploads are only checked for type and size.');
     return out;
 }
 
