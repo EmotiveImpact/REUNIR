@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 29 files on project tasks and live project work",
   "version": "0.39.0-alpha.1",
   "sourceBaseline": "94b130b120946a2f6c6276ffe02c0fc892928241",
-  "generatedAt": "2026-10-03T17:57:15.630670+00:00",
+  "generatedAt": "2026-10-03T18:15:31.202899+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -546,8 +546,8 @@
     },
     {
       "path": "platform/apps/web/src/pages/project-work.tsx",
-      "sha256": "ca8c3cc8a282baf9cc6e54143a6a299d5cb9cc09bf8d98995511f0074d29a609",
-      "bytes": 24501
+      "sha256": "1f39fe9cf824f7d843df3a1e7f4ff1defe06cf41b6c436403af9de51a8f3f9e3",
+      "bytes": 24632
     },
     {
       "path": "platform/apps/web/src/pages/purpose.tsx",
@@ -621,8 +621,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "d33b6eed33ca41b34e4057067f3284eb9bd7797ce7005311fd98fd044f2fae98",
-      "bytes": 164850
+      "sha256": "94dc8b854c020f28f52e8b138a5697d2fee38c769fc6211a60b58f1d1d44ce5e",
+      "bytes": 165181
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -1571,8 +1571,8 @@
     },
     {
       "path": "platform/packages/domain/src/task-files.ts",
-      "sha256": "865bfd308a38acdc01e2491e89bc8326a06e2ec6f9e708a1f9a4e5360ecb769d",
-      "bytes": 12494
+      "sha256": "924ba8e6a0b6917f70583be239fc5a5aacc7a188dc45357f5de3b93e7580bc6a",
+      "bytes": 13299
     },
     {
       "path": "platform/scripts/accounts-browser-check.ts",
@@ -2111,8 +2111,8 @@
     },
     {
       "path": "platform/tests/task-files.test.ts",
-      "sha256": "fc906b9c17dbdae5de483fe4fef1279b98a2fd14a7fbac3fa6c2159402f9c79c",
-      "bytes": 14221
+      "sha256": "a1d243e35ed0977c73e94296ec038e47a90c8de47bf34963330c8587533c94be",
+      "bytes": 14926
     },
     {
       "path": "platform/tests/two-factor-http.test.ts",

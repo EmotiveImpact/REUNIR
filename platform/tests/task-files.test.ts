@@ -61,6 +61,16 @@ test('pending uploads per person and files per task are capped', () => {
     assert.equal(taskFiles(s, 'task_test').length, MAX_TASK_FILES);
     assert.throws(() => begin(s, LEAD), { code: 'TASK_FILE_LIMIT' });
 });
+test('two teammates racing for the last place on a task cannot both attach', () => {
+    let s = createSeed();
+    for (let i = 0; i < MAX_TASK_FILES - 1; i++) s = attach(s).workspace;
+    const mine = begin(s); s = mine.workspace;
+    const theirs = begin(s, LEAD); s = theirs.workspace;
+    s = completeTaskFileUpload(s, ctx(), mine.upload.id, good(), NOW).workspace;
+    assert.equal(taskFiles(s, 'task_test').length, MAX_TASK_FILES);
+    assert.throws(() => completeTaskFileUpload(s, ctx(LEAD), theirs.upload.id, good(), NOW), { code: 'TASK_FILE_LIMIT' });
+    assert.equal(s.uploads.find(u => u.id === theirs.upload.id)!.status, 'pending', 'the refused upload is left to expire and be cleared');
+});
 test('the person’s own refused or expired uploads are pruned when they start another', () => {
     const first = begin(createSeed());
     const later = new Date(Date.parse(NOW) + 2 * 60 * 60 * 1000).toISOString();

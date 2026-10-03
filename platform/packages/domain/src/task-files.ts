@@ -76,6 +76,11 @@ export function completeTaskFileUpload(input: Workspace, ctx: TenantContext, upl
     if (Date.parse(now) - Date.parse(found.createdAt) > RESOURCE_UPLOAD_TTL_MS) throw new DomainError('UPLOAD_EXPIRED', 'This upload expired. Choose the file again.', 409);
     const s = normalisePurposeState(structuredClone(input));
     const upload = s.uploads.find(u => u.id === found.id && u.organizationId === ctx.organizationId)!;
+    // Limits are checked again here, under the community lock: two teammates may each have started an upload into the last place.
+    const ready = s.uploads.filter(u => isTaskFile(u, ctx.organizationId) && u.status === 'ready');
+    if (ready.filter(u => u.taskId === task.id).length >= MAX_TASK_FILES) throw new DomainError('TASK_FILE_LIMIT', `Attach up to ${MAX_TASK_FILES} files to a task. Remove one first, then try again.`, 409);
+    const projectTasks = new Set(s.projectTasks.filter(t => t.projectId === task.projectId).map(t => t.id));
+    if (ready.filter(u => !!u.taskId && projectTasks.has(u.taskId)).length >= MAX_PROJECT_TASK_FILES) throw new DomainError('UPLOAD_LIMIT', 'This project has reached its file limit for the alpha. Remove files the team no longer needs, then try again.', 409);
     const accepted = observed.sizeBytes === upload.sizeBytes && observed.contentType === upload.contentType && observed.signatureMatches && !!observed.generation && /^[0-9]{1,20}$/.test(observed.generation);
     Object.assign(upload, { status: accepted ? 'ready' : 'rejected', completedAt: now, generation: accepted ? observed.generation : null });
     record(s, ctx, now, makeId, accepted ? 'task.file.attached' : 'task.file.rejected', upload.id, true);
