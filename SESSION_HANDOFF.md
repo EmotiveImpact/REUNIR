@@ -4,7 +4,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, LESSON_RESOURCES.md, decisions/03
 
 ## Where the source is
 
-- Base: main `99e919a`, the merge of PR #28 (Alpha 36 instructors start their own tracks). The application version stays 0.39.0-alpha.1 because Alpha 39 is already on main.
+- Base: main `99e919a`, the merge of PR #28 (Alpha 36 instructors start their own tracks). Main `2561a00` (PR #27, Alpha 29 files on project tasks and live project work) is merged in. The application version stays 0.39.0-alpha.1 because Alpha 39 is already on main.
 - This slice: branch `claude/courses-teaching-6hum2q`, restarted from that main. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Numbering: courses and teaching uses Alpha 35 to 38, decisions 035 to 038 and migrations 0034 to 0037, as allocated by the project coordinator on 3 October 2026. Alpha 38 and migration 0037 are unused so far.
 
@@ -31,6 +31,39 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 ## Next
 
 1. Scan large uploads in chunks so the API need not hold a whole video in memory; until then raise clamd `StreamMaxLength` to the video limit. Question banks, timers and partial marks wait for pilot needs.
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 29 handover: files on project tasks and live project work
+- Outcome: [PR #27](https://github.com/EmotiveImpact/REUNIR/pull/27), merged into main as `2561a00`.
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, PROJECT_WORK.md, decisions/029-task-files-and-live-project-work.md, LESSON_RESOURCES.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `94b130b`, the merge of PR #25 (Alpha 28), tree identical to its tested head `e4d69fa`.
+- This slice: branch `claude/everyday-use-4z9rmz`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- This thread holds Alpha 27 to 30, decisions 027 to 030 and migrations 0028 and 0029.
+
+### What is done
+
+Project teams attach files to tasks through the shared upload-intent path; boards and open tasks refresh through a cheap change check; concurrent task edits are caught and explained. Additive migration 0029, no grant change.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Open Projects, a project, Open project workspace, then a task and Attach a file. Two demo tabs stand in for two people. For PostgreSQL: `npm run db:migrate` (applies 0029); no grant change.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (now including `test:browser:task-files`), and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`.
+
+### Next
+
+1. Shared form components (Alpha 30). Task files already go through Alpha 23 upload scanning.
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
 
 ---

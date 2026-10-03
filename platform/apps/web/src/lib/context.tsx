@@ -6,7 +6,7 @@ import type { Workspace, Member, CommandInput, MutationResult, Upload } from '..
 import type { ResourceRef } from '../../../../packages/contracts/src/lesson-resources';
 import { discardLessonUpload, downloadLessonResource, playLessonResource, uploadLessonResource } from './resources';
 import { DEMO_ADMIN, DEMO_USER } from '../../../../packages/domain/src/seed';
-import { loadWorkspace, sendCommand, displayError, mode, identity, resetDemo, demoState, type Identity } from './data';
+import { loadWorkspace, sendCommand, displayError, errorCode, mode, identity, resetDemo, demoState, type Identity } from './data';
 import { demoAccountDeleted, takeDeletionNotice } from './account';
 import { signInWithPassword } from './two-factor';
 import { SecondStepForm } from '../components/second-step';
@@ -23,7 +23,7 @@ interface Ctx {
     setUserId: (s: string) => void;
     busy: boolean;
     /** Reports failure through `onError` when given (for example inside a dialogue), otherwise as a toast. */
-    command: (c: CommandInput, options?: { onError?: (message: string) => void }) => Promise<MutationResult | undefined>;
+    command: (c: CommandInput, options?: { onError?: (message: string, code?: string) => void }) => Promise<MutationResult | undefined>;
     /** Private lesson files. Each reports its own outcome and leaves the global busy state alone. */
     uploadResource: (trackId: string, file: File, videoBytes?: number) => Promise<Upload | undefined>;
     discardUpload: (uploadId: string) => Promise<boolean>;
@@ -61,7 +61,7 @@ export function WorkspaceProvider({ children }: {
     const query = useQuery({ queryKey: key, queryFn: () => loadWorkspace(activeSlug, userId), enabled: !!ident.data && !!userId && !deletedPersona, retry: false, refetchInterval: mode==='live'?30000:false, refetchOnWindowFocus: mode === 'live' });
     // A failure stays a little longer: it usually asks the person to do something.
     const toast = useCallback((s: string, tone?: 'error') => { const next = { text: s, tone }; setNotice(next); window.setTimeout(() => setNotice(n => n === next ? { text: '' } : n), tone === 'error' ? 8000 : 4800); }, []);
-    const command = async (c: CommandInput, options: { onError?: (message: string) => void } = {}) => { if (busy)
+    const command = async (c: CommandInput, options: { onError?: (message: string, code?: string) => void } = {}) => { if (busy)
         return; setBusy(true); try {
         const r = await sendCommand(activeSlug, userId, c);
         cache.removeQueries({ queryKey: ['workspace', activeSlug], predicate: q => q.queryKey[2] !== userId });
@@ -70,7 +70,7 @@ export function WorkspaceProvider({ children }: {
         return r;
     }
     catch (e) {
-        if (options.onError) options.onError(displayError(e));
+        if (options.onError) options.onError(displayError(e), errorCode(e));
         else toast(displayError(e), 'error');
         return undefined;
     }

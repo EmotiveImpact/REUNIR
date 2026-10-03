@@ -14,7 +14,8 @@ import { createHash, timingSafeEqual, randomUUID } from 'node:crypto';
 import { DomainError, type Upload } from '../../../packages/contracts/src/index';
 import { WorkspaceRepository } from '../../../packages/db/src/repository';
 import { ScannerUnavailable, type FileScanner } from './scanner';
-import { coverLibraryObjectKey, coverObjectKey, coverThumbnailObjectKey, isMissingObject, objectKey, resourceObjectKey, uploadSchema, type PrivateStorage } from './storage';
+import { coverLibraryObjectKey, coverObjectKey, coverThumbnailObjectKey, isMissingObject, objectKey, resourceObjectKey, taskFileObjectKey, uploadSchema, type PrivateStorage } from './storage';
+import { taskFileUploadRequest } from '../../../packages/contracts/src/task-files';
 import { clientUpload, type StoredObservation } from '../../../packages/domain/src/resources';
 import type { CoverObservation } from '../../../packages/domain/src/covers';
 import { learningRecordFilename } from '../../../packages/domain/src/learning-record';
@@ -272,6 +273,14 @@ export function createApp({ repository, operations, origin, resolveSession, auth
             const policy = await storage.upload(upload.objectKey, upload.contentType, upload.sizeBytes);
             return c.json({ id: upload.id, ...policy, method: 'POST', expiresIn: 300 }, 201);
         }
+        if (body && typeof body === 'object' && (body as { purpose?: unknown }).purpose === 'task_file') {
+            const input = taskFileUploadRequest.parse(body);
+            // The domain checks that the person can work on the task now, before any storage capability exists.
+            const { upload, expired } = await repository.beginTaskFileUpload(slug, who.id, input, (organizationId, projectId, id) => taskFileObjectKey(organizationId, projectId, input.contentType, id), c.get('requestId'), { administration: administration(c) });
+            await removeQuietly(c.get('requestId'), expired.map(x => x.objectKey));
+            const policy = await storage.upload(upload.objectKey, upload.contentType, upload.sizeBytes);
+            return c.json({ id: upload.id, ...policy, method: 'POST', expiresIn: 300 }, 201);
+        }
         if (body && typeof body === 'object' && (body as { purpose?: unknown }).purpose === 'cover_image') {
             const input = coverUploadRequest.parse(body);
             const key = (organizationId: string, id: string) => coverObjectKey(organizationId, input.subject, input.subjectId, input.contentType, id);
@@ -377,7 +386,8 @@ export function createApp({ repository, operations, origin, resolveSession, auth
             }
             return c.json({ id, status: 'ready', upload: clientUpload(result.upload) });
         }
-        if (intent.purpose === 'lesson_resource') {
+        // Task files share the lesson-file verification and virus scan below, so any later check on this path covers both.
+        if (intent.purpose === 'lesson_resource' || intent.purpose === 'task_file') {
             let observed: StoredObservation = { sizeBytes: 0, contentType: '', generation: null, signatureMatches: false }, infected = false;
             if (intent.status === 'pending') {
                 // Read only the first bytes, pinned to the generation that was just measured.
@@ -385,7 +395,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
                 observed = { sizeBytes: meta.size, contentType: meta.contentType, generation: meta.generation ?? null, signatureMatches: matches && !flagged && fileSignatureMatches(String(intent.content_type), head) };
                 infected = flagged;
             }
-            const result = await repository.completeResourceUpload(slug, who, id, observed, c.get('requestId'));
+            const result = intent.purpose === 'task_file' ? await repository.completeTaskFileUpload(slug, who, id, observed, c.get('requestId')) : await repository.completeResourceUpload(slug, who, id, observed, c.get('requestId'));
             if (result.outcome === 'rejected') {
                 await removeQuietly(c.get('requestId'), [key]);
                 if (infected)
@@ -511,6 +521,22 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         const record = await repository.learningRecord(c.req.param('slug'), c.get('identity').id);
         c.header('Content-Disposition', `attachment; filename="${learningRecordFilename(record.community.slug, record.generatedAt)}"`);
         return c.json(record);
+    });
+    // A task file, for someone who can work on the task now: a two-minute signed link pinned to the verified generation.
+    app.get('/api/organisations/:slug/tasks/:taskId/files/:fileId/download', async (c) => {
+        if (!storage)
+            throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
+        const target = await repository.taskFileDownload(c.req.param('slug'), c.get('identity').id, id.parse(c.req.param('taskId')), id.parse(c.req.param('fileId')));
+        const url = await storage.download(target.objectKey, { filename: target.filename, contentType: target.contentType, generation: target.generation });
+        return c.json({ url, expiresIn: 120, filename: target.filename });
+    });
+    // The workboard's change check. An open board asks every few seconds; an unchanged answer is an empty 304.
+    app.get('/api/organisations/:slug/projects/:projectId/changes', async (c) => {
+        const version = await repository.projectWorkVersion(c.req.param('slug'), c.get('identity').id, id.parse(c.req.param('projectId')));
+        const tag = `"${version}"`;
+        c.header('ETag', tag);
+        if (c.req.header('if-none-match') === tag) return c.body(null, 304);
+        return c.json({ version });
     });
     for (const [segment, context] of [['lessons', 'lesson'], ['lesson-drafts', 'draft'], ['lesson-revisions', 'revision']] as const)
     {

@@ -48,7 +48,8 @@ test('0038 upgrade keeps every library picture and upload as it was, with no tag
         const versions = (await old.query('SELECT version,digest FROM schema_migrations ORDER BY version')).rows;
         await migrate(old); await migrate(old);
         const strip = (rows: Record<string, unknown>[], extra: string[]) => rows.map(r => Object.fromEntries(Object.entries(r).filter(([k]) => !extra.includes(k))));
-        const thumbnail = ['thumbnail_object_key', 'thumbnail_content_type', 'thumbnail_size_bytes', 'thumbnail_generation'];
+        // Task files (migration 0029) add an empty task_id to every upload too.
+        const thumbnail = ['thumbnail_object_key', 'thumbnail_content_type', 'thumbnail_size_bytes', 'thumbnail_generation', 'task_id'];
         const libraryNow = await read('cover_library'), uploadsNow = await read('upload_intents');
         assert.deepEqual(strip(libraryNow, ['tags']), before.cover_library);
         assert.deepEqual(libraryNow.map(r => r.tags), [[]], 'existing pictures start untagged');

@@ -53,7 +53,7 @@ test('0011 upgrade keeps tracks, projects and uploads exactly as they were and s
         }
         const uploads = await read('upload_intents');
         const thumbnail = ['thumbnail_object_key', 'thumbnail_content_type', 'thumbnail_size_bytes', 'thumbnail_generation'];
-        assert.deepEqual(strip(uploads, ['cover_track_id', 'cover_project_id', ...thumbnail]), before.uploads);
+        assert.deepEqual(strip(uploads, ['cover_track_id', 'cover_project_id', 'task_id', ...thumbnail]), before.uploads);
         assert.deepEqual(uploads.map(u => [u.purpose, u.cover_track_id, u.cover_project_id]), [['member', null, null]]);
         assert(uploads.every(u => thumbnail.every(k => u[k] === null)), 'no upload gains a small copy');
         assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, MIGRATION_COUNT);
