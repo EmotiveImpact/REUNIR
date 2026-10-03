@@ -1,4 +1,59 @@
-# Alpha 21 two-step sign-in for owners and administrators
+# Alpha 22 cover picture descriptions
+
+3 October 2026. Application 0.22.0-alpha.1. Whoever may change a track or project cover can describe the picture, and a screen reader reads that description on the track's or project's own page. See decisions/022-cover-descriptions.md and COVERS.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/build-out-tvzn40`, from main `b24095a` (the merge of PR #14, Alpha 21) |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## PR #14 merged into main
+
+Alpha 21 was merged into main on 3 October 2026 as `b24095a115bf852558a8bc82b61dcb1f42678ab7`, a merge commit whose parents are the previous main `c137f90` (PR #13) and the tested head `3f573bd`; its tree, `b4bbfa3abd0abb16fc18d748d0bae80610c397cc`, is identical to the tested head's tree. CI runs 37120425288 and 37120428877 (application and postgres) passed on `3f573bd`. This slice started from that main.
+
+## What changed
+
+- **Describe the picture (optional)** in the cover dialogue: up to 150 characters on one line, with a counter. Stored with the cover itself, inside its existing 1,000-byte check.
+- On a track's or project's own page a described cover is an image with that description (`role="img"` and `aria-label`); cards, lists, thumbnails and undescribed covers stay decorative.
+- Moving the focal point keeps the description; choosing a new picture starts without one; removing the cover removes it.
+- No migration, no grant change, no new runtime dependency. Release constant and package version are 0.22.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). Every step ran on this branch's tree on top of main `b24095a`.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 627 passed, 0 failed (625 existing plus 2 for descriptions in the covers domain and database tests) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 283 passed: as Alpha 21, with 17 covers (1 new: describing a picture, the counter and the announced image) |
+| Connected-browser suites | 60 passed (unchanged) |
+| `npm run test:postgres` | 20 passed on PostgreSQL 16 |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates with 55 pinned sources and 18 register decisions |
+
+## Corrections made while verifying
+
+- The first PostgreSQL run in this slice failed before any test because the local disposable cluster had stopped; it was restarted and the suite passed unchanged.
+
+## Not verified, and why
+
+- Screen readers themselves were not run; the covers browser suite checks the role and accessible name the page exposes.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Virus scanning of uploads (Alpha 23) and group conversations (Alpha 24), each built and tested locally.
+3. When deployment resumes: follow LAUNCH_RUNBOOK.md once it lands.
+
+## Historical Alpha 21 evidence: two-step sign-in for owners and administrators
 
 3 October 2026. Application 0.21.0-alpha.1. Anyone can turn on two-step sign-in with an authenticator app and one-time backup codes. When the server requires it, owners and administrators need it to use their authority. See decisions/021-two-step-sign-in.md, ACCOUNTS.md and SECURITY.md.
 
@@ -8,8 +63,8 @@
 | --- | --- |
 | Implemented | Yes, on `claude/build-out-tvzn40`, from main `c137f90` (the merge of PR #13, Alpha 20) |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes: runs 37120425288 and 37120428877 on `3f573bd` (application and postgres) |
+| Merged | Yes, [PR #14](https://github.com/EmotiveImpact/REUNIR/pull/14) as `b24095a`, under the owner's standing approval (3 October 2026) |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 

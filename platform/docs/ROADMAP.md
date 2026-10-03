@@ -29,6 +29,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 19 | Members turn off notice topics per community and may get a daily or weekly email digest of unread notices; access notices always arrive | No mail provider or scheduler configured; no per-notice switches or quiet hours |
 | Alpha 20 | Owners and administrators invite someone new by email to teach one track; accepting makes them a member and that track's instructor | Only while the sender still administers; one track per invitation; no contributor roles or instructor-created tracks |
 | Alpha 21 | Two-step sign-in with an authenticator app and backup codes for anyone; owners and administrators need it to use their authority when the server requires it (the production default) | No passkeys, QR code or trusted devices; recovery without backup codes is an operator task; hosted Better Auth unverified |
+| Alpha 22 | Whoever may change a track or project cover can describe the picture; the track's or project's own page announces it to screen readers | No descriptions for library pictures themselves, automatic descriptions or translations |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 
