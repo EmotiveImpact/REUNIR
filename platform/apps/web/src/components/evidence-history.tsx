@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { Ban, History, PencilLine, Scale } from 'lucide-react';
 import { Modal, date } from './ui';
 import { useWorkspace } from '../lib/context';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
 import { isAdmin } from '../../../../packages/domain/src/engine';
 import { canReviewEvidence, evidenceAuthor, evidenceText, historyOf, isReviewedEvidence, type EvidenceRecord } from '../../../../packages/domain/src/evidence-history';
 import { isCreditedOn } from '../../../../packages/domain/src/credits';
@@ -51,12 +55,12 @@ export function EvidenceHistory({ subject, record }: { subject: EvidenceSubject;
                 {c.kind === 'withdrawal' && <Wording label="Reviewed wording" text={c.previous} reviewer={name} />}
                 {c.kind === 'correction' && c.status !== 'accepted' && c.proposed && <Wording label={c.status === 'pending' ? 'Proposed wording' : 'Wording not accepted'} text={c.proposed} />}
                 {c.response && <p className="evidence-response">{name(c.decidedBy)}: {c.response}</p>}
-                {c.status === 'pending' && reviewer && <button className="button secondary compact" onClick={() => setOpen(c)}><Scale size={14} />Review correction</button>}
+                {c.status === 'pending' && reviewer && <Button variant="secondary" size="sm" className="button secondary compact" onClick={() => setOpen(c)}><Scale size={14} />Review correction</Button>}
             </li>)}</ol>
         </section>}
         {actions && <div className="evidence-history-actions">
-            {author && <button className="button secondary compact" disabled={!!pending} onClick={() => setOpen('correct')}><PencilLine size={14} />{pending ? 'Correction waiting' : 'Correct…'}</button>}
-            <button className="button secondary compact" onClick={() => setOpen('withdraw')}><Ban size={14} />Withdraw…</button>
+            {author && <Button variant="secondary" size="sm" className="button secondary compact" disabled={!!pending} onClick={() => setOpen('correct')}><PencilLine size={14} />{pending ? 'Correction waiting' : 'Correct…'}</Button>}
+            <Button variant="secondary" size="sm" className="button secondary compact" onClick={() => setOpen('withdraw')}><Ban size={14} />Withdraw…</Button>
         </div>}
         {open === 'correct' && <CorrectionModal subject={subject} record={record} onClose={() => setOpen(null)} />}
         {open === 'withdraw' && <WithdrawModal subject={subject} record={record} onClose={() => setOpen(null)} />}
@@ -72,11 +76,11 @@ function CorrectionModal({ subject, record, onClose }: { subject: EvidenceSubjec
         if (await command({ type: 'evidence.correct', subject, subjectId: record.id, title: read(f, 'title'), text: read(f, 'text'), evidenceUrl: read(f, 'url'), reason: read(f, 'reason') })) onClose();
     }}>
         <p className="sample-note">The reviewed version stays until a reviewer accepts your correction. The earlier wording stays in the history either way.</p>
-        <label>Title<input required name="title" maxLength={limit.title} defaultValue={current.title} /></label>
-        <label>{subject === 'contribution' ? 'What you did and what changed' : 'What happened, and what evidence supports it?'}<textarea required name="text" rows={4} maxLength={limit.text} defaultValue={current.text} /></label>
-        <label>Evidence link (optional)<input name="url" type="url" maxLength={2000} defaultValue={current.evidenceUrl} placeholder="https://…" /></label>
-        <label>Why the correction?<textarea required name="reason" rows={2} maxLength={1000} placeholder="What was wrong or missing?" /></label>
-        <button className="button primary" disabled={busy}>Send correction for review</button>
+        <Label>Title<Input required name="title" maxLength={limit.title} defaultValue={current.title} /></Label>
+        <Label>{subject === 'contribution' ? 'What you did and what changed' : 'What happened, and what evidence supports it?'}<Textarea required name="text" rows={4} maxLength={limit.text} defaultValue={current.text} /></Label>
+        <Label>Evidence link (optional)<Input name="url" type="url" maxLength={2000} defaultValue={current.evidenceUrl} placeholder="https://…" /></Label>
+        <Label>Why the correction?<Textarea required name="reason" rows={2} maxLength={1000} placeholder="What was wrong or missing?" /></Label>
+        <Button variant="default" className="button primary" disabled={busy}>Send correction for review</Button>
     </form></Modal>;
 }
 
@@ -88,8 +92,8 @@ function WithdrawModal({ subject, record, onClose }: { subject: EvidenceSubject;
         if (await command({ type: 'evidence.withdraw', subject, subjectId: record.id, reason: read(f, 'reason') })) onClose();
     }}>
         <p className="sample-note">Withdrawn evidence stays on record, marked as withdrawn, and stops counting towards paths, goals, profiles and outputs.{built > 0 && ` The ${built === 1 ? 'outcome' : `${built} outcomes`} built on it will be withdrawn too.`} This cannot be undone.</p>
-        <label>Reason<textarea required name="reason" rows={3} maxLength={1000} placeholder="Why should this no longer count?" /></label>
-        <button className="button primary" disabled={busy}>Withdraw {noun(subject)}</button>
+        <Label>Reason<Textarea required name="reason" rows={3} maxLength={1000} placeholder="Why should this no longer count?" /></Label>
+        <Button variant="default" className="button primary" disabled={busy}>Withdraw {noun(subject)}</Button>
     </form></Modal>;
 }
 
@@ -100,8 +104,8 @@ function ReviewModal({ change, subject, record, onClose }: { change: EvidenceCha
     return <Modal title="Review a correction" onClose={onClose}><div className="form-stack">
         <p>{data.members.find(m => m.userId === change.requestedBy)?.name || 'The author'} asked to correct this {noun(subject)}: {change.reason}</p>
         <div className="evidence-compare"><Wording label="Reviewed wording" text={evidenceText(subject, record)} /><Wording label="Proposed wording" text={change.proposed!} /></div>
-        <label>Your response<textarea aria-label="Correction review response" maxLength={2000} rows={2} value={response} onChange={e => setResponse(e.target.value)} placeholder="What did you check?" /></label>
+        <Label>Your response<Textarea aria-label="Correction review response" maxLength={2000} rows={2} value={response} onChange={e => setResponse(e.target.value)} placeholder="What did you check?" /></Label>
         <p className="sample-note">Accepting changes the {noun(subject)}{subject === 'outcome' ? ' and any published output that repeats it' : ''}. The earlier wording stays in the history.</p>
-        <div className="evidence-history-actions"><button className="button secondary" disabled={busy || !response.trim()} onClick={() => decide('declined')}>Decline</button><button className="button primary" disabled={busy || !response.trim()} onClick={() => decide('accepted')}>Accept correction</button></div>
+        <div className="evidence-history-actions"><Button variant="secondary" className="button secondary" disabled={busy || !response.trim()} onClick={() => decide('declined')}>Decline</Button><Button variant="default" className="button primary" disabled={busy || !response.trim()} onClick={() => decide('accepted')}>Accept correction</Button></div>
     </div></Modal>;
 }

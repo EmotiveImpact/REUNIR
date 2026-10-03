@@ -8,6 +8,9 @@ import { appealDeciders, appealIsCurrent, appealPost, decisionBlock } from '../.
 import { isAdmin } from '../../../../packages/domain/src/access';
 import { APPEAL_TEXT_MAX } from '../../../../packages/contracts/src/appeals';
 import type { ModerationAppeal, Post } from '../../../../packages/contracts/src/index';
+import { Button } from '../components/ui/button';
+import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
 
 const STATUS: Record<ModerationAppeal['status'], string> = { pending: 'Waiting for a decision', upheld: 'Kept hidden', reversed: 'Restored', withdrawn: 'Withdrawn' };
 const newest = (a: ModerationAppeal, b: ModerationAppeal) => b.createdAt.localeCompare(a.createdAt);
@@ -44,7 +47,7 @@ function HiddenPostRow({ post }: { post: Post }) {
     const [open, setOpen] = useState(false);
     return <div className="appeal-row">
         <div><strong>{post.title || 'A post without a title'}</strong><p className="muted">{post.moderatedAt ? `Hidden on ${date(post.moderatedAt, { day: 'numeric', month: 'long', year: 'numeric' })}. ` : ''}Only you can see it.</p></div>
-        <div className="review-actions"><Link className="button secondary" to={`/post/${post.id}`}>Read the post</Link><button type="button" className="button primary" onClick={() => setOpen(true)}><Scale size={15} aria-hidden="true"/>Appeal</button></div>
+        <div className="review-actions"><Link className="button secondary" to={`/post/${post.id}`}>Read the post</Link><Button variant="default" type="button" className="button primary" onClick={() => setOpen(true)}><Scale size={15} aria-hidden="true"/>Appeal</Button></div>
         {open && <AppealDialog post={post} onClose={() => setOpen(false)}/>}
     </div>;
 }
@@ -69,8 +72,8 @@ function AppealCard({ appeal, own = false }: { appeal: ModerationAppeal; own?: b
         ].filter(Boolean).join(' ') || (own ? 'Waiting for an owner or administrator who did not hide the post.' : 'You can decide this appeal.')}</p>}
         {(appeal.status === 'upheld' || appeal.status === 'reversed') && <div className="appeal-response"><strong>{appeal.decidedBy === me.userId ? 'Your response' : <>Response from <PersonLink member={person(appeal.decidedBy)}/></>}{appeal.decidedAt ? `, ${day(appeal.decidedAt)}` : ''}</strong><p className="preline">{appeal.response}</p></div>}
         <div className="review-actions">
-            {own && appeal.status === 'pending' && <button type="button" className="button secondary" disabled={busy} onClick={() => void command({ type: 'moderation.appeal.withdraw', appealId: appeal.id })}>Withdraw appeal</button>}
-            {!own && appeal.status === 'pending' && !block && <button type="button" className="button primary" onClick={() => setDeciding(true)}>Decide</button>}
+            {own && appeal.status === 'pending' && <Button variant="secondary" type="button" className="button secondary" disabled={busy} onClick={() => void command({ type: 'moderation.appeal.withdraw', appealId: appeal.id })}>Withdraw appeal</Button>}
+            {!own && appeal.status === 'pending' && !block && <Button variant="default" type="button" className="button primary" onClick={() => setDeciding(true)}>Decide</Button>}
             {post && (!post.hidden || own || isAdmin(me)) && <Link className="text-link" to={`/post/${post.id}`}>Read the post</Link>}
         </div>
         {deciding && <DecideDialog appeal={appeal} onClose={() => setDeciding(false)}/>}
@@ -88,12 +91,12 @@ function DecideDialog({ appeal, onClose }: { appeal: ModerationAppeal; onClose: 
     return <Modal title="Decide this appeal" onClose={onClose}>
         <div className="form-stack">
             <p className="modal-intro">Restoring makes the post visible to members again. Keeping it hidden leaves it visible only to its author. Your response goes to the member, and the decision is recorded in the audit trail.</p>
-            <label htmlFor={field}>Response to the member</label>
-            <textarea id={field} required rows={4} maxLength={APPEAL_TEXT_MAX} value={response} onChange={e => setResponse(e.target.value)}/>
+            <Label htmlFor={field}>Response to the member</Label>
+            <Textarea id={field} required rows={4} maxLength={APPEAL_TEXT_MAX} value={response} onChange={e => setResponse(e.target.value)}/>
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="review-actions">
-                <button type="button" className="button secondary" disabled={busy || !response.trim()} onClick={() => void decide('upheld')}>Keep hidden</button>
-                <button type="button" className="button primary" disabled={busy || !response.trim()} onClick={() => void decide('reversed')}>Restore the post</button>
+                <Button variant="secondary" type="button" className="button secondary" disabled={busy || !response.trim()} onClick={() => void decide('upheld')}>Keep hidden</Button>
+                <Button variant="default" type="button" className="button primary" disabled={busy || !response.trim()} onClick={() => void decide('reversed')}>Restore the post</Button>
             </div>
         </div>
     </Modal>;

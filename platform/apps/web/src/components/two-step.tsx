@@ -7,6 +7,9 @@ import { displayError } from '../lib/data';
 import { beginTwoStep, confirmTwoStep, newBackupCodes, turnOffTwoStep, twoStepCapabilities } from '../lib/two-factor';
 import { setupKey } from '../../../../packages/contracts/src/two-factor';
 import { Modal, Pill } from './ui';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 
 const looksAfter = (role?: string) => role === 'owner' || role === 'admin';
 
@@ -42,8 +45,8 @@ export function TwoStepPanel({ roles }: { roles: (string | undefined)[] }) {
         {!on && responsible && <p className="two-step-emphasis">You look after a community, so your account opens its member list and settings. {required ? 'This server requires two-step sign-in before you can use owner and administrator tools.' : 'Turning this on is strongly recommended.'}</p>}
         <div className="two-step-actions">
             {on
-                ? <><button type="button" className="button secondary" onClick={() => setDialogue('codes')}><KeyRound size={15} aria-hidden="true"/>New backup codes…</button><button type="button" className="button secondary" onClick={() => setDialogue('off')}>Turn off…</button></>
-                : <button type="button" className="button primary" onClick={() => setDialogue('on')}><ShieldCheck size={15} aria-hidden="true"/>Turn on two-step sign-in…</button>}
+                ? <><Button variant="secondary" type="button" className="button secondary" onClick={() => setDialogue('codes')}><KeyRound size={15} aria-hidden="true"/>New backup codes…</Button><Button variant="secondary" type="button" className="button secondary" onClick={() => setDialogue('off')}>Turn off…</Button></>
+                : <Button variant="default" type="button" className="button primary" onClick={() => setDialogue('on')}><ShieldCheck size={15} aria-hidden="true"/>Turn on two-step sign-in…</Button>}
         </div>
         {dialogue === 'on' && <TurnOnDialogue onClose={() => setDialogue(null)}/>}
         {dialogue === 'off' && <PasswordDialogue title="Turn off two-step sign-in?" action="Turn off" body={required && responsible ? 'Signing in will ask only for your password, and owner and administrator tools will stop working for you until you turn it on again.' : 'Signing in will ask only for your password.'} run={async password => { await turnOffTwoStep(password); return null; }} onClose={() => setDialogue(null)}/>}
@@ -58,7 +61,7 @@ function useRefreshIdentity() {
 
 function PasswordField({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled: boolean }) {
     const id = useId();
-    return <div className="account-field"><label htmlFor={id}>Your password</label><input id={id} type="password" autoComplete="current-password" required value={value} onChange={e => onChange(e.target.value)} disabled={disabled}/></div>;
+    return <div className="account-field"><Label htmlFor={id}>Your password</Label><Input id={id} type="password" autoComplete="current-password" required value={value} onChange={e => onChange(e.target.value)} disabled={disabled}/></div>;
 }
 
 /** Backup codes, shown once. */
@@ -71,7 +74,7 @@ function BackupCodes({ codes }: { codes: string[] }) {
     return <div className="two-step-codes">
         <p>Save these backup codes somewhere safe, such as a password manager. Each one signs you in once if you cannot use your authenticator app. They will not be shown again.</p>
         <ul aria-label="Backup codes">{codes.map(c => <li key={c}><code>{c}</code></li>)}</ul>
-        <button type="button" className="button secondary" onClick={copy}><Copy size={15} aria-hidden="true"/>Copy the codes</button>
+        <Button variant="secondary" type="button" className="button secondary" onClick={copy}><Copy size={15} aria-hidden="true"/>Copy the codes</Button>
         {copied && <p role="status" className="two-step-copied">{copied}</p>}
     </div>;
 }
@@ -86,15 +89,15 @@ function PasswordDialogue({ title, action, body, run, onClose }: { title: string
         try { const result = await run(password); if (result) { setCodes(result); setWorking(false); } else { await refresh(); onClose(); } }
         catch (err) { setError(displayError(err)); setWorking(false); }
     };
-    if (codes) return <Modal title={title} onClose={onClose}><div className="form-stack"><BackupCodes codes={codes}/><div className="modal-actions"><button type="button" className="button primary" onClick={onClose}>I have saved them</button></div></div></Modal>;
+    if (codes) return <Modal title={title} onClose={onClose}><div className="form-stack"><BackupCodes codes={codes}/><div className="modal-actions"><Button variant="default" type="button" className="button primary" onClick={onClose}>I have saved them</Button></div></div></Modal>;
     return <Modal title={title} onClose={() => { if (!working) onClose(); }}>
         <form className="form-stack" onSubmit={submit} noValidate>
             <p className="account-warning">{body}</p>
             <PasswordField value={password} onChange={setPassword} disabled={working}/>
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="modal-actions">
-                <button type="button" className="button secondary" onClick={onClose} disabled={working}>Cancel</button>
-                <button type="submit" className="button primary" disabled={working}>{working && <LoaderCircle size={15} className="spin" aria-hidden="true"/>}{action}</button>
+                <Button variant="secondary" type="button" className="button secondary" onClick={onClose} disabled={working}>Cancel</Button>
+                <Button variant="default" type="submit" className="button primary" disabled={working}>{working && <LoaderCircle size={15} className="spin" aria-hidden="true"/>}{action}</Button>
             </div>
         </form>
     </Modal>;
@@ -122,21 +125,21 @@ function TurnOnDialogue({ onClose }: { onClose: () => void }) {
         finally { setWorking(false); }
     };
     const close = () => { if (!working) onClose(); };
-    if (step === 'codes' && setup) return <Modal title="Two-step sign-in is on" onClose={onClose}><div className="form-stack"><BackupCodes codes={setup.backupCodes}/><div className="modal-actions"><button type="button" className="button primary" onClick={onClose}>I have saved them</button></div></div></Modal>;
+    if (step === 'codes' && setup) return <Modal title="Two-step sign-in is on" onClose={onClose}><div className="form-stack"><BackupCodes codes={setup.backupCodes}/><div className="modal-actions"><Button variant="default" type="button" className="button primary" onClick={onClose}>I have saved them</Button></div></div></Modal>;
     if (step === 'app' && setup) return <Modal title="Add REUNIR to your authenticator app" onClose={close}>
         <form className="form-stack" onSubmit={confirm} noValidate>
             <p className="account-warning">In your authenticator app, add an account and enter this setup key, or open the link on the device that has the app. A QR code to scan can follow in a later release.</p>
             <div className="two-step-key"><span id={keyLabel}>Setup key</span><code aria-labelledby={keyLabel}>{setupKey(setup.totpURI)}</code><small>Time-based, six digits, every 30 seconds.</small></div>
             <a className="text-link" href={setup.totpURI}>Open in an authenticator app <ArrowRight size={14} aria-hidden="true"/></a>
             <div className="account-field">
-                <label htmlFor={codeField}>Six-digit code from the app</label>
-                <input id={codeField} inputMode="numeric" autoComplete="one-time-code" maxLength={7} required value={code} onChange={e => setCode(e.target.value)} disabled={working}/>
+                <Label htmlFor={codeField}>Six-digit code from the app</Label>
+                <Input id={codeField} inputMode="numeric" autoComplete="one-time-code" maxLength={7} required value={code} onChange={e => setCode(e.target.value)} disabled={working}/>
                 <small>Two-step sign-in stays off until this code is accepted.</small>
             </div>
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="modal-actions">
-                <button type="button" className="button secondary" onClick={close} disabled={working}>Cancel</button>
-                <button type="submit" className="button primary" disabled={working}>{working && <LoaderCircle size={15} className="spin" aria-hidden="true"/>}Confirm and turn on</button>
+                <Button variant="secondary" type="button" className="button secondary" onClick={close} disabled={working}>Cancel</Button>
+                <Button variant="default" type="submit" className="button primary" disabled={working}>{working && <LoaderCircle size={15} className="spin" aria-hidden="true"/>}Confirm and turn on</Button>
             </div>
         </form>
     </Modal>;
@@ -146,8 +149,8 @@ function TurnOnDialogue({ onClose }: { onClose: () => void }) {
             <PasswordField value={password} onChange={setPassword} disabled={working}/>
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="modal-actions">
-                <button type="button" className="button secondary" onClick={close} disabled={working}>Cancel</button>
-                <button type="submit" className="button primary" disabled={working}>{working && <LoaderCircle size={15} className="spin" aria-hidden="true"/>}Continue</button>
+                <Button variant="secondary" type="button" className="button secondary" onClick={close} disabled={working}>Cancel</Button>
+                <Button variant="default" type="submit" className="button primary" disabled={working}>{working && <LoaderCircle size={15} className="spin" aria-hidden="true"/>}Continue</Button>
             </div>
         </form>
     </Modal>;

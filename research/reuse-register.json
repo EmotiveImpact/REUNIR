@@ -117,6 +117,94 @@
       "reviewedOn": "2026-10-02"
     },
     {
+      "id": "shadcn-input",
+      "project": "shadcn/ui",
+      "repository": "shadcn-ui/ui",
+      "file": "apps/v4/registry/new-york-v4/ui/input.tsx",
+      "blob": "ddb9b315e34245addded54b1848bb32c80c418cc",
+      "licence": "MIT; complete notice retained",
+      "lesson": "Reuse accessible form composition and Radix primitive behaviour; keep REUNIR field names, labels, validation and permissions.",
+      "url": "https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/input.tsx",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "shadcn-textarea",
+      "project": "shadcn/ui",
+      "repository": "shadcn-ui/ui",
+      "file": "apps/v4/registry/new-york-v4/ui/textarea.tsx",
+      "blob": "bf23f6c255978311c3069f5da3fa10c1d896e8cf",
+      "licence": "MIT; complete notice retained",
+      "lesson": "Reuse accessible form composition and Radix primitive behaviour; keep REUNIR field names, labels, validation and permissions.",
+      "url": "https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/textarea.tsx",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "shadcn-label",
+      "project": "shadcn/ui",
+      "repository": "shadcn-ui/ui",
+      "file": "apps/v4/registry/new-york-v4/ui/label.tsx",
+      "blob": "5aff7469c384001a3f1b49cc5cf8871b10f10386",
+      "licence": "MIT; complete notice retained",
+      "lesson": "Reuse accessible form composition and Radix primitive behaviour; keep REUNIR field names, labels, validation and permissions.",
+      "url": "https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/label.tsx",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "shadcn-native-select",
+      "project": "shadcn/ui",
+      "repository": "shadcn-ui/ui",
+      "file": "apps/v4/registry/new-york-v4/ui/native-select.tsx",
+      "blob": "9ddba6b7fcddda52d9c4fc969cd910b929e7aec7",
+      "licence": "MIT; complete notice retained",
+      "lesson": "Reuse accessible form composition and Radix primitive behaviour; keep REUNIR field names, labels, validation and permissions.",
+      "url": "https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/native-select.tsx",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "shadcn-checkbox",
+      "project": "shadcn/ui",
+      "repository": "shadcn-ui/ui",
+      "file": "apps/v4/registry/new-york-v4/ui/checkbox.tsx",
+      "blob": "9aaa1baace43e42aba6ee7c3b04adb8ff7e99ea2",
+      "licence": "MIT; complete notice retained",
+      "lesson": "Reuse accessible form composition and Radix primitive behaviour; keep REUNIR field names, labels, validation and permissions.",
+      "url": "https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/checkbox.tsx",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "shadcn-radio-group",
+      "project": "shadcn/ui",
+      "repository": "shadcn-ui/ui",
+      "file": "apps/v4/registry/new-york-v4/ui/radio-group.tsx",
+      "blob": "2dc7ec59fa0af08a9274410db47b03cb78f629eb",
+      "licence": "MIT; complete notice retained",
+      "lesson": "Reuse accessible form composition and Radix primitive behaviour; keep REUNIR field names, labels, validation and permissions.",
+      "url": "https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/radio-group.tsx",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "shadcn-switch",
+      "project": "shadcn/ui",
+      "repository": "shadcn-ui/ui",
+      "file": "apps/v4/registry/new-york-v4/ui/switch.tsx",
+      "blob": "c45932afe4e484c900aa916e81d0e0d67137bedc",
+      "licence": "MIT; complete notice retained",
+      "lesson": "Reuse accessible form composition and Radix primitive behaviour; keep REUNIR field names, labels, validation and permissions.",
+      "url": "https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/switch.tsx",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "shadcn-dialog",
+      "project": "shadcn/ui",
+      "repository": "shadcn-ui/ui",
+      "file": "apps/v4/registry/new-york-v4/ui/dialog.tsx",
+      "blob": "ccadf4a85bf6398d52314b112600f796fc97db97",
+      "licence": "MIT; complete notice retained",
+      "lesson": "Native Dialog kept: the native modal dialog already gives top-layer inertness, Escape and focus return, and parallel tests address dialog[open].",
+      "url": "https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/dialog.tsx",
+      "reviewedOn": "2026-10-03"
+    },
+    {
       "id": "tiptap-starter-kit",
       "project": "Tiptap",
       "repository": "ueberdosis/tiptap",
@@ -877,6 +965,56 @@
       "rationale": "Scoped source adaptation with pinned Radix primitives; no separate product/stack fork."
     },
     {
+      "id": "alpha30-shadcn-forms",
+      "sources": [
+        "shadcn-input",
+        "shadcn-textarea",
+        "shadcn-label",
+        "shadcn-native-select",
+        "shadcn-checkbox",
+        "shadcn-radio-group",
+        "shadcn-switch"
+      ],
+      "mode": "source_import",
+      "status": "implemented",
+      "licenceDecision": "approved",
+      "notices": [
+        "platform/legal/shadcn-MIT.txt",
+        "platform/THIRD_PARTY_NOTICES.md",
+        "platform/legal/dependencies/radix-ui__react-checkbox-LICENSE.txt",
+        "platform/legal/dependencies/radix-ui__react-label-LICENSE.txt",
+        "platform/legal/dependencies/radix-ui__react-radio-group-LICENSE.txt",
+        "platform/legal/dependencies/radix-ui__react-switch-LICENSE.txt"
+      ],
+      "implementation": [
+        "platform/apps/web/src/components/ui/input.tsx",
+        "platform/apps/web/src/components/ui/textarea.tsx",
+        "platform/apps/web/src/components/ui/label.tsx",
+        "platform/apps/web/src/components/ui/native-select.tsx",
+        "platform/apps/web/src/components/ui/checkbox.tsx",
+        "platform/apps/web/src/components/ui/radio-group.tsx",
+        "platform/apps/web/src/components/ui/switch.tsx",
+        "platform/apps/web/src/forms.css",
+        "platform/apps/web/src/components/forms.tsx"
+      ],
+      "tests": [
+        "platform/scripts/forms-browser-check.ts",
+        "scripts/test_forms_contract.py"
+      ],
+      "rationale": "Scoped source adaptation with individually pinned Radix primitives; every form in the web app uses the shared components and keeps its names, labels and validation."
+    },
+    {
+      "id": "alpha30-shadcn-dialog",
+      "sources": [
+        "shadcn-dialog"
+      ],
+      "mode": "potential_source_import",
+      "status": "rejected",
+      "implementation": [],
+      "tests": [],
+      "rationale": "Modal keeps its native modal dialog, now with shadcn slots and a shadcn Button to close it. Replacing it would add a dependency and a portal without improving focus or Escape handling."
+    },
+    {
       "id": "rich-lesson-editor",
       "status": "implemented",
       "mode": "existing_code_reuse",
@@ -1158,5 +1296,5 @@
     }
   ],
   "libraryReuse": "Alpha 09 adds no runtime dependency: lesson files extend the existing @google-cloud/storage 8.2.0 adapter, Hono routes and shadcn Button. Alpha 08 added pinned MIT Tiptap 3.31.4 packages. No donor LMS application source imported.",
-  "uiComponentSourceFilesAdapted": 3
+  "uiComponentSourceFilesAdapted": 10
 }

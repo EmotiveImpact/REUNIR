@@ -9,6 +9,9 @@ import { displayError } from '../lib/data';
 import { coverUploadsAvailable, prepareCover, removeLibraryPicture, saveLibraryDetails, uploadLibraryPicture, type PreparedCover } from '../lib/covers';
 import { MAX_COVER_LIBRARY_ITEMS, MAX_COVER_LIBRARY_TAGS, MAX_COVER_TAG_LENGTH, coverLibraryTags, splitCoverTags } from '../../../../packages/contracts/src/covers';
 import type { CoverLibraryItem } from '../../../../packages/contracts/src/index';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 
 /**
  * Community settings: owners and administrators keep a small set of pictures that anyone who changes a track or
@@ -43,8 +46,8 @@ export function CoverLibrarySettings() {
                         <small>{count ? `The cover of ${count} ${count === 1 ? 'track or project' : 'tracks or projects'}. Change ${count === 1 ? 'it' : 'them'} before removing this picture.` : 'Not used as a cover yet.'}</small>
                     </div>
                     <div className="cover-library-row-actions">
-                        <button type="button" className="button secondary" disabled={!!removing} aria-label={`Edit the name and tags of ${item.label}`} onClick={() => setEditing(item)}><Pencil size={15} aria-hidden="true"/>Edit</button>
-                        <button type="button" className="button secondary" disabled={!!removing || count > 0} aria-label={`Remove ${item.label}`} onClick={() => void remove(item)}>{removing === item.id ? <LoaderCircle size={15} className="spin" aria-hidden="true"/> : <Trash2 size={15} aria-hidden="true"/>}Remove</button>
+                        <Button variant="secondary" type="button" className="button secondary" disabled={!!removing} aria-label={`Edit the name and tags of ${item.label}`} onClick={() => setEditing(item)}><Pencil size={15} aria-hidden="true"/>Edit</Button>
+                        <Button variant="secondary" type="button" className="button secondary" disabled={!!removing || count > 0} aria-label={`Remove ${item.label}`} onClick={() => void remove(item)}>{removing === item.id ? <LoaderCircle size={15} className="spin" aria-hidden="true"/> : <Trash2 size={15} aria-hidden="true"/>}Remove</Button>
                     </div>
                 </li>;
             })}
@@ -52,7 +55,7 @@ export function CoverLibrarySettings() {
         {uploads.isError ? <p className="resource-warning" role="note">Upload availability could not be checked, so pictures cannot be added right now. Try again shortly.</p>
             : uploads.isFetched && uploads.data !== true && <p className="resource-warning" role="note">Private file storage is not configured for this community, so pictures cannot be added.</p>}
         <div className="cover-library-actions">
-            <button type="button" className="button primary" disabled={full || uploads.data !== true} onClick={() => setAdding(true)}><ImagePlus size={16} aria-hidden="true"/>Add a picture</button>
+            <Button variant="default" type="button" className="button primary" disabled={full || uploads.data !== true} onClick={() => setAdding(true)}><ImagePlus size={16} aria-hidden="true"/>Add a picture</Button>
             <span>{library.length} of {MAX_COVER_LIBRARY_ITEMS} pictures{full ? '. Remove one to add another.' : ''}</span>
         </div>
         {adding && createPortal(<AddPictureDialog onClose={() => setAdding(false)}/>, document.body)}
@@ -85,19 +88,19 @@ function EditPictureDialog({ item, onClose }: { item: CoverLibraryItem; onClose:
     return <Modal title="Edit library picture" onClose={onClose}>
         <form className="form-stack cover-editor" onSubmit={e => { e.preventDefault(); void save(); }}>
             <div className="cover-library-name">
-                <label htmlFor={nameField}>Name</label>
-                <input id={nameField} value={label} onChange={e => setLabel(e.target.value)} maxLength={80} required disabled={saving}/>
+                <Label htmlFor={nameField}>Name</Label>
+                <Input id={nameField} value={label} onChange={e => setLabel(e.target.value)} maxLength={80} required disabled={saving}/>
             </div>
             <div className="cover-library-name">
-                <label htmlFor={tagsField}>Tags</label>
-                <input id={tagsField} value={tagText} onChange={e => setTagText(e.target.value)} aria-describedby={tagsHint} autoComplete="off" disabled={saving}/>
+                <Label htmlFor={tagsField}>Tags</Label>
+                <Input id={tagsField} value={tagText} onChange={e => setTagText(e.target.value)} aria-describedby={tagsHint} autoComplete="off" disabled={saving}/>
                 <small id={tagsHint} className="cover-library-hint">{tagHint}</small>
             </div>
             <p className="cover-library-hint">Covers that show this picture keep showing it. Only the words change.</p>
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="modal-actions">
-                <button type="button" className="button secondary" disabled={saving} onClick={onClose}>Cancel</button>
-                <button type="submit" className="button primary" disabled={saving || !label.trim()}>{saving ? 'Saving…' : 'Save changes'}</button>
+                <Button variant="secondary" type="button" className="button secondary" disabled={saving} onClick={onClose}>Cancel</Button>
+                <Button variant="default" type="submit" className="button primary" disabled={saving || !label.trim()}>{saving ? 'Saving…' : 'Save changes'}</Button>
             </div>
         </form>
     </Modal>;
@@ -148,24 +151,24 @@ function AddPictureDialog({ onClose }: { onClose: () => void }) {
                     : <div className="cover-stage-empty"><ImagePlus size={28} strokeWidth={1.5} aria-hidden="true"/><span>Choose an image or drop one here.</span></div>}
             </div>
             <div className="cover-editor-pick">
-                <button type="button" className="button secondary" aria-describedby={help} disabled={!!working} onClick={() => picker.current?.click()}>{working === 'reading' ? <LoaderCircle size={15} className="spin" aria-hidden="true"/> : <Upload size={15} aria-hidden="true"/>}{prepared ? 'Choose another image' : 'Choose an image'}</button>
+                <Button variant="secondary" type="button" className="button secondary" aria-describedby={help} disabled={!!working} onClick={() => picker.current?.click()}>{working === 'reading' ? <LoaderCircle size={15} className="spin" aria-hidden="true"/> : <Upload size={15} aria-hidden="true"/>}{prepared ? 'Choose another image' : 'Choose an image'}</Button>
                 <input ref={picker} type="file" accept="image/*" hidden onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; void choose(file); }}/>
             </div>
             <div className="cover-library-name">
-                <label htmlFor={field}>Name</label>
-                <input id={field} value={label} onChange={e => setLabel(e.target.value)} maxLength={80} required aria-describedby={hint} disabled={working === 'saving'}/>
+                <Label htmlFor={field}>Name</Label>
+                <Input id={field} value={label} onChange={e => setLabel(e.target.value)} maxLength={80} required aria-describedby={hint} disabled={working === 'saving'}/>
                 <small id={hint} className="cover-library-hint">Shown beside the picture when people choose a cover, for example “Harbour at dawn”.</small>
             </div>
             <div className="cover-library-name">
-                <label htmlFor={tagsField}>Tags</label>
-                <input id={tagsField} value={tagText} onChange={e => setTagText(e.target.value)} aria-describedby={tagsHint} autoComplete="off" disabled={working === 'saving'}/>
+                <Label htmlFor={tagsField}>Tags</Label>
+                <Input id={tagsField} value={tagText} onChange={e => setTagText(e.target.value)} aria-describedby={tagsHint} autoComplete="off" disabled={working === 'saving'}/>
                 <small id={tagsHint} className="cover-library-hint">{tagHint}</small>
             </div>
             <p className="cover-editor-status" role="status" aria-live="polite">{status}</p>
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="modal-actions">
-                <button type="button" className="button secondary" disabled={working === 'saving'} onClick={onClose}>Cancel</button>
-                <button type="button" className="button primary" disabled={!!working || !prepared || !label.trim()} onClick={() => void save()}>{working === 'saving' ? 'Adding…' : 'Add to library'}</button>
+                <Button variant="secondary" type="button" className="button secondary" disabled={working === 'saving'} onClick={onClose}>Cancel</Button>
+                <Button variant="default" type="button" className="button primary" disabled={!!working || !prepared || !label.trim()} onClick={() => void save()}>{working === 'saving' ? 'Adding…' : 'Add to library'}</Button>
             </div>
         </div>
     </Modal>;

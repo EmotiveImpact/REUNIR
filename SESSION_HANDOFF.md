@@ -4,7 +4,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, LESSON_RESOURCES.md, decisions/03
 
 ## Where the source is
 
-- Base: main `99e919a`, the merge of PR #28 (Alpha 36 instructors start their own tracks). Main `2561a00` (PR #27, Alpha 29 files on project tasks and live project work) is merged in. The application version stays 0.39.0-alpha.1 because Alpha 39 is already on main.
+- Base: main `99e919a`, the merge of PR #28 (Alpha 36 instructors start their own tracks). Main `2561a00` (PR #27, Alpha 29 files on project tasks and live project work) and `ec9181d` (PR #32, Alpha 30 every form on the shared shadcn components) are merged in. The application version stays 0.39.0-alpha.1 because Alpha 39 is already on main.
 - This slice: branch `claude/courses-teaching-6hum2q`, restarted from that main. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Numbering: courses and teaching uses Alpha 35 to 38, decisions 035 to 038 and migrations 0034 to 0037, as allocated by the project coordinator on 3 October 2026. Alpha 38 and migration 0037 are unused so far.
 
@@ -32,6 +32,38 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 
 1. Scan large uploads in chunks so the API need not hold a whole video in memory; until then raise clamd `StreamMaxLength` to the video limit. Question banks, timers and partial marks wait for pilot needs.
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 30 handover: every form on the shared shadcn components
+- Outcome: [PR #32](https://github.com/EmotiveImpact/REUNIR/pull/32), merged into main as `ec9181d`.
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, FORMS.md, decisions/030-shared-form-components.md and UI_DESIGN_DIRECTION.md first. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `2561a00`, which carries Alpha 29 (PR #27, merged 3 October 2026), on `claude/everyday-use-4z9rmz`.
+- The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- This thread held Alpha 27 to 30, decisions 027 to 030 and migrations 0028 and 0029; all four Everyday use items are built.
+
+### What is done
+
+Every form uses the shared shadcn components. New forms should use `components/ui` Input, Textarea, Label, NativeSelect, Checkbox, RadioGroup, Switch and Button; `scripts/test_forms_contract.py` fails on a hand-styled field.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run build`, every `npm run test:browser:*` script (now including `test:browser:forms`). From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`.
+
+### Next
+
+1. Task files already go through Alpha 23 upload scanning; confirm it against a real bucket and scanner when deployment is switched on.
+2. Later: remove the legacy `.button` and element rules so the shadcn classes alone style the app.
+3. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
 
 ---
 ## Historical Alpha 29 handover: files on project tasks and live project work

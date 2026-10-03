@@ -6,7 +6,7 @@
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `99e919a` (the merge of PR #28, Alpha 36), with main `2561a00` (PR #27, Alpha 29 files on project tasks and live project work) merged in |
+| Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `99e919a` (the merge of PR #28, Alpha 36), with main `2561a00` (PR #27, Alpha 29 files on project tasks and live project work) and `ec9181d` (PR #32, Alpha 30 every form on the shared shadcn components) merged in |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
@@ -32,7 +32,7 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 832 passed, 0 failed on top of main `99e919a` after the review fixes; rerun after merging main `2561a00` below (7 new in `tests/lesson-video.test.ts`, 1 new in `tests/launch-preflight.test.ts`, which also checks the clamd stream warning, 1 new in `tests/scanner.test.ts` for the scan allowance) |
+| `npm test` | 832 passed, 0 failed on top of main `99e919a` after the review fixes (7 new in `tests/lesson-video.test.ts`, 1 new in `tests/launch-preflight.test.ts`, which also checks the clamd stream warning, 1 new in `tests/scanner.test.ts` for the scan allowance) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
 | Demo-browser suites | 300 passed across 17 suites, including 20 lesson resource checks (1 new: a creator uploads a WebM clip and a learner plays it) |
@@ -51,6 +51,41 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. Scan large files in chunks so the API need not hold a whole video in memory.
 3. When deployment resumes: choose `LESSON_VIDEO_MAX_MB` with the bucket's storage and egress in mind, follow LAUNCH_RUNBOOK.md and run `npm run db:migrate`.
+
+## Historical Alpha 30 evidence: every form on the shared shadcn components
+
+3 October 2026. Release 0.30.0-alpha.1; the package version stays at 0.39.0-alpha.1, set by Alpha 39 on main. Every form in the web app uses the shared shadcn Input, Textarea, Label, Native Select, Checkbox, Radio Group, Switch and Button. See decisions/030-shared-form-components.md and FORMS.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of main `2561a00` (Alpha 29, PR #27) |
+| Verified locally | Yes, the checks below |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Yes: [PR #32](https://github.com/EmotiveImpact/REUNIR/pull/32), merged into main as `ec9181d` |
+| Deployed | No. Nothing was provisioned |
+| Operated with real members | No |
+
+## What changed
+
+- Seven adapted shadcn new-york-v4 components in `apps/web/src/components/ui`, pinned by registry blob in THIRD_PARTY_NOTICES.md and `research/reuse-register.json`. Four Radix packages at exact versions: `react-checkbox` 1.3.3, `react-label` 2.1.7, `react-radio-group` 1.3.8, `react-switch` 1.2.6; the only new transitive package is `react-use-previous` 1.1.1.
+- A mechanical swap across every page and component with a form, including collections, group conversations, task files, email address change, teaching roles and the loading, error and empty states. Names, ids, labels, validation and handlers are unchanged; legacy button classes are kept on Button so sizes and phone layouts stay.
+- `forms.css` gives the Radix controls a neutral, monochrome border and fill. Modal keeps its native modal `dialog` with shadcn slots.
+- No migration, no API change, no grant change.
+
+## Local verification, 3 October 2026
+
+On this branch, on top of Alpha 29 and main `99e919a`: typecheck, build and bundle passed; `npm test` 857 passed, 0 failed (after Alpha 29's review fixes and main's Alpha 35, 32, 33, 34 and 36); Python helpers including `test_forms_contract.py` passed; browser suites `forms` 10, `evidence` 7, `appeals` 7, `covers` 20, `covers-connected` 15, `instructors` 13, `instructors-connected` 6, `authoring` 27, `v4` 20, `monochrome` 16, `task-files` 12, `curation` 9, `states` 12, `work` 29, `accounts` 13, `groups` 11 and `credits` 7 passed. Alpha 39's new cover library fields (tags, the edit dialogue, the picture search and its radio choices) Alpha 35's lesson choices for teaching grants (a radio group, lesson checkboxes, role selects and buttons) Alpha 32's appeal forms and Alpha 33's evidence correction forms and Alpha 34's credit buttons and credit dialogue, and Alpha 36's track buttons on the learning and teaching pages, were moved onto the shared components while merging; the instructor browser check now finds the lesson checkboxes by role.
+
+## Not verified, and why
+
+- Real screen readers; the axe checks and keyboard paths in `test:browser:forms` stand in.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Confirm a real bucket and a real scanner on task files when deployment is switched on.
 
 ## Historical Alpha 29 evidence: files on project tasks and live project work
 

@@ -5,6 +5,9 @@ import { ResourceIcon, describeResource as describe } from './resource-list';
 import { useWorkspace } from '../lib/context';
 import { newId } from '../../../../packages/contracts/src/index';
 import { MAX_LESSON_RESOURCES, MAX_VIDEO_BYTES, RESOURCE_FILE_ACCEPT, formatFileSize, isLessonVideo, type LessonResource } from '../../../../packages/contracts/src/lesson-resources';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
 
 const displayName = (filename: string) => filename.replace(/\.[a-z0-9]{2,5}$/i, '').replace(/[\u0000-\u001f\u007f-\u009f]+/g, ' ').trim().slice(0, 120) || 'Lesson file';
 
@@ -56,8 +59,8 @@ export function ResourceEditor({ trackId, resources, saved, disabled, uploadsAva
         {resources.length ? <ol className="resource-rows">{resources.map((r, i) => <li key={r.id} className="resource-row">
             <div className="resource-row-file"><span className="resource-icon"><ResourceIcon type={r.contentType}/></span><div><strong>{r.name.trim() || 'Untitled file'}</strong><small>{describe(r)}{badge(r) && <span className="resource-badge">{badge(r)}</span>}</small></div>
                 <div className="resource-row-order"><button type="button" className="icon-button" aria-label={`Move ${r.name || 'file'} up`} disabled={locked || i === 0} onClick={() => move(i, -1)}><ArrowUp size={14}/></button><button type="button" className="icon-button" aria-label={`Move ${r.name || 'file'} down`} disabled={locked || i === resources.length - 1} onClick={() => move(i, 1)}><ArrowDown size={14}/></button></div></div>
-            <label>File name shown to learners<input value={r.name} maxLength={120} disabled={locked} onChange={e => change(r.id, { name: e.target.value })}/></label>
-            <label>Description for learners (optional)<textarea rows={2} maxLength={280} value={r.description} disabled={locked} onChange={e => change(r.id, { description: e.target.value })}/></label>
+            <Label>File name shown to learners<Input value={r.name} maxLength={120} disabled={locked} onChange={e => change(r.id, { name: e.target.value })}/></Label>
+            <Label>Description for learners (optional)<Textarea rows={2} maxLength={280} value={r.description} disabled={locked} onChange={e => change(r.id, { description: e.target.value })}/></Label>
             {!r.name.trim() && <p className="resource-invalid" role="alert">Give this file a name before saving.</p>}
             <div className="resource-row-actions">
                 <Button type="button" variant="ghost" size="sm" disabled={locked || !uploadsAvailable} aria-label={`Replace file for ${r.name || 'this entry'}`} onClick={() => choose(r.id)}><Upload size={14} aria-hidden="true"/>Replace file</Button>

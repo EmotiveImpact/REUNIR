@@ -7,6 +7,10 @@ import { useWorkspace } from '../lib/context';
 import { CREDIT_LIMIT, CREDIT_ROLE_MAX } from '../../../../packages/contracts/src/credits';
 import type { Contribution, ContributionCredit } from '../../../../packages/contracts/src/index';
 import { creditLine, creditedOn } from '../../../../packages/domain/src/credits';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { NativeSelect } from './ui/native-select';
 
 const STATUS: Record<ContributionCredit['status'], string> = { invited: 'Waiting for an answer', accepted: 'Credited', declined: 'Declined', withdrawn: 'Withdrawn' };
 
@@ -29,18 +33,18 @@ export function ContributionCredits({ contribution: c }: { contribution: Contrib
         {line && <p className="credit-line"><Handshake size={14} aria-hidden="true"/>{line}</p>}
         {mine?.status === 'invited' && <div className="credit-prompt" role="group" aria-label="Credit invitation">
             <p><strong>{name(mine.invitedBy)}</strong> would like to credit you on this contribution{mine.role ? <> as <strong>{mine.role}</strong></> : null}. Nothing is shown until you accept. A credit is acknowledgement from a teammate; it does not count as your own reviewed work.</p>
-            <div><button type="button" className="button primary compact" disabled={busy} onClick={() => run({ type: 'credit.respond', creditId: mine.id, decision: 'accepted' })}><Check size={14} aria-hidden="true"/>Accept credit</button>
-            <button type="button" className="button secondary compact" disabled={busy} onClick={() => run({ type: 'credit.respond', creditId: mine.id, decision: 'declined' })}><X size={14} aria-hidden="true"/>Decline</button></div>
+            <div><Button type="button" variant="default" size="sm" className="button primary compact" disabled={busy} onClick={() => run({ type: 'credit.respond', creditId: mine.id, decision: 'accepted' })}><Check size={14} aria-hidden="true"/>Accept credit</Button>
+            <Button type="button" variant="secondary" size="sm" className="button secondary compact" disabled={busy} onClick={() => run({ type: 'credit.respond', creditId: mine.id, decision: 'declined' })}><X size={14} aria-hidden="true"/>Decline</Button></div>
         </div>}
-        {mine?.status === 'accepted' && !author && <button type="button" className="button secondary compact" disabled={busy} onClick={() => { if (window.confirm('Remove your credit from this contribution?')) run({ type: 'credit.withdraw', creditId: mine.id }); }}><UserMinus size={14} aria-hidden="true"/>Remove my credit</button>}
+        {mine?.status === 'accepted' && !author && <Button type="button" variant="secondary" size="sm" className="button secondary compact" disabled={busy} onClick={() => { if (window.confirm('Remove your credit from this contribution?')) run({ type: 'credit.withdraw', creditId: mine.id }); }}><UserMinus size={14} aria-hidden="true"/>Remove my credit</Button>}
         {author && <div className="credit-manage">
             {credits.length > 0 && <ul className="credit-list" aria-label="People you have credited">{credits.map(k => <li key={k.id}>
                 <Avatar member={data.members.find(m => m.userId === k.userId)} size="xs"/>
                 <span><strong>{name(k.userId)}</strong>{k.role && <small>{k.role}</small>}</span>
                 <Pill>{STATUS[k.status]}</Pill>
-                {(k.status === 'invited' || k.status === 'accepted') && <button type="button" className="button secondary compact" disabled={busy} aria-label={`${k.status === 'invited' ? 'Withdraw the invitation to' : 'Remove the credit for'} ${name(k.userId)}`} onClick={() => run({ type: 'credit.withdraw', creditId: k.id })}>{k.status === 'invited' ? 'Withdraw' : 'Remove'}</button>}
+                {(k.status === 'invited' || k.status === 'accepted') && <Button type="button" variant="secondary" size="sm" className="button secondary compact" disabled={busy} aria-label={`${k.status === 'invited' ? 'Withdraw the invitation to' : 'Remove the credit for'} ${name(k.userId)}`} onClick={() => run({ type: 'credit.withdraw', creditId: k.id })}>{k.status === 'invited' ? 'Withdraw' : 'Remove'}</Button>}
             </li>)}</ul>}
-            <button type="button" className="button secondary compact" disabled={busy || live.length >= CREDIT_LIMIT} onClick={() => setOpen(true)}><UserPlus size={14} aria-hidden="true"/>Credit someone…</button>
+            <Button type="button" variant="secondary" size="sm" className="button secondary compact" disabled={busy || live.length >= CREDIT_LIMIT} onClick={() => setOpen(true)}><UserPlus size={14} aria-hidden="true"/>Credit someone…</Button>
         </div>}
         {error && <p className="form-error" role="alert">{error}</p>}
         {open && createPortal(<CreditDialog contribution={c} onClose={() => setOpen(false)}/>, document.body)}
@@ -64,15 +68,15 @@ function CreditDialog({ contribution: c, onClose }: { contribution: Contribution
     return <Modal title="Credit someone on this work" onClose={onClose}>
         <div className="form-stack credit-editor">
             <p id={intro}>Choose a teammate who worked on <strong>{c.title}</strong> with you. They are asked first, and nothing is shown until they accept. Credits acknowledge shared work; they do not count towards paths, recognition or any credential, and the review stays about this contribution.</p>
-            <label htmlFor={select}>Teammate</label>
-            <select id={select} value={choice} aria-describedby={intro} onChange={e => setChoice(e.target.value)}>
+            <Label htmlFor={select}>Teammate</Label>
+            <NativeSelect id={select} value={choice} aria-describedby={intro} onChange={e => setChoice(e.target.value)}>
                 <option value="">Choose a teammate</option>
                 {candidates.map(m => <option key={m.userId} value={m.userId}>{m.name}</option>)}
-            </select>
+            </NativeSelect>
             {!candidates.length && <small className="muted">Everyone on this project's team has already been asked. Teammates join from the project page.</small>}
-            <label>What they did (optional)<input value={role} maxLength={CREDIT_ROLE_MAX} onChange={e => setRole(e.target.value)} placeholder="Co-author, photography, sound…"/></label>
+            <Label>What they did (optional)<Input value={role} maxLength={CREDIT_ROLE_MAX} onChange={e => setRole(e.target.value)} placeholder="Co-author, photography, sound…"/></Label>
             {error && <p className="form-error" role="alert">{error}</p>}
-            <div className="modal-actions"><button type="button" className="button secondary" onClick={onClose}>Cancel</button><button type="button" className="button primary" disabled={busy || !choice} onClick={() => void send()}>Ask to credit</button></div>
+            <div className="modal-actions"><Button type="button" variant="secondary" className="button secondary" onClick={onClose}>Cancel</Button><Button type="button" variant="default" className="button primary" disabled={busy || !choice} onClick={() => void send()}>Ask to credit</Button></div>
         </div>
     </Modal>;
 }

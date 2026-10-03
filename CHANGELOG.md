@@ -27,6 +27,19 @@ Details:
 
 - Nothing further is planned for accounts and trust in this round. Removing someone from a project team, credits on outcomes and appeals against suspension remain undecided.
 
+## 0.30.0-alpha.1 (Alpha 30): every form on the shared shadcn components, 3 October 2026
+
+On main through [PR #32](https://github.com/EmotiveImpact/REUNIR/pull/32), merged as `ec9181d`. The package version stays at 0.39.0-alpha.1, set by Alpha 39.
+
+**In plain language:** every form in the app now uses the same set of shared components for text boxes, labels, drop-down lists, tick boxes, choice buttons and on/off switches. Nothing looks different and nothing moves; keyboard and screen-reader behaviour is now consistent everywhere.
+
+Details:
+
+- Seven more adapted shadcn new-york-v4 components (Input, Textarea, Label, Native Select, Checkbox, Radio Group, Switch) over four exactly pinned Radix packages; notices, licences and register entries added.
+- Field names, ids, labels, validation and submit handlers are unchanged. Show archive and showing answers after a knowledge check became switches.
+- The dialogue keeps its native modal `dialog` with shadcn slots and a shadcn close button. File pickers and focal-point sliders stay native.
+- New `test:browser:forms` in CI and a Python contract check (`scripts/test_forms_contract.py`). FORMS.md and decision 030 explain the choices.
+
 ## 0.29.0-alpha.1 (Alpha 29): files on project tasks and live project work, 3 October 2026
 
 On main through [PR #27](https://github.com/EmotiveImpact/REUNIR/pull/27), merged as `2561a00`. The package version stays at 0.39.0-alpha.1, set by Alpha 39.

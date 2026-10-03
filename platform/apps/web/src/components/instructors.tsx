@@ -8,6 +8,12 @@ import { createInvitation } from '../lib/invitations';
 import { isAdmin } from '../../../../packages/domain/src/access';
 import type { Lesson, TeachingRole, Track } from '../../../../packages/contracts/src/index';
 import { teachingRole } from '../../../../packages/domain/src/instructors';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { NativeSelect } from './ui/native-select';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Checkbox } from './ui/checkbox';
 
 /** Owners and administrators choose who teaches a track. Instructors author and review that track only. */
 export function InstructorsButton({ track }: { track: Track }) {
@@ -15,7 +21,7 @@ export function InstructorsButton({ track }: { track: Track }) {
     const [open, setOpen] = useState(false);
     if (!isAdmin(me)) return null;
     return <>
-        <button type="button" className="button secondary" onClick={() => setOpen(true)}><GraduationCap size={16} aria-hidden="true"/>Instructors</button>
+        <Button variant="secondary" type="button" className="button secondary" onClick={() => setOpen(true)}><GraduationCap size={16} aria-hidden="true"/>Instructors</Button>
         {open && createPortal(<InstructorsDialog track={track} onClose={() => setOpen(false)}/>, document.body)}
     </>;
 }
@@ -45,28 +51,28 @@ function InstructorsDialog({ track, onClose }: { track: Track; onClose: () => vo
             <p id={intro}>Instructors author, publish and order lessons, files and knowledge checks for <strong>{track.title}</strong> and give feedback on its knowledge checks. Contributors write drafts and attach files for the instructors to publish. Neither can change other tracks or community settings. Owners and administrators can already do all of this.</p>
             {grants.length ? <ul className="instructor-list" aria-label="Current instructors and contributors">{grants.map(g => <li key={g.id}>
                 <Avatar member={data.members.find(m => m.userId === g.userId)} size="sm"/><span className="instructor-name"><strong>{name(g.userId)}</strong><small>{teachingRole(g) === 'instructor' ? 'Instructor' : 'Contributor'}{g.lessonIds ? ` for ${g.lessonIds.map(lessonTitle).join(', ')}` : ', whole track'} · added by {name(g.grantedBy)}</small></span>
-                <select aria-label={`Role for ${name(g.userId)}`} value={teachingRole(g)} disabled={busy} onChange={e => void change(g.userId, e.target.value as TeachingRole, g.lessonIds ?? null)}><option value="instructor">Instructor</option><option value="contributor">Contributor</option></select>
-                <button type="button" className="button secondary" disabled={busy || !lessons.length} aria-expanded={editing?.userId === g.userId} aria-label={`Change lessons for ${name(g.userId)}`} onClick={() => setEditing(e => e?.userId === g.userId ? null : { userId: g.userId, some: !!g.lessonIds, chosen: g.lessonIds ?? [] })}><ListChecks size={15} aria-hidden="true"/>Lessons</button>
-                <button type="button" className="button secondary" disabled={busy} aria-label={`Remove ${name(g.userId)} from this track`} onClick={() => { setError(''); void command({ type: 'track.instructor.remove', trackId: track.id, userId: g.userId }, { onError: setError }); }}><UserMinus size={15} aria-hidden="true"/>Remove</button>
+                <NativeSelect aria-label={`Role for ${name(g.userId)}`} value={teachingRole(g)} disabled={busy} onChange={e => void change(g.userId, e.target.value as TeachingRole, g.lessonIds ?? null)}><option value="instructor">Instructor</option><option value="contributor">Contributor</option></NativeSelect>
+                <Button variant="secondary" type="button" className="button secondary" disabled={busy || !lessons.length} aria-expanded={editing?.userId === g.userId} aria-label={`Change lessons for ${name(g.userId)}`} onClick={() => setEditing(e => e?.userId === g.userId ? null : { userId: g.userId, some: !!g.lessonIds, chosen: g.lessonIds ?? [] })}><ListChecks size={15} aria-hidden="true"/>Lessons</Button>
+                <Button variant="secondary" type="button" className="button secondary" disabled={busy} aria-label={`Remove ${name(g.userId)} from this track`} onClick={() => { setError(''); void command({ type: 'track.instructor.remove', trackId: track.id, userId: g.userId }, { onError: setError }); }}><UserMinus size={15} aria-hidden="true"/>Remove</Button>
                 {editing?.userId === g.userId && <div className="instructor-grant-scope">
                     <LessonScope legend={`What ${name(g.userId)} works on`} lessons={lessons} some={editing.some} chosen={editing.chosen} onSome={v => setEditing({ ...editing, some: v })} onChosen={c => setEditing({ ...editing, chosen: c })}/>
-                    <div><button type="button" className="button primary" disabled={busy || (editing.some && !editing.chosen.length)} onClick={async () => { if (await change(g.userId, teachingRole(g), editing.some ? editing.chosen : null)) setEditing(null); }}>Save lessons</button>
-                    <button type="button" className="button secondary" onClick={() => setEditing(null)}>Cancel</button></div>
+                    <div><Button variant="default" type="button" className="button primary" disabled={busy || (editing.some && !editing.chosen.length)} onClick={async () => { if (await change(g.userId, teachingRole(g), editing.some ? editing.chosen : null)) setEditing(null); }}>Save lessons</Button>
+                    <Button variant="secondary" type="button" className="button secondary" onClick={() => setEditing(null)}>Cancel</Button></div>
                 </div>}
             </li>)}</ul> : <p className="muted">No instructors yet. Owners and administrators author this track.</p>}
             <div className="instructor-add">
-                <label htmlFor={select}>Add someone to teach</label>
-                <div><select id={select} value={choice} aria-describedby={intro} onChange={e => setChoice(e.target.value)}>
+                <Label htmlFor={select}>Add someone to teach</Label>
+                <div><NativeSelect id={select} value={choice} aria-describedby={intro} onChange={e => setChoice(e.target.value)}>
                     <option value="">Choose a member</option>
                     {candidates.map(m => <option key={m.userId} value={m.userId}>{m.name}</option>)}
-                </select>
-                <select id={roleSelect} aria-label="Role" value={role} onChange={e => setRole(e.target.value as TeachingRole)}><option value="instructor">Instructor</option><option value="contributor">Contributor</option></select>
-                <button type="button" className="button primary" disabled={busy || !choice || (some && !chosen.length)} onClick={() => void add()}><UserPlus size={15} aria-hidden="true"/>Add</button></div>
+                </NativeSelect>
+                <NativeSelect id={roleSelect} aria-label="Role" value={role} onChange={e => setRole(e.target.value as TeachingRole)}><option value="instructor">Instructor</option><option value="contributor">Contributor</option></NativeSelect>
+                <Button variant="default" type="button" className="button primary" disabled={busy || !choice || (some && !chosen.length)} onClick={() => void add()}><UserPlus size={15} aria-hidden="true"/>Add</Button></div>
                 <LessonScope legend="What they work on" lessons={lessons} some={some} chosen={chosen} onSome={setSome} onChosen={setChosen}/>
             </div>
             <InviteToTeach track={track}/>
             {error && <p className="form-error" role="alert">{error}</p>}
-            <div className="modal-actions"><button type="button" className="button secondary" onClick={onClose}>Done</button></div>
+            <div className="modal-actions"><Button variant="secondary" type="button" className="button secondary" onClick={onClose}>Done</Button></div>
         </div>
     </Modal>;
 }
@@ -74,11 +80,11 @@ function InstructorsDialog({ track, onClose }: { track: Track; onClose: () => vo
 /** The whole track, or only the chosen lessons. Used when adding someone and when changing an existing grant. */
 function LessonScope({ legend, lessons, some, chosen, onSome, onChosen }: { legend: string; lessons: Lesson[]; some: boolean; chosen: string[]; onSome: (some: boolean) => void; onChosen: (chosen: string[]) => void }) {
     const scopeName = useId();
-    return <fieldset className="instructor-scope"><legend>{legend}</legend>
-        <label><input type="radio" name={scopeName} checked={!some} onChange={() => onSome(false)}/>The whole track, including new lessons</label>
-        <label><input type="radio" name={scopeName} checked={some} disabled={!lessons.length} onChange={() => onSome(true)}/>Only the lessons I choose</label>
-        {some && <div className="instructor-lessons">{lessons.map(l => <label key={l.id}><input type="checkbox" checked={chosen.includes(l.id)} onChange={e => onChosen(e.target.checked ? [...chosen, l.id] : chosen.filter(x => x !== l.id))}/>{l.title}</label>)}</div>}
-    </fieldset>;
+    return <RadioGroup asChild name={scopeName} value={some ? 'some' : 'all'} onValueChange={v => onSome(v === 'some')}><fieldset className="instructor-scope"><legend>{legend}</legend>
+        <Label><RadioGroupItem value="all"/>The whole track, including new lessons</Label>
+        <Label><RadioGroupItem value="some" disabled={!lessons.length}/>Only the lessons I choose</Label>
+        {some && <div className="instructor-lessons">{lessons.map(l => <Label key={l.id}><Checkbox checked={chosen.includes(l.id)} onCheckedChange={on => onChosen(on === true ? [...chosen, l.id] : chosen.filter(x => x !== l.id))}/>{l.title}</Label>)}</div>}
+    </fieldset></RadioGroup>;
 }
 
 /**
@@ -98,12 +104,12 @@ function InviteToTeach({ track }: { track: Track }) {
         } catch (e) { setError(displayError(e)); } finally { setWorking(false); }
     };
     return <form className="instructor-invite" onSubmit={e => { e.preventDefault(); void send(); }}>
-        <label htmlFor={field}>Invite someone new to teach</label>
-        <div><input id={field} type="email" required autoComplete="off" value={email} aria-describedby={note} onChange={e => setEmail(e.target.value.trim().toLowerCase())} placeholder="name@example.com"/>
-        <button type="submit" className="button secondary" disabled={working || !email}><Mail size={15} aria-hidden="true"/>{working ? 'Inviting…' : 'Invite'}</button></div>
+        <Label htmlFor={field}>Invite someone new to teach</Label>
+        <div><Input id={field} type="email" required autoComplete="off" value={email} aria-describedby={note} onChange={e => setEmail(e.target.value.trim().toLowerCase())} placeholder="name@example.com"/>
+        <Button variant="secondary" type="submit" className="button secondary" disabled={working || !email}><Mail size={15} aria-hidden="true"/>{working ? 'Inviting…' : 'Invite'}</Button></div>
         <small id={note}>They join {data.organisation.name} as a member and teach {track.title} only. Invite people who are expecting to hear from you.</small>
         {sent && <p role="status">{mode === 'demo' ? `A fictional invitation for ${sent} was recorded. The preview never sends email.` : `Invitation created for ${sent}. This personal link is shown once:`}</p>}
-        {link && <input readOnly aria-label="Personal invitation link" value={link} onFocus={e => e.target.select()}/>}
+        {link && <Input readOnly aria-label="Personal invitation link" value={link} onFocus={e => e.target.select()}/>}
         {error && <p className="form-error" role="alert">{error}</p>}
     </form>;
 }

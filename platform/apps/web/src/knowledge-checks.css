@@ -19,9 +19,9 @@
 .quiz-choices {display:grid;gap:8px;padding-top:10px;clear:both}
 .quiz-choice {display:flex;flex-direction:row;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid #333;border-radius:8px;font-size:13px;line-height:1.5;color:#e4e4e4;cursor:pointer;overflow-wrap:anywhere}
 .quiz-choice:hover {border-color:#555}
-.quiz-choice:has(input:checked) {border-color:#d4d4d4;background:#1a1a1a}
+.quiz-choice:has(input:checked),.quiz-choice:has([data-slot=checkbox][data-state=checked]),.quiz-choice:has([data-slot=radio-group-item][data-state=checked]) {border-color:#d4d4d4;background:#1a1a1a}
 /* The global input rule stretches every input; choices keep their natural size. */
-.knowledge-check input[type=radio],.knowledge-check input[type=checkbox],.quiz-editor input[type=radio],.quiz-editor input[type=checkbox] {width:16px;height:16px;min-width:16px;padding:0;margin:3px 0 0;flex:none;accent-color:#f1f1f1}
+.knowledge-check input[type=radio],.knowledge-check input[type=checkbox],.quiz-editor input[type=radio],.quiz-editor input[type=checkbox],.knowledge-check [data-slot=checkbox],.knowledge-check [data-slot=radio-group-item],.quiz-editor [data-slot=checkbox],.quiz-editor [data-slot=radio-group-item] {width:16px;height:16px;min-width:16px;padding:0;margin:3px 0 0;flex:none;accent-color:#f1f1f1}
 .quiz-question:disabled .quiz-choice {cursor:default}
 .quiz-text {display:block;width:100%;min-width:0;box-sizing:border-box;margin-top:12px;clear:both}
 textarea.quiz-text {min-height:96px}
@@ -93,7 +93,7 @@ textarea.quiz-text {min-height:96px}
 .quiz-option-list>button {justify-self:start}
 .quiz-option-editor {display:flex;align-items:center;gap:8px;min-width:0}
 .quiz-option-editor input:not([type=radio]):not([type=checkbox]) {flex:1;min-width:0}
-.quiz-option-editor input[type=radio],.quiz-option-editor input[type=checkbox] {margin-top:0}
+.quiz-option-editor input[type=radio],.quiz-option-editor input[type=checkbox],.quiz-option-editor [data-slot=checkbox],.quiz-option-editor [data-slot=radio-group-item] {margin-top:0}
 .quiz-option-editor .icon-button {width:30px;height:30px;min-width:30px}
 .quiz-editor-foot {display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .quiz-editor-note {font-size:12px;line-height:1.6;color:#bcbcbc}

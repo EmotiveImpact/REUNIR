@@ -1,4 +1,5 @@
 import { Avatar as AvatarRoot, AvatarImage, AvatarFallback } from './ui/avatar';
+import { Button } from './ui/button';
 import { mode } from '../lib/data';
 import { demoPortraits } from '../lib/portraits';
 import { useEffect, useRef, type ReactNode } from 'react';
@@ -53,11 +54,11 @@ export function Modal({ title, children, onClose, wide = false }: {
 }) {
     const ref = useRef<HTMLDialogElement>(null);
     useEffect(() => { const d = ref.current; const prior = document.activeElement as HTMLElement; d?.showModal(); return () => { d?.close(); prior?.focus?.(); }; }, []);
-    return <dialog ref={ref} className={`modal ${wide ? 'modal-wide' : ''}`} aria-labelledby="modal-title" onCancel={e => { e.preventDefault(); onClose(); }} onClick={e => { if (e.target === e.currentTarget) {
+    return <dialog ref={ref} data-slot="dialog-content" className={`modal ${wide ? 'modal-wide' : ''}`} aria-labelledby="modal-title" onCancel={e => { e.preventDefault(); onClose(); }} onClick={e => { if (e.target === e.currentTarget) {
         const r = e.currentTarget.getBoundingClientRect();
         if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)
             onClose();
-    } }}><div className="modal-head"><h2 id="modal-title">{title}</h2><button className="icon-button" aria-label="Close dialogue" onClick={onClose}><X size={20}/></button></div>{children}</dialog>;
+    } }}><div className="modal-head" data-slot="dialog-header"><h2 id="modal-title" data-slot="dialog-title">{title}</h2><Button type="button" variant="ghost" size="icon" className="icon-button" aria-label="Close dialogue" onClick={onClose}><X size={20}/></Button></div>{children}</dialog>;
 }
 export function Back({ to, label }: {
     to: string;
