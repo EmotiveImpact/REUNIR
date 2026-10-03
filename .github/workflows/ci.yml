@@ -42,6 +42,7 @@ jobs:
       - run: npm run test:browser:instructors
       - run: npm run test:browser:accounts
       - run: npm run test:browser:notifications
+      - run: npm run test:browser:appeals
       - run: npm run test:browser:monochrome
       - run: npm run test:browser:v4
       - run: npm run test:browser:connected

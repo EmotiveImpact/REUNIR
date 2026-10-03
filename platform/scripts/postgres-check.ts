@@ -30,6 +30,17 @@ try{
     await admin.transaction(grantRuntimeTables);url.username='reunir_app';url.password='LOCAL_CI_TEST_ONLY_12345678901234567890';runtime=await openDatabase(url.toString());
     await check('separate runtime connection is non-owner and cannot bypass RLS',async()=>{assert(await runtimeRoleIsSafe(runtime!));await assert.rejects(()=>runtime!.query('SELECT * FROM schema_migrations'));});
     await check('the runtime role is granted the two-step sign-in table (migration 0021)',async()=>{for(const action of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await admin.query<{ok:boolean}>("SELECT has_table_privilege('reunir_app','auth_two_factor',$1) AS ok",[action])).rows[0].ok,true,action);assert.equal((await runtime!.query<{n:number}>('SELECT count(*)::int AS n FROM auth_two_factor')).rows[0].n,0);});
+    await check('the runtime role may change only the decision fields of moderation appeals (migration 0022)',async()=>{
+        const table=async(p:string)=>(await admin.query<{ok:boolean}>("SELECT has_table_privilege('reunir_app','moderation_appeals',$1) AS ok",[p])).rows[0].ok;
+        const column=async(c:string)=>(await admin.query<{ok:boolean}>("SELECT has_column_privilege('reunir_app','moderation_appeals',$1,'UPDATE') AS ok",[c])).rows[0].ok;
+        for(const p of ['SELECT','INSERT','DELETE'])assert.equal(await table(p),true,p);
+        assert.equal(await table('UPDATE'),false,'no table-wide UPDATE');
+        for(const c of ['status','decided_by','decided_at','response'])assert.equal(await column(c),true,c);
+        for(const c of ['reason','appellant_id','subject_id','subject','created_at'])assert.equal(await column(c),false,c);
+        for(const c of ['moderated_by','moderated_at'])assert.equal((await admin.query<{ok:boolean}>("SELECT has_column_privilege('reunir_app','posts',$1,'UPDATE') AS ok",[c])).rows[0].ok,true,c);
+        const rls=(await admin.query<{relrowsecurity:boolean;relforcerowsecurity:boolean}>("SELECT relrowsecurity,relforcerowsecurity FROM pg_class WHERE relname='moderation_appeals'")).rows[0];
+        assert.deepEqual(rls,{relrowsecurity:true,relforcerowsecurity:true});
+    });
     await check('missing tenant context denies rows on a fresh connection',async()=>{assert.equal((await runtime!.query('SELECT id FROM posts')).rows.length,0);});
     await check('parallel connection-pool reads keep two tenant contexts separate',async()=>{const repo=new WorkspaceRepository(runtime!);const slugs=Array.from({length:20},(_,i)=>i%2?'code-black':'studio-north');const rows=await Promise.all(slugs.map(s=>repo.snapshot(s,DEMO_USER)));rows.forEach((r,i)=>assert.equal(r.organisation.slug,slugs[i]));});
     await check('transaction context is reset before a pooled connection is reused',async()=>{await runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',DEMO_USER);assert((await tx.query('SELECT id FROM posts')).rows.length>0);});assert.equal((await runtime!.query('SELECT id FROM posts')).rows.length,0);});
@@ -133,6 +144,27 @@ try{
         await exec({type:'project.cover.set',projectId:'project_still',fileId:null},'member_jordan');
         assert.deepEqual(await repo.removeCoverLibraryItem('code-black',DEMO_ADMIN,item,'library-postgres'),{id:item,objectKey:key('org_code_black',upload.id)});
         assert.deepEqual(await rows(DEMO_ADMIN,`SELECT id FROM upload_intents WHERE id='${upload.id}'`),[]);
+    });
+    await check('a hidden post is appealed and reversed, private to the appellant and administrators, through a restricted PostgreSQL connection',async()=>{
+        const repo=new WorkspaceRepository(runtime!),MAYA='member_maya',NIA='member_nia';
+        const exec=(cmd:unknown,user:string)=>repo.execute('code-black',user,cmd,randomUUID(),'appeals-postgres');
+        const rows=(org:string,user:string,sql:string)=>runtime!.transaction(async tx=>{await setContext(tx,org,user);return (await tx.query<Record<string,unknown>>(sql)).rows;});
+        await exec({type:'post.moderate',postId:'post_win',hidden:true},MAYA);
+        assert.deepEqual(await rows('org_code_black',NIA,"SELECT hidden,moderated_by FROM posts WHERE id='post_win'"),[{hidden:true,moderated_by:MAYA}]);
+        const id=(await exec({type:'moderation.appeal',postId:'post_win',reason:'A celebration, not an advert.'},NIA)).objectId!;
+        await assert.rejects(()=>exec({type:'moderation.appeal',postId:'post_win',reason:'Twice.'},NIA),{code:'APPEAL_OPEN'});
+        assert.equal((await rows('org_code_black',NIA,'SELECT id FROM moderation_appeals')).length,1);
+        assert.equal((await rows('org_code_black',DEMO_ADMIN,'SELECT id FROM moderation_appeals')).length,1);
+        assert.deepEqual(await rows('org_code_black',MAYA,'SELECT id FROM moderation_appeals'),[],'the moderator does not read appeals');
+        assert.deepEqual(await rows('org_code_black',DEMO_USER,'SELECT id FROM moderation_appeals'),[]);
+        assert.deepEqual(await rows('org_studio_north',DEMO_ADMIN,'SELECT id FROM moderation_appeals'),[],'another community reads none');
+        await assert.rejects(()=>exec({type:'moderation.appeal.decide',appealId:id,decision:'reversed',response:'Mine?'},MAYA),{code:'NOT_FOUND'});
+        await rows('org_code_black',MAYA,`UPDATE moderation_appeals SET status='reversed',decided_by='${MAYA}',decided_at=now() WHERE id='${id}'`);
+        await assert.rejects(()=>rows('org_code_black',DEMO_ADMIN,`UPDATE moderation_appeals SET reason='Rewritten' WHERE id='${id}'`),/permission denied/);
+        await exec({type:'moderation.appeal.decide',appealId:id,decision:'reversed',response:'Restored. Celebrations are welcome.'},DEMO_ADMIN);
+        assert.deepEqual(await rows('org_code_black',NIA,`SELECT status,decided_by,reason FROM moderation_appeals WHERE id='${id}'`),[{status:'reversed',decided_by:DEMO_ADMIN,reason:'A celebration, not an advert.'}]);
+        assert((await repo.snapshot('code-black',DEMO_USER)).posts.some(p=>p.id==='post_win'),'members see the restored post');
+        await assert.rejects(()=>rows('org_code_black',DEMO_USER,"INSERT INTO moderation_appeals(id,organization_id,created_at,subject,subject_id,appellant_id,reason) VALUES('forged_pg','org_code_black',now(),'post','post_common','member_alex','Forged')"),/row-level security/);
     });
     await check('an owner-authorised erasure removes one member\u2019s answers through a role without row-security bypass',async()=>{
         // A stand-in for a hosted migration role: table privileges, but no superuser and no BYPASSRLS.

@@ -1750,3 +1750,11 @@ tables.push({key:'notificationPreferences',table:'notification_preferences',fiel
     {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
     {property:'userId',column:'user_id',type:'text'},{property:'muted',column:'muted',type:'jsonb'},{property:'digest',column:'digest',type:'text'},
     {property:'updatedAt',column:'updated_at',type:'timestamptz'},{property:'lastDigestAt',column:'last_digest_at',type:'timestamptz'}]});
+
+// Appeals against moderation. Posts record who last hid or restored them; an appeal changes only its decision fields.
+tables.find(t => t.key === 'posts')!.fields.push({property:'moderatedBy',column:'moderated_by',type:'text'},{property:'moderatedAt',column:'moderated_at',type:'timestamptz'});
+tables.push({key:'moderationAppeals',table:'moderation_appeals',mutable:['status','decidedBy','decidedAt','response'],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'subject',column:'subject',type:'text'},{property:'subjectId',column:'subject_id',type:'text'},{property:'appellantId',column:'appellant_id',type:'text'},
+    {property:'reason',column:'reason',type:'text'},{property:'status',column:'status',type:'text'},{property:'decidedBy',column:'decided_by',type:'text'},
+    {property:'decidedAt',column:'decided_at',type:'timestamptz'},{property:'response',column:'response',type:'text'}]});

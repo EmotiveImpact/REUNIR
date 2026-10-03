@@ -7,6 +7,7 @@ import { WorkspaceRepository, setContext } from '../packages/db/src/repository';
 import { grantRuntimeTables } from '../packages/db/src/runtime-role';
 import { createSeed, DEMO_ADMIN, DEMO_USER } from '../packages/domain/src/seed';
 import { quizFingerprint } from '../packages/contracts/src/assessments';
+import { seedAtSchema } from './helpers/legacy-fixture';
 
 const ORG = 'org_code_black', SOFIA = 'member_sofia';
 let db: Database, runtime: WorkspaceRepository, operator: WorkspaceRepository;
@@ -38,14 +39,14 @@ after(async () => db?.close());
 test('0014 upgrade adds one delete policy and changes no rows', async () => {
     const old = await openDatabase('pglite:memory');
     try {
-        await migrate(old, '0013'); await new WorkspaceRepository(old).seed(createSeed());
+        await migrate(old, '0013'); await seedAtSchema(old);
         const read = async (table: string) => (await old.query(`SELECT * FROM ${table} ORDER BY organization_id,id`)).rows;
         const before = { quiz_attempts: await read('quiz_attempts'), notifications: await read('notifications'), audit: await read('audit') };
         await migrate(old); await migrate(old);
         for (const table of ['quiz_attempts', 'notifications', 'audit'] as const) assert.deepEqual(await read(table), before[table], table);
         assert.deepEqual((await old.query("SELECT policyname,permissive FROM pg_policies WHERE tablename='quiz_attempts' AND cmd='DELETE' ORDER BY policyname")).rows, [
             { policyname: 'attempt_account_erasure', permissive: 'PERMISSIVE' }, { policyname: 'attempt_erasure', permissive: 'PERMISSIVE' }, { policyname: 'attempt_runtime_deletion', permissive: 'RESTRICTIVE' }]);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 21);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 22);
     } finally { await old.close(); }
 });
 
