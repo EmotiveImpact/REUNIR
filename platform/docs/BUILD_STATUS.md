@@ -1,4 +1,43 @@
-# Alpha 27 loading, error and empty screens
+# Alpha 28 collections of useful content
+
+3 October 2026. Application 0.28.0-alpha.1. Owners, administrators and moderators gather useful posts, tracks, lessons, paths, projects, events, missions and community outputs into collections with notes and a chosen order; one published collection can be featured on Home. See decisions/028-curated-collections.md and CURATION.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of Alpha 27 (PR #22) |
+| Verified locally | Yes: the full suite on base `b24095a`, and the checks below on top of Alpha 27 and main `9b34cac` |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. Nothing was provisioned |
+| Operated with real members | No |
+
+## What changed
+
+- `packages/contracts/src/collections.ts`, `packages/domain/src/collections.ts`: eight item kinds, curator checks, visibility filtering (run last, after every other filter) and eight commands through the existing command pipeline.
+- Additive migration 0028: `collections` and `collection_items` with composite tenant keys, forced row security, drafts readable only by curators, writes only by an active curator in their own name, one featured collection per community, and runtime updates limited to wording, status, feature flag and editor (collections) and order and note (items). Run `npm run db:grant-runtime` after migrating.
+- Web: Collections page and detail with management for curators, a compact featured block on Home, global search includes collections. The existing private Saved page is unchanged and now browser-checked.
+- Demo: fictional "Start here" (published, featured, with one item from a private space members never see) and a draft by Maya Bennett.
+- Migrations 0001 to 0022 are byte-identical; migration count assertions moved to 23. No new dependency.
+
+## Local verification, 3 October 2026
+
+On base `b24095a` (by the building agent): typecheck, builds, `npm test` 644 passed, `test:http` 19, every demo suite including the new `test:browser:curation` (9), every connected suite (60), `test:postgres` 21 on PostgreSQL 16, Python helpers 35 and the research register.
+
+On this branch, on top of Alpha 27 and main `9b34cac`: typecheck, build and bundle passed; `npm test` 687 passed, 0 failed; `test:postgres` passed on a fresh PostgreSQL 16 loopback cluster with no leftover `reunir_*` roles; `curation` 9, `groups` 11, `states` 12, `v4` 20 and `monochrome` 16 passed.
+
+## Not verified, and why
+
+- PostgreSQL 17 runs in CI only. No hosted deployment.
+- Browsers with older saved demo data see no seeded collections until the demo is restarted; their data upgrades to empty collections.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Task files with live updates (Alpha 29) and shared form components (Alpha 30).
+
+## Historical evidence: Alpha 27 loading, error and empty screens
 
 3 October 2026. Application 0.27.0-alpha.1. Shared loading, error and empty states across the web app: shell-preserving loading outlines, route error boundaries with Try again, a Not found page, offline and failed-refresh notices, marked command failures and role-aware empty states. See decisions/027-loading-error-empty-states.md and STATES.md. Alpha 23 and 25 are claimed by other open pull requests, and Alpha 24 (group conversations) and Alpha 26 (email confirmation) are on main, so this slice takes the next free number.
 
