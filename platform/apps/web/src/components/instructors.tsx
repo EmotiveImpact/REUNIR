@@ -23,7 +23,11 @@ export function InstructorsButton({ track }: { track: Track }) {
 function InstructorsDialog({ track, onClose }: { track: Track; onClose: () => void }) {
     const { data, command, busy } = useWorkspace();
     const [choice, setChoice] = useState(''), [role, setRole] = useState<TeachingRole>('instructor'), [error, setError] = useState('');
-    const select = useId(), roleSelect = useId(), intro = useId();
+    // Empty means the whole track; otherwise the grant covers only the chosen lessons.
+    const [some, setSome] = useState(false), [chosen, setChosen] = useState<string[]>([]);
+    const select = useId(), roleSelect = useId(), intro = useId(), scopeName = useId();
+    const lessons = data.lessons.filter(l => l.trackId === track.id).sort((a, b) => a.position - b.position);
+    const lessonTitle = (id: string) => lessons.find(l => l.id === id)?.title ?? 'A lesson';
     const grants = data.trackInstructors.filter(i => i.trackId === track.id);
     const name = (userId: string) => data.members.find(m => m.userId === userId)?.name ?? 'Former member';
     // Administrators already teach every track, so only other active members are offered.
@@ -31,15 +35,15 @@ function InstructorsDialog({ track, onClose }: { track: Track; onClose: () => vo
     const add = async () => {
         if (!choice) return;
         setError('');
-        if (await command({ type: 'track.instructor.add', trackId: track.id, userId: choice, role }, { onError: setError })) setChoice('');
+        if (await command({ type: 'track.instructor.add', trackId: track.id, userId: choice, role, lessonIds: some ? chosen : null }, { onError: setError })) { setChoice(''); setSome(false); setChosen([]); }
     };
-    const change = (userId: string, next: TeachingRole) => { setError(''); void command({ type: 'track.instructor.add', trackId: track.id, userId, role: next }, { onError: setError }); };
+    const change = (userId: string, next: TeachingRole, lessonIds: string[] | null) => { setError(''); void command({ type: 'track.instructor.add', trackId: track.id, userId, role: next, lessonIds }, { onError: setError }); };
     return <Modal title="Track instructors" onClose={onClose}>
         <div className="form-stack instructors-editor">
             <p id={intro}>Instructors author, publish and order lessons, files and knowledge checks for <strong>{track.title}</strong> and give feedback on its knowledge checks. Contributors write drafts and attach files for the instructors to publish. Neither can change other tracks or community settings. Owners and administrators can already do all of this.</p>
             {grants.length ? <ul className="instructor-list" aria-label="Current instructors and contributors">{grants.map(g => <li key={g.id}>
-                <Avatar member={data.members.find(m => m.userId === g.userId)} size="sm"/><span className="instructor-name"><strong>{name(g.userId)}</strong><small>{teachingRole(g) === 'instructor' ? 'Instructor' : 'Contributor'} · added by {name(g.grantedBy)}</small></span>
-                <select aria-label={`Role for ${name(g.userId)}`} value={teachingRole(g)} disabled={busy} onChange={e => change(g.userId, e.target.value as TeachingRole)}><option value="instructor">Instructor</option><option value="contributor">Contributor</option></select>
+                <Avatar member={data.members.find(m => m.userId === g.userId)} size="sm"/><span className="instructor-name"><strong>{name(g.userId)}</strong><small>{teachingRole(g) === 'instructor' ? 'Instructor' : 'Contributor'}{g.lessonIds ? ` for ${g.lessonIds.map(lessonTitle).join(', ')}` : ', whole track'} · added by {name(g.grantedBy)}</small></span>
+                <select aria-label={`Role for ${name(g.userId)}`} value={teachingRole(g)} disabled={busy} onChange={e => change(g.userId, e.target.value as TeachingRole, g.lessonIds ?? null)}><option value="instructor">Instructor</option><option value="contributor">Contributor</option></select>
                 <button type="button" className="button secondary" disabled={busy} aria-label={`Remove ${name(g.userId)} from this track`} onClick={() => { setError(''); void command({ type: 'track.instructor.remove', trackId: track.id, userId: g.userId }, { onError: setError }); }}><UserMinus size={15} aria-hidden="true"/>Remove</button>
             </li>)}</ul> : <p className="muted">No instructors yet. Owners and administrators author this track.</p>}
             <div className="instructor-add">
@@ -49,7 +53,12 @@ function InstructorsDialog({ track, onClose }: { track: Track; onClose: () => vo
                     {candidates.map(m => <option key={m.userId} value={m.userId}>{m.name}</option>)}
                 </select>
                 <select id={roleSelect} aria-label="Role" value={role} onChange={e => setRole(e.target.value as TeachingRole)}><option value="instructor">Instructor</option><option value="contributor">Contributor</option></select>
-                <button type="button" className="button primary" disabled={busy || !choice} onClick={() => void add()}><UserPlus size={15} aria-hidden="true"/>Add</button></div>
+                <button type="button" className="button primary" disabled={busy || !choice || (some && !chosen.length)} onClick={() => void add()}><UserPlus size={15} aria-hidden="true"/>Add</button></div>
+                <fieldset className="instructor-scope"><legend>What they work on</legend>
+                    <label><input type="radio" name={scopeName} checked={!some} onChange={() => setSome(false)}/>The whole track, including new lessons</label>
+                    <label><input type="radio" name={scopeName} checked={some} disabled={!lessons.length} onChange={() => setSome(true)}/>Only the lessons I choose</label>
+                    {some && <div className="instructor-lessons">{lessons.map(l => <label key={l.id}><input type="checkbox" checked={chosen.includes(l.id)} onChange={e => setChosen(c => e.target.checked ? [...c, l.id] : c.filter(x => x !== l.id))}/>{l.title}</label>)}</div>}
+                </fieldset>
             </div>
             <InviteToTeach track={track}/>
             {error && <p className="form-error" role="alert">{error}</p>}

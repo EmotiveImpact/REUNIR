@@ -1753,3 +1753,6 @@ tables.push({key:'notificationPreferences',table:'notification_preferences',fiel
 
 // Alpha 25: a teaching grant names its role. Changing a role replaces the grant; it is never rewritten in place.
 tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'role',column:'role',type:'text'});
+
+// Alpha 35: a grant may cover only some of a track's lessons. NULL keeps the whole track.
+tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'lessonIds',column:'lesson_ids',type:'jsonb'});

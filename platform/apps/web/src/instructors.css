@@ -26,3 +26,8 @@
 .instructor-list select{width:auto;flex:0 0 auto}
 .instructor-add select[aria-label=Role]{flex:0 0 auto;min-width:0}
 @media(max-width:560px){.instructor-list li{flex-wrap:wrap}}
+.instructor-scope{border:0;margin:0;padding:0;display:grid;gap:6px}
+.instructor-scope legend{font-size:12px;color:var(--muted);margin-bottom:4px;padding:0}
+.instructor-scope label{display:flex;align-items:center;gap:8px;font-size:13px}
+.instructor-lessons{display:grid;gap:6px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;max-height:220px;overflow:auto}
+span.creator-title{cursor:default;color:var(--muted)}
