@@ -18,6 +18,9 @@ class V4Contract(unittest.TestCase):
         self.assertIn("member?.avatar || (mode==='demo'&&member?demoPortraits[member.userId]:undefined)",src)
         self.assertIn('<AvatarFallback><UserRound',src)
         self.assertNotIn("member.colour",src)
+    def test_former_members_never_show_a_portrait(self):
+        src=(ROOT/'platform/apps/web/src/components/ui.tsx').read_text()
+        self.assertIn("const photo=member?.status==='left'?undefined:",src)
     def test_shell_keeps_routes_and_does_not_embed_the_static_mock(self):
         src=(ROOT/'platform/apps/web/src/App.tsx').read_text()
         for path in ['/paths/:id','/projects/:id/work','/learn/:id/studio','/messages/:id','/outputs','/access','/operations','/settings','/profile']:

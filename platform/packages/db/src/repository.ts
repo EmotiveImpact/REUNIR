@@ -7,7 +7,7 @@ import { beginCoverLibraryUpload, beginCoverUpload, completeCoverUpload, removeC
 import type { CoverLibraryUploadRequest, CoverSubject, CoverUploadRequest } from '../../contracts/src/covers';
 import { learningRecord } from '../../domain/src/learning-record';
 import { eraseFromCommunity, PERSONAL_COLLECTIONS } from '../../domain/src/account-deletion';
-import type { AccountDeletionSummary } from '../../contracts/src/account';
+import { ownerRefusal, type AccountDeletionSummary } from '../../contracts/src/account';
 import { tables, type TableSpec, type CollectionKey } from './tables';
 import type { Database, SQL } from './connection';
 const slugPattern = /^[a-z0-9][a-z0-9-]{0,99}$/;
@@ -66,8 +66,6 @@ async function saveChanges(sql: SQL, before: Workspace, after: Workspace) {
     }
     await sql.query('UPDATE organisations SET name=$2,tagline=$3,accent=$4,revision=$5 WHERE id=$1', [after.organisation.id, after.organisation.name, after.organisation.tagline, after.organisation.accent, after.revision]);
 }
-/** "A", "A and B", "A, B and C". */
-const listNames = (names: string[]) => names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 export class WorkspaceRepository {
     constructor(readonly db: Database) { }
     async memberships(userId: string) { return this.db.transaction(async (sql) => { await setContext(sql, '', userId); return (await sql.query<{
@@ -316,7 +314,7 @@ export class WorkspaceRepository {
                 await setContext(sql, m.organization_id, userId);
                 owned.push(String((await sql.query<{ name: string }>('SELECT name FROM organisations WHERE id=$1', [m.organization_id])).rows[0]?.name ?? 'a community'));
             }
-            if (owned.length) throw new DomainError('OWNER_CANNOT_DELETE', `You own ${listNames(owned)}. A community needs its owner, so this account cannot be deleted while you own one.`, 409);
+            if (owned.length) throw new DomainError('OWNER_CANNOT_DELETE', ownerRefusal(owned), 409);
             const now = new Date().toISOString(), removed: Record<string, number> = {}, files: string[] = [];
             const add = (key: string, n: number) => { if (n) removed[key] = (removed[key] ?? 0) + n; };
             const drop = async (key: string, query: string, params: unknown[]) => { const r = await sql.query<Record<string, unknown>>(query, params); add(key, r.rows.length); return r.rows; };

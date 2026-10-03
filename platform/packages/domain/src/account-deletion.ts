@@ -1,5 +1,5 @@
 import { DomainError, newId, type Member, type Workspace } from '../../contracts/src/index';
-import { FORMER_MEMBER } from '../../contracts/src/account';
+import { FORMER_MEMBER, ownerRefusal } from '../../contracts/src/account';
 export { FORMER_MEMBER } from '../../contracts/src/account';
 export { isFormer } from './access';
 
@@ -37,7 +37,7 @@ export function eraseFromCommunity(input: Workspace, userId: string, now: string
     const s = structuredClone(input), org = s.organisation.id;
     const member = s.members.find(m => m.userId === userId && m.organizationId === org);
     if (!member) throw new DomainError('NOT_FOUND', 'That person has no membership in this community.', 404);
-    if (member.role === 'owner') throw new DomainError('OWNER_CANNOT_DELETE', `You own ${s.organisation.name}. A community needs its owner, so this account cannot be deleted while you own it.`, 409);
+    if (member.role === 'owner') throw new DomainError('OWNER_CANNOT_DELETE', ownerRefusal([s.organisation.name]), 409);
     const formerName = member.status === 'left' ? '' : member.name;
     Object.assign(member, scrubbedMember(member));
     const removed = {} as Record<PersonalCollection, number>;

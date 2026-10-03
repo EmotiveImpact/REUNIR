@@ -154,5 +154,24 @@ try{
         assert.deepEqual(await operator.removeStaleCoverUploads('code-black',DEMO_ADMIN,['pg_stale_cover','pg_fresh_cover']),['pg_stale_cover']);
         assert.deepEqual((await admin.query("SELECT id FROM upload_intents WHERE id IN ('pg_stale_cover','pg_fresh_cover')")).rows,[{id:'pg_fresh_cover'}]);
     });
+    await check('a member deletes their own account through the restricted runtime connection, keeping shared work as Former member',async()=>{
+        const theo='member_theo',now=new Date().toISOString(),repo=new WorkspaceRepository(runtime!);
+        for(const [id,name,email] of [[theo,'Theo Williams','theo@example.test'],[DEMO_ADMIN,'Amina Okafor','amina@example.test']])await admin.query('INSERT INTO auth_user(id,name,email,email_verified,created_at,updated_at) VALUES($1,$2,$3,true,$4,$4)',[id,name,email,now]);
+        await admin.query("INSERT INTO auth_session(id,expires_at,token,created_at,updated_at,user_id) VALUES('pg_theo_session',now()+interval '1 day','pg_theo_token',$1,$1,$2)",[now,theo]);
+        await repo.execute('code-black',theo,{type:'track.enrol',trackId:'track_product'},randomUUID(),'pg-account');
+        const seen=(await repo.snapshot('code-black',theo)).lessons.find(l=>l.id==='lesson_5')!.quiz!;
+        await repo.execute('code-black',theo,{type:'quiz.attempt.submit',lessonId:'lesson_5',fingerprint:quizFingerprint(seen),answers:[{questionId:'q5_feedback',optionIds:['a']},{questionId:'q5_essentials',optionIds:['a']},{questionId:'q5_outcome',text:'useful'}]},randomUUID(),'pg-account');
+        await repo.execute('code-black',DEMO_ADMIN,{type:'track.instructor.add',trackId:'track_product',userId:theo},randomUUID(),'pg-account');
+        await admin.query("UPDATE members SET status='suspended' WHERE organization_id='org_studio_north' AND user_id=$1",[theo]);
+        await assert.rejects(()=>repo.deleteAccount(DEMO_ADMIN),{code:'OWNER_CANNOT_DELETE'});
+        assert.equal((await admin.query('SELECT count(*)::int AS n FROM auth_user WHERE id=$1',[DEMO_ADMIN])).rows[0].n,1,'a refused owner keeps their account');
+        const {summary}=await repo.deleteAccount(theo);
+        assert.equal(summary.communities,2);assert.equal(summary.removed.quizAttempts,1);assert.equal(summary.removed.trackInstructors,1);
+        assert.deepEqual((await admin.query('SELECT DISTINCT name,status,avatar,bio,role FROM members WHERE user_id=$1',[theo])).rows,[{name:'Former member',status:'left',avatar:'',bio:'',role:'member'}]);
+        for(const table of ['quiz_attempts','track_instructors','enrolments','reactions','rsvps','notifications','reputation','auth_session'])assert.equal((await admin.query(`SELECT count(*)::int AS n FROM ${table} WHERE user_id=$1`,[theo])).rows[0].n,0,table);
+        assert.equal((await admin.query('SELECT count(*)::int AS n FROM auth_user WHERE id=$1',[theo])).rows[0].n,0);
+        assert.equal((await admin.query('SELECT count(*)::int AS n FROM project_members WHERE user_id=$1',[theo])).rows[0].n,2,'team places stay with the work');
+        await assert.rejects(()=>repo.snapshot('code-black',theo),{code:'NOT_FOUND'});
+    });
     await mkdir('evidence/alpha04',{recursive:true});await writeFile('evidence/alpha04/postgres-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Disposable local PostgreSQL service, not Neon.',results},null,2));
 }finally{await runtime?.close();await admin.close();}

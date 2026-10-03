@@ -1,0 +1,23 @@
+/* Your account: where you belong, and deleting the account everywhere at once. Neutral greys only. */
+.account-page .panel h2{font-size:15px;margin:0}
+.account-page .panel>p{margin:10px 0 0;font-size:12px;line-height:1.75;color:var(--muted)}
+.account-communities{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+.account-communities li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--border);font-size:13px}
+.account-delete{display:grid;gap:4px}
+.account-delete>div:last-child{margin-top:16px}
+.account-delete .text-link{margin-top:6px;justify-self:start}
+.account-outcomes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:16px 0 4px}
+.account-outcomes>div{border:1px solid var(--border);border-radius:9px;padding:14px 16px}
+.account-outcomes h3{margin:0 0 8px;font-size:12px;font-weight:600}
+.account-outcomes ul{margin:0;padding-left:18px;display:grid;gap:6px;font-size:12px;line-height:1.6;color:var(--muted)}
+.account-owner-note{margin-top:16px!important;padding:12px 14px;border:1px solid #4a4a4a;border-radius:8px;background:#222222;color:#d4d4d4!important}
+.account-warning{margin:0;font-size:13px;line-height:1.75;color:#d6d6d6}
+.account-field{display:flex;flex-direction:column;gap:7px;font-size:12px}
+.account-field label{display:block;color:#dedede}
+.account-field small{color:var(--muted);font-size:11px}
+.account-deleted-notice{border:1px solid #535353;padding:12px;border-radius:7px;font-size:12px;background:#262626;color:#d6d6d6!important;line-height:1.6}
+.account-farewell h1{max-width:560px;font-size:28px}
+.account-farewell p{max-width:560px;line-height:1.8}
+.farewell-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:6px}
+.former-member{color:var(--muted)}
+.former-thread{font-size:12px;line-height:1.6;color:var(--muted)}
