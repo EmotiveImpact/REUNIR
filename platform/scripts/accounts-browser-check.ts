@@ -65,6 +65,16 @@ try {
         await neutral(); await a11y('two-step-demo'); await overflow();
         await switchPreviewRole(page, 'member');
     });
+    await check('the email address panel explains confirmation and change, with no address or link in the demo', async () => {
+        await account();
+        const panel = page.locator('section.email-address');
+        await expect(panel.getByRole('heading', { name: 'Email address', level: 2 })).toBeVisible();
+        await expect(panel).toContainText('the change happens only when you open the link sent there');
+        await expect(panel).toContainText('This fictional demo has no email addresses or sign-in, so there is nothing to confirm or change here.');
+        await expect(panel.getByRole('button')).toHaveCount(0);
+        expect(await panel.textContent()).not.toMatch(/@/);
+        await neutral(); await a11y('email-demo'); await overflow();
+    });
     await check('an owner is told why their account cannot be deleted, with no delete button', async () => {
         await switchPreviewRole(page, 'admin'); await account();
         await expect(page.locator('.account-owner-note')).toHaveText(/^You own Code Black and Studio North\. A community needs its owner, so this account cannot be deleted while you own one\./);

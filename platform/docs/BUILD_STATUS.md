@@ -1,4 +1,58 @@
-# Alpha 24 group conversations
+# Alpha 26 confirming and changing your email address
+
+3 October 2026. Application 0.26.0-alpha.1. People confirm their email address by a link, and accepting an invitation confirms it. When the server requires it, the production default, an unconfirmed address cannot sign in. Anyone can move their account to a new address with their password and a link sent there. See decisions/026-email-confirmation-and-change.md and ACCOUNTS.md.
+
+Numbering: first opened as Alpha 24. Alpha 23 is claimed by open pull requests (#16, #21), Alpha 24 (group conversations, PR #19) reached main first, and Alpha 25 is on PR #20, so this release is Alpha 26 with decision 026. It has no migration.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/accounts-trust-zojuqs`, from main `b24095a` with main `ec4285d` (PR #15, Alpha 22) `f5ec8d3` (PR #17, launch kit) and `d62424d` (PR #19, Alpha 24 group conversations) merged in |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- **Email address** panel on Your account: the address, Confirmed or Not confirmed, **Send a confirmation link** and **Change email address…**. The demo panel only explains the feature.
+- **`EMAIL_VERIFICATION`** is `required` or `optional`; unset means required in production. It applies only where mail can be sent; required without a sender blocks the pilot checklist but does not stop the server, and an invalid value stops it. When required, Better Auth refuses a session to an unconfirmed address with `EMAIL_NOT_VERIFIED` and queues a fresh link.
+- **Invitations confirm the address** they were sent to when accepted.
+- **`POST /api/account/email`** checks the password (five attempts in fifteen minutes), then Better Auth sends a confirmation link to the new address; the address changes only when it is opened. The current address gets a notice with the new address masked and no link. A taken address gets the same answer and no mail. Better Auth's own `/api/auth/change-email` answers 404.
+- `/api/account/capabilities` adds `emailVerification`, `emailConfirmation` and `emailChange`; `/api/session` adds the person's own `email` and `emailVerified`.
+- Review fixes on PR #18: changing or resetting the password cancels any change link asked for before it (the server refuses an older link and the address stays), and the password check no longer needs a session started within the last day, so days two to seven of a session can change the address, delete the account or hand over a community.
+- `npm run launch:preflight` (from PR #17) now also checks `EMAIL_VERIFICATION`: an invalid value fails, `optional` warns. Against the blank `.env.example` it reports 5 failures and 6 warnings.
+- No migration, no grant change, no new runtime dependency. Release constant and package version are 0.26.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`. The full suite ran on this slice before main `ec4285d` was merged in; typecheck, unit tests, both builds, the HTTP checks and the accounts and covers browser suites ran again after the merge.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 634 passed before the merge (625 plus 9 new in `tests/email-http.test.ts`, real Better Auth with the outbox captured); 636 of 636 after merging main at `ec4285d`; 666 of 666 after the review fixes (2 new) and merging main at `d62424d` (Alpha 24) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | `test:browser` 85, `v4` 20, `monochrome` 16, `accounts` 12 (1 new: the explanatory email panel), `covers` 17 after the merge, `accounts-connected` 13 |
+| Connected-browser suites | `accounts-connected` 13 (2 new: confirming an address by its link, and changing it in a real browser) |
+| `npm run test:postgres` | 21 passed on PostgreSQL 16 after merging main at `d62424d` |
+| Python helpers | 35 passed |
+
+## Not verified, and why
+
+- No real mail was sent; links were read from the encrypted outbox. Hosted Better Auth and a real reverse proxy were not exercised.
+- Opening a change link while signed out creates a session without the second step, as Better Auth does (decision 026).
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. The remaining account and trust items: data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and consented credit for several contributors.
+3. When deployment resumes: set `EMAIL_VERIFICATION` with a verified sender.
+
+## Historical Alpha 24 evidence: group conversations
 
 3 October 2026. Application 0.24.0-alpha.1. Members start named group conversations of up to 20 people from Messages. People added later read only what is written after they join. See decisions/024-group-conversations.md.
 
@@ -8,8 +62,8 @@
 | --- | --- |
 | Implemented | Yes, on `claude/group-conversations-5arqv6`, from main `b24095a` with main `f5ec8d3` (PR #15 Alpha 22 and PR #17 launch kit) merged in |
 | Verified locally | Yes: every suite on the merged tree (see below) |
-| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes, on PR #19 before it merged |
+| Merged | Yes: [PR #19](https://github.com/EmotiveImpact/REUNIR/pull/19), merged into main as `d62424d` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 
@@ -64,8 +118,8 @@ Tests changed rather than added: migration-count assertions moved from 21 to 22.
 | --- | --- |
 | Implemented | Yes, on `claude/build-out-tvzn40`, from main `ec4285d` (the merge of PR #15, Alpha 22) |
 | Verified locally | Yes: typecheck, unit tests and the preflight against `.env.example` (see below) |
-| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes, on PR #17 before it merged |
+| Merged | Yes: [PR #17](https://github.com/EmotiveImpact/REUNIR/pull/17), merged into main as `f5ec8d3` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 
