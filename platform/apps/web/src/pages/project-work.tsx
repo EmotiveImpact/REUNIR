@@ -13,7 +13,7 @@ import { projectWorkVersion, taskFiles } from '../../../../packages/domain/src/t
 import { displayError } from '../lib/data';
 import { useProjectChanges, type LiveState } from '../lib/live';
 import { downloadTaskFile, forgetTaskFile, uploadTaskFile } from '../lib/task-files';
-import { resourceUploadsAvailable } from '../lib/resources';
+import { resourceUploadLimits } from '../lib/resources';
 import { ResourceIcon, describeResource } from '../components/resource-list';
 import { EvidenceReview } from './purpose';
 
@@ -130,7 +130,7 @@ function TaskFiles({task:t,lead}:{task:ProjectTask;lead:boolean}) {
     const {data,me,slug,userId,command,busy,toast,reload,mode}=useWorkspace();
     const files=taskFiles(data,t.id),picker=useRef<HTMLInputElement>(null);
     const [pending,setPending]=useState<string|null>(null),[uploading,setUploading]=useState(false),[status,setStatus]=useState(''),[storage,setStorage]=useState(mode==='demo');
-    useEffect(()=>{let on=true;resourceUploadsAvailable().then(v=>{if(on)setStorage(v);},()=>{});return ()=>{on=false;};},[]);
+    useEffect(()=>{let on=true;resourceUploadLimits().then(l=>{if(on)setStorage(l.uploads);},()=>{});return ()=>{on=false;};},[]);
     const full=files.length>=MAX_TASK_FILES,team=!t.archived;
     const upload=async(file:File)=>{setUploading(true);setStatus('Uploading '+file.name+'…');try{setStatus(await uploadTaskFile(slug,userId,t.id,file));reload();}catch(e){setStatus(displayError(e));}finally{setUploading(false);}};
     const name=(id:string)=>data.members.find(m=>m.userId===id)?.name||'Former member';
