@@ -25,4 +25,7 @@ export async function grantRuntimeTables(sql: SQL): Promise<void> {
     await sql.query(`REVOKE UPDATE ON track_instructors FROM ${role}`);
     // Library pictures are added or removed, never rewritten.
     await sql.query(`REVOKE UPDATE ON cover_library FROM ${role}`);
+    // Evidence history is kept: a change is never removed, and only its decision is recorded once.
+    await sql.query(`REVOKE UPDATE,DELETE ON evidence_changes FROM ${role}`);
+    await sql.query(`GRANT UPDATE (status,decided_by,decided_at,response) ON evidence_changes TO ${role}`);
 }

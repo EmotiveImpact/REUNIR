@@ -30,6 +30,27 @@ try{
     await admin.transaction(grantRuntimeTables);url.username='reunir_app';url.password='LOCAL_CI_TEST_ONLY_12345678901234567890';runtime=await openDatabase(url.toString());
     await check('separate runtime connection is non-owner and cannot bypass RLS',async()=>{assert(await runtimeRoleIsSafe(runtime!));await assert.rejects(()=>runtime!.query('SELECT * FROM schema_migrations'));});
     await check('the runtime role is granted the two-step sign-in table (migration 0021)',async()=>{for(const action of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await admin.query<{ok:boolean}>("SELECT has_table_privilege('reunir_app','auth_two_factor',$1) AS ok",[action])).rows[0].ok,true,action);assert.equal((await runtime!.query<{n:number}>('SELECT count(*)::int AS n FROM auth_two_factor')).rows[0].n,0);});
+    await check('evidence history keeps reviewed wording, accepts withdrawn and records only decisions (migration 0022)',async()=>{
+        const priv=async(action:string)=>(await admin.query<{ok:boolean}>("SELECT has_table_privilege('reunir_app','evidence_changes',$1) AS ok",[action])).rows[0].ok;
+        assert.deepEqual([await priv('SELECT'),await priv('INSERT'),await priv('UPDATE'),await priv('DELETE')],[true,true,false,false]);
+        for(const column of ['status','decided_by','decided_at','response','previous','proposed','reason'])assert.equal((await admin.query<{ok:boolean}>("SELECT has_column_privilege('reunir_app','evidence_changes',$1,'UPDATE') AS ok",[column])).rows[0].ok,['status','decided_by','decided_at','response'].includes(column),column);
+        const defs=(await admin.query<{conname:string;def:string}>("SELECT conname,pg_get_constraintdef(oid) AS def FROM pg_constraint WHERE conname IN ('contributions_status_check','outcomes_status_check') ORDER BY conname")).rows;
+        assert.equal(defs.length,2);assert(defs.every(d=>d.def.includes("'withdrawn'")));
+        const repo=new WorkspaceRepository(runtime!),exec=(cmd:unknown,user:string)=>repo.execute('code-black',user,cmd,randomUUID(),'evidence-postgres');
+        const r=await exec({type:'evidence.correct',subject:'outcome',subjectId:'outcome_notes',title:'Notes from the studio: issue 01, revised',text:'A fictional community-made publication, corrected.',evidenceUrl:'',reason:'The issue title changed before printing.'},'member_sofia');
+        assert(!(await repo.snapshot('code-black',DEMO_USER)).evidenceChanges.some(c=>c.id===r.objectId),'a waiting correction is not shown to other members');
+        await exec({type:'evidence.correction.review',changeId:r.objectId,decision:'accepted',response:'Matches the printed issue.'},DEMO_ADMIN);
+        assert.equal((await admin.query<{title:string}>("SELECT title FROM community_outputs WHERE organization_id='org_code_black' AND outcome_id='outcome_notes'")).rows[0].title,'Notes from the studio: issue 01, revised');
+        await exec({type:'evidence.withdraw',subject:'outcome',subjectId:'outcome_notes',reason:'Withdrawn for this check.'},DEMO_ADMIN);
+        assert.equal((await admin.query<{status:string}>("SELECT status FROM outcomes WHERE organization_id='org_code_black' AND id='outcome_notes'")).rows[0].status,'withdrawn');
+        await assert.rejects(()=>admin.query("UPDATE outcomes SET status='retracted' WHERE organization_id='org_code_black' AND id='outcome_notes'"),/outcomes_status_check/);
+        await assert.rejects(()=>admin.query("UPDATE contributions SET status='retracted' WHERE organization_id='org_code_black' AND id='contribution_notes'"),/contributions_status_check/);
+        const rows=(org:string,sql:string,params:unknown[]=[])=>runtime!.transaction(async tx=>{await setContext(tx,org,DEMO_ADMIN);return (await tx.query<{id:string}>(sql,params)).rows;});
+        assert.equal((await rows('org_code_black','SELECT id FROM evidence_changes')).length,2);
+        assert.equal((await rows('org_studio_north','SELECT id FROM evidence_changes')).length,0);
+        await assert.rejects(()=>rows('org_code_black',"UPDATE evidence_changes SET previous='{}'::jsonb WHERE id=$1",[r.objectId]),/permission denied/);
+        await assert.rejects(()=>rows('org_code_black','DELETE FROM evidence_changes WHERE id=$1',[r.objectId]),/permission denied/);
+    });
     await check('missing tenant context denies rows on a fresh connection',async()=>{assert.equal((await runtime!.query('SELECT id FROM posts')).rows.length,0);});
     await check('parallel connection-pool reads keep two tenant contexts separate',async()=>{const repo=new WorkspaceRepository(runtime!);const slugs=Array.from({length:20},(_,i)=>i%2?'code-black':'studio-north');const rows=await Promise.all(slugs.map(s=>repo.snapshot(s,DEMO_USER)));rows.forEach((r,i)=>assert.equal(r.organisation.slug,slugs[i]));});
     await check('transaction context is reset before a pooled connection is reused',async()=>{await runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',DEMO_USER);assert((await tx.query('SELECT id FROM posts')).rows.length>0);});assert.equal((await runtime!.query('SELECT id FROM posts')).rows.length,0);});

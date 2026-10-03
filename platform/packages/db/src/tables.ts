@@ -1750,3 +1750,12 @@ tables.push({key:'notificationPreferences',table:'notification_preferences',fiel
     {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
     {property:'userId',column:'user_id',type:'text'},{property:'muted',column:'muted',type:'jsonb'},{property:'digest',column:'digest',type:'text'},
     {property:'updatedAt',column:'updated_at',type:'timestamptz'},{property:'lastDigestAt',column:'last_digest_at',type:'timestamptz'}]});
+
+// Evidence history: corrections and withdrawals of reviewed evidence. A change is never rewritten; only its decision is recorded.
+tables.push({key:'evidenceChanges',table:'evidence_changes',mutable:['status','decidedBy','decidedAt','response'],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'subject',column:'subject',type:'text'},{property:'subjectId',column:'subject_id',type:'text'},{property:'kind',column:'kind',type:'text'},
+    {property:'requestedBy',column:'requested_by',type:'text'},{property:'reason',column:'reason',type:'text'},
+    {property:'previous',column:'previous',type:'jsonb'},{property:'proposed',column:'proposed',type:'jsonb'},{property:'previousStatus',column:'previous_status',type:'text'},
+    {property:'status',column:'status',type:'text'},{property:'decidedBy',column:'decided_by',type:'text'},{property:'decidedAt',column:'decided_at',type:'timestamptz'},
+    {property:'response',column:'response',type:'text'}]});

@@ -47,7 +47,8 @@
     "test:browser:instructors-connected": "tsx scripts/instructors-connected-check.ts",
     "test:browser:accounts": "tsx scripts/accounts-browser-check.ts",
     "test:browser:accounts-connected": "tsx scripts/accounts-connected-check.ts",
-    "test:browser:notifications": "tsx scripts/notifications-browser-check.ts"
+    "test:browser:notifications": "tsx scripts/notifications-browser-check.ts",
+    "test:browser:evidence": "tsx scripts/evidence-history-browser-check.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.13.0",
