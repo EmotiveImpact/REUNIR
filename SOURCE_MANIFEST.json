@@ -2,12 +2,12 @@
   "release": "REUNIR Alpha 36 instructors start their own tracks",
   "version": "0.39.0-alpha.1",
   "sourceBaseline": "3c770b562edc7db120cd3ada2e40c6bddc639ea9",
-  "generatedAt": "2026-10-03T19:11:40.559445+00:00",
+  "generatedAt": "2026-10-03T19:37:36.178167+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "802bf33a44241ed76377bce0045e0f975968ebc6797185c6d4940f6a595ed4a4",
-      "bytes": 3386
+      "sha256": "715fe7a07ad33808e628e2321ba2d32e62cdbeb89f8df9aa138adc4e977f6808",
+      "bytes": 3429
     },
     {
       "path": ".gitignore",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "ddb9829e3981d7847aa277a716592873d24d66280c240e099e28ae02f8b8da34",
-      "bytes": 43393
+      "sha256": "81f77d8210d370172d5f25c7ab37462770763dbf2d1c4c008e3f503e6c984dee",
+      "bytes": 45266
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "00bda91c3949bf770c578d3b5395b3cf4e26ec204b48cd6850b0e6fc7f092e76",
-      "bytes": 97851
+      "sha256": "d5a30dd94d9ee5b05abb1b62af7f458cf4b7f4bbd27c615d5cde81d4f2e5231b",
+      "bytes": 100681
     },
     {
       "path": "platform/.dockerignore",
@@ -240,6 +240,11 @@
       "bytes": 6761
     },
     {
+      "path": "platform/apps/web/src/components/evidence-history.tsx",
+      "sha256": "f1990451090d7020b5223c408504f9681f17098d7890b59001554a69cd06d6c8",
+      "bytes": 9308
+    },
+    {
       "path": "platform/apps/web/src/components/featured-collection.tsx",
       "sha256": "8731e9bf05555baed103c6c7c98e6f8daecd385cbef040cbf163f3f7ee08f644",
       "bytes": 1586
@@ -365,6 +370,11 @@
       "bytes": 632
     },
     {
+      "path": "platform/apps/web/src/evidence-history.css",
+      "sha256": "267d7314f155f03a0a99fbcfe568dd7ba22b2d6fc8484edf5b6964096c4aeca7",
+      "bytes": 1479
+    },
+    {
       "path": "platform/apps/web/src/groups.css",
       "sha256": "da014c63d8e71667c4d15eb893779345ccced9b1a8f578689dec47e8c3ffe3a0",
       "bytes": 1322
@@ -481,8 +491,8 @@
     },
     {
       "path": "platform/apps/web/src/main.tsx",
-      "sha256": "d1fa31773efe7e51ce28c835da7f8238af5df5aa57177e227ef251b0b3a5576b",
-      "bytes": 1953
+      "sha256": "4854d0b07839637f382e2f40182bea301bd75de83a314342c83145f7db0887dd",
+      "bytes": 1986
     },
     {
       "path": "platform/apps/web/src/pages/access.tsx",
@@ -551,13 +561,13 @@
     },
     {
       "path": "platform/apps/web/src/pages/project-work.tsx",
-      "sha256": "60e72ef53384dca6b2d4954ddef249b09e3a29d19e64f9b86e6cc1d1e949bb03",
-      "bytes": 16232
+      "sha256": "d709b6f26a403c526af982e396f04167f13c5220b73606fcf60c8ae1653e5037",
+      "bytes": 16316
     },
     {
       "path": "platform/apps/web/src/pages/purpose.tsx",
-      "sha256": "56f0192a69a0c64631157574d8037c570dcafb71216bafb9458160bb6bfd39e7",
-      "bytes": 39675
+      "sha256": "71cb78bb26812d125584c66b13b65d524a5fbea1d510046cca8db8c4d5631dc6",
+      "bytes": 40021
     },
     {
       "path": "platform/apps/web/src/pages/teaching.tsx",
@@ -621,8 +631,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "e5baf81ca20e6a33219c5191ebd722e7acb61341ec2b343985da9b5eae771dda",
-      "bytes": 174442
+      "sha256": "69db9fddeef658650a92cc66db79303c55f2eb9f70860322cae4b8500d197892",
+      "bytes": 178599
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -643,6 +653,11 @@
       "path": "platform/docs/DIRECTION_AUDIT_ALPHA_02.md",
       "sha256": "bfb09cd73ebff4f8fbfe975de2bca7673bf325c39374884b259fa1d25f3c76d0",
       "bytes": 6764
+    },
+    {
+      "path": "platform/docs/EVIDENCE_HISTORY.md",
+      "sha256": "2e9168c4a56dc3b1ab8133c7f947fb5be586311bdf6542139c9bd6f9c9ad7e85",
+      "bytes": 2329
     },
     {
       "path": "platform/docs/GITHUB_HANDOVER.md",
@@ -711,8 +726,8 @@
     },
     {
       "path": "platform/docs/ROADMAP.md",
-      "sha256": "0aa58735dc22030ff8a6f3d6c4e7388af630947ef63512756b293c7f579002a3",
-      "bytes": 14042
+      "sha256": "b75847e12d7194acf4267448600225a2cc3ec52fc821dc66f5b4846481418082",
+      "bytes": 14319
     },
     {
       "path": "platform/docs/SECURITY.md",
@@ -868,6 +883,11 @@
       "path": "platform/docs/decisions/032-moderation-appeals.md",
       "sha256": "c5f001e62df42fe7111f11d9957b1041ab399f31d9021ae67dba7065ef092abb",
       "bytes": 5900
+    },
+    {
+      "path": "platform/docs/decisions/033-evidence-history.md",
+      "sha256": "6c174fe1e2a30bea3a005b1215ee47ad781832c12152ff6bd248567d8e517ebf",
+      "bytes": 3504
     },
     {
       "path": "platform/docs/decisions/035-lesson-grants.md",
@@ -1196,8 +1216,8 @@
     },
     {
       "path": "platform/package.json",
-      "sha256": "7726c3f5a9f58f7ed1ee6eedefe3a8299d1aa9fdbd22fc24478fb1db9c5c94aa",
-      "bytes": 4876
+      "sha256": "dc44b14e17fc24e444350083d97166aa791bb779de2dc8d4cc6574cd25e9b443",
+      "bytes": 4954
     },
     {
       "path": "platform/packages/contracts/package.json",
@@ -1236,8 +1256,8 @@
     },
     {
       "path": "platform/packages/contracts/src/index.ts",
-      "sha256": "407a7834b0a3d947eec9b0737d5807575843af17da5e29890bbe6ebf14fd7028",
-      "bytes": 27661
+      "sha256": "bf80b3cb2775a0096a0540bba605763d93f61c1155a87c0e9f9ead1be4773471",
+      "bytes": 29534
     },
     {
       "path": "platform/packages/contracts/src/lesson-document.ts",
@@ -1415,6 +1435,11 @@
       "bytes": 6188
     },
     {
+      "path": "platform/packages/db/migrations/0032_evidence_history.sql",
+      "sha256": "4bf6a6b7c530e940158c65f2ad8329c476e6355e8c6376f04be825a2d0be7cee",
+      "bytes": 3186
+    },
+    {
       "path": "platform/packages/db/migrations/0034_lesson_grants.sql",
       "sha256": "a2914d0c45681f35b8440eb82dd39b3b3ffa2dd885bbd61dbc28dd2cd1a1b9ca",
       "bytes": 5490
@@ -1476,8 +1501,8 @@
     },
     {
       "path": "platform/packages/db/src/runtime-role.ts",
-      "sha256": "15299301288b9e844eab352cee5fe99d870d1ba7168f23e4b3a66247aeb9731e",
-      "bytes": 3592
+      "sha256": "811ba3c5cdc8c45b51d7234cf60c759ab29928a47dd27f6e0dcc066a06fc2856",
+      "bytes": 3878
     },
     {
       "path": "platform/packages/db/src/runtime-safety.ts",
@@ -1486,8 +1511,8 @@
     },
     {
       "path": "platform/packages/db/src/tables.ts",
-      "sha256": "b8bc8fa8feb9ed12924a10aff83cfd1234bcca1a3ecb443d32e589fd01e3e4de",
-      "bytes": 51909
+      "sha256": "ab0835f26b2404256a191ae3602ee584732c2812b5234da436df8215f200ffba",
+      "bytes": 53007
     },
     {
       "path": "platform/packages/domain/src/access.ts",
@@ -1541,8 +1566,13 @@
     },
     {
       "path": "platform/packages/domain/src/engine.ts",
-      "sha256": "b7249e78db0201995997c0ea28386e24da7a3464ed432825d83e7cb5a4dadb68",
-      "bytes": 29744
+      "sha256": "d10e075f7bd2e4e66bcf88497be1db521ca0995b752b38d216383a2096ac6e23",
+      "bytes": 29982
+    },
+    {
+      "path": "platform/packages/domain/src/evidence-history.ts",
+      "sha256": "048f111f073eee5eb76df22b8c6791a6121a087285ce6d31d56500611bbeeae1",
+      "bytes": 13432
     },
     {
       "path": "platform/packages/domain/src/instructors.ts",
@@ -1571,8 +1601,8 @@
     },
     {
       "path": "platform/packages/domain/src/project-work.ts",
-      "sha256": "48ac40d2b9e1b875bb326ff8acce265ee9d5112454bf98092bdd8cda6832b4f8",
-      "bytes": 9328
+      "sha256": "fac9395423ff63e0160468b01bc6e97fe8f8e88516c098af30fb25fb73072a5a",
+      "bytes": 9536
     },
     {
       "path": "platform/packages/domain/src/purpose-seed.ts",
@@ -1581,8 +1611,8 @@
     },
     {
       "path": "platform/packages/domain/src/purpose.ts",
-      "sha256": "c1f41309fbaac8316d98bb9f2ec6a9a686a50b87a6b65c990d1e56c04a9cfb0b",
-      "bytes": 21069
+      "sha256": "7f6b6c0e23f0221a59fd4f3ffa31f462ee5a4bb490284003a3b589aad1d48116",
+      "bytes": 21151
     },
     {
       "path": "platform/packages/domain/src/resources.ts",
@@ -1591,8 +1621,8 @@
     },
     {
       "path": "platform/packages/domain/src/seed.ts",
-      "sha256": "fd49561d5983ec30f422437fefc09d5195f1b53d79be1cbc104c8dbafe3e72ae",
-      "bytes": 27559
+      "sha256": "d5b1babe7fe4fed5b1b4e0a0bf0edd54ff3c3eef2b7d30c0358a1f747e5d4d7f",
+      "bytes": 27580
     },
     {
       "path": "platform/scripts/accounts-browser-check.ts",
@@ -1680,6 +1710,11 @@
       "bytes": 273
     },
     {
+      "path": "platform/scripts/evidence-history-browser-check.ts",
+      "sha256": "379d42265bec7b716778967ba9b156736e61ddc558f4b5712b24f7983de1eca1",
+      "bytes": 9823
+    },
+    {
       "path": "platform/scripts/groups-browser-check.ts",
       "sha256": "a7691d3cae40e16be4c03e9b566a885badf7f6264c1ee3c32fc20a0a11e56b66",
       "bytes": 11024
@@ -1736,8 +1771,8 @@
     },
     {
       "path": "platform/scripts/postgres-check.ts",
-      "sha256": "78594d7cce79aef60f54a0ffd47be1a920c07d3f6582638b29ac2637b222216c",
-      "bytes": 45569
+      "sha256": "ccc62a02598ed1a9547890e3e0c9d0293a55af7489cd9e37d1e1b5071099e5d9",
+      "bytes": 48996
     },
     {
       "path": "platform/scripts/project-work-browser-check.ts",
@@ -1938,6 +1973,16 @@
       "path": "platform/tests/email-http.test.ts",
       "sha256": "9e8670b7bb05a22d988c01ed593e8b82bf63d8a1a9f837e6f624297c83de0760",
       "bytes": 17349
+    },
+    {
+      "path": "platform/tests/evidence-history-database.test.ts",
+      "sha256": "889be241170b8bce55eb8731a6fef4c5eb13c80e10d4fd03cde21f179d68a31d",
+      "bytes": 12409
+    },
+    {
+      "path": "platform/tests/evidence-history.test.ts",
+      "sha256": "9a12dbc503fd05327cceba157e1b2a37de05e22129c92aea23c68cd6b1f6c903",
+      "bytes": 19608
     },
     {
       "path": "platform/tests/group-conversations-database.test.ts",

@@ -25,6 +25,20 @@ Details:
 
 - Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
 
+## Alpha 33: correcting and withdrawing reviewed evidence (no version change), 3 October 2026
+
+On main through [PR #29](https://github.com/EmotiveImpact/REUNIR/pull/29), merged as `e930e39`. This thread holds Alpha 31 to 34 and migrations 0030 to 0033, so this is Alpha 33 with decision 033 and migration 0032. Alpha 39 reached main first, so the application version stays 0.39.0-alpha.1.
+
+**In plain language:** you can now ask to correct a recognised contribution or verified outcome, and a reviewer decides, just as they did the first time. You or an administrator can also withdraw reviewed evidence that turned out to be wrong. Nothing is rewritten in secret: each item keeps a history of the wording that was reviewed, what changed, when and why.
+
+Details:
+
+- **Correct…** on a recognised contribution or verified outcome (author only). The project owner and administrators review a contribution's correction; administrators review an outcome's. Nobody reviews their own. The reviewed version stays until the correction is accepted, and a published output follows its outcome.
+- **Withdraw…** (author or administrator, with a reason) is immediate and final. Withdrawn evidence stays visible, marked withdrawn, and stops counting towards path milestones, profiles, goals and the output archive. Outcomes built on a withdrawn contribution are withdrawn too, and a goal completed with one reopens.
+- **History** on each item lists corrections, declined corrections and withdrawals with their reasons and responses. Waiting corrections are visible only to the author and the reviewers.
+- Additive migration 0032: `withdrawn` joins the contribution and outcome statuses, and `evidence_changes` sits under forced row security. The runtime role may add a change and record its decision, never reword or delete one.
+- Community review, not accreditation (decision 033).
+
 ## Alpha 32: appealing a hidden post (no version change), 3 October 2026
 
 On main through [PR #26](https://github.com/EmotiveImpact/REUNIR/pull/26), merged as `f3efa39`. This thread holds Alpha 31 to 34 and migrations 0030 to 0033, so this is Alpha 32 with decision 032 and migration 0031. Alpha 39 (PR #21) reached main first, so the application version stays 0.39.0-alpha.1.
