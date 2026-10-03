@@ -144,5 +144,15 @@ try{
         assert.deepEqual((await admin.query("SELECT metadata FROM audit WHERE action='learner.answers.erased' AND object_id='member_sofia'")).rows,[{metadata:{reference:'request pg-1',attempts:planned.attempts,notifications:planned.notifications}}]);
         await assert.rejects(()=>runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',DEMO_ADMIN);await tx.query("SELECT set_config('app.erasure_subject','member_alex',true)");await tx.query("DELETE FROM quiz_attempts WHERE user_id='member_alex'");}),/permission denied/);
     });
+    await check('unused cover files are listed and cleared through a role without row-security bypass',async()=>{
+        const scoped=Object.create(admin) as typeof admin;scoped.transaction=fn=>admin.transaction(async tx=>{await tx.query('SET LOCAL ROLE reunir_operator');return fn(tx);});
+        const operator=new WorkspaceRepository(scoped);
+        await admin.query("INSERT INTO upload_intents(organization_id,id,user_id,object_key,content_type,size_bytes,original_name,created_at,status,purpose,cover_track_id) VALUES('org_code_black','pg_stale_cover','member_amina','k-pg-stale','image/png',10,'c',now()-interval '2 hours','pending','cover_image','track_story'),('org_code_black','pg_fresh_cover','member_amina','k-pg-fresh','image/png',10,'c',now(),'pending','cover_image','track_story')");
+        await assert.rejects(()=>operator.staleCoverUploads('code-black',DEMO_USER),{code:'OWNER_REQUIRED'});
+        const stale=(await operator.staleCoverUploads('code-black',DEMO_ADMIN)).map(u=>u.id);
+        assert(stale.includes('pg_stale_cover')&&!stale.includes('pg_fresh_cover'));
+        assert.deepEqual(await operator.removeStaleCoverUploads('code-black',DEMO_ADMIN,['pg_stale_cover','pg_fresh_cover']),['pg_stale_cover']);
+        assert.deepEqual((await admin.query("SELECT id FROM upload_intents WHERE id IN ('pg_stale_cover','pg_fresh_cover')")).rows,[{id:'pg_fresh_cover'}]);
+    });
     await mkdir('evidence/alpha04',{recursive:true});await writeFile('evidence/alpha04/postgres-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Disposable local PostgreSQL service, not Neon.',results},null,2));
 }finally{await runtime?.close();await admin.close();}
