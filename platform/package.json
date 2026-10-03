@@ -53,7 +53,8 @@
     "test:browser:notifications": "tsx scripts/notifications-browser-check.ts",
     "test:browser:groups": "tsx scripts/groups-browser-check.ts",
     "test:browser:states": "tsx scripts/states-browser-check.ts",
-    "test:browser:appeals": "tsx scripts/appeals-browser-check.ts"
+    "test:browser:appeals": "tsx scripts/appeals-browser-check.ts",
+    "test:browser:curation": "tsx scripts/collections-browser-check.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.13.0",

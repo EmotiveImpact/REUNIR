@@ -32,3 +32,4 @@ import './groups.css';
 import './learning-record.css';
 import './account.css';
 import './states.css';
+import './collections.css';

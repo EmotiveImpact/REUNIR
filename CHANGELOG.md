@@ -27,6 +27,21 @@ Details:
 
 - A correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
 
+## 0.28.0-alpha.1 (Alpha 28): collections of useful content, 3 October 2026
+
+On main through [PR #25](https://github.com/EmotiveImpact/REUNIR/pull/25), merged as `94b130b`. Alpha 39 reached main first, so the version stayed 0.39.0-alpha.1.
+
+**In plain language:** communities can now gather useful material into collections such as "Start here". Owners, administrators and moderators pick posts, lessons, tracks, paths, projects, events, missions and community outputs, add short notes and choose the order, keeping a collection private until they publish it. Everyone sees only the items they already have access to, and one featured collection appears on Home.
+
+Details:
+
+- **Collections** in the second sidebar lists published collections; curators also see their drafts. A collection holds up to 50 items, each with an optional note of up to 280 characters and a manual order.
+- Curators are active owners, administrators and moderators; suspension, demotion or account deletion ends curation at once. Every change is audited; nobody is notified.
+- Items are filtered against each viewer's own view, so private spaces, hidden posts, unpublished lessons and missions on unpublished tracks, and other communities never leak, and a note disappears with its item. Goals, messages, bookmarks and scores can never be collected.
+- At most one featured collection per community, checked by the database. A deleted account's collections stay, credited to Former member.
+- Additive migration 0028 adds `collections` and `collection_items` with forced row security and column-limited updates (decision 028). Run `npm run db:grant-runtime` after migrating.
+- New demo browser suite `npm run test:browser:curation`. No new dependency.
+
 ## 0.39.0-alpha.1 (Alpha 39): cover library management and small copies, 3 October 2026
 
 On main through [PR #21](https://github.com/EmotiveImpact/REUNIR/pull/21), merged as `0a818fa`.

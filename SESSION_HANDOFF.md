@@ -4,7 +4,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, MODERATION.md, decisions/032-mode
 
 ## Where the source is
 
-- Base: main `b80fc04`, the merge of PR #23 (Alpha 31, data retention rules), with main `16b2768` (PR #16, Alpha 23 virus scanning) and main `0a818fa` (PR #21, Alpha 39 cover library management, migration 0038) merged in. The application version stays main's 0.39.0-alpha.1.
+- Base: main `b80fc04`, the merge of PR #23 (Alpha 31, data retention rules), with main `16b2768` (PR #16, Alpha 23 virus scanning) main `0a818fa` (PR #21, Alpha 39 cover library management, migration 0038) and main `94b130b` (PR #25, Alpha 28 collections, migration 0028) merged in. The application version stays main's 0.39.0-alpha.1.
 - This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ## What is done
@@ -28,6 +28,39 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 ## Next
 
 1. A correction and withdrawal history for reviewed evidence (Alpha 33, migration 0032) and consented credit for several contributors (Alpha 34, migration 0033), one pull request each. They are built locally in separate worktrees and need renumbering from main when opened.
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 28 handover: collections of useful content
+- Outcome: [PR #25](https://github.com/EmotiveImpact/REUNIR/pull/25), merged into main as `94b130b`.
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, CURATION.md, decisions/028-curated-collections.md, STATES.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `f9f32d6`, the merge of PR #22 (Alpha 27), tree identical to its tested head `297dab8`, with main merged in since at `b80fc04` (Alpha 31), `16b2768` (Alpha 23) and `0a818fa` (Alpha 39). The package version is 0.39.0-alpha.1.
+- This slice: branch `claude/everyday-use-4z9rmz`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- This thread holds Alpha 27 to 30, decisions 027 to 030 and migrations 0028 and 0029.
+
+### What is done
+
+Owners, administrators and moderators curate collections of existing content with notes and order, drafted privately and published explicitly; one can be featured on Home. Each viewer sees only items they can already open. Additive migration 0028 with forced row security.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Open Collections in the sidebar, or Preview as admin to edit "Start here". For PostgreSQL: `npm run db:migrate` (applies 0028), then `npm run db:grant-runtime`.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (now including `test:browser:curation`), and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`.
+
+### Next
+
+1. Task files with live updates (Alpha 29) and shared form components (Alpha 30).
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
 
 ---
