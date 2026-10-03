@@ -1,4 +1,78 @@
-# Alpha 10 knowledge checks
+# Alpha 11 cover images
+
+3 October 2026. Application 0.11.0-alpha.1. Communities upload their own track and project covers, or a plain neutral panel shows. The generated cover art and every word written on it are retired; titles stay below pictures. Administrators set track covers; a project's owner or an administrator sets its cover. See COVERS.md and decisions/011-cover-images.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)), built from main `788e5d7` and merged with main `365e1c9` |
+| Verified locally | Yes, every suite below, in this cloud workspace, from a clean worktree of the tested commit |
+| Verified remotely (GitHub Actions) | See the publication receipt below |
+| Merged | No. Merging into main needs the owner's approval |
+| Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- Migration `0011_cover_images.sql` (additive): a nullable, size-bounded `cover_image` object on tracks and projects; `upload_intents` accepts the `cover_image` purpose with `cover_track_id` or `cover_project_id` (exactly one, foreign keys to the tenant's track or project), a generation once ready and at most 3 MB; and a restrictive `cover_image_read` row policy. Migrations 0001 to 0010 are byte-identical.
+- Uploads reuse the verified private pipeline: subject-bound intents, five-minute signed POST policies for an exact key, type and size, and completion that checks size, type, signature and declared dimensions (16 to 4,096 pixels) on the pinned generation, deleting refused objects. Commands `track.cover.set` and `project.cover.set` set, refocus or remove a cover. `GET /api/organisations/:slug/covers/:kind/:subjectId/:fileId` serves bytes after checking access, with private caching, `nosniff` and a sandboxing content security policy.
+- The web `Cover` component shows the picture with its focal point as the object position, or the plain panel, on every card, detail page, feed post, profile and home list. The cover dialogue resizes pictures in the browser to 1,600 pixels (dropping metadata such as location), sets the focal point by click, drag or keyboard sliders, previews three crops and saves or removes.
+- The decorative shapes, labels, art variants and the earlier `.art-custom` contrast patch are removed from the stylesheets. The project post in the feed now links to the project it names, not always to Common Ground.
+- No new runtime dependency. Release constant and package version are 0.11.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, `npm ci` from the committed lockfile in a clean worktree of tested commit `f62d5134c30f2e6c9cd37d4729aa7c1a7419041b`, Playwright with Chromium 141 at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16.14 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 486 passed, 0 failed (466 existing plus 9 domain, 5 database and 6 HTTP cover tests) |
+| `npm run test:http` | 17 passed |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Existing demo-browser suites | 238 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 14 knowledge checks, 16 monochrome, 20 v4 |
+| `npm run test:browser:covers` (new) | 11 passed: plain panels, member permissions, labelled dialogue with keyboard focus return, focal point by click and keyboard, metadata removed, 1,600-pixel resizing, PNG transparency kept, focus-only change, unreadable file refused, project owner journey, axe scans and no overflow at 390px |
+| Existing connected-browser suites | 29 passed: 12 connected, 9 resources, 8 knowledge checks (whole-page axe scan) |
+| `npm run test:browser:covers-connected` (new) | 9 passed: live build, Better Auth sessions, PGlite, stand-in bucket on a second origin; real Chrome JPEG output verified by the server, no cookies or metadata reaching storage, headers, other tenants and visitors refused, unpublished track hidden, removal |
+| `npm run test:postgres` | 10 passed, including the new restricted-role cover check (run on the same source before the commit that only changes the version number) |
+| Python helpers, `scripts/check_research.py` | 34 passed; 30 pinned sources, 13 decisions |
+
+Negative control: with `cover_image_read` dropped inside a rolled-back transaction, a member's restricted-role transaction saw 1 unused cover upload instead of 0.
+
+Tests changed rather than added: the old-schema fixture skips the new property, five migration-count assertions moved from 10 to 11, the project-work upgrade test from 0005 asserts the new `cover_image` column is null before comparing rows, the 0009 upgrade test also strips the two new upload columns, the monochrome check for text on custom covers now checks the plain panel on a new track, and the knowledge-check connected axe scan is no longer limited to `.lesson-content`. No business assertion was weakened.
+
+## Corrections made while verifying
+
+- The cover dialogue first rendered inside the page heading, so heading paragraph styles reached into it. It now renders at the document root.
+- The slider values used `<output>`, which is a live region, so each step would have been announced twice. They are hidden text now; the sliders announce their own values.
+- A failed capability request made the dialogue say storage was not configured. It now says availability could not be checked.
+- In the demo, the note about browser-only storage appeared twice after saving. It appears once.
+
+## Not verified, and why
+
+- Real Google Cloud Storage signing, IAM and bucket CORS for cover uploads, as for lesson files; hosted behaviour is deferred by the user.
+- Photos straight from phones: HEIC decoding on Safari, EXIF rotation and very large images on low-memory devices. The checks use desktop Chromium with JPEG and PNG.
+- Removed pictures are pruned only by a later cover upload in the same community, after an hour; there is no operator erasure procedure yet. A browser can show a cached cover for up to an hour after access ends.
+- One 1,600-pixel file serves every size, including small thumbnails; smaller renditions are a follow-up.
+
+## Preview
+
+The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `http://127.0.0.1:5173`, reachable only from inside the container. Use the account menu's Preview as admin, open a track or project and choose **Add a cover**. This environment does not publish a public preview URL. Clone the branch and run `npm ci && npm run dev` from `platform/`.
+
+## Publication receipt
+
+Pending: the push, the remote read-back and the GitHub Actions runs are recorded here after they happen.
+
+## Next actions
+
+1. Owner review of PR #5 in the demo; merge only with the owner's approval, then read back main.
+2. Instructor-scoped authoring and review permissions, a paginated review queue and a learner export of their own attempts.
+3. An operator erasure procedure covering removed covers and a learner's attempts.
+4. When deployment resumes: Neon staging with eleven migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests.
+
+---
+## Historical Alpha 10 evidence: knowledge checks
 
 2 October 2026. Application 0.10.0-alpha.1. Creators add an optional knowledge check to a lesson in the private draft; learners answer it and the server scores it; owners and administrators mark written answers and send feedback. Scores are private feedback, not reputation, completion or credentials. See ASSESSMENTS.md and decisions/010-knowledge-checks.md.
 
@@ -75,6 +149,8 @@ This receipt commit changes only documentation and source hashes; the merge into
 3. When deployment resumes: Neon staging with ten migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests.
 
 ## Follow-up: cover contrast
+
+Superseded by Alpha 11 above: the decorative cover art, including the custom cover patched here, was removed and replaced by uploaded covers and a plain panel. Both items listed as still open below are resolved there. The record is kept as history.
 
 Branch `claude/laughing-goodall-2p7z0v`, built from main `788e5d7` and merged with main `365e1c9`. It resolves the decorative cover finding recorded under Alpha 09.
 

@@ -1,4 +1,8 @@
-# Research status: Alpha 10
+# Research status: Alpha 11
+
+Alpha 11 (cover images) reviewed the course card files of Frappe Learning, LearnHouse and ClassroomIO at the same pinned commits, the contrast code of axe-core 4.13.0 (the installed version) and WCAG failure F83 with the contrast understanding document; see notes/16_COVER_IMAGES.md and the `cover-images` decision in reuse-register.json. The learning projects are AGPL at their roots, so they are behavioural references only; axe-core and WCAG were read to understand the checks, not copied. Imported donor files: zero. New runtime dependencies: none.
+
+## Alpha 10 record
 
 Alpha 10 (knowledge checks) reviewed specific files in Frappe Learning, LearnHouse and ClassroomIO at the same pinned commits; see notes/15_ASSESSMENTS.md and the `knowledge-checks` decision in reuse-register.json. All three are AGPL at their roots, so they are behavioural references only. Imported donor files: zero. New runtime dependencies: none. Question banks, partial credit, timers and file answers stay queued under `authoring-next`.
 

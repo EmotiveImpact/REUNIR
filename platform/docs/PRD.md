@@ -1,6 +1,6 @@
 # REUNIR · Product Requirements Document
 
-Version 0.10 · 2 October 2026 · Knowledge checks, Alpha 10 (application 0.10.0-alpha.1), on the approved v4 design. Requirements and actual delivery are distinguished below.
+Version 0.11 · 3 October 2026 · Cover images, Alpha 11 (application 0.11.0-alpha.1), on the approved v4 design. Requirements and actual delivery are distinguished below.
 
 ## 1. Product
 
@@ -392,3 +392,21 @@ Creators add one optional knowledge check to a lesson inside the existing privat
 | K10 | The fictional demo runs the same rules, including a seeded review queue | Demo browser journey |
 
 Question banks, timers, partial credit, file answers, exports and an erasure procedure for attempts are outside this release.
+
+## Alpha 11: cover images
+
+Tracks and projects show a picture their community uploads, or a plain neutral panel. The decorative generated art and its text are retired: titles, categories and people always sit outside the picture, and only opaque status labels appear on it. Administrators set track covers; a project's owner or an administrator sets its cover. The browser resizes each picture to 1,600 pixels before upload, dropping metadata such as location, and a stored focal point keeps the chosen part in view at every size. See `COVERS.md` and `decisions/011-cover-images.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| C01 | Only active owners/admins change track covers; a project's owner or an active owner/admin changes its cover | Domain, HTTP, database, demo and connected browser tests |
+| C02 | Covers are visible only where their track or project is: tenant, space access and track publication | Domain matrix, RLS, HTTP, connected browser and PostgreSQL tests |
+| C03 | Uploads are bound to one subject and an exact key, type and size; completion checks signature and declared dimensions on the pinned generation, and refused objects are deleted | Domain, HTTP and connected browser tests |
+| C04 | Pictures are resized in the browser and metadata such as location never reaches storage | Demo and connected browser tests |
+| C05 | No text is drawn on a picture; the plain panel has no words; colours stay neutral and pictures keep their own colours | Monochrome, cover and design contract checks |
+| C06 | The cover dialogue is labelled, keyboard operable and passes automated accessibility checks at desktop and phone widths | Demo and connected browser tests with axe |
+| C07 | Removing a cover stops serving its bytes at once | HTTP and connected browser tests |
+| C08 | Existing tracks, projects and uploads upgrade unchanged | Migration 0011 upgrade test |
+| C09 | The fictional demo runs the same rules with browser-local bytes | Demo browser journey |
+
+Server-side thumbnails, alt text fields, cropping tools, remote image URLs and covers for spaces, paths or events are outside this release. Removed pictures are pruned later rather than deleted at once; an operator erasure procedure is still open.

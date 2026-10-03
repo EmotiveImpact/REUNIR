@@ -1,3 +1,15 @@
+# 0.11.0-alpha.1: cover images
+
+- Upload your own cover for a track or project. Administrators set track covers; a project's owner or an administrator sets its cover.
+- Choose or drop a picture, set the focal point by clicking or with keyboard-operable sliders, preview the banner, card and small crops, then save or remove.
+- The browser resizes each picture to 1,600 pixels before upload, which also drops metadata such as location. PNG stays PNG when it fits, so transparent logos keep their transparency.
+- Without a cover, a plain neutral panel with one muted icon shows. The generated art, its shapes and every word written on it are retired; titles stay below the picture.
+- Uploads reuse the verified private pipeline: subject-bound intents, exact signed POST policies, signature and dimension checks on the pinned generation. Bytes come from an access-checked same-origin route with private caching and a sandboxing content security policy.
+- Additive migration 0011 with a restrictive RLS policy for cover uploads; migrations 0001 to 0010 unchanged. No new runtime dependency.
+- The connected resources and knowledge-check scans cover the whole learner page again, the monochrome suite checks the plain panel on a new track, and the design contract now checks every web stylesheet. This replaces the earlier contrast patch for text on custom covers, which never reached main.
+- Fix: a project post in the feed always linked to Common Ground; it now links to the project it names.
+- Deployment remains deferred by the user.
+
 # 0.10.0-alpha.1: knowledge checks
 
 - Add one optional knowledge check per lesson: single choice, multiple choice, short answer and written response, with an optional pass mark, attempt limit and answer-reveal rule.
@@ -7,7 +19,6 @@
 - Scores are private feedback: no reputation points, no automatic completion, no credentials.
 - Additive migration 0010 with forced RLS, column-level review grants and no DELETE for the application role; migrations 0001 to 0009 unchanged. No new runtime dependency.
 - Fix: `npm run dev` showed a blank page because a lazy page was declared above its React import; a static test now guards module order.
-- Custom covers on tracks and projects created in the app keep AA text contrast at every width. The connected resources check scans the whole learner page again, and the monochrome suite now checks a newly created track.
 - Deployment remains deferred by the user.
 
 # 0.9.0-alpha.1: private lesson resources
