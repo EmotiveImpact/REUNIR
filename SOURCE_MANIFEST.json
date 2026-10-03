@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 39 cover library management and small copies",
   "version": "0.39.0-alpha.1",
   "sourceBaseline": "f9f32d6db2d9a028e33395ce540114af683364ad",
-  "generatedAt": "2026-10-03T14:03:54.729667+00:00",
+  "generatedAt": "2026-10-03T14:04:23.097598+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -1111,8 +1111,8 @@
     },
     {
       "path": "platform/package.json",
-      "sha256": "ccf7c2845a45c83d855de40569407aff82115998c5dc38bf397c5fd85aa349a3",
-      "bytes": 4567
+      "sha256": "54bbd3a241c34a549cff6a4c527f42841ac38c0acad584538581fbf7f826c82b",
+      "bytes": 4633
     },
     {
       "path": "platform/packages/contracts/package.json",
