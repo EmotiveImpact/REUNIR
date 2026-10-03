@@ -1,21 +1,23 @@
-# Alpha 25 cover library management and small copies of covers
+# Alpha 27 cover library management and small copies of covers
 
-3 October 2026. Application 0.25.0-alpha.1. Administrators rename and tag cover library pictures, the library holds up to 60, the cover picker can be filtered, and cards and lists load a small copy of each cover instead of the full picture. See decisions/025-cover-library-management-and-small-copies.md and COVERS.md.
+3 October 2026. Application 0.27.0-alpha.1. Administrators rename and tag cover library pictures, the library holds up to 60, the cover picker can be filtered, and cards and lists load a small copy of each cover instead of the full picture. See decisions/027-cover-library-management-and-small-copies.md and COVERS.md.
 
 ## Status at a glance
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/build-out-tvzn40` ([PR #21](https://github.com/EmotiveImpact/REUNIR/pull/21)), first opened on main `f5ec8d3` and brought up to main `d62424d` (the merge of PR #19, Alpha 24) |
+| Implemented | Yes, on `claude/build-out-tvzn40` ([PR #21](https://github.com/EmotiveImpact/REUNIR/pull/21)), first opened on main `f5ec8d3` and brought up to main `9b34cac` (the merge of PR #18, Alpha 26) |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 
-## PR #19 merged into main
+## PR #19 and PR #18 merged into main
 
-Alpha 24 (group conversations, from another thread) was merged into main on 3 October 2026 as `d62424dc5b68cf9386757173a89464211f5b7021`, a merge commit whose parents are the previous main `f5ec8d3` (PR #17) and the tested head `5c97bb4`; its tree, `85e91e8022d87830336918d8765392698795b48d`, is identical to the tested head's tree. CI runs 37123762116 and 37123778756 (application and postgres) passed on `5c97bb4`. It took migration 0022 and decision 024 while this slice was open as Alpha 23, so this slice merged main in and became Alpha 25 with migration 0023 and decision 025; decision 023 stays free for upload scanning.
+Two other threads' releases reached main while this slice was open. Alpha 24 (group conversations) was merged as `d62424dc5b68cf9386757173a89464211f5b7021` on top of `f5ec8d3`, its tree `85e91e8022d87830336918d8765392698795b48d` identical to its tested head `5c97bb4` (CI runs 37123762116 and 37123778756). Alpha 26 (email confirmation and change) was then merged as `9b34cac`, its tree `2e61a0a1ea8f287c3fe3e8dc6a2f455f57a7e3b5` identical to its tested head `a427140` (CI runs 37124821464 and 37124825018). This slice merged both in.
+
+Numbering: first opened as Alpha 23 with migration 0022 and decision 023. Group conversations took migration 0022 and decision 024; upload scanning (PR #16) holds Alpha 23 and decision 023; contributor roles (PR #20) hold Alpha 25 and decision 025; email took Alpha 26 and decision 026. This release is therefore Alpha 27, with migration 0023 and decision 027.
 
 ## What changed
 
@@ -23,16 +25,16 @@ Alpha 24 (group conversations, from another thread) was merged into main on 3 Oc
 - **Limit raised from 24 to 60**, enforced by the domain on every library upload.
 - **Small copies.** When the browser prepares a picture wider than 480 pixels it also draws a 480-pixel copy (WebP, or JPEG where WebP cannot be written), at most 256 KB, uploaded under a second five-minute policy tied to the same upload record. On completion the server checks the copy's signature, size, type and dimensions from its own stored generation; a failed copy is deleted and dropped while the picture is kept. New `/thumbnail` routes serve the copy, or the full picture when there is none, so existing covers keep working. Every deletion path removes both files.
 - **Additive migration 0023** adds `cover_library.tags` with a shape check, an update policy for active owners and administrators, and four checked small-copy columns on `upload_intents`. The runtime role may update only `label` and `tags` on `cover_library`; run `npm run db:grant-runtime` after migrating.
-- Migrations 0001 to 0022 are byte-identical; no new runtime dependency. Release constant and package version are 0.25.0-alpha.1.
+- Migrations 0001 to 0022 are byte-identical; no new runtime dependency. Release constant and package version are 0.27.0-alpha.1.
 
 ## Local verification, 3 October 2026
 
-Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). Every step ran on this branch's tree on top of main `d62424d`.
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). Every step ran on this branch's tree on top of main `9b34cac`.
 
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 679 passed, 0 failed (654 on main `d62424d` plus 25: 6 library management, 6 small copies, 6 database tests under the restricted role including cross-tenant and inactive-role refusals, 7 HTTP) |
+| `npm test` | 691 passed, 0 failed (666 on main `9b34cac` plus 25: 6 library management, 6 small copies, 6 database tests under the restricted role including cross-tenant and inactive-role refusals, 7 HTTP) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
 | Demo-browser suites | 297 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 20 covers (3 new), 10 instructors, 11 accounts, 16 monochrome, 20 v4, 5 notifications, 11 groups |
@@ -56,6 +58,60 @@ Tests changed rather than added: migration-count assertions moved from 22 to 23,
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. When deployment resumes: follow LAUNCH_RUNBOOK.md, and run `npm run db:grant-runtime` after migrating.
 
+## Historical Alpha 26 evidence: confirming and changing your email address
+
+3 October 2026. Application 0.26.0-alpha.1. People confirm their email address by a link, and accepting an invitation confirms it. When the server requires it, the production default, an unconfirmed address cannot sign in. Anyone can move their account to a new address with their password and a link sent there. See decisions/026-email-confirmation-and-change.md and ACCOUNTS.md.
+
+Numbering: first opened as Alpha 24. Alpha 23 is claimed by open pull requests (#16, #21), Alpha 24 (group conversations, PR #19) reached main first, and Alpha 25 is on PR #20, so this release is Alpha 26 with decision 026. It has no migration.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/accounts-trust-zojuqs`, from main `b24095a` with main `ec4285d` (PR #15, Alpha 22) `f5ec8d3` (PR #17, launch kit) and `d62424d` (PR #19, Alpha 24 group conversations) merged in |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Yes: runs 37124821464 and 37124825018 on `a427140` (application and postgres) |
+| Merged | Yes, [PR #18](https://github.com/EmotiveImpact/REUNIR/pull/18) as `9b34cac`, under the owner's standing approval (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- **Email address** panel on Your account: the address, Confirmed or Not confirmed, **Send a confirmation link** and **Change email address…**. The demo panel only explains the feature.
+- **`EMAIL_VERIFICATION`** is `required` or `optional`; unset means required in production. It applies only where mail can be sent; required without a sender blocks the pilot checklist but does not stop the server, and an invalid value stops it. When required, Better Auth refuses a session to an unconfirmed address with `EMAIL_NOT_VERIFIED` and queues a fresh link.
+- **Invitations confirm the address** they were sent to when accepted.
+- **`POST /api/account/email`** checks the password (five attempts in fifteen minutes), then Better Auth sends a confirmation link to the new address; the address changes only when it is opened. The current address gets a notice with the new address masked and no link. A taken address gets the same answer and no mail. Better Auth's own `/api/auth/change-email` answers 404.
+- `/api/account/capabilities` adds `emailVerification`, `emailConfirmation` and `emailChange`; `/api/session` adds the person's own `email` and `emailVerified`.
+- Review fixes on PR #18: changing or resetting the password cancels any change link asked for before it (the server refuses an older link and the address stays), and the password check no longer needs a session started within the last day, so days two to seven of a session can change the address, delete the account or hand over a community.
+- `npm run launch:preflight` (from PR #17) now also checks `EMAIL_VERIFICATION`: an invalid value fails, `optional` warns. Against the blank `.env.example` it reports 5 failures and 6 warnings.
+- No migration, no grant change, no new runtime dependency. Release constant and package version are 0.26.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`. The full suite ran on this slice before main `ec4285d` was merged in; typecheck, unit tests, both builds, the HTTP checks and the accounts and covers browser suites ran again after the merge.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 634 passed before the merge (625 plus 9 new in `tests/email-http.test.ts`, real Better Auth with the outbox captured); 636 of 636 after merging main at `ec4285d`; 666 of 666 after the review fixes (2 new) and merging main at `d62424d` (Alpha 24) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | `test:browser` 85, `v4` 20, `monochrome` 16, `accounts` 12 (1 new: the explanatory email panel), `covers` 17 after the merge, `accounts-connected` 13 |
+| Connected-browser suites | `accounts-connected` 13 (2 new: confirming an address by its link, and changing it in a real browser) |
+| `npm run test:postgres` | 21 passed on PostgreSQL 16 after merging main at `d62424d` |
+| Python helpers | 35 passed |
+
+## Not verified, and why
+
+- No real mail was sent; links were read from the encrypted outbox. Hosted Better Auth and a real reverse proxy were not exercised.
+- Opening a change link while signed out creates a session without the second step, as Better Auth does (decision 026).
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. The remaining account and trust items: data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and consented credit for several contributors.
+3. When deployment resumes: set `EMAIL_VERIFICATION` with a verified sender.
+
 ## Historical Alpha 24 evidence: group conversations
 
 3 October 2026. Application 0.24.0-alpha.1. Members start named group conversations of up to 20 people from Messages. People added later read only what is written after they join. See decisions/024-group-conversations.md.
@@ -66,8 +122,8 @@ Tests changed rather than added: migration-count assertions moved from 22 to 23,
 | --- | --- |
 | Implemented | Yes, on `claude/group-conversations-5arqv6`, from main `b24095a` with main `f5ec8d3` (PR #15 Alpha 22 and PR #17 launch kit) merged in |
 | Verified locally | Yes: every suite on the merged tree (see below) |
-| Verified remotely (GitHub Actions) | Yes: runs 37123762116 and 37123778756 on `5c97bb4` (application and postgres) |
-| Merged | Yes, [PR #19](https://github.com/EmotiveImpact/REUNIR/pull/19) as `d62424d`, under the owner's standing approval (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes, on PR #19 before it merged |
+| Merged | Yes: [PR #19](https://github.com/EmotiveImpact/REUNIR/pull/19), merged into main as `d62424d` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 
@@ -122,8 +178,8 @@ Tests changed rather than added: migration-count assertions moved from 21 to 22.
 | --- | --- |
 | Implemented | Yes, on `claude/build-out-tvzn40`, from main `ec4285d` (the merge of PR #15, Alpha 22) |
 | Verified locally | Yes: typecheck, unit tests and the preflight against `.env.example` (see below) |
-| Verified remotely (GitHub Actions) | Yes: runs 37122409822 and 37122421213 on `8e2fdfc` (application and postgres) |
-| Merged | Yes, [PR #17](https://github.com/EmotiveImpact/REUNIR/pull/17) as `f5ec8d3`, under the owner's standing approval (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes, on PR #17 before it merged |
+| Merged | Yes: [PR #17](https://github.com/EmotiveImpact/REUNIR/pull/17), merged into main as `f5ec8d3` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 

@@ -18,8 +18,9 @@ const AUTH_MESSAGES: Record<string, string> = {
     TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE: 'Too many attempts. Start again with your email and password.',
     ACCOUNT_TEMPORARILY_LOCKED: 'Too many wrong codes. Wait 15 minutes, then try again.',
     TOTP_ALREADY_ENABLED: 'Two-step sign-in is already on.',
+    EMAIL_NOT_VERIFIED: 'Confirm your email address first. A new confirmation link is on its way to your inbox.',
 };
-async function authCall<T>(path: string, body: unknown): Promise<T> {
+export async function authCall<T>(path: string, body: unknown): Promise<T> {
     const res = await fetch('/api/auth' + path, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json().catch(() => ({}));
     if (res.status === 429) throw new Error('Too many attempts in a short time. Wait a moment, then try again.');

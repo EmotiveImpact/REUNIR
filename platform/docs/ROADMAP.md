@@ -31,7 +31,8 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 21 | Two-step sign-in with an authenticator app and backup codes for anyone; owners and administrators need it to use their authority when the server requires it (the production default) | No passkeys, QR code or trusted devices; recovery without backup codes is an operator task; hosted Better Auth unverified |
 | Alpha 22 | Whoever may change a track or project cover can describe the picture; the track's or project's own page announces it to screen readers | No descriptions for library pictures themselves, automatic descriptions or translations |
 | Alpha 24 | Members start named group conversations of up to 20 people; anyone in a group adds people and renames it, the starter removes people, anyone leaves; people added later read only what follows | No join or leave lines, mentions, attachments or new-message notices; blocks stop adding but never pause a group |
-| Alpha 25 | Administrators rename and tag cover library pictures (up to 60); the picker filters by name or tag; cards and lists load a 480-pixel copy checked by the server | No stock search or backfilled copies for existing covers; real bucket signing for the second policy unverified |
+| Alpha 26 | People confirm their email address by a link, and invitations confirm it; when the server requires it (the production default) an unconfirmed address cannot sign in; anyone changes their address with their password and a link to the new one | Needs a mail sender; no confirmation step at the old address; invitations already sent stay with the old address; real delivery unverified |
+| Alpha 27 | Administrators rename and tag cover library pictures (up to 60); the picker filters by name or tag; cards and lists load a 480-pixel copy checked by the server | No stock search or backfilled copies for existing covers; real bucket signing for the second policy unverified |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 
@@ -53,7 +54,7 @@ The user will clone, deploy and run hosted tests later. Continue product develop
 
 **Everyday reliability:** cursor pagination for posts and tasks (notices, review queues and the audit trail page since Alpha 18), notification preferences and digests (Alpha 19), useful content curation. Course and project art is now uploaded by each community (Alpha 11); smaller renditions for thumbnails can follow real usage. Improve loading/error/empty states through real pilot observations.
 
-**Account and trust operations:** general email verification/change, retention (self-service account deletion with Former member attribution arrived in Alpha 15, after the learning record download and answer erasure in Alpha 14, and ownership transfer, which lets owners delete their accounts too, in Alpha 16, and two-step sign-in for owners and administrators in Alpha 21), moderator appeals/escalation, reviewed-evidence correction/revocation history and consented multi-contributor credits.
+**Account and trust operations:** retention (self-service account deletion with Former member attribution arrived in Alpha 15, after the learning record download and answer erasure in Alpha 14, and ownership transfer, which lets owners delete their accounts too, in Alpha 16, two-step sign-in for owners and administrators in Alpha 21, and email confirmation and change in Alpha 26), moderator appeals/escalation, reviewed-evidence correction/revocation history and consented multi-contributor credits.
 
 ## Commercial platform stage
 

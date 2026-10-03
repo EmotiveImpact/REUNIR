@@ -1,10 +1,10 @@
-# Current continuation: Alpha 25 cover library management and small copies
+# Current continuation: Alpha 27 cover library management and small copies
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, decisions/025-cover-library-management-and-small-copies.md, LAUNCH_RUNBOOK.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, decisions/027-cover-library-management-and-small-copies.md, LAUNCH_RUNBOOK.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `d62424d`, the merge of PR #19 (Alpha 24 group conversations), tree identical to its tested head `5c97bb4`. This slice was first opened as Alpha 23 on main `f5ec8d3` and renumbered when group conversations took migration 0022.
+- Base: main `9b34cac`, the merge of PR #18 (Alpha 26 email confirmation and change), tree identical to its tested head `a427140`. This slice was first opened as Alpha 23 on main `f5ec8d3`; group conversations took migration 0022, and Alpha 23, 25 and 26 were claimed by other threads, so it is Alpha 27 with migration 0023 and decision 027.
 - This slice: branch `claude/build-out-tvzn40`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Since 3 October 2026 the remaining work is split across threads in the project. This thread owns covers and launch preparation. Each pull request takes the next free alpha, migration and decision numbers from main when it is opened, and renumbers if another lands first.
 
@@ -34,6 +34,41 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 2. Launch: LAUNCH_RUNBOOK.md and `npm run launch:preflight` are ready; the owner decides when. Provision nothing until then.
 
 ---
+## Historical Alpha 26 handover: email confirmation and change
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, ACCOUNTS.md, SECURITY.md, decisions/026-email-confirmation-and-change.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `b24095a` (Alpha 21), with main `ec4285d` (PR #15, Alpha 22 cover descriptions) merged in. Main `f5ec8d3` (PR #17, launch kit: LAUNCH_RUNBOOK.md and `npm run launch:preflight`) and `d62424d` (PR #19, Alpha 24 group conversations, migration 0022) are merged in too. Alpha 23 is claimed by open pull requests (#16, #21), Alpha 24 (group conversations, PR #19) reached main first, and Alpha 25 is on PR #20, so this release is Alpha 26 with decision 026.
+- This slice: [PR #18](https://github.com/EmotiveImpact/REUNIR/pull/18), green in CI runs 37124821464 and 37124825018 and merged into main as `9b34cac` (tree identical to the tested head `a427140`). BUILD_STATUS.md records the local runs. Never force-push.
+
+### What is done
+
+People confirm their email address by a link from Your account, and accepting an invitation confirms the invited address. `EMAIL_VERIFICATION` (`required` by default in production, applied only where mail can be sent) refuses a session to an unconfirmed address and queues a fresh link. `POST /api/account/email` checks the password and sends a link to the new address; the address changes only when it is opened, and the current address is told. No migration.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+The demo's Your account explains the Email address panel; it has no addresses. In a connected build, configure `RESEND_API_KEY`, `EMAIL_FROM` and `EMAIL_VERIFICATION` deliberately.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+### Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. An address changes only by a link opened at the new address after the password; the old address is always told. Authority is granted explicitly and must be current when it takes effect. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+### Next
+
+1. Data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and consented credit for several contributors, one pull request each.
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
 ## Historical Alpha 24 handover: group conversations
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, decisions/024-group-conversations.md, ARCHITECTURE.md (messaging boundaries), SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
@@ -41,7 +76,9 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, decisions/024-group-conversations
 ### Where the source is
 
 - Base: main `f5ec8d3`, the merge of PR #17 (launch kit) on top of PR #15 (Alpha 22).
-- This slice: [PR #19](https://github.com/EmotiveImpact/REUNIR/pull/19), green in CI runs 37123762116 and 37123778756 and merged into main as `d62424d` (tree identical to the tested head `5c97bb4`). BUILD_STATUS.md records the local runs. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- This slice: branch `claude/group-conversations-5arqv6`.
+- Outcome: [PR #19](https://github.com/EmotiveImpact/REUNIR/pull/19), merged into main as `d62424d`.
+- Earlier note: BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Parallel work: Alpha 23 (upload scanning, PR #16) and an email confirmation slice (PR #18, also labelled Alpha 24) were open when this was written. Whichever merges after another must take the next free alpha and migration numbers and move the migration-count assertions.
 
 ### What is done
@@ -78,7 +115,9 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, LAUNCH_RUNBOOK.md, COVERS.md, dec
 ### Where the source is
 
 - Base: main `ec4285d`, the merge of PR #15 (Alpha 22), tree identical to its tested head `1645ab7`. PR #15 passed CI runs 37121503128 and 37121505780.
-- This slice: [PR #17](https://github.com/EmotiveImpact/REUNIR/pull/17), green in CI runs 37122409822 and 37122421213 and merged into main as `f5ec8d3` (tree identical to the tested head `8e2fdfc`). BUILD_STATUS.md records the local runs. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- This slice: branch `claude/build-out-tvzn40`.
+- Outcome: [PR #17](https://github.com/EmotiveImpact/REUNIR/pull/17), merged into main as `f5ec8d3`.
+- Earlier note: BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ### What is done
 
@@ -105,6 +144,43 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 ### Next
 
 1. Cover thumbnails, cover library renaming and tags, and a higher library limit (this thread). Virus scanning of uploads, group conversations, accounts and trust, courses and teaching, and everyday use are owned by other threads since 3 October 2026; built and tested scanning and group conversation commits are in the project files under `ferven/handover/`. Each pull request takes the next free alpha and migration numbers from main.
+2. Email verification and change, then the remaining account and trust items in ROADMAP.md.
+3. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 22 handover: cover descriptions
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, decisions/022-cover-descriptions.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `b24095a`, the merge of PR #14 (Alpha 21), tree identical to its tested head `3f573bd`.
+- This slice: branch `claude/build-out-tvzn40`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- Outcome: [PR #15](https://github.com/EmotiveImpact/REUNIR/pull/15), green in CI runs 37121503128 and 37121505780, merged into main as `ec4285d`.
+
+### What is done
+
+Whoever may change a track or project cover can add an optional description of up to 150 characters. The track's or project's own page announces a described cover as an image; everywhere else covers stay decorative. A new picture starts without a description. No migration.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Preview as admin, open a track, choose **Cover** and fill in **Describe the picture (optional)**.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+### Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Authority is granted explicitly and must be current when it takes effect; teaching is a per-track grant, not a community role. Owner and administrator authority may require two-step sign-in. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+### Next
+
+1. Virus scanning of uploads (Alpha 23) and group conversations (Alpha 24).
 2. Email verification and change, then the remaining account and trust items in ROADMAP.md.
 3. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
 

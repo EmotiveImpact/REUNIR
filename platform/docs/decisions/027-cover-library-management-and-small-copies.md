@@ -1,6 +1,6 @@
-# Decision 025: managing the cover library, and smaller copies of covers for cards
+# Decision 027: managing the cover library, and smaller copies of covers for cards
 
-Status: implemented Alpha 25, verified locally; not released or deployed. Date: 3 October 2026.
+Status: implemented in Alpha 27 (first opened as Alpha 23), verified locally; not released or deployed. Date: 3 October 2026.
 
 ## Problem
 
