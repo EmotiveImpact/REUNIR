@@ -1,5 +1,5 @@
 import { commandSchema, DomainError, newId, type Command, type Workspace, type TenantContext, type TenantRecord, type Member, type MutationResult } from '../../contracts/src/index';
-import { isAdmin, isModerator, actorFor, canSeeSpace, isFormer } from './access';
+import { isAdmin, isModerator, actorFor, canSeeSpace, isFormer, formerMember } from './access';
 export { isAdmin, isModerator, actorFor, canSeeSpace, isFormer } from './access';
 import { applyProjectWork, filterProjectWork } from './project-work';
 import { applyAuthoring, filterAuthoring } from './authoring';
@@ -44,7 +44,8 @@ export function visibleWorkspace(state: Workspace, ctx: TenantContext): Workspac
     s.reputation = s.reputation.map(r => { const [kind, target] = r.sourceId.split(':'); const hidden = kind === 'lesson' ? !visibleLessons.has(target) : kind === 'mission' ? !missions.has(target) : false; return hidden ? { ...r, sourceId: r.id, description: 'Recognised community activity' } : r; });
     // Do not expose suspended members as active directory entries. Retain authors already visible. Former members stay
     // visible to everyone as scrubbed records, so their kept posts and work read "Former member"; directories skip them.
-    s.members = s.members.filter(x => x.status !== 'suspended' || isAdmin(actor));
+    // A membership that left before account deletion existed may still hold its details, so every one is scrubbed here.
+    s.members = s.members.filter(x => x.status !== 'suspended' || isAdmin(actor)).map(x => x.status === 'left' ? formerMember(x) : x);
     s.uploads = visibleUploads(s, actor);
     return filterAssessments(filterAuthoring(filterCoverLibrary(filterInstructors(filterProjectWork(filterPurposeWorkspace(s, ctx, actor), actor), actor), actor), actor), actor);
 }

@@ -11,10 +11,10 @@ import { quizFingerprint } from '../packages/contracts/src/assessments';
 import { FORMER_MEMBER } from '../packages/contracts/src/account';
 import { MailQueue } from '../apps/api/src/mail';
 
-const ORG = 'org_code_black', NORTH = 'org_studio_north', SOFIA = 'member_sofia', IDRIS = 'member_idris';
+const ORG = 'org_code_black', NORTH = 'org_studio_north', RIVERSIDE = 'org_riverside', SOFIA = 'member_sofia', IDRIS = 'member_idris';
 const ALEX_EMAIL = 'alex@example.test';
 let db: Database, runtime: WorkspaceRepository, messaging: MessagingRepository, mail: MailQueue;
-let thread = '', privateFile = '', invitation = '';
+let thread = '', privateFile = '', invitation = '', unjoined = '', othersInvitation = '';
 /** Statements as the restricted runtime role, with forced row security, as the API runs them. */
 const asRuntime = <T>(organizationId: string, userId: string, fn: (sql: SQL) => Promise<T>, mark?: string) => db.transaction(async sql => {
     await sql.query('SET LOCAL ROLE reunir_app'); await setContext(sql, organizationId, userId);
@@ -68,6 +68,11 @@ before(async () => {
     invitation = randomUUID();
     await db.query("INSERT INTO invitations(id,organization_id,email,token_hash,created_by,expires_at,status,accepted_by,accepted_at) VALUES($1,$2,$3,$4,$5,now()+interval '7 days','accepted',$6,now())", [invitation, ORG, ALEX_EMAIL, 'a'.repeat(64), DEMO_ADMIN, DEMO_USER]);
     await mail.enqueue({ to: ALEX_EMAIL, subject: 'Your invitation to Code Black on REUNIR', text: 'Join your community.' }, db, ORG, invitation);
+    // A pending invitation to a community Alex never joined, and one to someone else there: only Alex's goes.
+    await db.query("INSERT INTO organisations(id,slug,name,tagline,accent,created_at) VALUES($1,'riverside','Riverside','A third community.','blue',now())", [RIVERSIDE]);
+    unjoined = randomUUID(); othersInvitation = randomUUID();
+    await db.query("INSERT INTO invitations(id,organization_id,email,token_hash,created_by,expires_at) VALUES($1,$2,$3,$4,$5,now()+interval '7 days'),($6,$2,'sofia@example.test',$7,$5,now()+interval '7 days')", [unjoined, RIVERSIDE, ALEX_EMAIL, 'b'.repeat(64), DEMO_ADMIN, othersInvitation, 'c'.repeat(64)]);
+    await mail.enqueue({ to: ALEX_EMAIL, subject: 'Your invitation to Riverside on REUNIR', text: 'Join your community.' }, db, RIVERSIDE, unjoined);
     await mail.enqueue({ to: 'Alex@Example.test', subject: 'Reset your REUNIR password', text: 'A reset link.' });
     await mail.enqueue({ to: 'sofia@example.test', subject: 'Reset your REUNIR password', text: 'A reset link.' });
     await db.query("INSERT INTO request_limits(key,count,window_start) VALUES($1,3,now())", [`member:${DEMO_USER}`]);
@@ -91,6 +96,12 @@ test('row security admits only the person’s own rows, and only while their own
     const memberships = (mark?: string) => asRuntime('', DEMO_USER, sql => sql.query<{ organization_id: string }>('SELECT organization_id FROM members WHERE user_id IN ($1,$2) ORDER BY organization_id', [DEMO_USER, SOFIA]).then(r => r.rows.map(x => x.organization_id)), mark);
     assert.deepEqual(await memberships(), [ORG]);
     assert.deepEqual(await memberships(DEMO_USER), [ORG, NORTH]);
+    // Invitations to the person's own address in a community they never joined, only with the mark.
+    const invitations = (mark?: string, who = DEMO_USER) => asRuntime('', who, sql => sql.query<{ id: string }>('SELECT id FROM invitations ORDER BY id').then(r => r.rows.map(x => x.id)), mark);
+    assert.deepEqual(await invitations(), []);
+    assert.deepEqual(await invitations(SOFIA), [], 'the mark must name the acting person');
+    assert.deepEqual(await invitations(DEMO_USER), [invitation, unjoined].sort());
+    assert.equal(await asRuntime('', SOFIA, sql => sql.query('DELETE FROM invitations WHERE id=$1 RETURNING id', [unjoined]).then(r => r.rows.length), SOFIA), 0, 'never someone else’s invitation');
 });
 
 test('an owner cannot delete their account, and nothing changes', async () => {
@@ -103,13 +114,13 @@ test('deleting an account scrubs every membership, keeps shared work as Former m
     const kept = { posts: await mine('posts', 'author_id'), comments: await mine('comments', 'author_id'), contributions: await mine('contributions'), team: await mine('project_members'), messages: await mine('messages', 'sender_id') };
     assert(Object.values(kept).every(n => n > 0), 'the fixture has shared work to keep');
     assert(await mine('quiz_attempts') && await mine('track_instructors') && await mine('member_blocks') && await mine('message_receipts'));
-    const revisions = await db.query<{ id: string; revision: number }>('SELECT id,revision::int FROM organisations ORDER BY id');
+    const revisions = await db.query<{ id: string; revision: number }>('SELECT id,revision::int FROM organisations WHERE id<>$1 ORDER BY id', [RIVERSIDE]);
     const { summary, files } = await runtime.deleteAccount(DEMO_USER, (sql, email) => mail.forget(email, sql));
     assert.equal(summary.communities, 2);
     assert.deepEqual(files, [privateFile], 'the private file is returned for removal from storage after commit');
     assert.equal(summary.releasedTasks, 1);
     assert.equal(summary.rewordedNotices, 3, 'the reply notice, and the contribution notices to the owner and the project lead');
-    assert.deepEqual([summary.removed.quizAttempts, summary.removed.trackInstructors, summary.removed.privateFiles, summary.removed.invitations, summary.removed.queuedMail, summary.removed.sessions, summary.removed.signInTokens], [1, 1, 1, 1, 1, 2, 1]);
+    assert.deepEqual([summary.removed.quizAttempts, summary.removed.trackInstructors, summary.removed.privateFiles, summary.removed.invitations, summary.removed.queuedMail, summary.removed.sessions, summary.removed.signInTokens], [1, 1, 1, 2, 1, 2, 1]);
     // Every membership, the suspended one included, is the same scrubbed record.
     const members = await db.query('SELECT organization_id,name,headline,bio,skills,colour,avatar,role,status FROM members WHERE user_id=$1 ORDER BY organization_id', [DEMO_USER]);
     for (const [i, org] of [ORG, NORTH].entries()) assert.deepEqual(members.rows[i], { organization_id: org, name: FORMER_MEMBER, headline: '', bio: '', skills: [], colour: 'neutral', avatar: '', role: 'member', status: 'left' });
@@ -123,7 +134,8 @@ test('deleting an account scrubs every membership, keeps shared work as Former m
     // Private records, learning and access are gone in both communities.
     for (const table of PERSONAL) assert.equal(await mine(table), 0, `${table} has nothing left`);
     assert.equal(await count("SELECT count(*)::int AS n FROM upload_intents WHERE user_id=$1 AND purpose='member'", [DEMO_USER]), 0);
-    assert.equal(await count('SELECT count(*)::int AS n FROM invitations WHERE email=$1', [ALEX_EMAIL]), 0);
+    assert.equal(await count('SELECT count(*)::int AS n FROM invitations WHERE email=$1', [ALEX_EMAIL]), 0, 'in every community, joined or not');
+    assert.equal(await count('SELECT count(*)::int AS n FROM invitations WHERE id=$1', [othersInvitation]), 1);
     // Sign-in, sessions, credentials, reset tokens, counters and queued mail to the address are gone; others' stay.
     for (const table of ['auth_user', 'auth_session', 'auth_account']) assert.equal(await count(`SELECT count(*)::int AS n FROM ${table} WHERE ${table === 'auth_user' ? 'id' : 'user_id'}=$1`, [DEMO_USER]), 0, table);
     assert.equal(await count('SELECT count(*)::int AS n FROM auth_verification WHERE value=$1', [DEMO_USER]), 0);
@@ -145,7 +157,7 @@ test('deleting an account scrubs every membership, keeps shared work as Former m
     const audit = await db.query<{ organization_id: string; metadata: Record<string, unknown> }>("SELECT organization_id,metadata FROM audit WHERE action='member.account.deleted' AND actor_id=$1 ORDER BY organization_id", [DEMO_USER]);
     assert.deepEqual(audit.rows.map(r => r.organization_id), [ORG, NORTH]);
     assert(!JSON.stringify(audit.rows).includes('Alex') && !JSON.stringify(audit.rows).includes(ALEX_EMAIL));
-    const after = await db.query<{ id: string; revision: number }>('SELECT id,revision::int FROM organisations ORDER BY id');
+    const after = await db.query<{ id: string; revision: number }>('SELECT id,revision::int FROM organisations WHERE id<>$1 ORDER BY id', [RIVERSIDE]);
     assert.deepEqual(after.rows.map(r => r.revision), revisions.rows.map(r => r.revision + 1));
     // Members see the kept record as Former member, so bylines still resolve; the directory can tell it apart.
     const seen = (await runtime.snapshot('code-black', SOFIA)).members.find(m => m.userId === DEMO_USER);

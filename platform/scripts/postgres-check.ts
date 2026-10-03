@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomUUID, randomBytes, createHash } from 'node:crypto';
 import { plainLessonDocument } from '../packages/contracts/src/lesson-document';
 import { lessonContent } from '../packages/domain/src/authoring';
 import { quizFingerprint } from '../packages/contracts/src/assessments';
@@ -12,6 +12,8 @@ import {runtimeRoleIsSafe} from '../packages/db/src/runtime-safety';
 import {WorkspaceRepository,setContext} from '../packages/db/src/repository';
 import {createSeed,DEMO_USER,DEMO_ADMIN} from '../packages/domain/src/seed';
 import {PilotOperations} from '../apps/api/src/operations';
+import {InvitationService} from '../apps/api/src/invitations';
+import {MailQueue} from '../apps/api/src/mail';
 import {inspectMigrations} from '../packages/db/src/inspection';
 const url=new URL(process.env.POSTGRES_TEST_URL||'http://unconfigured');
 if(!['postgres:','postgresql:'].includes(url.protocol)||!['127.0.0.1','localhost','[::1]'].includes(url.hostname)||url.pathname!=='/reunir_ci')throw new Error('This test requires a disposable loopback database named reunir_ci. It cannot target remote or customer databases.');
@@ -172,6 +174,23 @@ try{
         assert.equal((await admin.query('SELECT count(*)::int AS n FROM auth_user WHERE id=$1',[theo])).rows[0].n,0);
         assert.equal((await admin.query('SELECT count(*)::int AS n FROM project_members WHERE user_id=$1',[theo])).rows[0].n,2,'team places stay with the work');
         await assert.rejects(()=>repo.snapshot('code-black',theo),{code:'NOT_FOUND'});
+    });
+    await check('accepting an invitation waits for an account deletion under way, and adds no membership after it',async()=>{
+        const person='pg_newcomer',now=new Date().toISOString(),token=randomBytes(32).toString('base64url');
+        await admin.query("INSERT INTO auth_user(id,name,email,email_verified,created_at,updated_at) VALUES($1,'Noor Patel','noor@example.test',true,$2,$2)",[person,now]);
+        await admin.query("INSERT INTO invitations(id,organization_id,email,token_hash,created_by,expires_at) VALUES($1,'org_studio_north','noor@example.test',$2,$3,now()+interval '7 days')",[randomUUID(),createHash('sha256').update(token).digest('hex'),DEMO_ADMIN]);
+        const invitations=new InvitationService(new WorkspaceRepository(runtime!),'http://127.0.0.1:5173',new MailQueue(runtime!,'postgres_check_secret_5a4b3c2d1e0f9a8b7c6d'));
+        let accepting:Promise<string>|undefined;
+        // The deletion's first step, locking the account, is held open while the acceptance starts on another connection.
+        await runtime!.transaction(async tx=>{
+            await setContext(tx,'',person);await tx.query("SELECT set_config('app.account_deletion',$1,true)",[person]);
+            await tx.query('SELECT id FROM auth_user WHERE id=$1 FOR UPDATE',[person]);
+            accepting=invitations.accept(token,person).then(()=>'accepted',(e:{code?:string})=>e.code??'failed');
+            assert.equal(await Promise.race([accepting,new Promise(r=>setTimeout(()=>r('waiting'),500))]),'waiting','acceptance waits on the account lock');
+            await tx.query('DELETE FROM auth_user WHERE id=$1',[person]);
+        });
+        assert.equal(await accepting,'INVITE_ACCOUNT_MISMATCH');
+        assert.equal((await admin.query('SELECT count(*)::int AS n FROM members WHERE user_id=$1',[person])).rows[0].n,0,'no membership outlives the account');
     });
     await mkdir('evidence/alpha04',{recursive:true});await writeFile('evidence/alpha04/postgres-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Disposable local PostgreSQL service, not Neon.',results},null,2));
 }finally{await runtime?.close();await admin.close();}

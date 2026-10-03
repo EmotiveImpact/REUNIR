@@ -1,7 +1,8 @@
-import { DomainError, newId, type Member, type Workspace } from '../../contracts/src/index';
-import { FORMER_MEMBER, ownerRefusal } from '../../contracts/src/account';
+import { DomainError, newId, type Workspace } from '../../contracts/src/index';
+import { ownerRefusal } from '../../contracts/src/account';
 export { FORMER_MEMBER } from '../../contracts/src/account';
-export { isFormer } from './access';
+import { formerMember } from './access';
+export { isFormer, formerMember } from './access';
 
 /**
  * The person's own records, removed outright: goals, saved posts, inbox, reactions, attendance, private-space access,
@@ -18,10 +19,6 @@ export interface CommunityErasure {
     rewordedNotices: number;
 }
 
-/** What a scrubbed membership keeps: its identifiers and joining date. Everything that described the person goes. */
-function scrubbedMember(m: Member): Member {
-    return { ...m, name: FORMER_MEMBER, headline: '', bio: '', skills: [], colour: 'neutral', avatar: '', role: 'member', status: 'left' };
-}
 
 /**
  * Erase one person from one community's full state, as deleting their account does in every community. Posts, comments
@@ -35,7 +32,7 @@ export function eraseFromCommunity(input: Workspace, userId: string, now: string
     if (!member) throw new DomainError('NOT_FOUND', 'That person has no membership in this community.', 404);
     if (member.role === 'owner') throw new DomainError('OWNER_CANNOT_DELETE', ownerRefusal([s.organisation.name]), 409);
     const formerName = member.status === 'left' ? '' : member.name;
-    Object.assign(member, scrubbedMember(member));
+    Object.assign(member, formerMember(member));
     const removed = {} as Record<PersonalCollection, number>;
     for (const key of PERSONAL_COLLECTIONS) {
         const rows = s[key] as { userId: string; organizationId: string }[];

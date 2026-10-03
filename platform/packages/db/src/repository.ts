@@ -298,7 +298,7 @@ export class WorkspaceRepository {
      * Delete the acting person's account, in one transaction across every community they belong to. Each membership is
      * scrubbed to "Former member" and kept, with their posts, comments and project work; their own records go; their
      * sign-in, sessions and email address go. Owners are refused. The transaction is marked as their own account
-     * deletion, which is all that the policies in migration 0015 admit. Returns counts and the storage keys of their
+     * deletion, which is all that the policies in migrations 0015 and 0016 admit. Returns counts and the storage keys of their
      * private files, which the caller removes once this has committed.
      */
     async deleteAccount(userId: string, forgetMail?: (sql: SQL, email: string) => Promise<number>): Promise<{ summary: AccountDeletionSummary; files: string[] }> {
@@ -342,8 +342,6 @@ export class WorkspaceRepository {
                 await drop('memberBlocks', 'DELETE FROM member_blocks WHERE organization_id=$1 AND user_id=$2 RETURNING blocked_user_id', [orgId, userId]);
                 await drop('commandReceipts', 'DELETE FROM command_receipts WHERE organization_id=$1 AND user_id=$2 RETURNING request_key', [orgId, userId]);
                 files.push(...(await drop('privateFiles', "DELETE FROM upload_intents WHERE organization_id=$1 AND user_id=$2 AND purpose='member' RETURNING object_key", [orgId, userId])).map(r => String(r.object_key)));
-                // Invitations to their address hold their email; queued invitation mail goes with them (cascade).
-                await drop('invitations', 'DELETE FROM invitations WHERE organization_id=$1 AND lower(email)=lower($2) RETURNING id', [orgId, account.email]);
                 // 3. The audit entry, then the scrub as the last write: later policies would no longer see an active member.
                 const entry = after.audit.at(-1)!, member = after.members.find(m => m.userId === userId)!;
                 await sql.query('INSERT INTO audit(id,organization_id,created_at,actor_id,action,object_id,metadata) VALUES($1,$2,$3,$4,$5,$6,$7)', [entry.id, orgId, entry.createdAt, entry.actorId, entry.action, entry.objectId, JSON.stringify(entry.metadata)]);
@@ -351,8 +349,13 @@ export class WorkspaceRepository {
                 await sql.query('UPDATE organisations SET revision=$2 WHERE id=$1', [orgId, after.revision]);
                 releasedTasks += erasure.releasedTasks; rewordedNotices += erasure.rewordedNotices;
             }
-            // Account-wide: rate counters, reset tokens and queued mail for their address, then the sign-in itself.
+            // Accepting an invitation takes the account lock held here, so no membership can have been added meanwhile.
+            const held = (await sql.query<{ n: number }>('SELECT count(*)::int AS n FROM members WHERE user_id=$1', [userId])).rows[0].n;
+            if (held !== memberships.length) throw new Error('A membership changed during account deletion, so nothing was changed.');
+            // Account-wide: invitations to their address in any community, joined or not (queued invitation mail goes with
+            // them by cascade), rate counters, reset tokens and other queued mail, then the sign-in itself.
             await setContext(sql, '', userId);
+            await drop('invitations', 'DELETE FROM invitations WHERE email=lower($1) RETURNING id', [account.email]);
             await sql.query('DELETE FROM request_limits WHERE key = ANY($1::text[])', [[`member:${userId}`, `invite-admin:${userId}`, `account-delete:${userId}`]]);
             await drop('signInTokens', 'DELETE FROM auth_verification WHERE value=$1 OR lower(identifier)=lower($2) RETURNING id', [userId, account.email]);
             if (forgetMail) add('queuedMail', await forgetMail(sql, account.email));

@@ -115,3 +115,14 @@ test('erasing a membership that is already scrubbed changes nothing further', ()
     assert.deepEqual([twice.releasedTasks, twice.rewordedNotices], [0, 0]);
     assert.deepEqual(alex(twice.workspace), alex(once));
 });
+
+test('a membership that left before account deletion existed reaches the browser only as Former member', () => {
+    const s = createSeed(), legacy = alex(s);
+    Object.assign(legacy, { status: 'left' });
+    for (const viewer of ['member_sofia', DEMO_ADMIN]) {
+        const seen = visibleWorkspace(s, ctx(viewer)).members.find(m => m.userId === DEMO_USER)!;
+        assert.deepEqual({ name: seen.name, headline: seen.headline, bio: seen.bio, skills: seen.skills, avatar: seen.avatar, colour: seen.colour, role: seen.role, status: seen.status }, { name: FORMER_MEMBER, headline: '', bio: '', skills: [], avatar: '', colour: 'neutral', role: 'member', status: 'left' }, viewer);
+        assert(!JSON.stringify(visibleWorkspace(s, ctx(viewer)).members).includes('Alex Morgan'));
+    }
+    assert.equal(legacy.name, 'Alex Morgan', 'the stored record is not rewritten by a read');
+});
