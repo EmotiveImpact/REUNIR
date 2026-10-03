@@ -13,6 +13,7 @@ import { ZodError, z } from 'zod';
 import { createHash, timingSafeEqual, randomUUID } from 'node:crypto';
 import { DomainError } from '../../../packages/contracts/src/index';
 import { WorkspaceRepository } from '../../../packages/db/src/repository';
+import { ScannerUnavailable, type FileScanner } from './scanner';
 import { coverLibraryObjectKey, coverObjectKey, isMissingObject, objectKey, resourceObjectKey, uploadSchema, type PrivateStorage } from './storage';
 import { clientUpload, type StoredObservation } from '../../../packages/domain/src/resources';
 import { learningRecordFilename } from '../../../packages/domain/src/learning-record';
@@ -40,6 +41,8 @@ interface Dependencies {
     resolveSession: (headers: Headers) => Promise<SessionIdentity | null>;
     authHandler?: (request: Request) => Promise<Response>;
     storage?: PrivateStorage;
+    /** When present, every upload is scanned before it can become ready. Absent means type and size checks only. */
+    scanner?: FileScanner;
     invitations?: InvitationService;
     mail?: MailQueue;
     cronSecret?: string;
@@ -57,7 +60,7 @@ interface Dependencies {
     /** False for a link to change an address that was asked for before the password last changed. */
     emailChangeLinkValid?: (token: string) => Promise<boolean>;
 }
-export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, invitations, mail, cronSecret, registerInvited, verifyPassword, digests, retention, adminTwoFactor = 'optional', emailVerification = 'optional', changeEmail, emailChangeLinkValid }: Dependencies) {
+export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, scanner, invitations, mail, cronSecret, registerInvited, verifyPassword, digests, retention, adminTwoFactor = 'optional', emailVerification = 'optional', changeEmail, emailChangeLinkValid }: Dependencies) {
     const messaging=new MessagingRepository(repository);
     const canonical = new URL(origin).origin;
     const app = new Hono<{
@@ -80,7 +83,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     });
     app.get('/api/health', async (c) => { await repository.db.query('SELECT 1'); return c.json({ status: 'ok', version: RELEASE_VERSION, mode: 'live', database: repository.db.kind, storage: storage ? 'configured' : 'not-configured' }); });
     app.get('/api/health/live', c=>c.json({status:'ok',version:RELEASE_VERSION}));
-    app.get('/api/account/capabilities', c=>c.json({emailDigests:!!digests&&!!mail?.transport,invitations:!!invitations,passwordRecovery:!!mail?.transport,resourceUploads:!!storage,coverUploads:!!storage,twoStepSignIn:!!authHandler,adminTwoFactor,emailVerification,emailConfirmation:!!authHandler&&!!mail?.transport,emailChange:!!changeEmail&&!!mail?.transport}));
+    app.get('/api/account/capabilities', c=>c.json({emailDigests:!!digests&&!!mail?.transport,invitations:!!invitations,passwordRecovery:!!mail?.transport,resourceUploads:!!storage,coverUploads:!!storage,uploadScanning:!!storage&&!!scanner,twoStepSignIn:!!authHandler,adminTwoFactor,emailVerification,emailConfirmation:!!authHandler&&!!mail?.transport,emailChange:!!changeEmail&&!!mail?.transport}));
     // Best effort after commit: an orphaned object is private and unreferenced, never served.
     const removeQuietly = async (requestId: string, keys: string[]) => { for (const key of keys) {
         try { await storage?.remove(key); }
@@ -284,56 +287,102 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         const slug = c.req.param('slug'), who = c.get('identity').id, id = c.req.param('id');
         const intent = await repository.uploadIntent(slug, who, id);
         const key = String(intent.object_key);
-        /** Size, type and generation as stored, plus the first bytes pinned to that generation. */
+        /**
+         * Size, type and generation as stored, plus the first bytes pinned to that generation. With a scanner, the whole
+         * of that generation is read once and scanned; it is the generation the upload records, so what was scanned is
+         * exactly what is later served.
+         */
         const inspect = async (bytes: number) => {
             const meta = await storage.metadata(key);
             if (!meta)
                 throw new DomainError('UPLOAD_MISSING', 'The file has not reached private storage. Try uploading it again.', 409);
             const matches = meta.size === Number(intent.size_bytes) && meta.contentType === intent.content_type && !!meta.generation;
-            let head: Uint8Array = new Uint8Array();
+            let head: Uint8Array = new Uint8Array(), flagged = false;
             if (matches) {
-                try { head = await storage.head(key, Math.min(bytes, meta.size), meta.generation!); }
+                let read: Uint8Array;
+                try { read = await storage.head(key, scanner ? meta.size : Math.min(bytes, meta.size), meta.generation!); }
                 catch (error) {
                     if (isMissingObject(error))
                         throw new DomainError('UPLOAD_CHANGED', 'The file changed while it was being checked. Upload it again.', 409);
                     throw error;
                 }
+                head = read.subarray(0, bytes);
+                flagged = !!scanner && !(await scan(read));
             }
-            return { meta, matches, head };
+            return { meta, matches, head, flagged };
         };
+        /** True when clean. Without a verdict the upload stays pending, so the person can try again once scanning is back. */
+        const scan = async (bytes: Uint8Array) => {
+            let verdict;
+            try { verdict = await scanner!.scan(bytes); }
+            catch (error) {
+                if (!(error instanceof ScannerUnavailable)) throw error;
+                console.error(JSON.stringify({ event: 'upload.scan.unavailable', requestId: c.get('requestId'), reason: error.message }));
+                throw new DomainError('SCAN_UNAVAILABLE', 'Files cannot be checked for viruses just now. Nothing was lost; try again in a few minutes.', 503);
+            }
+            if (!verdict.clean)
+                console.error(JSON.stringify({ event: 'upload.scan.flagged', requestId: c.get('requestId'), signature: verdict.signature }));
+            return verdict.clean;
+        };
+        const FLAGGED = 'This file was flagged by the virus scanner and has been deleted. Nothing was changed.';
         if (intent.purpose === 'cover_image' || intent.purpose === 'cover_library') {
-            let observed = { sizeBytes: 0, contentType: '', generation: null as string | null, bytesAcceptable: false };
+            let observed = { sizeBytes: 0, contentType: '', generation: null as string | null, bytesAcceptable: false }, infected = false;
             if (intent.status === 'pending') {
-                const { meta, matches, head } = await inspect(COVER_HEAD_BYTES);
-                observed = { sizeBytes: meta.size, contentType: meta.contentType, generation: meta.generation ?? null, bytesAcceptable: matches && coverBytesAcceptable(String(intent.content_type), head) };
+                const { meta, matches, head, flagged } = await inspect(COVER_HEAD_BYTES);
+                observed = { sizeBytes: meta.size, contentType: meta.contentType, generation: meta.generation ?? null, bytesAcceptable: matches && !flagged && coverBytesAcceptable(String(intent.content_type), head) };
+                infected = flagged;
             }
             const result = await repository.completeCoverUpload(slug, who, id, observed, c.get('requestId'));
             if (result.outcome === 'rejected') {
                 await removeQuietly(c.get('requestId'), [key]);
+                if (infected)
+                    throw new DomainError('FILE_FLAGGED', FLAGGED, 422);
                 throw new DomainError('FILE_MISMATCH', 'This image is not a JPEG, PNG or WebP of a usable size. Nothing was changed.');
             }
             return c.json({ id, status: 'ready', upload: clientUpload(result.upload) });
         }
         if (intent.purpose === 'lesson_resource') {
-            let observed: StoredObservation = { sizeBytes: 0, contentType: '', generation: null, signatureMatches: false };
+            let observed: StoredObservation = { sizeBytes: 0, contentType: '', generation: null, signatureMatches: false }, infected = false;
             if (intent.status === 'pending') {
                 // Read only the first bytes, pinned to the generation that was just measured.
-                const { meta, matches, head } = await inspect(SIGNATURE_BYTES);
-                observed = { sizeBytes: meta.size, contentType: meta.contentType, generation: meta.generation ?? null, signatureMatches: matches && fileSignatureMatches(String(intent.content_type), head) };
+                const { meta, matches, head, flagged } = await inspect(SIGNATURE_BYTES);
+                observed = { sizeBytes: meta.size, contentType: meta.contentType, generation: meta.generation ?? null, signatureMatches: matches && !flagged && fileSignatureMatches(String(intent.content_type), head) };
+                infected = flagged;
             }
             const result = await repository.completeResourceUpload(slug, who, id, observed, c.get('requestId'));
             if (result.outcome === 'rejected') {
                 await removeQuietly(c.get('requestId'), [key]);
+                if (infected)
+                    throw new DomainError('FILE_FLAGGED', FLAGGED, 422);
                 throw new DomainError('FILE_MISMATCH', 'This file does not match its declared type and size. Nothing was attached.');
             }
             return c.json({ id, status: 'ready', upload: clientUpload(result.upload) });
         }
+        // A rejected file stays rejected, so a second upload under the same policy cannot slip past the scanner.
+        if (intent.status === 'rejected')
+            throw new DomainError('FILE_REJECTED', 'This file did not pass verification. Choose it again.', 409);
         const meta = await storage.metadata(key);
         if (!meta)
             throw new DomainError('UPLOAD_MISSING', 'The file has not reached private storage. Try uploading it again.', 409);
         if (meta.size !== Number(intent.size_bytes) || meta.contentType !== intent.content_type) {
             await repository.markUpload(slug, who, id, 'rejected');
             throw new DomainError('FILE_MISMATCH', 'The uploaded file does not match the permitted type and size.');
+        }
+        if (scanner) {
+            if (!meta.generation)
+                throw new DomainError('UPLOAD_CHANGED', 'The file changed while it was being checked. Upload it again.', 409);
+            let bytes: Uint8Array;
+            try { bytes = await storage.head(key, meta.size, meta.generation); }
+            catch (error) {
+                if (isMissingObject(error))
+                    throw new DomainError('UPLOAD_CHANGED', 'The file changed while it was being checked. Upload it again.', 409);
+                throw error;
+            }
+            if (!(await scan(bytes))) {
+                await repository.markUpload(slug, who, id, 'rejected');
+                await removeQuietly(c.get('requestId'), [key]);
+                throw new DomainError('FILE_FLAGGED', FLAGGED, 422);
+            }
         }
         await repository.markUpload(slug, who, id, 'ready');
         return c.json({ id, status: 'ready' });

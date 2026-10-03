@@ -8,9 +8,42 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### 0.31.0-alpha.1 (Alpha 31): data retention rules, 3 October 2026
+### 0.32.0-alpha.1 (Alpha 32): appealing a hidden post, 3 October 2026
 
-On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. Numbering follows the project's allocation of 3 October 2026: this thread holds Alpha 31 to 34, decision records 031 to 034 and migrations 0030 to 0033, so data retention is Alpha 31, decision 031 and migration 0030 (first opened as Alpha 27 with migration 0023).
+On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. This thread holds Alpha 31 to 34 and migrations 0030 to 0033, so this is Alpha 32 with decision 032 and migration 0031.
+
+**In plain language:** when a moderator hides your post, you are now told, you can still see it, and you can ask for it to be looked at again. An owner or administrator who did not hide it decides, writes you a reply, and either restores the post or keeps it hidden. Appeals are private to you and the people who decide them.
+
+Details:
+
+- New **Appeals** page: your hidden posts, your appeals and their outcomes, and for owners and administrators the appeals waiting for a decision. The Moderation tab in the community studio lists open appeals.
+- The person who hid the post, and the appellant, can never decide the appeal. If nobody else can, the appeal waits and both sides are told why.
+- One open appeal per hiding; withdrawing allows another; a decided appeal closes that hiding.
+- Additive migration 0031: `posts.moderated_by` and `posts.moderated_at`, and `moderation_appeals` under forced row security, with column-level updates on the decision fields only. Existing posts are not backfilled.
+- Deleting your account removes your appeals; the decisions stay in the audit trail.
+- Suspension, task-note removal and message reports are not appealable here (decision 032).
+
+### Planned
+
+- A correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+
+## Alpha 23: virus scanning of uploads (no version change), 3 October 2026
+
+On main through [PR #16](https://github.com/EmotiveImpact/REUNIR/pull/16), merged as `16b2768`.
+
+**In plain language:** once a virus scanner is connected, every file people upload (lesson files, cover pictures, library pictures and attachments) is checked before anyone can use it. A flagged file is deleted straight away and the uploader is told why. If the scanner is briefly unavailable, the upload simply waits and can be tried again.
+
+Details:
+
+- ClamAV's clamd is reached over TCP with its `INSTREAM` command (`CLAMAV_HOST`, `CLAMAV_PORT`); no new runtime dependency and no paid service.
+- The whole stored file is scanned at the exact generation that is then recorded and served. Flagged files return 422 `FILE_FLAGGED` and are deleted; no verdict returns 503 `SCAN_UNAVAILABLE` and the upload stays pending.
+- `UPLOAD_SCANNING` (`required` or `optional`, required by default in production): with a bucket and no scanner, a production server will not start. `npm run scan:check` tests a configured clamd with the EICAR test file (decision 023).
+- `npm run launch:preflight` and LAUNCH_RUNBOOK.md cover the scanner: clamd runs on a private network beside the API, since Vercel functions cannot run it.
+- A rejected member attachment can no longer be completed again. No database migration.
+
+## 0.31.0-alpha.1 (Alpha 31): data retention rules, 3 October 2026
+
+On main through [PR #23](https://github.com/EmotiveImpact/REUNIR/pull/23), merged as `b80fc04`.
 
 **In plain language:** REUNIR now clears its own housekeeping on a schedule: expired sign-in sessions and links, old rate counters, technical receipts, records of email already sent and notices people read long ago. What people make, reviewed evidence and the audit trail are never cleared by it. Your account has a new **How long things are kept** panel that says what is kept and for how long.
 
@@ -20,10 +53,6 @@ Details:
 - `npm run retention:run` is a dry run with exact counts; `RETENTION=apply` clears. An authenticated `GET /api/internal/retention` applies the rules on a schedule, `?dry=1` only counts. Counts per rule only, never contents.
 - Additive migration 0030: a read-only policy so the job lists communities only as its own worker, and an index for read notices. Each community's records are cleared inside that community's tenant context.
 - Nothing is scheduled; the operator chooses a daily schedule.
-
-### Planned
-
-- Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
 
 ## 0.27.0-alpha.1 (Alpha 27): loading, error and empty screens, 3 October 2026
 

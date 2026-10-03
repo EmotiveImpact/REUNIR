@@ -12,23 +12,35 @@ import { actorFor, canSeeSpace, isAdmin, isFormer, isModerator } from './access'
 export const appealPost = (s: Workspace, appeal: Pick<ModerationAppeal, 'organizationId' | 'subjectId'>): Post | undefined =>
     s.posts.find(p => p.id === appeal.subjectId && p.organizationId === appeal.organizationId);
 
+/**
+ * Whether the hiding an appeal challenges is still the post's latest moderation. If the post was restored or hidden again
+ * since, the appeal no longer applies: deciding it would overrule a later decision it never challenged.
+ */
+export function appealIsCurrent(s: Workspace, appeal: ModerationAppeal): boolean {
+    const post = appealPost(s, appeal);
+    return !!post && (post.moderatedAt ?? null) === (appeal.hiddenAt ?? null);
+}
+
 /** Whether this member may decide this appeal: an active owner or administrator who is neither the appellant nor the moderator. */
 export function mayDecide(s: Workspace, member: Member, appeal: ModerationAppeal): boolean {
     if (member.status !== 'active' || !isAdmin(member) || member.organizationId !== appeal.organizationId) return false;
-    if (member.userId === appeal.appellantId) return false;
-    return (appealPost(s, appeal)?.moderatedBy ?? null) !== member.userId;
+    if (member.userId === appeal.appellantId || member.userId === appeal.hiddenBy) return false;
+    return appealIsCurrent(s, appeal) && (appealPost(s, appeal)?.moderatedBy ?? null) !== member.userId;
 }
 
 /** Everyone who could decide the appeal now. Empty means it waits until the community has such a person. */
 export const appealDeciders = (s: Workspace, appeal: ModerationAppeal): Member[] =>
     s.members.filter(m => mayDecide(s, m, appeal));
 
+const OUTDATED = 'The post was moderated again after this appeal was made, so the appeal no longer applies. The author can appeal the current decision.';
+
 /** Why a member cannot decide an appeal they can see, in words for the screen; null when they can. */
 export function decisionBlock(s: Workspace, member: Member, appeal: ModerationAppeal): string | null {
     if (appeal.status !== 'pending') return 'This appeal has been closed.';
+    if (!appealIsCurrent(s, appeal)) return OUTDATED;
     if (!isAdmin(member)) return 'Only an owner or administrator decides appeals.';
     if (member.userId === appeal.appellantId) return 'Another owner or administrator decides your own appeal.';
-    if ((appealPost(s, appeal)?.moderatedBy ?? null) === member.userId) return 'You hid this post, so another owner or administrator decides.';
+    if (appeal.hiddenBy === member.userId || (appealPost(s, appeal)?.moderatedBy ?? null) === member.userId) return 'You hid this post, so another owner or administrator decides.';
     return null;
 }
 
@@ -58,12 +70,15 @@ export function applyAppeals(s: Workspace, ctx: TenantContext, cmd: Command, now
         if (post.authorId !== ctx.userId) throw new DomainError('NOT_AUTHOR', 'Only the person who wrote a post can appeal its moderation.', 403);
         if (!post.hidden) throw new DomainError('NOT_HIDDEN', 'This post is visible to members, so there is nothing to appeal.', 409);
         const mine = s.moderationAppeals.filter(a => a.organizationId === ctx.organizationId && a.subject === 'post' && a.subjectId === post.id);
-        if (mine.some(a => a.status === 'pending')) throw new DomainError('APPEAL_OPEN', 'Your appeal about this post is already waiting for a decision.', 409);
-        // One decided appeal per hiding: a later hiding, after the post was restored, can be appealed again.
         const hiddenAt = post.moderatedAt ?? null;
-        if (mine.some(a => (a.status === 'upheld' || a.status === 'reversed') && (hiddenAt === null || a.createdAt >= hiddenAt)))
+        const open = mine.find(a => a.status === 'pending');
+        if (open && (open.hiddenAt ?? null) === hiddenAt) throw new DomainError('APPEAL_OPEN', 'Your appeal about this post is already waiting for a decision.', 409);
+        // One decided appeal per hiding: a later hiding, after the post was restored, can be appealed again.
+        if (mine.some(a => (a.status === 'upheld' || a.status === 'reversed') && (a.hiddenAt ?? null) === hiddenAt))
             throw new DomainError('APPEAL_DECIDED', 'An appeal about this hiding has already been decided.', 409);
-        const appeal: ModerationAppeal = { ...base(), subject: 'post', subjectId: post.id, appellantId: ctx.userId, reason: cmd.reason, status: 'pending', decidedBy: null, decidedAt: null, response: '' };
+        // An open appeal about an earlier hiding no longer applies; the new appeal replaces it.
+        if (open) { Object.assign(open, { status: 'withdrawn', decidedAt: now }); audit('moderation.appeal.withdrawn', open.id, { postId: post.id, replacedByLaterHiding: true }); }
+        const appeal: ModerationAppeal = { ...base(), subject: 'post', subjectId: post.id, appellantId: ctx.userId, hiddenBy: post.moderatedBy ?? null, hiddenAt, reason: cmd.reason, status: 'pending', decidedBy: null, decidedAt: null, response: '' };
         s.moderationAppeals.push(appeal);
         const deciders = appealDeciders(s, appeal);
         for (const d of deciders) notify(d.userId, 'An appeal to decide', `${actor.name} asked for a second look at a hidden post.`);
@@ -91,9 +106,8 @@ export function applyAppeals(s: Workspace, ctx: TenantContext, cmd: Command, now
     if (appeal.appellantId === ctx.userId) throw new DomainError('SELF_DECISION', 'Another owner or administrator decides your own appeal.', 403);
     const post = appealPost(s, appeal);
     if (!post) throw missing();
-    if ((post.moderatedBy ?? null) === ctx.userId) throw new DomainError('MODERATOR_CANNOT_DECIDE', 'You hid this post, so another owner or administrator decides.', 403);
-    if (cmd.decision === 'upheld' && !post.hidden)
-        throw new DomainError('ALREADY_RESTORED', 'This post is visible again, so it cannot be kept hidden. Reverse the decision to close the appeal.', 409);
+    if (!appealIsCurrent(s, appeal)) throw new DomainError('APPEAL_OUTDATED', OUTDATED, 409);
+    if (appeal.hiddenBy === ctx.userId || (post.moderatedBy ?? null) === ctx.userId) throw new DomainError('MODERATOR_CANNOT_DECIDE', 'You hid this post, so another owner or administrator decides.', 403);
     Object.assign(appeal, { status: cmd.decision, decidedBy: ctx.userId, decidedAt: now, response: cmd.response });
     const wasHidden = post.hidden;
     // Reversal restores the post. Who hid it, and when, stay on the post; the appeal records who restored it.
