@@ -122,6 +122,14 @@ try {
         await expect(page.getByRole('menuitem', { name: /Preview as instructor/ })).toHaveCount(1);
         await page.keyboard.press('Escape');
     });
+    await check('restarting straight after deleting the first persona brings it back', async () => {
+        await deleteDemoAccount();
+        await page.getByRole('button', { name: 'Restart the demo', exact: true }).click();
+        await expect(page.locator('.topbar')).toBeVisible();
+        await page.getByRole('button', { name: 'Account menu', exact: true }).click();
+        await expect(page.locator('.account-menu strong').first()).toHaveText('Alex Morgan');
+        await page.keyboard.press('Escape');
+    });
     await check('the account page and dialogue fit a phone screen', async () => {
         await page.setViewportSize({ width: 390, height: 844 });
         await account(); await overflow();
