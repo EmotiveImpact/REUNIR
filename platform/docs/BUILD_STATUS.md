@@ -29,7 +29,7 @@ Numbering: Parallel threads now take numbers from agreed blocks, and this one ho
 
 ## Local verification, 3 October 2026
 
-Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). The full run below, every step including the new states suite, ran on this branch's tree on top of main `f9f32d6`. An earlier full run on top of main `9b34cac`, before the renumbering to Alpha 39, also passed.
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). The full run below, every step including the new states suite, ran on this branch's tree on top of main `b80fc04`. An earlier full run on top of main `9b34cac`, before the renumbering to Alpha 39, also passed.
 
 | Check | Result |
 | --- | --- |
@@ -37,9 +37,9 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | `npm test` | 708 passed, 0 failed (683 on main `b80fc04` plus 25: 6 library management, 6 small copies, 6 database tests under the restricted role including cross-tenant and inactive-role refusals, 7 HTTP) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
-| Demo-browser suites | 311 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 20 covers (3 new), 11 instructors, 12 accounts, 16 monochrome, 20 v4, 5 notifications, 11 groups, 12 states |
+| Demo-browser suites | 312 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 20 covers (3 new), 11 instructors, 13 accounts, 16 monochrome, 20 v4, 5 notifications, 11 groups, 12 states |
 | Connected-browser suites | 64 passed: 12 connected, 9 resources, 9 assessments, 15 covers (2 new), 6 instructors, 13 accounts |
-| `npm run test:postgres` | 22 passed on PostgreSQL 16 (1 new for renaming and tagging through the restricted role; the existing library case now checks that changing the picture itself is refused) |
+| `npm run test:postgres` | 23 passed on PostgreSQL 16 (1 new for renaming and tagging through the restricted role; the existing library case now checks that changing the picture itself is refused) |
 | Python helpers, `scripts/check_research.py` | 35 passed; the register validates with 55 pinned sources and 18 register decisions |
 
 Tests changed rather than added: upgrade tests count the migration files (from PR #20), and the 0038 upgrade test starts from a database at 0022; the 0009, 0011 and 0013 upgrade tests strip the four new upload columns and assert they are empty; the operator-erasure test seeds its 0013-era database without uploads or library pictures; the library grant test also asserts the two updatable columns; the two-step sign-in HTTP test lists the new route among those that refuse.
@@ -97,7 +97,7 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | `npm run build`, `npm run bundle:preview` | Passed |
 | Demo-browser suites | `accounts` 13 (1 new: the retention panel, at phone width too), `monochrome` 16, `v4` 20 |
 | Connected-browser suites | `accounts-connected` 13; `instructors` 11 after the Alpha 25 merge; `states` 12 after the Alpha 27 merge |
-| `npm run test:postgres` | 22 passed on PostgreSQL 16 (1 new: the worker policy and a dry and real run through the restricted runtime role) |
+| `npm run test:postgres` | 23 passed on PostgreSQL 16 (1 new: the worker policy and a dry and real run through the restricted runtime role) |
 | Python helpers | 35 passed; research register valid |
 
 ## Not verified, and why
