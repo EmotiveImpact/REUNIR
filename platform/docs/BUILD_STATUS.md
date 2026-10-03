@@ -1,4 +1,39 @@
-# Alpha 29 files on project tasks and live project work
+# Alpha 30 every form on the shared shadcn components
+
+3 October 2026. Release 0.30.0-alpha.1; the package version stays at 0.39.0-alpha.1, set by Alpha 39 on main. Every form in the web app uses the shared shadcn Input, Textarea, Label, Native Select, Checkbox, Radio Group, Switch and Button. See decisions/030-shared-form-components.md and FORMS.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of Alpha 29 |
+| Verified locally | Yes, the checks below |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. Nothing was provisioned |
+| Operated with real members | No |
+
+## What changed
+
+- Seven adapted shadcn new-york-v4 components in `apps/web/src/components/ui`, pinned by registry blob in THIRD_PARTY_NOTICES.md and `research/reuse-register.json`. Four Radix packages at exact versions: `react-checkbox` 1.3.3, `react-label` 2.1.7, `react-radio-group` 1.3.8, `react-switch` 1.2.6; the only new transitive package is `react-use-previous` 1.1.1.
+- A mechanical swap across every page and component with a form, including collections, group conversations, task files, email address change, teaching roles and the loading, error and empty states. Names, ids, labels, validation and handlers are unchanged; legacy button classes are kept on Button so sizes and phone layouts stay.
+- `forms.css` gives the Radix controls a neutral, monochrome border and fill. Modal keeps its native modal `dialog` with shadcn slots.
+- No migration, no API change, no grant change.
+
+## Local verification, 3 October 2026
+
+On this branch, on top of Alpha 29 and main `99e919a`: typecheck, build and bundle passed; `npm test` 857 passed, 0 failed (after Alpha 29's review fixes and main's Alpha 35, 32, 33, 34 and 36); Python helpers including `test_forms_contract.py` passed; browser suites `forms` 10, `evidence` 7, `appeals` 7, `covers` 20, `covers-connected` 15, `instructors` 13, `instructors-connected` 6, `authoring` 27, `v4` 20, `monochrome` 16, `task-files` 12, `curation` 9, `states` 12, `work` 29, `accounts` 13, `groups` 11 and `credits` 7 passed. Alpha 39's new cover library fields (tags, the edit dialogue, the picture search and its radio choices) Alpha 35's lesson choices for teaching grants (a radio group, lesson checkboxes, role selects and buttons) Alpha 32's appeal forms and Alpha 33's evidence correction forms and Alpha 34's credit buttons and credit dialogue, and Alpha 36's track buttons on the learning and teaching pages, were moved onto the shared components while merging; the instructor browser check now finds the lesson checkboxes by role.
+
+## Not verified, and why
+
+- Real screen readers; the axe checks and keyboard paths in `test:browser:forms` stand in.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Confirm a real bucket and a real scanner on task files when deployment is switched on.
+
+## Historical evidence: Alpha 29 files on project tasks and live project work
 
 3 October 2026. Release 0.29.0-alpha.1; the package version stays at 0.39.0-alpha.1, set by Alpha 39 on main. Project teams attach files to tasks through the shared verified upload path, boards and open tasks refresh when teammates change something, and concurrent edits are caught and explained. See decisions/029-task-files-and-live-project-work.md and PROJECT_WORK.md.
 
@@ -6,7 +41,7 @@
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of main `94b130b` (PR #25, Alpha 28, merged 3 October 2026; tree identical to its tested head `e4d69fa`), with main `3c770b5` (Alpha 35 teaching grants for chosen lessons) `f3efa39` (Alpha 32 appealing a hidden post) `e930e39` (Alpha 33 correcting and withdrawing reviewed evidence) and `5f7b827` (Alpha 34 crediting teammates) merged in |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of main `94b130b` (PR #25, Alpha 28, merged 3 October 2026; tree identical to its tested head `e4d69fa`), with main `3c770b5` (Alpha 35 teaching grants for chosen lessons) `f3efa39` (Alpha 32 appealing a hidden post) `e930e39` (Alpha 33 correcting and withdrawing reviewed evidence) `5f7b827` (Alpha 34 crediting teammates) and `99e919a` (Alpha 36 instructors start their own tracks) merged in |
 | Verified locally | Yes: the full suite on base `b24095a`, and the checks below on top of Alpha 28 and main `0a818fa` |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
@@ -28,7 +63,7 @@
 
 On base `b24095a` (by the building agent): typecheck, builds, `npm test` 657 passed (32 new), `test:http` 19, every demo suite including the new `test:browser:task-files` (12, plus four repeat runs after fixing a timing race), every connected suite (60), `test:postgres` 21 on PostgreSQL 16, Python helpers 35 and the research register.
 
-On this branch, on top of Alpha 28 and main `0a818fa`: typecheck, build and bundle passed; `npm test` 850 passed, 0 failed after merging main `5f7b827` (the 0029 upgrade test now seeds with main's schema-aware `seedAtSchema`; including the new scanned task file test, a race for the last file place on a task, and two upgrade tests that now expect both the 0029 and 0038 columns); `test:http` 19 passed; `test:postgres` runs in CI (it last passed locally with 23 before main's 0038); `task-files` 12, `work` 29, `states` 12, `curation` 9, `covers` 20, `instructors` 12, `appeals` 7, `evidence` 7, `credits` 7, `v4` 20 and `monochrome` 16 passed.
+On this branch, on top of Alpha 28 and main `0a818fa`: typecheck, build and bundle passed; `npm test` 857 passed, 0 failed after merging main `99e919a` (the 0029 upgrade test now seeds with main's schema-aware `seedAtSchema`; including the new scanned task file test, a race for the last file place on a task, and two upgrade tests that now expect both the 0029 and 0038 columns); `test:http` 19 passed; `test:postgres` runs in CI (it last passed locally with 23 before main's 0038); `task-files` 12, `work` 29, `states` 12, `curation` 9, `covers` 20, `instructors` 13, `authoring` 27, `appeals` 7, `evidence` 7, `credits` 7, `v4` 20 and `monochrome` 16 passed.
 
 ## Not verified, and why
 
@@ -40,7 +75,59 @@ On this branch, on top of Alpha 28 and main `0a818fa`: typecheck, build and bund
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. Shared form components (Alpha 30).
 
-## Historical evidence: Alpha 34 crediting teammates on a contribution
+## Historical evidence: Alpha 36 instructors start their own tracks
+
+3 October 2026. Application version stays 0.39.0-alpha.1: Alpha 39 is already on main. An active instructor of a whole track starts a new track. It stays unpublished, seen only by its teachers and the community's owners and administrators, until an owner or administrator publishes it. See decisions/036-instructor-tracks.md and INSTRUCTORS.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `3c770b5` (the merge of PR #24, Alpha 35, which brought Alpha 23, 28 and 39), with main `f3efa39` (PR #26, Alpha 32 appeals) and main `e930e39` (PR #29, Alpha 33 evidence history) and main `5f7b827` (PR #30, Alpha 34 credits) merged in |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+Numbering: Alpha 36, decision 036 and migration 0035 come from the block allocated to courses and teaching (Alpha 35 to 38, migrations 0034 to 0037).
+
+## What changed
+
+- **Start a track** on Learning and on the Teaching page for active instructors of at least one whole track. `track.create` from anyone else who is not an owner or administrator is refused with 403 `TRACK_STARTER_REQUIRED`; contributors and lesson-only grants do not qualify.
+- An instructor's track starts unpublished, authored by them, with a whole-track instructor grant in their own name. Members see nothing of it, its lessons or its cover; its teachers and administrators see it marked **Not published**. Administrators are told it was started.
+- **Publish track** (`track.publish`, owners and administrators, idempotent) makes it visible, records `track.published` in the audit and tells the starter.
+- Review fix on PR #28: an unpublished track's lessons show that members can join once it is published, instead of a **Join this track** button its own instructor could never use.
+- An administrator who also teaches still needs two-step sign-in, where required, to create a published track, because the command would turn out differently without administrator authority.
+- Additive migration `0035_instructor_tracks.sql`: one INSERT policy on `track_instructors`, `instructor_own_track`, admitting only the starter's own grant on a new unpublished track they authored while they actively teach another whole track. Earlier migrations are byte-identical; no grant change.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 823 passed, 0 failed after main's Alpha 32, 33 and 34 were merged in; the suites below ran just before it (7 new in `tests/instructor-tracks.test.ts` and `tests/instructor-tracks-database.test.ts`) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 299 passed across 17 suites, including 13 instructor checks (1 new: an instructor starts a track, members see it only after an administrator publishes it) |
+| Connected-browser suites | 64 passed (unchanged) |
+| `npm run test:postgres` | 24 passed on PostgreSQL 16 |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
+
+## Not verified, and why
+
+- Instructors cannot archive or delete a track they started, and there is no way to withdraw a started track except through an administrator.
+- The connected browser suite does not start a track; the policy is covered by the database tests through the restricted runtime role.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Uploaded lesson video (Alpha 37, migration 0036), off until the operator sets `LESSON_VIDEO_MAX_MB`.
+3. When deployment resumes: follow LAUNCH_RUNBOOK.md and run `npm run db:migrate`.
+
+## Historical Alpha 34 evidence: crediting teammates on a contribution
 
 3 October 2026. The application version stays 0.39.0-alpha.1: Alpha 39 (PR #21) reached main first. The author of a contribution credits teammates; each person accepts or declines; accepted credits show on the contribution and the person's profile and never count as evidence. See decisions/034-contribution-credits.md and CREDITS.md.
 
@@ -53,7 +140,7 @@ Numbering: this thread holds Alpha 31 to 34, decisions 031 to 034 and migrations
 | Implemented | Yes, on `claude/accounts-trust-zojuqs`, restarted from main `e930e39` (the merge of PR #29, Alpha 33) |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Merged | Yes: [PR #30](https://github.com/EmotiveImpact/REUNIR/pull/30), merged into main as `5f7b827` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 
@@ -103,7 +190,7 @@ Numbering: this thread holds Alpha 31 to 34, decisions 031 to 034 and migrations
 | --- | --- |
 | Implemented | Yes, on `claude/accounts-trust-zojuqs`, restarted from main `f3efa39` (the merge of PR #26, Alpha 32) |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Yes: runs 37147217690 and 37147220863 (application and postgres) on `e8569eb` |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Yes: [PR #29](https://github.com/EmotiveImpact/REUNIR/pull/29), merged into main as `e930e39` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
@@ -153,7 +240,7 @@ Numbering: this thread holds Alpha 31 to 34, decisions 031 to 034 and migrations
 | --- | --- |
 | Implemented | Yes, on `claude/accounts-trust-zojuqs`, restarted from main `b80fc04` (the merge of PR #23, Alpha 31), with main `16b2768` (PR #16, Alpha 23 virus scanning) main `0a818fa` (PR #21, Alpha 39 cover library management, migration 0038) and main `94b130b` (PR #25, Alpha 28 collections, migration 0028) and main `3c770b5` (PR #24, Alpha 35 lesson grants, migration 0034) merged in |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Yes: runs 37145103758 and 37145107626 (application and postgres) on `fcdd0f8` |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Yes: [PR #26](https://github.com/EmotiveImpact/REUNIR/pull/26), merged into main as `f3efa39` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
@@ -422,7 +509,7 @@ Numbering follows the project's allocation of 3 October 2026: this thread holds 
 | --- | --- |
 | Implemented | Yes, on `claude/accounts-trust-zojuqs`, restarted from main `9b34cac` (the merge of PR #18, Alpha 26), with main `fab9510` (PR #20, Alpha 25 contributor roles, migration 0023) and main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) merged in |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Yes: runs 37128602184 and 37128604626 (application and postgres) on `5635bde` |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Yes: [PR #23](https://github.com/EmotiveImpact/REUNIR/pull/23), merged into main as `b80fc04` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |

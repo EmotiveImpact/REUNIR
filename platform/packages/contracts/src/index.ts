@@ -551,6 +551,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('collection.items.reorder'), collectionId: id, expectedOrder: z.array(id).max(100), itemIds: z.array(id).max(100) }).strict(),
     z.object({ type: z.literal('organisation.update'), name: text(80), tagline: text(180), accent: z.enum(['violet', 'mint', 'blue', 'amber']) }).strict(),
     z.object({ type: z.literal('space.create'), name: text(60), description: text(500), visibility: z.enum(['members', 'private']), kind: z.enum(['discussion', 'learning', 'project']) }).strict(),
+    z.object({ type: z.literal('track.publish'), trackId: id }).strict(),
     z.object({ type: z.literal('track.create'), title: text(120), summary: text(240), description: text(4000), category: text(40), spaceId: optionalSpace.default(null) }).strict(),
     z.object({ type: z.literal('lesson.create'), trackId: id, title: text(120), summary: text(240), body: text(20000), minutes: z.number().int().min(1).max(240), resourceUrl: link.default('') }).strict(),
     z.object({ type: z.literal('mission.create'), title: text(120), brief: text(8000), criteria: z.array(text(240)).min(1).max(10), category: text(40), points: z.number().int().min(0).max(500), dueAt: z.string().datetime(), spaceId: optionalSpace.default(null), trackId: optionalSpace.default(null) }).strict(),
