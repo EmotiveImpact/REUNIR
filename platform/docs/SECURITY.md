@@ -32,7 +32,7 @@ Cover library management and small copies (COVERS.md, decisions/039-cover-librar
 - Verify reverse-proxy origin/client-IP trust, abuse controls and rate-limit behaviour. Never trust arbitrary forwarding headers.
 - Run independent authorisation/security review, live Neon tenant-isolation tests and a real restore rehearsal. Add monitoring and incident procedures.
 - Implement retention/export/deletion flows, policy notices and documented handling of reports. Do not claim regulatory compliance from a technical prototype.
-- Add bounded/paginated read endpoints, worker delivery with retries, outbox/receipt/rate-table retention and appropriate indexes before scale.
+- Add bounded/paginated read endpoints, worker delivery with retries and appropriate indexes before scale. Outbox, receipt, rate-table, session and mail retention is built (RETENTION.md) but must be scheduled.
 - Connect real storage with private IAM and exact-origin CORS, verify signed uploads and downloads against the real bucket, add malware/content scanning and an orphaned-object sweep, and define an operator procedure for removing published files that contain personal data. Generation pinning and signature checks are implemented; they are not a substitute for scanning.
 - Review the complete transitive dependency/SBOM and known vulnerabilities; CI must enforce these gates. Build success is not a vulnerability audit.
 - Verify Vercel function routing, cookie security, preview isolation, bundle size, operational cost caps and production environment settings.
@@ -59,7 +59,7 @@ Community verification is not accreditation or independent validation of a real-
 
 ## Alpha 03 privacy and account boundaries
 
-Invitation tokens are hashed; reset handling uses Better Auth. Both kinds of outgoing links are stored only in encrypted mail payloads until delivery, then cleared from sent jobs. Invitation creation returns its personal link once to an authorised inviter. Do not log that response. Verify email sender ownership and queue retention before launch.
+Invitation tokens are hashed; reset handling uses Better Auth. Both kinds of outgoing links are stored only in encrypted mail payloads until delivery, then cleared from sent jobs. Invitation creation returns its personal link once to an authorised inviter. Do not log that response. Verify email sender ownership before launch, and schedule the retention job (RETENTION.md), which clears finished mail records after 90 days and undelivered mail contents after 30.
 
 Conversations and messages are participant scoped at both API and forced RLS layers. Group conversations (Alpha 24, decision 024) use the same participant list; someone added to a group later is kept from earlier messages by a restrictive select policy as well as the API, and leaving relies on a one-transaction mark (`app.leaving_conversation`) set only after the API confirms they are in the group. Moderators receive only a member-selected report excerpt, not inbox access. Message text is plaintext to the server/database operator and is NOT end-to-end encrypted. Browser-demo localStorage is untrusted fictional state, not a secure store for real conversations.
 

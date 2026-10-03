@@ -4,7 +4,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, decisions/039-cover-li
 
 ## Where the source is
 
-- Base: main `f9f32d6`, the merge of PR #22 (Alpha 27 loading, error and empty screens), on top of main `fab9510` (PR #20, Alpha 25 contributor roles) and main `9b34cac` (PR #18, Alpha 26 email confirmation and change). This slice was first opened as Alpha 23 on main `f5ec8d3`. Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 27 before the blocks were agreed; gaps in the sequence on main are expected.
+- Base: main `b80fc04`, the merge of PR #23 (Alpha 31 data retention rules), on top of main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens), main `fab9510` (PR #20, Alpha 25 contributor roles) and main `9b34cac` (PR #18, Alpha 26 email confirmation and change). This slice was first opened as Alpha 23 on main `f5ec8d3`. Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 27 before the blocks were agreed; gaps in the sequence on main are expected.
 - This slice: branch `claude/build-out-tvzn40`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Since 3 October 2026 the remaining work is split across threads in the project. This thread owns covers and launch preparation. Each pull request takes the next free alpha, migration and decision numbers from main when it is opened, and renumbers if another lands first.
 
@@ -34,21 +34,56 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 2. Launch: LAUNCH_RUNBOOK.md and `npm run launch:preflight` are ready; the owner decides when. Provision nothing until then.
 
 ---
+## Historical Alpha 31 handover: data retention rules
+- Outcome: [PR #23](https://github.com/EmotiveImpact/REUNIR/pull/23), merged into main as `b80fc04`.
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, RETENTION.md, decisions/031-data-retention.md, ACCOUNTS.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `9b34cac`, the merge of PR #18 (Alpha 26, email confirmation and change), with main `fab9510` (PR #20, Alpha 25 contributor roles, migration 0023) and main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) merged in.
+- This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+
+### What is done
+
+Housekeeping records are cleared by one list of rules (RETENTION.md): expired sessions and links, rate counters, request receipts, change events, finished mail and read notices. The job is a dry run unless told to apply, reports counts only, and clears each community's records inside its own tenant context. Migration 0030 adds the job's read-only community listing policy. Your account says how long everything is kept. Nothing is scheduled.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed. `npm run retention:run` needs `DATABASE_URL` and is a dry run by default.
+
+### Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Retention clears housekeeping only; reviewed evidence and the audit trail stay. An address changes only by a link opened at the new address after the password. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+### Next
+
+1. Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and consented credit for several contributors, one pull request each. They are built locally in separate worktrees and need renumbering from main when opened.
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
 ## Historical Alpha 27 handover: loading, error and empty screens
+- Outcome: [PR #22](https://github.com/EmotiveImpact/REUNIR/pull/22), merged into main as `f9f32d6`.
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, STATES.md, decisions/027-loading-error-empty-states.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
-## Where the source is
+### Where the source is
 
 - Base: main `f5ec8d3` (launch kit after Alpha 22), with main `fab9510` (Alpha 24, 25 and 26) merged in.
-- This slice: [PR #22](https://github.com/EmotiveImpact/REUNIR/pull/22), merged into main as `f9f32d6`. BUILD_STATUS.md records the local runs; the pull request records CI.
+- This slice: branch `claude/everyday-use-4z9rmz`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Alpha 23 (upload scanning) is an open pull request from another thread. This thread uses Alpha 27 to 30.
 
-## What is done
+### What is done
 
 Every page and panel uses the shared loading, error and empty pieces in `apps/web/src/components/states.tsx`; STATES.md sets the conventions for new work. Unknown addresses show Not found; failures keep the shell and offer Try again; empty states only offer actions the viewer may take.
 
-## Run it
+### Run it
 
 ```sh
 cd platform
@@ -60,27 +95,28 @@ Open any unknown address for Not found, or `#/states/fault` in the demo for the 
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (now including `test:browser:states`), and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`.
 
-## Next
+### Next
 
 1. Content curation, task file uploads with live updates, and moving the remaining forms to the shadcn components, each as its own pull request.
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
 
 ---
 ## Historical Alpha 25 handover: contributor roles for teaching
+- Outcome: [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20), merged into main as `fab9510`.
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, decisions/025-contributor-roles.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
-## Where the source is
+### Where the source is
 
 - Base: main `ec4285d`, the merge of PR #15 (Alpha 22), with main `f5ec8d3` (PR #17, the launch kit) main `d62424d` (PR #19, Alpha 24 group conversations) and main `9b34cac` (PR #18, Alpha 26 email confirmation and change) merged in. The application version is main's 0.26.0-alpha.1.
-- This slice: [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20), merged into main as `fab9510`. BUILD_STATUS.md records the local runs; the pull request records CI.
+- This slice: branch `claude/courses-teaching-6hum2q`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Parallel slices: Alpha 23 (upload scanning) is on PR #16; Alpha 24 (group conversations, migration 0022) and Alpha 26 (email change, no migration) are on main. Take the next free alpha and migration numbers from main when opening a pull request, and renumber if main moves.
 
-## What is done
+### What is done
 
 A teaching grant names a role. Instructors keep everything they had; contributors write a track's drafts and files, and its instructors publish them. Contributors never see or review learners' knowledge-check attempts. Changing a role replaces the grant. Additive migration 0023 adds `track_instructors.role` and role-aware policies.
 
-## Run it
+### Run it
 
 ```sh
 cd platform
@@ -92,25 +128,26 @@ Preview as admin, open a track, choose **Instructors**, pick a member and **Cont
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Authority is granted explicitly and must be current when it takes effect; teaching is a per-track grant with a role, not a community role, and publishing stays with instructors. Owner and administrator authority may require two-step sign-in. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
 
-## Next
+### Next
 
 1. Per-lesson grants, instructors starting their own tracks (published by an administrator) and uploaded lesson video, each its own release. Question banks, timers and partial marks wait for pilot needs.
 2. Email verification and change, then the remaining account and trust items in ROADMAP.md.
 3. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
 
 ---
-## Historical Alpha 26 handover: email confirmation and change
+## Historical Alpha 26 handover: confirming and changing your email address
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, ACCOUNTS.md, SECURITY.md, decisions/026-email-confirmation-and-change.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ### Where the source is
 
 - Base: main `b24095a` (Alpha 21), with main `ec4285d` (PR #15, Alpha 22 cover descriptions) merged in. Main `f5ec8d3` (PR #17, launch kit: LAUNCH_RUNBOOK.md and `npm run launch:preflight`) and `d62424d` (PR #19, Alpha 24 group conversations, migration 0022) are merged in too. Alpha 23 is claimed by open pull requests (#16, #21), Alpha 24 (group conversations, PR #19) reached main first, and Alpha 25 is on PR #20, so this release is Alpha 26 with decision 026.
-- This slice: [PR #18](https://github.com/EmotiveImpact/REUNIR/pull/18), green in CI runs 37124821464 and 37124825018 and merged into main as `9b34cac` (tree identical to the tested head `a427140`). BUILD_STATUS.md records the local runs. Never force-push.
+- Outcome: [PR #18](https://github.com/EmotiveImpact/REUNIR/pull/18), merged into main as `9b34cac`.
+- This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ### What is done
 
@@ -733,7 +770,7 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, RICH_LESSONS.md and ROADMAP.md. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL app.
 
-### Verified delivery
+## Verified delivery
 
 Published source commit: `24eeebfdc14aefed457bdd513f378b65d6fd9be8` on `feat/creator-rich-lessons`, PR #2. The remote tree was fetched and compared with the local source. GitHub [run 36969054997](https://github.com/EmotiveImpact/REUNIR/actions/runs/36969054997) passed both application and PostgreSQL jobs.
 
@@ -746,11 +783,11 @@ This receipt changes documentation and source hashes only. Merge status is track
 
 # START HERE: REUNIR Alpha 07, approved v4 integrated
 
-### What the user wants
+## What the user wants
 
 The approved v4 visual design belongs IN the existing React application, not in another standalone mock. Preserve all existing work, keep pushing coherent source waves, and report what remains. The user explicitly requested merging appropriate completed work. Do not merge incomplete transfer/archive branches or overwrite concurrent work to satisfy the word "everything".
 
-### Exact source to continue
+## Exact source to continue
 
 The complete application is now on GitHub in PR #1, branch `integration/alpha07-source-2026-10-02`. Publication commit `5e88b30675832fcedfb0a26491484851d951dd59` has the exact same tree as recovered Alpha 07 `76b31ab787029126e6462f747f7127a224212899`: `5b9d79453d07c75f5d71e0374889d945a3ee1eb8`. It was fetched back through Git and compared with no differences. Use the latest verified remote branch, or main after the PR is merged. Do not repeat the source recovery/import or return to a transport branch. Earlier local history remains in the saved Alpha 07 bundle; the publication snapshot is parented to GitHub's original main.
 
@@ -758,21 +795,21 @@ Restore the accompanying `REUNIR-Alpha-07.bundle` into a fresh worktree, or use 
 
 Baseline preserved: `e834a1742e9b7f8c741ff362ba5a2584b3cdabf8` (Alpha 06 monochrome, 206 source-manifest entries), itself built on the complete Alpha 06 creator checkpoint `a09cd7db8f71462328b68a3c49b52dae4299dd97`. The first new integration checkpoint is `bb1dc52`. Current local branch: `integration/v4-application-2026-10-02`. Do not treat an earlier checkpoint in this paragraph as the final release commit.
 
-### Read before editing
+## Read before editing
 
 AGENTS.md; platform/docs/BUILD_STATUS.md; PRODUCT_DOCTRINE.md; PRD.md; ROADMAP.md; ARCHITECTURE.md; UI_DESIGN_DIRECTION.md; CREATOR_AUTHORING.md; RELEASE_GATES.md; research/reuse-register.json and the relevant research-to-build note. Earlier handover/status are under platform/docs/history, for provenance only.
 
-### Approved design
+## Approved design
 
 Far-left workspace rail; navigation-only second sidebar with NO search or community switcher; one top-right account portrait/menu; natural photo avatars, not coloured initials; no duplicate account blocks in sidebars. Neutral chrome, fine borders, clean white/outline buttons, proper Lucide icons, Inter-first UI and a restrained editorial Home heading. Keep the approved mountain and quieter hierarchy. Do not revive coloured tiles, side stripes, glitter, generic dashboards or another visual exploration.
 
 Actual shadcn Button/Avatar/Menu source is now incorporated and attributed, with Radix primitives and Tailwind utilities. Not every legacy form/dialog has been converted. Shared styling carries into the existing routes, which still invoke the original domain/data model. Demo portraits are only for explicit fictional fixture IDs; no invented face is assigned to a connected user.
 
-### Product invariants
+## Product invariants
 
 People + Purpose + Progress + Projects + Proof. Preserve Become/Build/Achieve, private goals/messages, tenant isolation, current role checks, existing lesson completion evidence, immutable draft/publication history, task proof and separate community-review outcomes. No force-feeding progress metadata into arbitrary posts. All seven migration files remain byte-identical. No AI, funding or credential expansion during this UI slice.
 
-### GitHub and deployment
+## GitHub and deployment
 
 Before publication, all 11 remote branches and open PRs were checked. Main was the README-only `551d7a2da3914080956372beced5f01debc898a8`; the other branches contained dependency/transport material and no newer application. Those branches were preserved. PR #1 now contains the normal complete source tree.
 
@@ -780,7 +817,7 @@ The current workspace can fetch GitHub but has no direct Git write credential. T
 
 No live Neon/Vercel/email/bucket/scheduler or production database was changed. Complete the existing staging/receipt/hosted-session/privacy/restore gates separately.
 
-### Verification and continuation
+## Verification and continuation
 
 Read BUILD_STATUS.md and the current release evidence for completed results and limitations. Browser demos exercise actual bundled React against fictional local state, not a live API. Node HTTP checks use local PGlite and captured email. Tests updated the intentionally moved control selectors, not their business assertions. The historical Events journey fixes Date to its September fixture period; a new v4 test verifies an honest empty future calendar.
 

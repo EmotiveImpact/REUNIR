@@ -50,7 +50,7 @@ export class MailQueue {
         if(!this.transport)return {configured:false,sent:0,failed:0};
         let sent=0,failed=0;
         try {
-            const exhausted=await this.db.query("UPDATE email_outbox SET status='failed',lease_until=NULL,lease_token=NULL,last_error='DELIVERY_UNCERTAIN' WHERE attempts>=5 AND ((status='sending' AND lease_until<now()) OR status='queued') RETURNING id");
+            const exhausted=await this.db.query("UPDATE email_outbox SET status='failed',failed_at=now(),lease_until=NULL,lease_token=NULL,last_error='DELIVERY_UNCERTAIN' WHERE attempts>=5 AND ((status='sending' AND lease_until<now()) OR status='queued') RETURNING id");
             failed+=exhausted.rows.length;
             for(let i=0;i<limit && Date.now()-started<maxMilliseconds;i++) {
                 const lease=randomUUID();
@@ -70,7 +70,7 @@ export class MailQueue {
                     sent+=accepted.rows.length;
                 } catch {
                     const dead=row.attempts+1>=5;
-                    const changed=await this.db.query("UPDATE email_outbox SET status=$3,lease_until=NULL,lease_token=NULL,available_at=now()+interval '2 minutes',last_error='DELIVERY_FAILED' WHERE id=$1 AND status='sending' AND lease_token=$2 RETURNING id",[row.id,lease,dead?'failed':'queued']);
+                    const changed=await this.db.query("UPDATE email_outbox SET status=$3,failed_at=CASE WHEN $3='failed' THEN now() END,lease_until=NULL,lease_token=NULL,available_at=now()+interval '2 minutes',last_error='DELIVERY_FAILED' WHERE id=$1 AND status='sending' AND lease_token=$2 RETURNING id",[row.id,lease,dead?'failed':'queued']);
                     failed+=changed.rows.length;
                 }
             }

@@ -6,16 +6,16 @@
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/build-out-tvzn40` ([PR #21](https://github.com/EmotiveImpact/REUNIR/pull/21)), first opened on main `f5ec8d3` and brought up to main `f9f32d6` (the merge of PR #22, Alpha 27) |
+| Implemented | Yes, on `claude/build-out-tvzn40` ([PR #21](https://github.com/EmotiveImpact/REUNIR/pull/21)), first opened on main `f5ec8d3` and brought up to main `b80fc04` (the merge of PR #23, Alpha 31) |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 
-## PR #19, PR #18, PR #20 and PR #22 merged into main
+## Other releases merged into main while this slice was open
 
-Four other threads' releases reached main while this slice was open. Alpha 24 (group conversations) was merged as `d62424dc5b68cf9386757173a89464211f5b7021` on top of `f5ec8d3`, its tree `85e91e8022d87830336918d8765392698795b48d` identical to its tested head `5c97bb4` (CI runs 37123762116 and 37123778756). Alpha 26 (email confirmation and change) was then merged as `9b34cac`, its tree `2e61a0a1ea8f287c3fe3e8dc6a2f455f57a7e3b5` identical to its tested head `a427140` (CI runs 37124821464 and 37124825018). Alpha 25 (contributor roles for teaching, migration 0023) was merged as `fab9510`, its tree `b07530cedae56e6c312e45318a4797e395889069` identical to its tested head `518bc06` (CI runs 37126085213 and 37126087981); it also replaced the fixed migration counts in upgrade tests with a count of the migration files. Alpha 27 (loading, error and empty screens, no migration) was merged as `f9f32d6`, its tree `e9981087152749e62cb402b8f5d3eb0150030215` identical to its tested head `297dab8` (CI runs 37127344409 and 37127347035). This slice merged all four in.
+Five other threads' releases reached main while this slice was open. Alpha 24 (group conversations) was merged as `d62424dc5b68cf9386757173a89464211f5b7021` on top of `f5ec8d3`, its tree `85e91e8022d87830336918d8765392698795b48d` identical to its tested head `5c97bb4` (CI runs 37123762116 and 37123778756). Alpha 26 (email confirmation and change) was then merged as `9b34cac`, its tree `2e61a0a1ea8f287c3fe3e8dc6a2f455f57a7e3b5` identical to its tested head `a427140` (CI runs 37124821464 and 37124825018). Alpha 25 (contributor roles for teaching, migration 0023) was merged as `fab9510`, its tree `b07530cedae56e6c312e45318a4797e395889069` identical to its tested head `518bc06` (CI runs 37126085213 and 37126087981); it also replaced the fixed migration counts in upgrade tests with a count of the migration files. Alpha 27 (loading, error and empty screens, no migration) was merged as `f9f32d6`, its tree `e9981087152749e62cb402b8f5d3eb0150030215` identical to its tested head `297dab8` (CI runs 37127344409 and 37127347035). Alpha 31 (data retention rules, migration 0030) was merged as `b80fc04`, its tree `3ab0d17291ed1aea25d4d25c5052c458c4cdf65c` identical to its tested head `5635bde` (CI runs 37128602184 and 37128604626). This slice merged all five in.
 
 Numbering: Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 27 before the blocks were agreed; gaps in the sequence on main are expected.
 
@@ -34,7 +34,7 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 703 passed, 0 failed (678 on main `f9f32d6` plus 25: 6 library management, 6 small copies, 6 database tests under the restricted role including cross-tenant and inactive-role refusals, 7 HTTP) |
+| `npm test` | 708 passed, 0 failed (683 on main `b80fc04` plus 25: 6 library management, 6 small copies, 6 database tests under the restricted role including cross-tenant and inactive-role refusals, 7 HTTP) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
 | Demo-browser suites | 311 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 20 covers (3 new), 11 instructors, 12 accounts, 16 monochrome, 20 v4, 5 notifications, 11 groups, 12 states |
@@ -58,6 +58,59 @@ Tests changed rather than added: upgrade tests count the migration files (from P
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. When deployment resumes: follow LAUNCH_RUNBOOK.md, and run `npm run db:grant-runtime` after migrating.
 
+## Historical Alpha 31 evidence: data retention rules
+
+3 October 2026. Application 0.31.0-alpha.1. Housekeeping records are cleared on a schedule by one list of rules, and Your account says how long everything is kept. What people make, reviewed evidence and the audit trail are never cleared by the job. See decisions/031-data-retention.md and RETENTION.md.
+
+Numbering follows the project's allocation of 3 October 2026: this thread holds Alpha 31 to 34, decision records 031 to 034 and migrations 0030 to 0033, so data retention is Alpha 31, decision 031 and migration 0030 (first opened as Alpha 27 with migration 0023). Migration 0023 (contributor roles, Alpha 25) is on main and 0024 to 0029 belong to other threads, so a gap before 0030 is expected; the runner applies files in order and does not need consecutive numbers.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/accounts-trust-zojuqs`, restarted from main `9b34cac` (the merge of PR #18, Alpha 26), with main `fab9510` (PR #20, Alpha 25 contributor roles, migration 0023) and main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) merged in |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Yes: runs 37128602184 and 37128604626 on `5635bde` (application and postgres) |
+| Merged | Yes: [PR #23](https://github.com/EmotiveImpact/REUNIR/pull/23), merged into main as `b80fc04` |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- **Rules** (`packages/contracts/src/retention.ts`): expired sessions, expired links and rate counters one day after expiry; request receipts 30 days; internal change events 90 days; sent and cancelled mail records 90 days; undelivered mail contents 30 days, the record 90; read notices 180 days. Unread notices and queued mail are never touched.
+- **Job** (`packages/db/src/retention.ts`): records outside any community are cleared directly; each community's receipts, change events and read notices inside its own tenant context. A dry run does the same work and rolls it back, so its counts are exact. Each applied run is recorded as `retention-job` in service observations.
+- **Running it**: `npm run retention:run` (dry run unless `RETENTION=apply`) and `GET /api/internal/retention` with the scheduler secret (applies; `?dry=1` counts). Nothing is scheduled.
+- **Migration 0030** (additive): `email_outbox.failed_at`, `organisations_retention`, a read-only policy that lists communities only when the transaction sets `app.worker` to `retention`, and `notifications_read_idx`. 0001 to 0023 unchanged; no grant change.
+- **How long things are kept** panel on Your account, from the same list. RETENTION.md, PILOT_OPERATIONS.md and SECURITY.md updated.
+- Review fixes on PR #23: migration 0030 also adds `email_outbox.failed_at` (set by the mail worker; mail already failed starts its period at migration), and failed mail is counted from it; `npm run launch:preflight` and LAUNCH_RUNBOOK.md now require `CRON_SECRET` even without mail, and list the retention route; against the blank `.env.example` the preflight now reports 6 failures and 5 warnings.
+- Upgrade tests count the migration files (`tests/helpers/migrations.ts`, from Alpha 25), so no count changed.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 on loopback.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 671 passed, 0 failed after the review fixes; 683 passed, 0 failed after main's Alpha 25 and Alpha 27 were merged in (5 new in `tests/retention-database.test.ts`: one list of rules, the worker-only community listing, an exact dry run then a real run that clears only what the rules name, the scheduled route, and failed mail counted from its failure) |
+| `npm run test:http` | 19 passed |
+| `npm run build`, `npm run bundle:preview` | Passed |
+| Demo-browser suites | `accounts` 13 (1 new: the retention panel, at phone width too), `monochrome` 16, `v4` 20 |
+| Connected-browser suites | `accounts-connected` 13; `instructors` 11 after the Alpha 25 merge; `states` 12 after the Alpha 27 merge |
+| `npm run test:postgres` | 22 passed on PostgreSQL 16 (1 new: the worker policy and a dry and real run through the restricted runtime role) |
+| Python helpers | 35 passed; research register valid |
+
+## Not verified, and why
+
+- No scheduler runs the job: the operator chooses one when deploying. Hosted PostgreSQL was not exercised.
+- The periods are the same for every community; per-community settings and a period for the audit trail need the owner's decision.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and consented credit for several contributors, one pull request each.
+3. When deployment resumes: schedule the retention job daily after a dry run on staging.
+
 ## Historical Alpha 27 evidence: loading, error and empty screens
 
 3 October 2026. Application 0.27.0-alpha.1. Shared loading, error and empty states across the web app: shell-preserving loading outlines, route error boundaries with Try again, a Not found page, offline and failed-refresh notices, marked command failures and role-aware empty states. See decisions/027-loading-error-empty-states.md and STATES.md. Alpha 23 is claimed by another open pull request, and Alpha 24 to 26 are on main, so this slice takes the next free number.
@@ -68,8 +121,8 @@ Tests changed rather than added: upgrade tests count the migration files (from P
 | --- | --- |
 | Implemented | Yes, on `claude/everyday-use-4z9rmz`, from main `f5ec8d3` (the launch kit after Alpha 22), with main `fab9510` (Alpha 24 group conversations, Alpha 26 email confirmation and Alpha 25 contributor roles) merged in |
 | Verified locally | Yes: the full suite on the original base `b24095a`, and the checks below again on top of `f5ec8d3` |
-| Verified remotely (GitHub Actions) | Yes: runs 37127344409 and 37127347035 on `297dab8` (application and postgres) |
-| Merged | Yes, [PR #22](https://github.com/EmotiveImpact/REUNIR/pull/22) as `f9f32d6`, under the owner's standing approval (3 October 2026) |
+| Verified remotely (GitHub Actions) | Run 37124475400 (application and postgres) passed on `bc37d8c` before main moved; the merge with Alpha 24 is recorded on the pull request |
+| Merged | Yes: [PR #22](https://github.com/EmotiveImpact/REUNIR/pull/22), merged into main as `f9f32d6` |
 | Deployed | No. Nothing was provisioned |
 | Operated with real members | No |
 
@@ -125,8 +178,8 @@ After merging main `fab9510` (Alpha 25 contributor roles): typecheck, build and 
 | --- | --- |
 | Implemented | Yes, on `claude/courses-teaching-6hum2q`, from main `ec4285d` (the merge of PR #15, Alpha 22), with main `f5ec8d3` (PR #17, the launch kit) main `d62424d` (PR #19, Alpha 24) and main `9b34cac` (PR #18, Alpha 26) merged in |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Yes: runs 37126085213 and 37126087981 on `518bc06` (application and postgres) |
-| Merged | Yes, [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20) as `fab9510`, under the owner's standing approval (3 October 2026) |
+| Verified remotely (GitHub Actions) | Passed on `919b352` (run 37125616557) before main moved again; the merge with Alpha 26 is recorded on the pull request |
+| Merged | Yes: [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20), merged into main as `fab9510` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 
@@ -183,8 +236,8 @@ Numbering: first opened as Alpha 24. Alpha 23 is claimed by open pull requests (
 | --- | --- |
 | Implemented | Yes, on `claude/accounts-trust-zojuqs`, from main `b24095a` with main `ec4285d` (PR #15, Alpha 22) `f5ec8d3` (PR #17, launch kit) and `d62424d` (PR #19, Alpha 24 group conversations) merged in |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Yes: runs 37124821464 and 37124825018 on `a427140` (application and postgres) |
-| Merged | Yes, [PR #18](https://github.com/EmotiveImpact/REUNIR/pull/18) as `9b34cac`, under the owner's standing approval (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes: runs 37124825018 and 37124821464 (application and postgres) on `a427140` |
+| Merged | Yes: [PR #18](https://github.com/EmotiveImpact/REUNIR/pull/18), merged into main as `9b34cac` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 
