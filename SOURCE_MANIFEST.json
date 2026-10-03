@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 13 cover library",
   "version": "0.13.0-alpha.1",
   "sourceBaseline": "365e1c9a822297ce471083d891eea1f1256e0c63",
-  "generatedAt": "2026-10-03T05:02:31.567979+00:00",
+  "generatedAt": "2026-10-03T05:12:01.407828+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "cfa5780a3327e8652e3975cd84504b2834344024c9291b6e83a809b0cfa70843",
-      "bytes": 26324
+      "sha256": "00a430dcab837b02aa972b1272c1c7d997da766dfdc49c2653588353b4f10991",
+      "bytes": 26368
     },
     {
       "path": "platform/.dockerignore",
@@ -461,8 +461,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "19510e1ae5d897b1dd9097b4e3119e2ba66b541ffb24e5ceff00156d5de037ce",
-      "bytes": 52576
+      "sha256": "cb81a9d174f170e7154d96a6550e16e1f4f8859dad8eea5656b0ad306b083d3e",
+      "bytes": 53605
     },
     {
       "path": "platform/docs/COVERS.md",

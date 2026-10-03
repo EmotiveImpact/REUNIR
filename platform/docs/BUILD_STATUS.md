@@ -8,7 +8,7 @@
 | --- | --- |
 | Implemented | Yes, on `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)), after Alpha 11 and Alpha 12 on the same branch |
 | Verified locally | Yes: every suite, from a clean worktree of tested commit `208e9be` after `npm ci` (see below) |
-| Verified remotely (GitHub Actions) | See the publication receipt below |
+| Verified remotely (GitHub Actions) | Yes: both jobs passed on `be9c6c8` in the push and pull request runs (publication receipt below) |
 | Merged | No. Merging into main needs the owner's approval |
 | Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
 | Operated with real members | No |
@@ -60,7 +60,11 @@ The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `h
 
 ## Publication receipt
 
-Pending: the push, the remote read-back and the GitHub Actions runs are recorded here after they happen.
+Pushed to `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)). The remote ref was fetched back and matched the local commit and tree: head `be9c6c89b5d62051396480bd752c9fa190739abc` (tree `5ac771fdbbca619dc310589a43a5e2facea5b25d`), which is tested commit `208e9be` plus documentation and the source manifest.
+
+Both jobs passed on that head in [run 37098543959](https://github.com/EmotiveImpact/REUNIR/actions/runs/37098543959) (push) and [run 37098546160](https://github.com/EmotiveImpact/REUNIR/actions/runs/37098546160) (pull request). The application job ran the research checker, typecheck, all application tests, 17 HTTP checks, both builds, every demo-browser suite including the cover library, every connected-browser suite including the cover library under the restricted runtime role, and the Python helpers; the PostgreSQL 17 job ran the 12 restricted-role checks, including the library.
+
+This receipt commit changes only documentation and source hashes. Merging into main needs the owner's approval.
 
 ## Next actions
 
