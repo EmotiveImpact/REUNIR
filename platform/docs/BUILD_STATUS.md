@@ -6,7 +6,7 @@
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of Alpha 29 |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of main `2561a00` (Alpha 29, PR #27) |
 | Verified locally | Yes, the checks below |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
@@ -43,8 +43,8 @@ On this branch, on top of Alpha 29 and main `99e919a`: typecheck, build and bund
 | --- | --- |
 | Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of main `94b130b` (PR #25, Alpha 28, merged 3 October 2026; tree identical to its tested head `e4d69fa`), with main `3c770b5` (Alpha 35 teaching grants for chosen lessons) `f3efa39` (Alpha 32 appealing a hidden post) `e930e39` (Alpha 33 correcting and withdrawing reviewed evidence) `5f7b827` (Alpha 34 crediting teammates) and `99e919a` (Alpha 36 instructors start their own tracks) merged in |
 | Verified locally | Yes: the full suite on base `b24095a`, and the checks below on top of Alpha 28 and main `0a818fa` |
-| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes: `application` and `postgres` passed on head `3546e80` |
+| Merged | Yes: PR #27 merged as `2561a00` on 3 October 2026; its tree is identical to the tested head `3546e80` |
 | Deployed | No. Nothing was provisioned |
 | Operated with real members | No |
 

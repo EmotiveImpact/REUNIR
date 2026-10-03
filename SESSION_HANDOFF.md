@@ -4,7 +4,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, FORMS.md, decisions/030-shared-fo
 
 ## Where the source is
 
-- Base: Alpha 29 on `claude/everyday-use-4z9rmz`.
+- Base: main `2561a00`, which carries Alpha 29 (PR #27, merged 3 October 2026), on `claude/everyday-use-4z9rmz`.
 - The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - This thread held Alpha 27 to 30, decisions 027 to 030 and migrations 0028 and 0029; all four Everyday use items are built.
 

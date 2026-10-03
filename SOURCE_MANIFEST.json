@@ -1,8 +1,8 @@
 {
   "release": "REUNIR Alpha 30 every form on the shared shadcn components",
   "version": "0.39.0-alpha.1",
-  "sourceBaseline": "99e919a",
-  "generatedAt": "2026-10-03T20:54:30.634985+00:00",
+  "sourceBaseline": "2561a00",
+  "generatedAt": "2026-10-03T20:58:59.195631+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "f64200319bd65840f9d2381ab9e6a9744db066cdaec2574537ebdc60eb7f1329",
-      "bytes": 50013
+      "sha256": "24b42572f17c2178ecb33f7dea4c2f3c506324324d1ba34205fc259ffcd7b586",
+      "bytes": 50020
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "f64d936ece3895a2959981c1c6532646917740a8a5d0a3e4681c5061201df602",
-      "bytes": 107347
+      "sha256": "2e44a39944462c816617709c8684b2027d325a0b89dce77e342e82c66fdb8644",
+      "bytes": 107410
     },
     {
       "path": "platform/.dockerignore",
@@ -696,8 +696,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "4b32d1811123d6180b3bb4554568dcb0f067c5e99743fa31730aace4d3f49472",
-      "bytes": 191265
+      "sha256": "cb3f9561e96420542e698a2607daef0ab5391f4925382e3c8be92a088a631560",
+      "bytes": 191304
     },
     {
       "path": "platform/docs/COVERS.md",
