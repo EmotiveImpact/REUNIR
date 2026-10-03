@@ -20,8 +20,9 @@ Numbering: main carries Alpha 26 (PR #18). Open pull requests claim Alpha 23 (#1
 - **Rules** (`packages/contracts/src/retention.ts`): expired sessions, expired links and rate counters one day after expiry; request receipts 30 days; internal change events 90 days; sent and cancelled mail records 90 days; undelivered mail contents 30 days, the record 90; read notices 180 days. Unread notices and queued mail are never touched.
 - **Job** (`packages/db/src/retention.ts`): records outside any community are cleared directly; each community's receipts, change events and read notices inside its own tenant context. A dry run does the same work and rolls it back, so its counts are exact. Each applied run is recorded as `retention-job` in service observations.
 - **Running it**: `npm run retention:run` (dry run unless `RETENTION=apply`) and `GET /api/internal/retention` with the scheduler secret (applies; `?dry=1` counts). Nothing is scheduled.
-- **Migration 0023** (additive): `organisations_retention`, a read-only policy that lists communities only when the transaction sets `app.worker` to `retention`, and `notifications_read_idx`. 0001 to 0022 unchanged; no grant change.
+- **Migration 0023** (additive): `email_outbox.failed_at`, `organisations_retention`, a read-only policy that lists communities only when the transaction sets `app.worker` to `retention`, and `notifications_read_idx`. 0001 to 0022 unchanged; no grant change.
 - **How long things are kept** panel on Your account, from the same list. RETENTION.md, PILOT_OPERATIONS.md and SECURITY.md updated.
+- Review fixes on PR #23: migration 0023 also adds `email_outbox.failed_at` (set by the mail worker; mail already failed starts its period at migration), and failed mail is counted from it; `npm run launch:preflight` and LAUNCH_RUNBOOK.md now require `CRON_SECRET` even without mail, and list the retention route; against the blank `.env.example` the preflight now reports 6 failures and 5 warnings.
 - Migration-count assertions moved from 22 to 23.
 
 ## Local verification, 3 October 2026
@@ -31,7 +32,7 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 670 passed, 0 failed (4 new in `tests/retention-database.test.ts`: one list of rules, the worker-only community listing, an exact dry run then a real run that clears only what the rules name, and the scheduled route) |
+| `npm test` | 671 passed, 0 failed after the review fixes (5 new in `tests/retention-database.test.ts`: one list of rules, the worker-only community listing, an exact dry run then a real run that clears only what the rules name, the scheduled route, and failed mail counted from its failure) |
 | `npm run test:http` | 19 passed |
 | `npm run build`, `npm run bundle:preview` | Passed |
 | Demo-browser suites | `accounts` 13 (1 new: the retention panel, at phone width too), `monochrome` 16, `v4` 20 |

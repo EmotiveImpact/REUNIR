@@ -8,6 +8,7 @@ import { RetentionJob } from '../packages/db/src/retention';
 import { createSeed } from '../packages/domain/src/seed';
 import { RETENTION_DAYS, RETENTION_POLICY, RETENTION_RULES, retentionCutoff } from '../packages/contracts/src/retention';
 import { createApp } from '../apps/api/src/app';
+import { MailQueue } from '../apps/api/src/mail';
 
 const NOW = new Date('2026-09-01T12:00:00Z'), DAY = 864e5, cron = 'retention-cron-secret-0123456789abcdef';
 const ago = (days: number) => new Date(NOW.getTime() - days * DAY).toISOString();
@@ -28,6 +29,8 @@ async function plant() {
         ['m_failed_old', 'failed', 'sealed', ago(95)], ['m_failed_mid', 'failed', 'sealed', ago(40)], ['m_failed_new', 'failed', 'sealed', ago(5)], ['m_queued_old', 'queued', 'sealed', ago(200)]];
     for (const [id, status, payload, at] of mail)
         await db.query('INSERT INTO email_outbox(id,payload,status,created_at,sent_at) VALUES($1,$2,$3,$4,$5)', [id, payload, status, at, status === 'sent' ? at : null]);
+    // Queued long ago but failed only last week: kept, with its contents, from when it failed.
+    await db.query("INSERT INTO email_outbox(id,payload,status,created_at,failed_at) VALUES('m_failed_late','sealed','failed',$1,$2)", [ago(200), ago(5)]);
     for (const org of ORGS) {
         const member = (await db.query<{ user_id: string }>('SELECT user_id FROM members WHERE organization_id=$1 ORDER BY user_id LIMIT 1', [org])).rows[0].user_id;
         await db.query("INSERT INTO command_receipts(organization_id,user_id,request_key,body_hash,result,created_at) VALUES($1,$2,'r_old','h','{}',$3),($1,$2,'r_new','h','{}',$4)", [org, member, ago(31), ago(29)]);
@@ -81,7 +84,7 @@ test('a dry run counts exactly and changes nothing; applying clears only what th
     assert.equal(dry.communities, 2);
     for (const [rule, n] of Object.entries(expected)) assert.ok(dry.counts[rule as keyof typeof expected] >= n, `${rule}: at least ${n}, counted ${dry.counts[rule as keyof typeof expected]}`);
     assert.equal(await count('SELECT (SELECT count(*) FROM auth_session)+(SELECT count(*) FROM email_outbox)+(SELECT count(*) FROM notifications)+(SELECT count(*) FROM outbox)+(SELECT count(*) FROM command_receipts) AS n'), before, 'nothing changed');
-    assert.equal(await count("SELECT count(*)::int AS n FROM email_outbox WHERE payload<>'' AND status='failed'"), 3, 'failed mail contents untouched by the dry run');
+    assert.equal(await count("SELECT count(*)::int AS n FROM email_outbox WHERE payload<>'' AND status='failed'"), 4, 'failed mail contents untouched by the dry run');
 
     const auditBefore = await count('SELECT count(*)::int AS n FROM audit');
     const applied = await job.run(NOW, true);
@@ -93,8 +96,8 @@ test('a dry run counts exactly and changes nothing; applying clears only what th
     assert.equal(await count("SELECT count(*)::int AS n FROM request_limits WHERE key='limit:new'"), 1);
     assert.deepEqual((await db.query<{ id: string }>('SELECT id FROM auth_rate_limit ORDER BY id')).rows.map(r => r.id), ['rl_new']);
     assert.deepEqual((await db.query<{ id: string; payload: string }>('SELECT id,payload FROM email_outbox ORDER BY id')).rows,
-        [{ id: 'm_failed_mid', payload: '' }, { id: 'm_failed_new', payload: 'sealed' }, { id: 'm_queued_old', payload: 'sealed' }, { id: 'm_sent_new', payload: '' }],
-        'finished mail goes after 90 days, failed contents after 30, queued mail is never touched');
+        [{ id: 'm_failed_late', payload: 'sealed' }, { id: 'm_failed_mid', payload: '' }, { id: 'm_failed_new', payload: 'sealed' }, { id: 'm_queued_old', payload: 'sealed' }, { id: 'm_sent_new', payload: '' }],
+        'finished mail goes after 90 days, failed contents after 30 counted from the failure, queued mail is never touched');
     for (const org of ORGS) {
         assert.deepEqual((await db.query<{ request_key: string }>('SELECT request_key FROM command_receipts WHERE organization_id=$1 AND request_key IN ($2,$3)', [org, 'r_old', 'r_new'])).rows.map(r => r.request_key), ['r_new']);
         assert.deepEqual((await db.query<{ id: string }>("SELECT id FROM outbox WHERE organization_id=$1 AND id IN ('o_old','o_new') ORDER BY id", [org])).rows.map(r => r.id), ['o_new']);
@@ -122,4 +125,16 @@ test('the scheduled route needs the scheduler secret, applies by default and onl
     assert.doesNotMatch(JSON.stringify(real), /@|sealed|token/, 'counts only, never contents');
     const bare = createApp({ repository: new WorkspaceRepository(runtime), origin: 'https://ferven.test', resolveSession: async () => null, cronSecret: cron });
     assert.deepEqual(await (await bare.request('/api/internal/retention', { headers: { Authorization: 'Bearer ' + cron } })).json(), { configured: false });
+});
+
+test('the mail worker records when a message finally failed, so its contents are kept for 30 days from then', async () => {
+    const queue = new MailQueue(runtime, 'retention-mail-test-secret-0123456789abcdef', { send: async () => { throw new Error('provider down'); } });
+    await queue.enqueue({ to: 'late@example.test', subject: 'Late', text: 'Queued long ago' });
+    await db.query("UPDATE email_outbox SET attempts=4,created_at=now() - interval '200 days',available_at=now() - interval '1 minute' WHERE status='queued'");
+    await queue.drain(1);
+    const row = (await db.query<{ status: string; failed_at: Date | null; payload: string }>("SELECT status,failed_at,payload FROM email_outbox WHERE created_at < now() - interval '199 days' AND status<>'sent' AND id NOT LIKE 'm\\_%'")).rows[0];
+    assert.equal(row.status, 'failed');
+    assert.ok(row.failed_at && Date.now() - new Date(row.failed_at).getTime() < 60000, 'failed just now');
+    await new RetentionJob(runtime).run(new Date(), true);
+    assert.notEqual((await db.query<{ payload: string }>("SELECT payload FROM email_outbox WHERE status='failed' AND created_at < now() - interval '199 days' AND failed_at > now() - interval '1 day'")).rows[0].payload, '', 'contents stay for investigation');
 });
