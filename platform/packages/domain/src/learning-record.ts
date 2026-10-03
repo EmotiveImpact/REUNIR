@@ -3,7 +3,7 @@ import { learnerQuiz, questionKinds, type QuizQuestion } from '../../contracts/s
 import { actorFor } from './access';
 import { answersUnlocked } from './assessments';
 import { visibleWorkspace } from './engine';
-import { taughtTracks } from './instructors';
+import { teaches } from './instructors';
 
 /**
  * A member's own learning in one community, as a file they can keep: tracks they joined, lessons they completed,
@@ -62,8 +62,8 @@ export function learningRecord(state: Workspace, ctx: TenantContext, now: string
     const s = visibleWorkspace(state, ctx), me = actor.userId, org = actor.organizationId;
     const own = <T extends { organizationId: string }>(rows: T[], owner: (row: T) => string) => rows.filter(r => r.organizationId === org && owner(r) === me);
     // The member's own attempts, with keys only where the screen would show them.
-    const attempts = own(state.quizAttempts, a => a.userId), taught = taughtTracks(state, actor);
-    const shown = (a: QuizAttempt) => taught.has(a.trackId) || answersUnlocked(attempts, a) ? a : { ...a, quiz: learnerQuiz(a.quiz) };
+    const attempts = own(state.quizAttempts, a => a.userId);
+    const shown = (a: QuizAttempt) => teaches(state, actor, a.trackId, a.lessonId) || answersUnlocked(attempts, a) ? a : { ...a, quiz: learnerQuiz(a.quiz) };
     const track = (id: string | null) => s.tracks.find(t => t.id === id)?.title ?? UNAVAILABLE_TRACK;
     const lesson = (id: string) => s.lessons.find(l => l.id === id)?.title ?? UNAVAILABLE_LESSON;
     // Names come from the member's own view of the directory, as on screen.

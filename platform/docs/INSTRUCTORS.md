@@ -21,6 +21,10 @@ The same dialogue has **Invite someone new to teach**. An owner or administrator
 
 When adding someone in the same dialogue, choose **Instructor** or **Contributor**; each person on the list has a role menu to change it. A contributor writes the track's lesson drafts and files for its instructors to publish: they open, save, preview and restore drafts, upload and attach lesson files, and see the track's drafts, history and upload records. They cannot publish, archive, reorder, change the cover, see learners' knowledge-check attempts or review them. Their Teaching page lists the track as "Contributor" without the review queue, and their creator studio has no publish, archive or ordering controls. Changing a role replaces the grant in the acting administrator's name. Migration `0023_contributor_roles.sql` (additive) adds the role and makes the published-revision, attempt and invitation policies require an instructor (decision 025).
 
+### Chosen lessons (Alpha 35)
+
+The dialogue's "What they work on" choice gives a grant to **the whole track, including new lessons** (the default) or **only the lessons I choose**, with a checkbox per lesson. A lesson grant reaches only those lessons' drafts, history and draft files, and, for an instructor, publishing and archiving their drafts and the learners' knowledge-check answers on them. Starting a lesson, reordering the curriculum and the track cover need a whole-track grant. Other lessons' drafts are "not available" (404) and show as "Not one of your lessons" in the studio. The list names the lessons ("Instructor for …"); changing the scope replaces the grant. Migration `0034_lesson_grants.sql` (additive) adds `lesson_ids` and scopes the draft, history, publishing and attempt policies to the listed lessons; an invitation to teach is accepted only for a whole track (decision 035).
+
 An instructor or contributor cannot create tracks, choose instructors, change other tracks or open Community studio, member access or community settings. Owners and administrators keep doing everything on every track.
 
 ## Rules
