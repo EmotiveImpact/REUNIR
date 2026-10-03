@@ -20,7 +20,7 @@ export function AuthoringPage() {
     const {id}=useParams(); const {data,me,busy,command}=useWorkspace();
     const [selected,select]=useState<string|null>(null); const [archived,showArchived]=useState(false);
     const track=data.tracks.find(t=>t.id===id);
-    if(!track||!teaches(data,me,track.id))return <Empty title="The creator studio is private." body="The track's instructors and the community's owners and administrators author lessons here."/>;
+    if(!track||!teaches(data,me,track.id))return <Empty icon={LockKeyhole} title="The creator studio is private." body="The track's instructors and the community's owners and administrators author lessons here."/>;
     const lessons=data.lessons.filter(l=>l.trackId===track.id).sort((a,b)=>a.position-b.position);
     const drafts=data.lessonDrafts.filter(d=>d.trackId===track.id&&(archived||!d.archived));
     const current=data.lessonDrafts.find(d=>d.trackId===track.id&&d.id===selected);
