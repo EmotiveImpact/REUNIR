@@ -5,6 +5,8 @@ import StarterKit from '@tiptap/starter-kit';
 import { Bold, Italic, Heading2, Heading3, List, ListOrdered, Quote, Code, Minus, Link, Unlink, Undo2, Redo2, Image, Video } from 'lucide-react';
 import { lessonDocumentText, lessonHttpsUrl, lessonVideoUrl, plainLessonDocument, type LessonDocument } from '../../../../packages/contracts/src/lesson-document';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 
 // Media stays a labelled, non-fetching block while writing. Preview/learner rendering
 // asks for a click before contacting the external host. Pasted HTML cannot add media.
@@ -59,6 +61,6 @@ export function LessonEditor({body,richBody,disabled,onChange}:{body:string;rich
         <Button variant="ghost" size="icon" type="button" aria-label="Undo" title="Undo" disabled={disabled||!editor.can().undo()} onClick={()=>editor.chain().focus().undo().run()}><Undo2 size={16}/></Button>
         <Button variant="ghost" size="icon" type="button" aria-label="Redo" title="Redo" disabled={disabled||!editor.can().redo()} onClick={()=>editor.chain().focus().redo().run()}><Redo2 size={16}/></Button>
     </div>
-    {insert&&<div className="lesson-insert"><label>{insert==='link'?'Link URL':insert==='image'?'Image URL':'Video URL'}<input type="url" autoFocus value={url} maxLength={2000} disabled={disabled} onChange={e=>setUrl(e.target.value)} placeholder="https://"/></label>{insert!=='link'&&<label>{insert==='image'?'Image description':'Video title'}<input value={label} maxLength={insert==='image'?500:240} disabled={disabled} onChange={e=>setLabel(e.target.value)}/></label>}<div><Button type="button" disabled={disabled} onClick={add}>Insert {insert}</Button><Button type="button" variant="ghost" onClick={()=>setInsert(null)}>Cancel</Button></div>{error&&<p role="alert">{error}</p>}{insert!=='link'&&<small>Use a public resource you have permission to share. Learners choose when to load external media. Private uploads come later.</small>}</div>}
+    {insert&&<div className="lesson-insert"><Label>{insert==='link'?'Link URL':insert==='image'?'Image URL':'Video URL'}<Input type="url" autoFocus value={url} maxLength={2000} disabled={disabled} onChange={e=>setUrl(e.target.value)} placeholder="https://"/></Label>{insert!=='link'&&<Label>{insert==='image'?'Image description':'Video title'}<Input value={label} maxLength={insert==='image'?500:240} disabled={disabled} onChange={e=>setLabel(e.target.value)}/></Label>}<div><Button type="button" disabled={disabled} onClick={add}>Insert {insert}</Button><Button type="button" variant="ghost" onClick={()=>setInsert(null)}>Cancel</Button></div>{error&&<p role="alert">{error}</p>}{insert!=='link'&&<small>Use a public resource you have permission to share. Learners choose when to load external media. Private uploads come later.</small>}</div>}
     <EditorContent editor={editor}/></div>;
 }

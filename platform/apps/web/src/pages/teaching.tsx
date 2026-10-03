@@ -7,6 +7,7 @@ import { useWorkspace } from '../lib/context';
 import { holdsGrant, startsTracks, teachesPart, teachesAny } from '../../../../packages/domain/src/instructors';
 import { CreateModal } from '../components/forms';
 import { useState } from 'react';
+import { Button } from '../components/ui/button';
 
 /** An instructor's own tracks and the knowledge-check answers waiting for their feedback. */
 export function TeachingPage() {
@@ -17,7 +18,7 @@ export function TeachingPage() {
     const reviews = teachesAny(data, me);
     return <section className="teaching-page">
         <PageHeading eyebrow="YOUR TEACHING" title="Teach what you know." body={reviews ? 'Author lessons for the tracks you teach and give feedback on knowledge checks. Scores stay private to each learner.' : 'Write lesson drafts for the tracks you contribute to. Their instructors publish them.'}/>
-        <div className="teaching-heading-row"><h2 className="teaching-heading">Your tracks</h2>{startsTracks(data, me) && <button type="button" className="button secondary" onClick={() => setStarting(true)}><Plus size={15} aria-hidden="true"/>Start a track</button>}</div>
+        <div className="teaching-heading-row"><h2 className="teaching-heading">Your tracks</h2>{startsTracks(data, me) && <Button variant="secondary" type="button" className="button secondary" onClick={() => setStarting(true)}><Plus size={15} aria-hidden="true"/>Start a track</Button>}</div>
         <ul className="teaching-tracks">{taught.map(t => {
             const lessons = data.lessons.filter(l => l.trackId === t.id && l.published).length;
             const drafts = data.lessonDrafts.filter(d => d.trackId === t.id && !d.archived && d.publishedVersion !== d.version).length;

@@ -6,6 +6,13 @@ import { newId } from '../../../../packages/contracts/src/index';
 import {
     MAX_QUIZ_ATTEMPTS, MAX_QUIZ_OPTIONS, MAX_QUIZ_QUESTIONS, lessonQuizSchema, questionKinds, quizMaxScore, type AuthoredQuiz, type QuestionKind,
 } from '../../../../packages/contracts/src/assessments';
+import { Checkbox } from './ui/checkbox';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { NativeSelect } from './ui/native-select';
+import { OptionalRadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Switch } from './ui/switch';
+import { Textarea } from './ui/textarea';
 
 type Question = AuthoredQuiz['questions'][number];
 type Option = Question['options'][number];
@@ -53,13 +60,13 @@ export function QuizEditor({ quiz, disabled, onChange }: {
         </div>
         {quiz && <>
             <div className="quiz-settings">
-                <label>Pass mark (%)<input type="number" min={1} max={100} step={1} inputMode="numeric" placeholder="None" value={quiz.passPercentage ?? ''} disabled={disabled}
-                    onChange={e => { const value = e.target.value; edit(current => ({ ...current, passPercentage: value === '' ? null : Math.round(Number(value)) })); }}/></label>
-                <label>Attempts<select value={quiz.maxAttempts ?? ''} disabled={disabled} onChange={e => { const value = e.target.value; edit(current => ({ ...current, maxAttempts: value === '' ? null : Number(value) })); }}>
+                <Label>Pass mark (%)<Input type="number" min={1} max={100} step={1} inputMode="numeric" placeholder="None" value={quiz.passPercentage ?? ''} disabled={disabled}
+                    onChange={e => { const value = e.target.value; edit(current => ({ ...current, passPercentage: value === '' ? null : Math.round(Number(value)) })); }}/></Label>
+                <Label>Attempts<NativeSelect value={quiz.maxAttempts ?? ''} disabled={disabled} onChange={e => { const value = e.target.value; edit(current => ({ ...current, maxAttempts: value === '' ? null : Number(value) })); }}>
                     <option value="">Unlimited</option>{Array.from({ length: MAX_QUIZ_ATTEMPTS }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
-                </select></label>
-                <label className="quiz-toggle"><input type="checkbox" checked={quiz.revealAnswers} disabled={disabled} onChange={e => { const checked = e.target.checked; edit(current => ({ ...current, revealAnswers: checked })); }}/>
-                    <span>Show correct answers and explanations once a learner passes or uses every attempt. With no pass mark, they appear after each attempt is marked.</span></label>
+                </NativeSelect></Label>
+                <Label className="quiz-toggle"><Switch checked={quiz.revealAnswers} disabled={disabled} onCheckedChange={checked => { edit(current => ({ ...current, revealAnswers: checked })); }}/>
+                    <span>Show correct answers and explanations once a learner passes or uses every attempt. With no pass mark, they appear after each attempt is marked.</span></Label>
             </div>
             <ol className="quiz-question-list">{quiz.questions.map((q, i) => <QuestionEditor key={q.id} question={q} index={i} count={quiz.questions.length} disabled={disabled}
                 onChange={update => editQuestion(q.id, update)} onMove={delta => move(i, delta)}
@@ -87,37 +94,37 @@ function QuestionEditor({ question: q, index, count, disabled, onChange, onMove,
     return <li className="quiz-question-editor">
         <div className="quiz-question-editor-head">
             <strong>Question {index + 1}</strong>
-            <label>Type<select value={q.kind} disabled={disabled} onChange={e => { const kind = e.target.value as QuestionKind; onChange(x => convertQuestion(x, kind)); }}>
+            <Label>Type<NativeSelect value={q.kind} disabled={disabled} onChange={e => { const kind = e.target.value as QuestionKind; onChange(x => convertQuestion(x, kind)); }}>
                 {Object.entries(questionKinds).map(([kind, name]) => <option key={kind} value={kind}>{name}</option>)}
-            </select></label>
-            <label>Points<select value={q.points} disabled={disabled} onChange={e => { const points = Number(e.target.value); onChange(x => ({ ...x, points })); }}>
+            </NativeSelect></Label>
+            <Label>Points<NativeSelect value={q.points} disabled={disabled} onChange={e => { const points = Number(e.target.value); onChange(x => ({ ...x, points })); }}>
                 {Array.from({ length: 10 }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
-            </select></label>
+            </NativeSelect></Label>
             <div className="resource-row-order">
                 <button type="button" className="icon-button" aria-label={`Move ${label} up`} disabled={disabled || index === 0} onClick={() => onMove(-1)}><ArrowUp size={14}/></button>
                 <button type="button" className="icon-button" aria-label={`Move ${label} down`} disabled={disabled || index === count - 1} onClick={() => onMove(1)}><ArrowDown size={14}/></button>
             </div>
         </div>
-        <label>Question<textarea rows={2} maxLength={300} value={q.prompt} disabled={disabled} placeholder="What should a learner be able to answer after this lesson?" onChange={e => { const prompt = e.target.value; onChange(x => ({ ...x, prompt })); }}/></label>
-        {isChoice(q.kind) && <fieldset className="quiz-option-list" disabled={disabled}>
+        <Label>Question<Textarea rows={2} maxLength={300} value={q.prompt} disabled={disabled} placeholder="What should a learner be able to answer after this lesson?" onChange={e => { const prompt = e.target.value; onChange(x => ({ ...x, prompt })); }}/></Label>
+        {isChoice(q.kind) && <OptionalRadioGroup when={q.kind === 'single'} value={q.options.find(o => o.correct)?.id ?? ''} onValueChange={id => markCorrect(id, true)}><fieldset className="quiz-option-list" disabled={disabled}>
             <legend>{q.kind === 'single' ? 'Options · select the correct answer' : 'Options · tick every correct answer'}</legend>
             {q.options.map((o, j) => <div key={o.id} className="quiz-option-editor">
-                <input type={q.kind === 'single' ? 'radio' : 'checkbox'} name={`correct-${q.id}`} checked={o.correct} aria-label={`Option ${j + 1} of ${label} is correct`} onChange={e => markCorrect(o.id, e.target.checked)}/>
-                <input value={o.text} maxLength={150} aria-label={`Option ${j + 1} of ${label}`} placeholder={`Option ${j + 1}`} onChange={e => { const text = e.target.value; onChange(x => ({ ...x, options: x.options.map(y => y.id === o.id ? { ...y, text } : y) })); }}/>
+                {q.kind === 'single' ? <RadioGroupItem value={o.id} aria-label={`Option ${j + 1} of ${label} is correct`}/> : <Checkbox checked={o.correct} aria-label={`Option ${j + 1} of ${label} is correct`} onCheckedChange={on => markCorrect(o.id, on === true)}/>}
+                <Input value={o.text} maxLength={150} aria-label={`Option ${j + 1} of ${label}`} placeholder={`Option ${j + 1}`} onChange={e => { const text = e.target.value; onChange(x => ({ ...x, options: x.options.map(y => y.id === o.id ? { ...y, text } : y) })); }}/>
                 <button type="button" className="icon-button" aria-label={`Remove option ${j + 1} of ${label}`} disabled={q.options.length <= 2} onClick={() => removeOption(o.id)}><X size={14}/></button>
             </div>)}
             <Button type="button" variant="ghost" size="sm" disabled={q.options.length >= MAX_QUIZ_OPTIONS} onClick={() => onChange(x => ({ ...x, options: [...x.options, { id: nextOptionId(x.options), text: '', correct: false }] }))}><Plus size={14} aria-hidden="true"/>Add option</Button>
-        </fieldset>}
+        </fieldset></OptionalRadioGroup>}
         {q.kind === 'short' && <fieldset className="quiz-option-list" disabled={disabled}>
             <legend>Accepted answers · matched ignoring capital letters and extra spaces</legend>
             {q.acceptedAnswers.map((answer, j) => <div key={j} className="quiz-option-editor">
-                <input value={answer} maxLength={120} aria-label={`Accepted answer ${j + 1} for ${label}`} placeholder="An answer you accept" onChange={e => { const text = e.target.value; onChange(x => ({ ...x, acceptedAnswers: x.acceptedAnswers.map((y, k) => k === j ? text : y) })); }}/>
+                <Input value={answer} maxLength={120} aria-label={`Accepted answer ${j + 1} for ${label}`} placeholder="An answer you accept" onChange={e => { const text = e.target.value; onChange(x => ({ ...x, acceptedAnswers: x.acceptedAnswers.map((y, k) => k === j ? text : y) })); }}/>
                 <button type="button" className="icon-button" aria-label={`Remove accepted answer ${j + 1} for ${label}`} disabled={q.acceptedAnswers.length <= 1} onClick={() => onChange(x => ({ ...x, acceptedAnswers: x.acceptedAnswers.filter((_, k) => k !== j) }))}><X size={14}/></button>
             </div>)}
             <Button type="button" variant="ghost" size="sm" disabled={q.acceptedAnswers.length >= 10} onClick={() => onChange(x => ({ ...x, acceptedAnswers: [...x.acceptedAnswers, ''] }))}><Plus size={14} aria-hidden="true"/>Add accepted answer</Button>
         </fieldset>}
         {q.kind === 'written' && <p className="quiz-editor-note">An owner or administrator marks written responses and sends feedback. The learner can try again once it is reviewed.</p>}
-        <label>Explanation shown with the answers (optional)<textarea rows={2} maxLength={300} value={q.explanation} disabled={disabled} onChange={e => { const explanation = e.target.value; onChange(x => ({ ...x, explanation })); }}/></label>
+        <Label>Explanation shown with the answers (optional)<Textarea rows={2} maxLength={300} value={q.explanation} disabled={disabled} onChange={e => { const explanation = e.target.value; onChange(x => ({ ...x, explanation })); }}/></Label>
         <div className="resource-row-actions"><Button type="button" variant="ghost" size="sm" disabled={disabled || count <= 1} aria-label={`Remove ${label}`} onClick={onRemove}><Trash2 size={14} aria-hidden="true"/>Remove question</Button></div>
     </li>;
 }

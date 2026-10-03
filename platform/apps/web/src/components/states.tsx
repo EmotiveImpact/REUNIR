@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Compass, Home, KeyRound, Lock, RefreshCw, ServerCrash, ShieldAlert, TriangleAlert, WifiOff, type LucideIcon } from 'lucide-react';
 import { mode } from '../lib/data';
 import { ApiError, displayError, failureOf, type Failure } from '../lib/errors';
+import { Button } from './ui/button';
 
 /**
  * Loading, error and empty screens share these pieces so every part of REUNIR says the same honest thing in the same way.
@@ -31,7 +32,7 @@ export function Loading({ label = 'Loading…', lines = 3, className = '' }: { l
 /** A panel or list that could not load: the message, and a way to try again, in place. */
 export function InlineError({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
     const Icon = failures[failureOf(error)].icon;
-    return <div className="state-inline-error" role="alert"><Icon size={16} aria-hidden="true"/><p>{displayError(error)}</p>{onRetry && <button type="button" className="button secondary compact" onClick={onRetry}>Try again</button>}</div>;
+    return <div className="state-inline-error" role="alert"><Icon size={16} aria-hidden="true"/><p>{displayError(error)}</p>{onRetry && <Button variant="secondary" size="sm" type="button" className="button secondary compact" onClick={onRetry}>Try again</Button>}</div>;
 }
 /** A route's code or data is on its way: the shell stays, the page area shows its outline. */
 export function PageLoading({ label = 'Opening your next step…' }: { label?: string }) {
@@ -61,7 +62,7 @@ export function ErrorState({ error, onRetry, retryLabel, home = true, saved = fa
         <p>{copy.body}</p>
         {saved && <p className="state-note">{SAVED_NOTE}</p>}
         <div className="empty-actions">
-            {retry && <button type="button" className="button primary" onClick={retry}><RefreshCw size={16} aria-hidden="true"/>{retryLabel ?? (kind === 'session' ? 'Sign in again' : kind === 'outdated' ? 'Reload REUNIR' : 'Try again')}</button>}
+            {retry && <Button variant="default" type="button" className="button primary" onClick={retry}><RefreshCw size={16} aria-hidden="true"/>{retryLabel ?? (kind === 'session' ? 'Sign in again' : kind === 'outdated' ? 'Reload REUNIR' : 'Try again')}</Button>}
             {kind === 'two-factor' && <Link className="button secondary" to="/account">Open Your account</Link>}
             {home && <Link className="button secondary" to="/"><Home size={16} aria-hidden="true"/>Go to your home</Link>}
         </div>
@@ -112,7 +113,7 @@ export function ConnectionNotice({ online, refreshError, onRetry }: { online: bo
     const kind = failureOf(refreshError);
     return <div className="state-banner" role="status" data-state={kind}>{kind === 'session' ? <KeyRound size={17} aria-hidden="true"/> : <ServerCrash size={17} aria-hidden="true"/>}
         <p>{kind === 'session' ? <><strong>Your session has ended.</strong> Sign in again to carry on. What you see may be out of date.</> : kind === 'forbidden' ? <><strong>Your access has changed.</strong> Reload to see what this account can open now.</> : <><strong>The latest changes could not be loaded.</strong> You are seeing what was loaded earlier.</>}</p>
-        <button type="button" className="button secondary compact" onClick={kind === 'session' || kind === 'forbidden' ? () => window.location.reload() : onRetry}>{kind === 'session' ? 'Sign in again' : kind === 'forbidden' ? 'Reload' : 'Try again'}</button></div>;
+        <Button variant="secondary" size="sm" type="button" className="button secondary compact" onClick={kind === 'session' || kind === 'forbidden' ? () => window.location.reload() : onRetry}>{kind === 'session' ? 'Sign in again' : kind === 'forbidden' ? 'Reload' : 'Try again'}</Button></div>;
 }
 
 /** Demo only: set by the simulated fault page (components/simulated-fault.tsx) and cleared by Retry. */

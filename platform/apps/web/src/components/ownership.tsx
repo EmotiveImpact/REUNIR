@@ -6,6 +6,9 @@ import { displayError } from '../lib/data';
 import { handOverOwnership } from '../lib/ownership';
 import { Modal } from './ui';
 import type { Member } from '../../../../packages/contracts/src/index';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 
 /** The owner hands the community to an administrator, after their password and the community's name. */
 export function HandOverDialogue({ target, onClose }: { target: Member; onClose: () => void }) {
@@ -27,17 +30,17 @@ export function HandOverDialogue({ target, onClose }: { target: Member; onClose:
         <form className="form-stack" onSubmit={submit} noValidate>
             <p className="account-warning">{target.name} becomes the owner of {community}: they assign roles and can hand it on again. You stay as an administrator, and only the new owner can change that. Posts, projects and everything else stay exactly as they are.</p>
             {mode === 'live'
-                ? <div className="account-field"><label htmlFor={passwordField}>Your password</label><input id={passwordField} type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} disabled={working}/></div>
+                ? <div className="account-field"><Label htmlFor={passwordField}>Your password</Label><Input id={passwordField} type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} disabled={working}/></div>
                 : <p className="sample-note">This fictional demo has no passwords. A connected community asks for yours here.</p>}
             <div className="account-field">
-                <label htmlFor={nameField}>Type <strong>{community}</strong> to confirm</label>
-                <input id={nameField} aria-describedby={nameHint} autoComplete="off" spellCheck={false} required value={typed} onChange={e => setTyped(e.target.value)} disabled={working}/>
+                <Label htmlFor={nameField}>Type <strong>{community}</strong> to confirm</Label>
+                <Input id={nameField} aria-describedby={nameHint} autoComplete="off" spellCheck={false} required value={typed} onChange={e => setTyped(e.target.value)} disabled={working}/>
                 <small id={nameHint}>Typing the community’s name guards against handing it over by accident.</small>
             </div>
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="modal-actions">
-                <button type="button" className="button secondary" onClick={onClose} disabled={working}>Keep ownership</button>
-                <button type="submit" className="button primary" disabled={working}>{working ? <LoaderCircle size={15} className="spin" aria-hidden="true"/> : <Crown size={15} aria-hidden="true"/>}Hand over ownership</button>
+                <Button variant="secondary" type="button" className="button secondary" onClick={onClose} disabled={working}>Keep ownership</Button>
+                <Button variant="default" type="submit" className="button primary" disabled={working}>{working ? <LoaderCircle size={15} className="spin" aria-hidden="true"/> : <Crown size={15} aria-hidden="true"/>}Hand over ownership</Button>
             </div>
         </form>
     </Modal>;

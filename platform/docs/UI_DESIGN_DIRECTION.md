@@ -19,7 +19,7 @@ Reference SHA-256: `c27b5c75f88837ae6c5a1b49368b2c432a5deb8edfa8a27c16b25521d66c
 
 `App.tsx` implements the two-level shell, global search and a single keyboard-operated account menu. `PurposeHome` is backed by the existing filtered workspace and `pathProgress`. Counts, next steps, projects, activity and published outputs use actual current records. Pending proof, private messages and other people's private goals are not activity content.
 
-`components/ui/button.tsx`, `avatar.tsx` and `dropdown-menu.tsx` adapt official shadcn registry source over pinned Radix primitives. `components.json`, `lib/utils.ts`, Tailwind utilities/theme and a Vite plugin are present. The original stylesheet remains; scoped v4 styles keep the other working routes coherent. This is not a claim that every legacy form/dialog has been migrated to shadcn.
+`components/ui/button.tsx`, `avatar.tsx` and `dropdown-menu.tsx` adapt official shadcn registry source over pinned Radix primitives. `components.json`, `lib/utils.ts`, Tailwind utilities/theme and a Vite plugin are present. The original stylesheet remains; scoped v4 styles keep the other working routes coherent. Since Alpha 30 every form uses the shared shadcn Input, Textarea, Label, Native Select, Checkbox, Radio Group, Switch and Button; the dialogue remains a native modal `dialog` with shadcn slots (FORMS.md).
 
 The account menu uses Radix's supported non-modal mode, with keyboard navigation, Escape, focus restoration and outside dismissal. The mobile drawer has an explicit close control, focus cycling and Escape handling. Drawer content is not duplicated into another independent navigation system.
 

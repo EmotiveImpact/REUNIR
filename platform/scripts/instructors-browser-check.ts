@@ -106,7 +106,7 @@ try {
         await dialog().getByLabel('Add someone to teach').selectOption({ label: 'Maya Bennett' });
         await dialog().getByLabel('Only the lessons I choose').check();
         await expect(dialog().getByRole('button', { name: 'Add', exact: true })).toBeDisabled();
-        await dialog().locator('.instructor-lessons label').first().locator('input').check();
+        await dialog().locator('.instructor-lessons [role=checkbox]').first().check();
         await dialog().getByRole('button', { name: 'Add', exact: true }).click();
         await expect(toast()).toContainText('Maya Bennett can now author and review 1 lesson of From idea to first version.');
         const row = dialog().locator('.instructor-list li', { hasText: 'Maya Bennett' });
@@ -115,7 +115,7 @@ try {
         await neutral(); await a11y('lesson-grant-dialog');
         // Widening the grant replaces it in place; nobody has to be removed and added again.
         await dialog().getByRole('button', { name: 'Change lessons for Maya Bennett', exact: true }).click();
-        await expect(row.locator('.instructor-grant-scope input[type=checkbox]').first()).toBeChecked();
+        await expect(row.locator('.instructor-grant-scope [role=checkbox]').first()).toBeChecked();
         await row.getByLabel('The whole track, including new lessons').check();
         await row.getByRole('button', { name: 'Save lessons', exact: true }).click();
         await expect(row).toContainText('Instructor, whole track');

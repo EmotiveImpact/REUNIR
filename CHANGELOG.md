@@ -8,20 +8,18 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### 0.29.0-alpha.1 (Alpha 29): files on project tasks and live project work, 3 October 2026
+### 0.30.0-alpha.1 (Alpha 30): every form on the shared shadcn components, 3 October 2026
 
 On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass. The package version stays at 0.39.0-alpha.1, set by Alpha 39.
 
-**In plain language:** project teams can now attach files to tasks, through the same private, checked upload path as lesson files. Workboards and open tasks update within a few seconds when a teammate changes something, and if someone changes a task you are editing, you are told who and choose whether to load their version or keep your own edits.
+**In plain language:** every form in the app now uses the same set of shared components for text boxes, labels, drop-down lists, tick boxes, choice buttons and on/off switches. Nothing looks different and nothing moves; keyboard and screen-reader behaviour is now consistent everywhere.
 
 Details:
 
-- **Task files:** up to 12 per task and 200 per project, the same types and 10 MB limit as lesson files, and the same virus scanning (Alpha 23) when a scanner is configured. Only people who can currently work on the project can download them; suspension ends access at once. The uploader, the project lead or an active owner or administrator can remove a file, and its stored copy is deleted once the change commits.
-- Account deletion keeps attached files as Former member work and removes the person's unfinished uploads; `db:prune-covers` also clears stale task uploads.
-- **Live project work:** the browser checks a small per-project change endpoint every 5 seconds while the tab is visible (304 when nothing changed), pauses when hidden and backs off on errors. No new infrastructure; server-sent events could replace it later behind the same hook.
-- **Edit conflicts:** a task changed by someone else while you edit shows who changed it and when, keeps your text and waits for you to load theirs or keep yours. No presence indicator, by choice.
-- Additive migration 0029 adds `upload_intents.task_id`, `project_tasks.updated_by` and four restrictive row-security policies; no grant change (decision 029). Task files go through Alpha 23 upload scanning on the shared upload path.
-- New demo browser suite `npm run test:browser:task-files`. No new dependency.
+- Seven more adapted shadcn new-york-v4 components (Input, Textarea, Label, Native Select, Checkbox, Radio Group, Switch) over four exactly pinned Radix packages; notices, licences and register entries added.
+- Field names, ids, labels, validation and submit handlers are unchanged. Show archive and showing answers after a knowledge check became switches.
+- The dialogue keeps its native modal `dialog` with shadcn slots and a shadcn close button. File pickers and focal-point sliders stay native.
+- New `test:browser:forms` in CI and a Python contract check (`scripts/test_forms_contract.py`). FORMS.md and decision 030 explain the choices.
 
 ### Alpha 36: instructors start their own tracks (no version change), 3 October 2026
 
@@ -39,6 +37,21 @@ Details:
 ### Planned
 
 - Nothing further is planned for accounts and trust in this round. Removing someone from a project team, credits on outcomes and appeals against suspension remain undecided.
+
+## 0.29.0-alpha.1 (Alpha 29): files on project tasks and live project work, 3 October 2026
+
+On main through [PR #27](https://github.com/EmotiveImpact/REUNIR/pull/27), merged as `2561a00`. The package version stays at 0.39.0-alpha.1, set by Alpha 39.
+
+**In plain language:** project teams can now attach files to tasks, through the same private, checked upload path as lesson files. Workboards and open tasks update within a few seconds when a teammate changes something, and if someone changes a task you are editing, you are told who and choose whether to load their version or keep your own edits.
+
+Details:
+
+- **Task files:** up to 12 per task and 200 per project, the same types and 10 MB limit as lesson files, and the same virus scanning (Alpha 23) when a scanner is configured. Only people who can currently work on the project can download them; suspension ends access at once. The uploader, the project lead or an active owner or administrator can remove a file, and its stored copy is deleted once the change commits.
+- Account deletion keeps attached files as Former member work and removes the person's unfinished uploads; `db:prune-covers` also clears stale task uploads.
+- **Live project work:** the browser checks a small per-project change endpoint every 5 seconds while the tab is visible (304 when nothing changed), pauses when hidden and backs off on errors. No new infrastructure; server-sent events could replace it later behind the same hook.
+- **Edit conflicts:** a task changed by someone else while you edit shows who changed it and when, keeps your text and waits for you to load theirs or keep yours. No presence indicator, by choice.
+- Additive migration 0029 adds `upload_intents.task_id`, `project_tasks.updated_by` and four restrictive row-security policies; no grant change (decision 029). Task files go through Alpha 23 upload scanning on the shared upload path.
+- New demo browser suite `npm run test:browser:task-files`. No new dependency.
 
 ## Alpha 34: crediting teammates on a contribution (no version change), 3 October 2026
 
