@@ -1,6 +1,6 @@
-# Decision 024: confirming email addresses, and changing your own
+# Decision 026: confirming email addresses, and changing your own
 
-Status: implemented in Alpha 24, verified locally; not deployed. Date: 3 October 2026.
+Status: implemented in Alpha 26, verified locally; not deployed. Date: 3 October 2026.
 
 ## Problem
 

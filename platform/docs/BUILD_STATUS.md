@@ -1,8 +1,8 @@
-# Alpha 24 confirming and changing your email address
+# Alpha 26 confirming and changing your email address
 
-3 October 2026. Application 0.24.0-alpha.1. People confirm their email address by a link, and accepting an invitation confirms it. When the server requires it, the production default, an unconfirmed address cannot sign in. Anyone can move their account to a new address with their password and a link sent there. See decisions/024-email-confirmation-and-change.md and ACCOUNTS.md.
+3 October 2026. Application 0.26.0-alpha.1. People confirm their email address by a link, and accepting an invitation confirms it. When the server requires it, the production default, an unconfirmed address cannot sign in. Anyone can move their account to a new address with their password and a link sent there. See decisions/026-email-confirmation-and-change.md and ACCOUNTS.md.
 
-Numbering: main carried Alpha 22 (cover descriptions, PR #15) and Alpha 23 (virus scanning) was already on its own open pull request (#16), so this slice took the next number not claimed. It has no migration.
+Numbering: first opened as Alpha 24. Alpha 23 is claimed by open pull requests (#16, #21), Alpha 24 (group conversations, PR #19) reached main first, and Alpha 25 is on PR #20, so this release is Alpha 26 with decision 026. It has no migration.
 
 ## Status at a glance
 
@@ -24,7 +24,7 @@ Numbering: main carried Alpha 22 (cover descriptions, PR #15) and Alpha 23 (viru
 - `/api/account/capabilities` adds `emailVerification`, `emailConfirmation` and `emailChange`; `/api/session` adds the person's own `email` and `emailVerified`.
 - Review fixes on PR #18: changing or resetting the password cancels any change link asked for before it (the server refuses an older link and the address stays), and the password check no longer needs a session started within the last day, so days two to seven of a session can change the address, delete the account or hand over a community.
 - `npm run launch:preflight` (from PR #17) now also checks `EMAIL_VERIFICATION`: an invalid value fails, `optional` warns. Against the blank `.env.example` it reports 5 failures and 6 warnings.
-- No migration, no grant change, no new runtime dependency. Release constant and package version are 0.24.0-alpha.1.
+- No migration, no grant change, no new runtime dependency. Release constant and package version are 0.26.0-alpha.1.
 
 ## Local verification, 3 October 2026
 
@@ -44,7 +44,7 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 ## Not verified, and why
 
 - No real mail was sent; links were read from the encrypted outbox. Hosted Better Auth and a real reverse proxy were not exercised.
-- Opening a change link while signed out creates a session without the second step, as Better Auth does (decision 024).
+- Opening a change link while signed out creates a session without the second step, as Better Auth does (decision 026).
 
 ## Next actions
 

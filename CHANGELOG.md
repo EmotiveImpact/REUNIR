@@ -8,16 +8,16 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### 0.24.0-alpha.1 (Alpha 24): confirming and changing your email address, 3 October 2026
+### 0.26.0-alpha.1 (Alpha 26): confirming and changing your email address, 3 October 2026
 
-On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. Alpha 23 (virus scanning of uploads) is on its own pull request; this release took the next number not already claimed.
+On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. Alpha 23 is claimed by open pull requests (#16, #21), Alpha 24 (group conversations, PR #19) reached main first, and Alpha 25 is on PR #20, so this release is Alpha 26 with decision 026.
 
 **In plain language:** people can now confirm their email address with a link, and accepting an invitation confirms it automatically. Once the app is live, an address has to be confirmed before it can sign in. Anyone can also move their account to a new email address: they enter their password, open the link sent to the new address, and their old address is told.
 
 Details:
 
 - **Email address** panel on Your account: the address, Confirmed or Not confirmed, **Send a confirmation link** and **Change email address…**.
-- `EMAIL_VERIFICATION` (`required` or `optional`, required by default in production, applied only where mail can be sent): an unconfirmed address gets a fresh link instead of a session (decision 024).
+- `EMAIL_VERIFICATION` (`required` or `optional`, required by default in production, applied only where mail can be sent): an unconfirmed address gets a fresh link instead of a session (decision 026).
 - `POST /api/account/email` checks the password, then sends a confirmation link to the new address; the address changes only when it is opened. The current address gets a notice. Better Auth's own change-email route is closed.
 - Changing or resetting the password cancels any change link asked for before it.
 - The launch preflight also checks `EMAIL_VERIFICATION`.

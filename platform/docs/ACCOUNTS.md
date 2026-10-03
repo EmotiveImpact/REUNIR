@@ -77,16 +77,16 @@ Version 0.21.0-alpha.1. Your account has a **Two-step sign-in** panel. Any accou
 
 The plugin is Better Auth's own (`better-auth/plugins/two-factor`, no new dependency). Migration 0021 adds `auth_user.two_factor_enabled` and `auth_two_factor`; the secret and backup codes are encrypted by Better Auth with the session secret. The decision is in `decisions/021-two-step-sign-in.md`.
 
-## Your email address (Alpha 24)
+## Your email address (Alpha 26)
 
-Version 0.24.0-alpha.1. Your account has an **Email address** panel showing the address you sign in with and whether it is **Confirmed**.
+Version 0.26.0-alpha.1. Your account has an **Email address** panel showing the address you sign in with and whether it is **Confirmed**.
 
 - **Confirming it.** **Send a confirmation link** queues a link to that address; it works once, for 24 hours. Opening it returns to Your account with "Thank you. This address is confirmed." Accepting an invitation confirms the invited address as well, since only that inbox received the link.
 - **When the server requires it** (`EMAIL_VERIFICATION=required`, the default in production once a sender is configured), signing in with an unconfirmed address makes no session: the sign-in page says a new link is on its way, and the person signs in after opening it.
 - **Changing it.** **Change email address…** asks for the new address and your password. A confirmation link goes to the new address and a notice to the current one, naming the new address only in part. Nothing changes until the link is opened; then the new address signs in, is confirmed, and the old one no longer works. If the new address already has an account, the answer is the same and nothing is sent there. Five attempts in fifteen minutes are allowed. Invitations already sent to the old address still need it.
 - **The demo** has no addresses, so its panel only explains the feature.
 
-`POST /api/account/email` checks the password against the stored hash with Better Auth's hasher and then sends Better Auth's own change link (the same signed token its change-email flow makes); changing or resetting the password afterwards cancels that link, and the server refuses it with "That link no longer works"; Better Auth's own `/api/auth/change-email` route is closed so the password is always asked for. No migration: `auth_user.email_verified` and `auth_verification` already existed. The decision is in `decisions/024-email-confirmation-and-change.md`.
+`POST /api/account/email` checks the password against the stored hash with Better Auth's hasher and then sends Better Auth's own change link (the same signed token its change-email flow makes); changing or resetting the password afterwards cancels that link, and the server refuses it with "That link no longer works"; Better Auth's own `/api/auth/change-email` route is closed so the password is always asked for. No migration: `auth_user.email_verified` and `auth_verification` already existed. The decision is in `decisions/026-email-confirmation-and-change.md`.
 
 ## Known limits
 
