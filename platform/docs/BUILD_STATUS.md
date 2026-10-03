@@ -31,10 +31,10 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 634 passed before the merge (625 plus 9 new in `tests/email-http.test.ts`, real Better Auth with the outbox captured); MERGED_TESTS after it |
+| `npm test` | 634 passed before the merge (625 plus 9 new in `tests/email-http.test.ts`, real Better Auth with the outbox captured); 636 of 636 after merging main at `ec4285d` |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
-| Demo-browser suites | `test:browser` 85, `v4` 20, `monochrome` 16, `accounts` 12 (1 new: the explanatory email panel), `covers` after the merge COVERS_COUNT |
+| Demo-browser suites | `test:browser` 85, `v4` 20, `monochrome` 16, `accounts` 12 (1 new: the explanatory email panel), `covers` 17 after the merge, `accounts-connected` 13 |
 | Connected-browser suites | `accounts-connected` 13 (2 new: confirming an address by its link, and changing it in a real browser) |
 | `npm run test:postgres` | Not rerun: no migration or grant changed; CI runs it on PostgreSQL 17 |
 | Python helpers | 35 passed |
