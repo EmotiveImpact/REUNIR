@@ -43,6 +43,7 @@ jobs:
       - run: npm run test:browser:accounts
       - run: npm run test:browser:notifications
       - run: npm run test:browser:appeals
+      - run: npm run test:browser:evidence
       - run: npm run test:browser:groups
       - run: npm run test:browser:states
       - run: npm run test:browser:monochrome
