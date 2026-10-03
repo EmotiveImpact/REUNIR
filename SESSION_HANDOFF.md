@@ -1,15 +1,17 @@
-# Current continuation: Alpha 22 cover descriptions, then the rest of the roadmap
+# Current continuation: launch kit after Alpha 22, then the rest of the covers work
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, decisions/022-cover-descriptions.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, LAUNCH_RUNBOOK.md, COVERS.md, decisions/022-cover-descriptions.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `b24095a`, the merge of PR #14 (Alpha 21), tree identical to its tested head `3f573bd`.
+- Base: main `ec4285d`, the merge of PR #15 (Alpha 22), tree identical to its tested head `1645ab7`. PR #15 passed CI runs 37121503128 and 37121505780.
 - This slice: branch `claude/build-out-tvzn40`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ## What is done
 
 Whoever may change a track or project cover can add an optional description of up to 150 characters. The track's or project's own page announces a described cover as an image; everywhere else covers stay decorative. A new picture starts without a description. No migration.
+
+The launch kit adds `platform/docs/LAUNCH_RUNBOOK.md` and `npm run launch:preflight`, an offline check of a production environment's names and shapes that never prints a value. Nothing was provisioned; the owner decides when to launch.
 
 ## Run it
 
@@ -29,7 +31,7 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 
 ## Next
 
-1. Virus scanning of uploads (Alpha 23) and group conversations (Alpha 24).
+1. Cover thumbnails, cover library renaming and tags, and a higher library limit (this thread). Virus scanning of uploads, group conversations, accounts and trust, courses and teaching, and everyday use are owned by other threads since 3 October 2026; built and tested scanning and group conversation commits are in the project files under `ferven/handover/`. Each pull request takes the next free alpha and migration numbers from main.
 2. Email verification and change, then the remaining account and trust items in ROADMAP.md.
 3. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
 

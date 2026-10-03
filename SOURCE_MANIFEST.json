@@ -1,8 +1,8 @@
 {
-  "release": "REUNIR Alpha 22 cover descriptions",
+  "release": "REUNIR Alpha 22 cover descriptions and launch kit",
   "version": "0.22.0-alpha.1",
-  "sourceBaseline": "b24095a115bf852558a8bc82b61dcb1f42678ab7",
-  "generatedAt": "2026-10-03T12:00:56.590584+00:00",
+  "sourceBaseline": "ec4285d41f7107fb44bfcd9a6b419d5eb31a3cc1",
+  "generatedAt": "2026-10-03T12:17:48.296388+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "570454b94eddf388aba20ef9b1ea92f9eda6499fe3d456e38b37b550901393f9",
-      "bytes": 26943
+      "sha256": "a1c7c746fde25ece4c49a9fa310189a91beb8d8b7dbbb598a77e8ea50f6eeced",
+      "bytes": 27875
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "9a57251919042372c220c3a724b9f8ef76c667ed0ffd0400e32bfbb5fac7cf30",
-      "bytes": 57635
+      "sha256": "2f7c5c0ee71fedbfabcdb4f810c0e31b52d300bfe6c4ba60711a54ad9b7d72e2",
+      "bytes": 58305
     },
     {
       "path": "platform/.dockerignore",
@@ -46,8 +46,8 @@
     },
     {
       "path": "platform/.env.example",
-      "sha256": "5bb1abe6d2455f4c008a86c5dc7575cf14ed60ed3542a4f1525f4ddba23c8752",
-      "bytes": 1623
+      "sha256": "0dc1f7ef167a6ea96e37e701ce71a7e9bfe90327d39bd62ef778efff68c72c59",
+      "bytes": 1893
     },
     {
       "path": "platform/.gitignore",
@@ -541,8 +541,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "aa943c3979d6745ca91cb0c0e4f6a87cc6d8c7918ae73d685d28c8078c7ef060",
-      "bytes": 114391
+      "sha256": "d7165d3fa3222a59f1b6843aa606cb9426d5cf9c6bc40b17e31c53affeedc001",
+      "bytes": 118210
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -568,6 +568,11 @@
       "path": "platform/docs/INSTRUCTORS.md",
       "sha256": "d437acf8abe7b5f3f61c67a884d1ffe0fd2df6458a24af65af563a5e1d25a8cc",
       "bytes": 5309
+    },
+    {
+      "path": "platform/docs/LAUNCH_RUNBOOK.md",
+      "sha256": "cdda023c2ec6b841c93514d6902ff0f4c1a5c1fac7606b635c4cb97816ea6752",
+      "bytes": 19694
     },
     {
       "path": "platform/docs/LEARNER_RECORDS.md",
@@ -621,8 +626,8 @@
     },
     {
       "path": "platform/docs/SETUP.md",
-      "sha256": "5d0bcd543720f4df40556debb573945ff7585805a9a6ad29a6722770d3b17bfd",
-      "bytes": 17415
+      "sha256": "8cddf3ded05025e25db28f49bf515123c2482b3903b491370114e85e4ac7f68d",
+      "bytes": 17573
     },
     {
       "path": "platform/docs/UI_DESIGN_DIRECTION.md",
@@ -1036,8 +1041,8 @@
     },
     {
       "path": "platform/package.json",
-      "sha256": "b73a0f8c9300575644aee29e87903cb4b9f8025dff15724c049071e60c7af77f",
-      "bytes": 4442
+      "sha256": "b8a16ecbcbf3d574597f651f25ea403eec433785c926a18c907c3d584dbb1989",
+      "bytes": 4501
     },
     {
       "path": "platform/packages/contracts/package.json",
@@ -1435,6 +1440,11 @@
       "bytes": 12756
     },
     {
+      "path": "platform/scripts/launch-preflight.ts",
+      "sha256": "d0830b462f6cf821e7032263ba2c4ee2239684535fbb088ab77ed416da90f5df",
+      "bytes": 13217
+    },
+    {
       "path": "platform/scripts/monochrome-browser-check.ts",
       "sha256": "a0494c30f1960fcba81efbdbeb925c063f880bed691de67a7c0d48a7e53f8964",
       "bytes": 8921
@@ -1648,6 +1658,11 @@
       "path": "platform/tests/instructors.test.ts",
       "sha256": "8eaebc54b450f4bfa672594fe04d4d74c77b35829dd974acaccf935094077af8",
       "bytes": 13357
+    },
+    {
+      "path": "platform/tests/launch-preflight.test.ts",
+      "sha256": "1892ccff4dd8c9ad8fa11c03c10b5c50630aaa4d72d636129b66661b9025d347",
+      "bytes": 8717
     },
     {
       "path": "platform/tests/learning-record-http.test.ts",
