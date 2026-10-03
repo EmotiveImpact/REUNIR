@@ -1,5 +1,6 @@
 /**
- * Live build, real HTTP, Better Auth cookies and a local PGlite database. The bucket is an in-process stand-in on a
+ * Live build, real HTTP, Better Auth cookies and a local PGlite database, with the API under the restricted runtime role
+ * and forced row security. The bucket is an in-process stand-in on a
  * separate origin with CORS: it enforces the policy-bound key, type and exact size, refuses cookies and returns bytes
  * only for the verified generation. Real Google Cloud Storage signing, IAM and bucket CORS are not exercised here.
  */
@@ -12,14 +13,15 @@ import { build } from 'vite';
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { openDatabase } from '../packages/db/src/connection';
+import { openDatabase, type Database } from '../packages/db/src/connection';
 import { migrate } from '../packages/db/src/migrate';
 import { WorkspaceRepository } from '../packages/db/src/repository';
+import { grantRuntimeTables } from '../packages/db/src/runtime-role';
 import { createAuth } from '../apps/api/src/auth';
 import { createApp } from '../apps/api/src/app';
 import type { PrivateStorage } from '../apps/api/src/storage';
 import { imageDimensions } from '../packages/contracts/src/covers';
-import { withExif } from './cover-test-helpers';
+import { picture, withExif } from './cover-test-helpers';
 const root = resolve(import.meta.dirname, '..'), dir = root + '/evidence/covers/connected'; await mkdir(dir, { recursive: true });
 process.env.VITE_DATA_MODE = 'live';
 await build({ configFile: root + '/apps/web/vite.config.ts', build: { outDir: root + '/.connected-dist', emptyOutDir: true }, logLevel: 'error' });
@@ -49,13 +51,19 @@ const storage: PrivateStorage = {
     remove: async key => { objects.delete(key); },
 };
 
-const db = await openDatabase('pglite:memory'); await migrate(db); const repo = new WorkspaceRepository(db);
+const db = await openDatabase('pglite:memory'); await migrate(db); const setup = new WorkspaceRepository(db);
 const secret = 'covers_connected_test_secret_7f6e5d4c3b2a1908', registrar = createAuth(db, origin, secret, true);
 const person = async (name: string, email: string) => (await registrar.api.signUpEmail({ body: { name, email, password: 'Cover-test-password-123!' } })).user;
 const owner = await person('Pilot Owner', 'owner@example.test'), learner = await person('Pilot Learner', 'learner@example.test'), outsider = await person('Other Owner', 'other@example.test');
-await repo.createCommunity({ id: owner.id, name: owner.name }, 'pilot', 'Code Black Pilot');
-await repo.addMembership('pilot', { id: learner.id, name: learner.name }, 'member');
-await repo.createCommunity({ id: outsider.id, name: outsider.name }, 'elsewhere', 'Another Community');
+await setup.createCommunity({ id: owner.id, name: owner.name }, 'pilot', 'Code Black Pilot');
+await setup.addMembership('pilot', { id: learner.id, name: learner.name }, 'member');
+await setup.createCommunity({ id: outsider.id, name: outsider.name }, 'elsewhere', 'Another Community');
+// The API and the fixtures below use the restricted runtime role with forced row security; only migrations and accounts ran as the owner.
+await db.query('CREATE ROLE reunir_app NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS');
+await db.transaction(grantRuntimeTables);
+const runtime = Object.create(db) as Database;
+runtime.transaction = fn => db.transaction(async tx => { await tx.query('SET LOCAL ROLE reunir_app'); return fn(tx); });
+const repo = new WorkspaceRepository(runtime);
 const run = (user: string, cmd: unknown) => repo.execute('pilot', user, cmd, randomUUID(), 'covers-connected');
 const trackId = (await run(owner.id, { type: 'track.create', title: 'Interviewing for real problems', summary: 'Plan and run a useful first conversation.', description: 'A short pilot track used by the connected cover test.', category: 'Product building', spaceId: null })).objectId!;
 const projectId = (await run(learner.id, { type: 'project.create', title: 'Night market zine', tagline: 'A small printed guide to the market.', summary: 'A fictional project used by the connected cover test.', category: 'Editorial', skills: ['Writing'], spaceId: null })).objectId!;
@@ -159,8 +167,74 @@ try {
         expect((await learnerPage.request.get(origin + coverRoute('track', trackId, trackCover))).status()).toBe(404);
         await open(learnerPage, '/learn'); await expect(learnerPage.locator(`.track-card[href="#/learn/${trackId}"] .cover-media`)).toHaveClass(/cover-plain/);
     });
+    const libraryRoute = (itemId: string) => `/api/organisations/pilot/cover-library/${itemId}`;
+    const send = (p: Page, path: string, data: unknown) => p.request.post(origin + path, { headers: { 'Content-Type': 'application/json', Origin: origin, 'Idempotency-Key': randomUUID() }, data });
+    let libraryItem = '', libraryFile = '', libraryKey = '';
+    await check('the owner adds a picture to the cover library in Community settings; it reaches the bucket under the community key', async () => {
+        await open(ownerPage, '/settings');
+        const section = ownerPage.locator('.cover-library-settings');
+        await expect(section.locator('.cover-library-empty')).toBeVisible();
+        await section.getByRole('button', { name: 'Add a picture', exact: true }).click();
+        const [chooser] = await Promise.all([ownerPage.waitForEvent('filechooser'), dialog(ownerPage).getByRole('button', { name: 'Choose an image', exact: true }).click()]);
+        await chooser.setFiles({ name: 'harbour.jpg', mimeType: 'image/jpeg', buffer: withExif(await picture(ownerPage, 'image/jpeg', 1200, 800), 'REUNIR-PRIVATE-LOCATION') });
+        await expect(dialog(ownerPage).locator('.cover-editor-status')).toContainText('Ready');
+        await dialog(ownerPage).getByLabel('Name', { exact: true }).fill('Quiet harbour');
+        await dialog(ownerPage).getByRole('button', { name: 'Add to library', exact: true }).click(); await expect(dialog(ownerPage)).toHaveCount(0);
+        await expect(ownerPage.locator('.toast')).toContainText('Quiet harbour is in the cover library.');
+        const row = (await db.query<{ id: string; file_id: string; label: string; added_by: string }>('SELECT id,file_id,label,added_by FROM cover_library')).rows;
+        expect(row.map(r => [r.label, r.added_by])).toEqual([['Quiet harbour', owner.id]]);
+        [libraryItem, libraryFile] = [row[0].id, row[0].file_id];
+        libraryKey = [...objects.keys()].find(k => k.includes('/covers/library/'))!;
+        expect(libraryKey).toMatch(new RegExp(`^organisations/[0-9a-f-]{36}/covers/library/${libraryFile}\\.jpg$`));
+        expect(Buffer.from(objects.get(libraryKey)!.bytes).includes('REUNIR-PRIVATE-LOCATION')).toBe(false); expect(cookiesSeen).toBe(0);
+        expect(await loaded(ownerPage, '.cover-library-list img')).toMatchObject({ width: 1200, src: libraryRoute(libraryItem) });
+        const a = await new AxeBuilder({ page: ownerPage }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+        expect(a.violations.map(v => v.id)).toEqual([]);
+        await section.screenshot({ path: dir + '/connected-library-settings.png' });
+    });
+    await check('a member who owns a project chooses the library picture; it is served through the project and the library', async () => {
+        await open(learnerPage, `/projects/${projectId}`);
+        await learnerPage.getByRole('button', { name: 'Change cover', exact: true }).click();
+        await dialog(learnerPage).getByLabel('Community library', { exact: true }).check();
+        await dialog(learnerPage).getByLabel('Quiet harbour', { exact: true }).check();
+        await dialog(learnerPage).getByLabel('Top to bottom', { exact: true }).fill('30');
+        const a = await new AxeBuilder({ page: learnerPage }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+        expect(a.violations.map(v => v.id)).toEqual([]);
+        await dialog(learnerPage).getByRole('button', { name: 'Save cover', exact: true }).click(); await expect(dialog(learnerPage)).toHaveCount(0);
+        expect(await coverOf('projects', projectId)).toEqual({ fileId: libraryFile, contentType: 'image/jpeg', sizeBytes: objects.get(libraryKey)!.bytes.length, focusX: 50, focusY: 30 });
+        await open(ownerPage, `/projects/${projectId}`);
+        expect(await loaded(ownerPage, '.project-detail-cover img')).toEqual({ width: 1200, src: coverRoute('project', projectId, libraryFile), position: '50% 30%' });
+        const r = await learnerPage.request.get(origin + libraryRoute(libraryItem));
+        expect([r.status(), r.headers()['content-type'], r.headers()['cache-control'], r.headers()['x-content-type-options']]).toEqual([200, 'image/jpeg', 'private, max-age=3600', 'nosniff']);
+        expect(Buffer.compare(await r.body(), Buffer.from(objects.get(libraryKey)!.bytes))).toBe(0);
+    });
+    await check('members cannot add library pictures; other communities and anonymous visitors cannot read them', async () => {
+        const denied = await send(learnerPage, '/api/organisations/pilot/uploads', { purpose: 'cover_library', contentType: 'image/jpeg', sizeBytes: 9000 });
+        expect(denied.status()).toBe(403); expect((await denied.json()).error.code).toBe('ADMIN_REQUIRED');
+        await open(learnerPage, '/settings'); await expect(learnerPage.locator('.cover-library-settings')).toHaveCount(0);
+        expect((await outsiderPage.request.get(origin + libraryRoute(libraryItem))).status()).toBe(404);
+        expect((await outsiderPage.request.get(origin + libraryRoute(libraryItem).replace('/pilot/', '/elsewhere/'))).status()).toBe(404);
+        expect((await anonymousPage.request.get(origin + libraryRoute(libraryItem))).status()).toBe(401);
+    });
+    await check('a picture in use cannot be removed; once free, removing it deletes the stored file', async () => {
+        await open(ownerPage, '/settings');
+        await expect(ownerPage.getByRole('button', { name: 'Remove Quiet harbour', exact: true })).toBeDisabled();
+        const busy = await send(ownerPage, `${libraryRoute(libraryItem)}/remove`, {});
+        expect(busy.status()).toBe(409); expect((await busy.json()).error.code).toBe('COVER_IN_USE'); expect(objects.has(libraryKey)).toBe(true);
+        await open(learnerPage, `/projects/${projectId}`); await learnerPage.getByRole('button', { name: 'Change cover', exact: true }).click();
+        await dialog(learnerPage).getByRole('button', { name: 'Remove cover', exact: true }).click(); await expect(dialog(learnerPage)).toHaveCount(0);
+        await open(ownerPage, '/settings');
+        ownerPage.once('dialog', d => d.accept());
+        await ownerPage.getByRole('button', { name: 'Remove Quiet harbour', exact: true }).click();
+        await expect(ownerPage.locator('.toast')).toContainText('Quiet harbour was removed from the cover library.');
+        await expect(ownerPage.locator('.cover-library-empty')).toBeVisible();
+        expect(objects.has(libraryKey)).toBe(false);
+        expect((await db.query('SELECT count(*)::int AS n FROM cover_library')).rows[0].n).toBe(0);
+        expect((await db.query('SELECT count(*)::int AS n FROM upload_intents WHERE id=$1', [libraryFile])).rows[0].n).toBe(0);
+        expect((await learnerPage.request.get(origin + libraryRoute(libraryItem))).status()).toBe(404);
+    });
     await check('the connected cover journey produced no uncaught browser errors', async () => { expect(errors).toEqual([]); });
-    await writeFile(dir + '/results.json', JSON.stringify({ generatedAt: new Date().toISOString(), method: 'Live Vite build + Hono HTTP + Better Auth cookies + local PGlite. In-process stand-in bucket on a second origin; no Google Cloud Storage, IAM or deployment.', results, errors }, null, 2));
+    await writeFile(dir + '/results.json', JSON.stringify({ generatedAt: new Date().toISOString(), method: 'Live Vite build + Hono HTTP + Better Auth cookies + local PGlite, API repository under the restricted reunir_app role with forced RLS. In-process stand-in bucket on a second origin; no Google Cloud Storage, IAM or deployment.', results, errors }, null, 2));
     console.log(`${results.length} connected cover checks passed`);
 } catch (e) {
     await ownerPage.screenshot({ path: dir + '/failure-owner.png', fullPage: true }).catch(() => {}); await learnerPage.screenshot({ path: dir + '/failure-learner.png', fullPage: true }).catch(() => {});

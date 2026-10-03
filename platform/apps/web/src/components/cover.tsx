@@ -1,22 +1,22 @@
 import { useEffect, useId, useRef, useState, type PointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, ImagePlus, Layers, LoaderCircle, Trash2, Upload } from 'lucide-react';
+import { BookOpen, Image as ImageIcon, ImagePlus, Layers, LoaderCircle, Trash2, Upload } from 'lucide-react';
 import { Modal } from './ui';
 import { useWorkspace } from '../lib/context';
 import { displayError, mode } from '../lib/data';
-import { coverUploadsAvailable, demoCoverUrl, liveCoverUrl, peekDemoCoverUrl, prepareCover, uploadCover, type PreparedCover } from '../lib/covers';
+import { coverUploadsAvailable, demoCoverUrl, liveCoverUrl, liveLibraryUrl, peekDemoCoverUrl, prepareCover, uploadCover, type PreparedCover } from '../lib/covers';
 import { coverPosition, type CoverSubject } from '../../../../packages/contracts/src/covers';
 import { canEditCover } from '../../../../packages/domain/src/covers';
-import type { Project, Track } from '../../../../packages/contracts/src/index';
+import type { CoverLibraryItem, Project, Track } from '../../../../packages/contracts/src/index';
 
 type Subject = Track | Project;
 const clamp = (value: number) => Math.min(100, Math.max(0, Math.round(value)));
 
-/** The address of a stored cover, or null for the plain panel. Live covers come through the access-checked route. */
-function useCoverSource(kind: CoverSubject, subject: Subject): string | null {
+/** Fictional demo only: the object URL for a picture stored in this browser, or the bundled library photograph. */
+function useDemoUrl(fileId: string): string | null {
     const { slug } = useWorkspace();
-    const fileId = subject.coverImage?.fileId ?? '', key = `${slug}/${fileId}`;
+    const key = `${slug}/${fileId}`;
     const [demo, setDemo] = useState<{ key: string; url: string | null }>({ key: '', url: null });
     useEffect(() => {
         if (mode === 'live' || !fileId) return;
@@ -24,9 +24,30 @@ function useCoverSource(kind: CoverSubject, subject: Subject): string | null {
         void demoCoverUrl(slug, fileId).then(url => { if (current) setDemo({ key, url }); });
         return () => { current = false; };
     }, [slug, fileId, key]);
-    if (!fileId) return null;
-    if (mode === 'live') return liveCoverUrl(slug, kind, subject.id, fileId);
+    if (mode === 'live' || !fileId) return null;
     return demo.key === key ? demo.url : peekDemoCoverUrl(slug, fileId) ?? null;
+}
+/** The address of a stored cover, or null for the plain panel. Live covers come through the access-checked route. */
+function useCoverSource(kind: CoverSubject, subject: Subject): string | null {
+    const { slug } = useWorkspace();
+    const fileId = subject.coverImage?.fileId ?? '', demo = useDemoUrl(fileId);
+    if (!fileId) return null;
+    return mode === 'live' ? liveCoverUrl(slug, kind, subject.id, fileId) : demo;
+}
+/** The address of a library picture, served to every active member. */
+export function useLibrarySource(item: CoverLibraryItem | null): string | null {
+    const { slug } = useWorkspace();
+    const demo = useDemoUrl(item?.fileId ?? '');
+    if (!item) return null;
+    return mode === 'live' ? liveLibraryUrl(slug, item.id) : demo;
+}
+/** A library picture as a small square. Decorative: its name is always written beside it. */
+export function LibraryThumb({ item }: { item: CoverLibraryItem }) {
+    const src = useLibrarySource(item);
+    const [failed, setFailed] = useState<string | null>(null);
+    return <span className="cover-library-thumb" aria-hidden="true">
+        {src && failed !== src ? <img src={src} alt="" loading="lazy" decoding="async" draggable={false} onError={() => setFailed(src)}/> : <ImageIcon size={18} strokeWidth={1.5}/>}
+    </span>;
 }
 
 /** An uploaded picture cropped around its focal point, or a plain panel. Decorative: titles always sit outside it. */
@@ -54,29 +75,40 @@ export function CoverButton({ kind, subject }: { kind: CoverSubject; subject: Su
 }
 
 function CoverDialog({ kind, subject, onClose }: { kind: CoverSubject; subject: Subject; onClose: () => void }) {
-    const { slug, userId, command } = useWorkspace();
+    const { data, slug, userId, command } = useWorkspace();
     const current = subject.coverImage ?? null, currentSrc = useCoverSource(kind, subject);
+    const library = data.coverLibrary ?? [], currentItem = current ? library.find(i => i.fileId === current.fileId) : undefined;
     const uploads = useQuery({ queryKey: ['cover-uploads'], queryFn: coverUploadsAvailable, staleTime: 300000, retry: false });
+    const [source, setSource] = useState<'upload' | 'library'>(currentItem ? 'library' : 'upload');
     const [prepared, setPrepared] = useState<PreparedCover | null>(null);
+    const [picked, setPicked] = useState<CoverLibraryItem | null>(null);
     const [focus, setFocus] = useState({ x: current?.focusX ?? 50, y: current?.focusY ?? 50 });
     const [working, setWorking] = useState<'' | 'reading' | 'saving' | 'removing'>('');
     const [status, setStatus] = useState(''), [error, setError] = useState('');
     const picker = useRef<HTMLInputElement>(null);
-    const help = useId(), across = useId(), down = useId();
+    const help = useId(), across = useId(), down = useId(), choice = useId();
+    const pickedSrc = useLibrarySource(picked);
     useEffect(() => () => { if (prepared) URL.revokeObjectURL(prepared.url); }, [prepared]);
-    const src = prepared?.url ?? currentSrc, canUpload = uploads.data === true;
-    const changed = !!prepared || (!!current && (current.focusX !== focus.x || current.focusY !== focus.y));
+    const src = prepared?.url ?? (picked ? pickedSrc : currentSrc), canUpload = uploads.data === true;
+    const chosenFile = prepared ? null : picked?.fileId ?? current?.fileId ?? null;
+    const changed = !!prepared || (!!picked && picked.fileId !== current?.fileId) || (!!current && (current.focusX !== focus.x || current.focusY !== focus.y));
     const position = `${focus.x}% ${focus.y}%`;
     const choose = async (file: File | undefined) => {
         if (!file || working || !canUpload) return;
-        setError(''); setWorking('reading'); setStatus('Preparing the image in your browser…');
+        setSource('upload'); setError(''); setWorking('reading'); setStatus('Preparing the image in your browser…');
         try {
             const next = await prepareCover(file);
-            setPrepared(next); setFocus({ x: 50, y: 50 });
+            setPrepared(next); setPicked(null); setFocus({ x: 50, y: 50 });
             setStatus(next.soft ? `Ready. At ${next.width} × ${next.height} pixels it may look soft on large screens.` : 'Ready. Choose the part of the picture to keep in view, then save.');
         }
         catch (e) { setError(displayError(e)); setStatus(''); }
         finally { setWorking(''); }
+    };
+    const pick = (item: CoverLibraryItem) => {
+        setPrepared(null); setPicked(item); setError('');
+        // The current picture keeps its focal point; a new one starts centred.
+        setFocus(item.fileId === current?.fileId ? { x: current.focusX, y: current.focusY } : { x: 50, y: 50 });
+        setStatus(`${item.label} chosen. Choose the part of the picture to keep in view, then save.`);
     };
     const point = (e: PointerEvent<HTMLDivElement>) => {
         const r = e.currentTarget.getBoundingClientRect();
@@ -88,7 +120,7 @@ function CoverDialog({ kind, subject, onClose }: { kind: CoverSubject; subject: 
     const save = async () => {
         setError(''); setWorking('saving');
         try {
-            let fileId = current?.fileId ?? null;
+            let fileId = chosenFile;
             if (prepared) { setStatus('Uploading the image privately…'); ({ fileId } = await uploadCover(slug, userId, kind, subject.id, prepared)); }
             if (!fileId) return;
             setStatus('Saving the cover…');
@@ -105,21 +137,38 @@ function CoverDialog({ kind, subject, onClose }: { kind: CoverSubject; subject: 
         setWorking('');
         if (r) onClose(); else setStatus('');
     };
+    const selected = prepared ? null : picked?.id ?? currentItem?.id ?? null;
+    const empty = source === 'library' ? 'No cover yet. Choose a picture from the library below. A plain panel shows until then.' : 'No cover yet. Choose an image or drop one here. A plain panel shows until then.';
     return <Modal title={kind === 'track' ? 'Track cover' : 'Project cover'} onClose={onClose} wide>
         <div className="form-stack cover-editor">
             <p className="cover-editor-intro" id={help}>Use a JPEG, PNG or WebP picture. Your browser resizes it to 1,600 pixels on the longest side before upload, which also removes photo details such as location. Titles stay below the picture, so it needs no words of its own.</p>
-            {uploads.isError ? <p className="resource-warning" role="note">Upload availability could not be checked, so new pictures cannot be uploaded right now. Close this and try again shortly.</p>
-                : uploads.isFetched && !canUpload && <p className="resource-warning" role="note">Private file storage is not configured for this community, so new pictures cannot be uploaded. You can still move the focal point or remove the current cover.</p>}
+            {library.length > 0 && <fieldset className="cover-source" disabled={!!working}>
+                <legend>Picture</legend>
+                <label><input type="radio" name={choice} checked={source === 'upload'} onChange={() => setSource('upload')}/>Upload your own</label>
+                <label><input type="radio" name={choice} checked={source === 'library'} onChange={() => setSource('library')}/>Community library</label>
+            </fieldset>}
+            {source === 'upload' && (uploads.isError ? <p className="resource-warning" role="note">Upload availability could not be checked, so new pictures cannot be uploaded right now. Close this and try again shortly.</p>
+                : uploads.isFetched && !canUpload && <p className="resource-warning" role="note">Private file storage is not configured for this community, so new pictures cannot be uploaded. You can still move the focal point or remove the current cover.</p>)}
             <div className="cover-stage" onDragOver={e => { if (canUpload) e.preventDefault(); }} onDrop={e => { e.preventDefault(); void choose(e.dataTransfer.files[0]); }}>
                 {src ? <div className="cover-stage-frame" onPointerDown={e => { if (e.button !== 0) return; e.currentTarget.setPointerCapture(e.pointerId); point(e); }} onPointerMove={e => { if (e.currentTarget.hasPointerCapture(e.pointerId)) point(e); }}>
                     <img src={src} alt="" draggable={false}/>
                     <span className="cover-focus-mark" style={{ left: `${focus.x}%`, top: `${focus.y}%` }} aria-hidden="true"/>
-                </div> : <div className="cover-stage-empty"><ImagePlus size={28} strokeWidth={1.5} aria-hidden="true"/><span>No cover yet. Choose an image or drop one here. A plain panel shows until then.</span></div>}
+                </div> : <div className="cover-stage-empty"><ImagePlus size={28} strokeWidth={1.5} aria-hidden="true"/><span>{empty}</span></div>}
             </div>
-            <div className="cover-editor-pick">
+            {source === 'upload' ? <div className="cover-editor-pick">
                 <button type="button" className="button secondary" aria-describedby={help} disabled={!!working || !canUpload} onClick={() => picker.current?.click()}>{working === 'reading' ? <LoaderCircle size={15} className="spin" aria-hidden="true"/> : <Upload size={15} aria-hidden="true"/>}{src ? 'Choose another image' : 'Choose an image'}</button>
                 <input ref={picker} type="file" accept="image/*" hidden onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; void choose(file); }}/>
-            </div>
+            </div> : <fieldset className="cover-library-picker" disabled={!!working}>
+                <legend>Community library</legend>
+                <p>Pictures your community’s owners and administrators have added. Choosing one does not copy it.</p>
+                <div className="cover-library-grid">
+                    {library.map(item => <label key={item.id} className="cover-library-option">
+                        <input type="radio" name={`${choice}-picture`} value={item.id} checked={selected === item.id} onChange={() => pick(item)}/>
+                        <LibraryThumb item={item}/>
+                        <span className="cover-library-label">{item.label}</span>
+                    </label>)}
+                </div>
+            </fieldset>}
             {src && <fieldset className="cover-focus-controls" disabled={!!working}>
                 <legend>Focal point</legend>
                 <p>Click or drag on the picture, or use the sliders. Every card keeps this point in view.</p>

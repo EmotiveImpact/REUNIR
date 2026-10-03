@@ -9,6 +9,8 @@ import {
 import { COVER_UPLOAD_TTL_MS, MAX_COVER_BYTES, MAX_COVER_LIBRARY_ITEMS, coverBytesAcceptable, coverLibraryUploadRequest } from '../packages/contracts/src/covers';
 import { commandSchema, type Workspace } from '../packages/contracts/src/index';
 import { pngHeader } from './helpers/images';
+import { readFileSync } from 'node:fs';
+import { imageDimensions } from '../packages/contracts/src/covers';
 
 const ORG = 'org_code_black', T0 = '2026-10-03T09:00:00.000Z';
 const ctx = (userId: string, organizationId = ORG) => ({ organizationId, userId, requestId: 'cover-library-test' });
@@ -42,6 +44,14 @@ test('the demo library has one fictional picture, and another community has none
     assert.deepEqual(s.coverLibrary.map(i => [i.id, i.fileId, i.label, i.addedBy]), [['library_mountain', DEMO_COVER_LIBRARY_FILE, 'Mountain ridge', DEMO_ADMIN]]);
     assert.equal(s.uploads.find(u => u.id === DEMO_COVER_LIBRARY_FILE)!.purpose, 'cover_library');
     assert.deepEqual(createSeed('studio-north').coverLibrary, []);
+});
+test('the demo picture the browser shows matches its seeded record and carries no words or metadata', () => {
+    const bytes = new Uint8Array(readFileSync(new URL('../apps/web/src/assets/library-mountain.jpg', import.meta.url)));
+    const upload = createSeed().uploads.find(u => u.id === DEMO_COVER_LIBRARY_FILE)!, item = createSeed().coverLibrary[0];
+    assert.deepEqual([upload.sizeBytes, item.sizeBytes, upload.contentType, item.contentType], [bytes.length, bytes.length, 'image/jpeg', 'image/jpeg']);
+    assert(coverBytesAcceptable('image/jpeg', bytes));
+    assert.deepEqual(imageDimensions('image/jpeg', bytes), { width: 440, height: 288 }, 'cropped above the caption the original carries');
+    assert(!Buffer.from(bytes).includes('Exif'), 'no camera metadata');
 });
 test('only active owners and administrators upload, list and remove library pictures', () => {
     const s = createSeed();

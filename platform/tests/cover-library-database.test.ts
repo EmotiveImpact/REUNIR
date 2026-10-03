@@ -115,7 +115,7 @@ test('database constraints keep library pictures unscoped, verified, bounded and
     await assert.rejects(() => insert("('org_code_black','l1','member_amina','k-l1','image/png',10,'c',now(),'pending','cover_library',NULL,NULL,'track_story',NULL)"), 'a library picture names no track');
     await assert.rejects(() => insert("('org_code_black','l2','member_amina','k-l2','image/png',10,'c',now(),'ready','cover_library',now(),NULL,NULL,NULL)"), 'ready needs a generation');
     await assert.rejects(() => insert("('org_code_black','l3','member_amina','k-l3','image/png',4000000,'c',now(),'pending','cover_library',NULL,NULL,NULL,NULL)"), 'at most 3 MB');
-    const list = (id: string, org: string, file: string, label = 'Picture', type = 'image/jpeg') => db.query("INSERT INTO cover_library(id,organization_id,created_at,file_id,label,content_type,size_bytes,added_by) VALUES($1,$2,now(),$3,$4,$5,23887,'member_amina')", [id, org, file, label, type]);
+    const list = (id: string, org: string, file: string, label = 'Picture', type = 'image/jpeg') => db.query("INSERT INTO cover_library(id,organization_id,created_at,file_id,label,content_type,size_bytes,added_by) VALUES($1,$2,now(),$3,$4,$5,14450,'member_amina')", [id, org, file, label, type]);
     await assert.rejects(() => list('dup', ORG, DEMO_COVER_LIBRARY_FILE), /duplicate key/, 'a picture is listed once');
     await assert.rejects(() => list('missing', ORG, 'no_such_upload'), /foreign key/);
     await assert.rejects(() => list('elsewhere', 'org_studio_north', DEMO_COVER_LIBRARY_FILE), /foreign key/, 'another community’s upload');

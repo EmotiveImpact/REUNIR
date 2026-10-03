@@ -135,6 +135,69 @@ try {
         await expect(page.locator('.project-detail-cover .cover-media')).toHaveClass(/cover-plain/);
         await expect(page.getByRole('button', { name: 'Add a cover', exact: true })).toBeVisible();
     });
+    const settings = () => page.locator('.cover-library-settings');
+    await check('an administrator keeps a community cover library in Community settings', async () => {
+        await go('/settings');
+        await expect(settings().getByRole('heading', { name: 'Cover library' })).toBeVisible();
+        await expect(settings().locator('.cover-library-list li')).toHaveCount(1);
+        await expect(settings()).toContainText('Mountain ridge'); await expect(settings()).toContainText('1 of 24 pictures');
+        await settings().getByRole('button', { name: 'Add a picture', exact: true }).click();
+        await expect(dialog().getByRole('heading', { name: 'Add a library picture' })).toBeVisible();
+        await expect(dialog().getByRole('button', { name: 'Add to library', exact: true })).toBeDisabled();
+        await choose({ name: 'harbour.jpg', mimeType: 'image/jpeg', buffer: await picture(page, 'image/jpeg', 1200, 800) });
+        await expect(status()).toContainText('Ready. Give it a short name');
+        await expect(dialog().getByRole('button', { name: 'Add to library', exact: true })).toBeDisabled();
+        await dialog().getByLabel('Name', { exact: true }).fill('Quiet harbour');
+        await neutral(); await a11y('library-add'); await dialog().screenshot({ path: dir + '/library-add.png' });
+        await dialog().getByRole('button', { name: 'Add to library', exact: true }).click(); await expect(dialog()).toHaveCount(0);
+        await expect(page.locator('.toast')).toContainText('Quiet harbour is in the cover library.');
+        await expect(settings().locator('.cover-library-list li')).toHaveCount(2); await expect(settings()).toContainText('2 of 24 pictures');
+        await neutral(); await a11y('library-settings'); await settings().screenshot({ path: dir + '/library-settings.png' });
+    });
+    await check('a cover can come from the library instead of an upload, chosen by pointer or keyboard', async () => {
+        await track('track_brand');
+        await page.getByRole('button', { name: 'Add a cover', exact: true }).click();
+        await expect(dialog().getByLabel('Upload your own', { exact: true })).toBeChecked();
+        await dialog().getByLabel('Community library', { exact: true }).check();
+        await expect(dialog().getByRole('button', { name: /^Choose (an|another) image$/ })).toHaveCount(0);
+        await expect(dialog().getByRole('button', { name: 'Save cover', exact: true })).toBeDisabled();
+        await dialog().getByLabel('Mountain ridge', { exact: true }).check();
+        await expect(status()).toContainText('Mountain ridge chosen.');
+        await dialog().getByLabel('Left to right', { exact: true }).fill('60');
+        await neutral(); await a11y('dialog-library'); await dialog().screenshot({ path: dir + '/dialog-library.png' });
+        await save();
+        expect(await stored('.track-detail-cover img')).toMatchObject({ type: 'image/jpeg', size: 14450, width: 440, height: 288, position: '60% 50%' });
+        await page.getByRole('button', { name: 'Change cover', exact: true }).click();
+        await expect(dialog().getByLabel('Community library', { exact: true })).toBeChecked();
+        await expect(dialog().getByLabel('Mountain ridge', { exact: true })).toBeChecked();
+        await dialog().getByLabel('Mountain ridge', { exact: true }).focus(); await page.keyboard.press('ArrowRight');
+        await expect(dialog().getByLabel('Quiet harbour', { exact: true })).toBeChecked();
+        await save();
+        expect(await stored('.track-detail-cover img')).toMatchObject({ width: 1200, height: 800, position: '50% 50%' });
+        await library(); await expect(page.locator('.track-card[href="/learn/track_brand"] .cover-media img')).toBeVisible();
+    });
+    await check('a picture in use stays in the library until its covers change', async () => {
+        await go('/settings');
+        await expect(settings().getByRole('button', { name: 'Remove Quiet harbour', exact: true })).toBeDisabled();
+        await expect(settings()).toContainText('The cover of 1 track or project.');
+        await track('track_brand'); await page.getByRole('button', { name: 'Change cover', exact: true }).click();
+        await dialog().getByLabel('Mountain ridge', { exact: true }).check(); await save();
+        await go('/settings');
+        page.once('dialog', d => d.accept());
+        await settings().getByRole('button', { name: 'Remove Quiet harbour', exact: true }).click();
+        await expect(page.locator('.toast')).toContainText('Quiet harbour was removed from the cover library.');
+        await expect(settings().locator('.cover-library-list li')).toHaveCount(1);
+        await expect(settings().getByRole('button', { name: 'Remove Mountain ridge', exact: true })).toBeDisabled();
+    });
+    await switchPreviewRole(page, 'instructor');
+    await check('an instructor chooses a library picture for their own track and has no library settings', async () => {
+        await track('track_product'); await page.getByRole('button', { name: 'Change cover', exact: true }).click();
+        await expect(dialog().getByLabel('Upload your own', { exact: true })).toBeChecked();
+        await dialog().getByLabel('Community library', { exact: true }).check();
+        await dialog().getByLabel('Mountain ridge', { exact: true }).check(); await save();
+        expect(await stored('.track-detail-cover img')).toMatchObject({ width: 440, height: 288 });
+        await expect(page.locator('.sidebar a[href="/settings"]')).toHaveCount(0);
+    });
     await switchPreviewRole(page, 'member');
     await check('a member who starts a project can give it a cover, and other members see it', async () => {
         await go('/projects'); await page.getByRole('button', { name: 'Start a project', exact: true }).click();
@@ -148,6 +211,11 @@ try {
         await expect(page.locator('.project-detail-cover img')).toBeVisible();
         await track('track_story'); await expect(page.getByRole('button', { name: /cover/i })).toHaveCount(0);
         await expect(page.locator('.track-detail-cover img')).toBeVisible();
+    });
+    await check('members see covers chosen from the library, with no way to change them', async () => {
+        await track('track_brand'); await expect(page.locator('.track-detail-cover img')).toBeVisible();
+        await expect(page.getByRole('button', { name: /cover/i })).toHaveCount(0);
+        await expect(page.locator('.sidebar a[href="/settings"]')).toHaveCount(0);
     });
     await check('390px: the cover dialogue fits, stays accessible and pages keep no horizontal overflow', async () => {
         await page.setViewportSize({ width: 390, height: 844 });

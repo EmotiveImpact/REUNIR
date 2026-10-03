@@ -1,8 +1,10 @@
 import { api, commitDemo, demoState, mode } from './data';
 import { getDemoFile, putDemoFile, removeDemoFile } from './demo-files';
-import { newId, type Workspace } from '../../../../packages/contracts/src/index';
+import mountainImage from '../assets/library-mountain.jpg';
+import { newId, type CoverLibraryItem, type Workspace } from '../../../../packages/contracts/src/index';
 import { COVER_EDGE, COVER_HEAD_BYTES, MAX_COVER_BYTES, MIN_COVER_EDGE, coverBytesAcceptable, coverImageTypes, imageDimensions, type CoverImageType, type CoverSubject } from '../../../../packages/contracts/src/covers';
-import { beginCoverUpload, completeCoverUpload } from '../../../../packages/domain/src/covers';
+import { beginCoverLibraryUpload, beginCoverUpload, completeCoverUpload, removeCoverLibraryItem } from '../../../../packages/domain/src/covers';
+import { DEMO_COVER_LIBRARY_FILE } from '../../../../packages/domain/src/demo-files';
 
 /**
  * Cover pictures. The browser resizes every image before upload, which also drops photo metadata such as location.
@@ -90,12 +92,20 @@ export async function prepareCover(file: File): Promise<PreparedCover> {
     finally { image.close(); }
 }
 
+/** A cover for one track or project, or a picture for the community's library. */
+type Destination = { purpose: 'cover_image'; subject: CoverSubject; subjectId: string } | { purpose: 'cover_library' };
 /** Upload a prepared cover and verify it. Returns the file ID to set on the track or project. */
-export async function uploadCover(slug: string, userId: string, subject: CoverSubject, subjectId: string, prepared: PreparedCover): Promise<{ fileId: string }> {
-    const request = { purpose: 'cover_image' as const, subject, subjectId, contentType: prepared.contentType, sizeBytes: prepared.blob.size };
+export const uploadCover = (slug: string, userId: string, subject: CoverSubject, subjectId: string, prepared: PreparedCover) =>
+    uploadPrepared(slug, userId, { purpose: 'cover_image', subject, subjectId }, prepared);
+/** Upload and verify a library picture. Listing it under a name is a separate command. */
+export const uploadLibraryPicture = (slug: string, userId: string, prepared: PreparedCover) => uploadPrepared(slug, userId, { purpose: 'cover_library' }, prepared);
+async function uploadPrepared(slug: string, userId: string, destination: Destination, prepared: PreparedCover): Promise<{ fileId: string }> {
+    const request = { ...destination, contentType: prepared.contentType, sizeBytes: prepared.blob.size };
     if (mode === 'demo') {
-        const id = newId();
-        const begun = beginCoverUpload(demoState(slug), tenant(demoState(slug), userId), request, { id, objectKey: `browser-demo/${slug}/${id}` }, now());
+        const id = newId(), ids = { id, objectKey: `browser-demo/${slug}/${id}` };
+        const begun = request.purpose === 'cover_library'
+            ? beginCoverLibraryUpload(demoState(slug), tenant(demoState(slug), userId), request, ids, now())
+            : beginCoverUpload(demoState(slug), tenant(demoState(slug), userId), request, ids, now());
         commitDemo(slug, begun.workspace);
         for (const old of begun.expired) { forgetDemoCover(slug, old.id); await removeDemoFile(slug, old.id); }
         await putDemoFile(slug, id, prepared.blob);
@@ -118,6 +128,19 @@ export async function uploadCover(slug: string, userId: string, subject: CoverSu
     return { fileId: intent.id };
 }
 
+/** Remove an unused picture from the library, with its stored file. The server refuses while any cover shows it. */
+export async function removeLibraryPicture(slug: string, userId: string, item: CoverLibraryItem): Promise<string> {
+    const message = `${item.label} was removed from the cover library.`;
+    if (mode === 'demo') {
+        const s = demoState(slug), r = removeCoverLibraryItem(s, tenant(s, userId), item.id, now());
+        const note = commitDemo(slug, r.workspace);
+        forgetDemoCover(slug, item.fileId); await removeDemoFile(slug, item.fileId);
+        return message + note;
+    }
+    await api(`${base(slug)}/cover-library/${encodeURIComponent(item.id)}/remove`, {});
+    return message;
+}
+
 export async function coverUploadsAvailable(): Promise<boolean> {
     if (mode === 'demo') return true;
     return !!(await api<{ coverUploads?: boolean }>('/api/account/capabilities')).coverUploads;
@@ -126,11 +149,15 @@ export async function coverUploadsAvailable(): Promise<boolean> {
 /** Live covers come from the same-origin route, which checks access on every request. */
 export const liveCoverUrl = (slug: string, kind: CoverSubject, subjectId: string, fileId: string) =>
     `${base(slug)}/covers/${kind}/${encodeURIComponent(subjectId)}/${encodeURIComponent(fileId)}`;
+/** Library pictures are served to every active member of the community. */
+export const liveLibraryUrl = (slug: string, itemId: string) => `${base(slug)}/cover-library/${encodeURIComponent(itemId)}`;
 
 /** Fictional demo only: object URLs for covers stored in this browser, kept for the session. */
 const demoUrls = new Map<string, Promise<string | null>>(), resolvedDemoUrls = new Map<string, string | null>();
 const demoKey = (slug: string, fileId: string) => `${slug}/${fileId}`;
 export function demoCoverUrl(slug: string, fileId: string): Promise<string | null> {
+    // The fictional library picture is the bundled photograph; nothing is stored for it.
+    if (fileId === DEMO_COVER_LIBRARY_FILE) return Promise.resolve(mountainImage);
     const key = demoKey(slug, fileId);
     let url = demoUrls.get(key);
     if (!url) {
@@ -141,7 +168,7 @@ export function demoCoverUrl(slug: string, fileId: string): Promise<string | nul
     return url;
 }
 /** A URL that has already been resolved, so a cover seen before renders without a blank frame. */
-export const peekDemoCoverUrl = (slug: string, fileId: string) => resolvedDemoUrls.get(demoKey(slug, fileId));
+export const peekDemoCoverUrl = (slug: string, fileId: string) => fileId === DEMO_COVER_LIBRARY_FILE ? mountainImage : resolvedDemoUrls.get(demoKey(slug, fileId));
 function forgetDemoCover(slug: string, fileId: string) {
     const key = demoKey(slug, fileId), url = resolvedDemoUrls.get(key);
     if (url) URL.revokeObjectURL(url);

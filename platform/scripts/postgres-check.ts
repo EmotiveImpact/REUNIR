@@ -109,5 +109,26 @@ try{
         await assert.rejects(()=>rows(IDRIS,"INSERT INTO track_instructors(id,organization_id,created_at,track_id,user_id,granted_by) VALUES('g_pg','org_code_black',now(),'track_story','member_idris','member_idris')"),/row-level security/);
         await assert.rejects(()=>rows(DEMO_ADMIN,"UPDATE track_instructors SET track_id='track_story'"),/permission denied/);
     });
+    await check('the cover library lists, serves and removes pictures through a restricted PostgreSQL connection',async()=>{
+        const repo=new WorkspaceRepository(runtime!),key=(org:string,id:string)=>`organisations/${org}/covers/library/${id}.png`;
+        const exec=(cmd:unknown,user:string)=>repo.execute('code-black',user,cmd,randomUUID(),'library-postgres');
+        const rows=(user:string,sql:string)=>runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',user);return (await tx.query<Record<string,unknown>>(sql)).rows;});
+        await assert.rejects(()=>repo.beginCoverLibraryUpload('code-black',DEMO_USER,{purpose:'cover_library',contentType:'image/png',sizeBytes:4096},key,'library-postgres'),{code:'ADMIN_REQUIRED'});
+        const {upload}=await repo.beginCoverLibraryUpload('code-black',DEMO_ADMIN,{purpose:'cover_library',contentType:'image/png',sizeBytes:4096},key,'library-postgres');
+        assert.equal((await repo.completeCoverUpload('code-black',DEMO_ADMIN,upload.id,{sizeBytes:4096,contentType:'image/png',generation:'1712345678908888',bytesAcceptable:true},'library-postgres')).outcome,'ready');
+        const unlisted=async()=>(await rows(DEMO_USER,"SELECT id FROM upload_intents WHERE purpose='cover_library'")).map(r=>r.id);
+        assert(!(await unlisted()).includes(upload.id),'members cannot read an unlisted picture');
+        const item=(await exec({type:'cover.library.add',fileId:upload.id,label:'Harbour'},DEMO_ADMIN)).objectId!;
+        assert((await unlisted()).includes(upload.id));
+        assert.deepEqual(await repo.coverLibraryPicture('code-black',DEMO_USER,item),{objectKey:key('org_code_black',upload.id),generation:'1712345678908888',contentType:'image/png',sizeBytes:4096});
+        await assert.rejects(()=>repo.coverLibraryPicture('studio-north',DEMO_USER,item),{code:'NOT_FOUND'});
+        await exec({type:'project.cover.set',projectId:'project_still',fileId:upload.id},'member_jordan');
+        await assert.rejects(()=>repo.removeCoverLibraryItem('code-black',DEMO_ADMIN,item,'library-postgres'),{code:'COVER_IN_USE'});
+        await assert.rejects(()=>rows(DEMO_USER,`INSERT INTO cover_library(id,organization_id,created_at,file_id,label,content_type,size_bytes,added_by) VALUES('l_pg','org_code_black',now(),'${upload.id}','x','image/png',4096,'${DEMO_USER}')`),/row-level security/);
+        await assert.rejects(()=>rows(DEMO_ADMIN,"UPDATE cover_library SET label='Renamed'"),/permission denied/);
+        await exec({type:'project.cover.set',projectId:'project_still',fileId:null},'member_jordan');
+        assert.deepEqual(await repo.removeCoverLibraryItem('code-black',DEMO_ADMIN,item,'library-postgres'),{id:item,objectKey:key('org_code_black',upload.id)});
+        assert.deepEqual(await rows(DEMO_ADMIN,`SELECT id FROM upload_intents WHERE id='${upload.id}'`),[]);
+    });
     await mkdir('evidence/alpha04',{recursive:true});await writeFile('evidence/alpha04/postgres-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Disposable local PostgreSQL service, not Neon.',results},null,2));
 }finally{await runtime?.close();await admin.close();}
