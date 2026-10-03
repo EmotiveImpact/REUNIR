@@ -25,7 +25,7 @@ export async function grantRuntimeTables(sql: SQL): Promise<void> {
     await sql.query(`REVOKE UPDATE ON track_instructors FROM ${role}`);
     // Library pictures are added or removed, never rewritten.
     await sql.query(`REVOKE UPDATE ON cover_library FROM ${role}`);
-    // Appeals: only the decision fields change after an appeal is made (migration 0024).
+    // Appeals: only the decision fields change after an appeal is made (migration 0031).
     await sql.query(`REVOKE UPDATE ON moderation_appeals FROM ${role}`);
     await sql.query(`GRANT UPDATE (status,decided_by,decided_at,response) ON moderation_appeals TO ${role}`);
 }

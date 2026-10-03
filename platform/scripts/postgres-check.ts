@@ -32,7 +32,7 @@ try{
     await admin.transaction(grantRuntimeTables);url.username='reunir_app';url.password='LOCAL_CI_TEST_ONLY_12345678901234567890';runtime=await openDatabase(url.toString());
     await check('separate runtime connection is non-owner and cannot bypass RLS',async()=>{assert(await runtimeRoleIsSafe(runtime!));await assert.rejects(()=>runtime!.query('SELECT * FROM schema_migrations'));});
     await check('the runtime role is granted the two-step sign-in table (migration 0021)',async()=>{for(const action of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await admin.query<{ok:boolean}>("SELECT has_table_privilege('reunir_app','auth_two_factor',$1) AS ok",[action])).rows[0].ok,true,action);assert.equal((await runtime!.query<{n:number}>('SELECT count(*)::int AS n FROM auth_two_factor')).rows[0].n,0);});
-    await check('the runtime role may change only the decision fields of moderation appeals (migration 0024)',async()=>{
+    await check('the runtime role may change only the decision fields of moderation appeals (migration 0031)',async()=>{
         const table=async(p:string)=>(await admin.query<{ok:boolean}>("SELECT has_table_privilege('reunir_app','moderation_appeals',$1) AS ok",[p])).rows[0].ok;
         const column=async(c:string)=>(await admin.query<{ok:boolean}>("SELECT has_column_privilege('reunir_app','moderation_appeals',$1,'UPDATE') AS ok",[c])).rows[0].ok;
         for(const p of ['SELECT','INSERT','DELETE'])assert.equal(await table(p),true,p);

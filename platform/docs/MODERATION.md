@@ -5,7 +5,7 @@ How community-post moderation works, and how a member asks for a second look. Se
 ## Hiding a post
 
 - Moderators, administrators and the owner can hide or restore a post from its options menu, or from a private report in Community studio, Moderation. Reports about the post are resolved either way, and the action is audited (`post.hidden`, `post.restored`).
-- The post records who last hid or restored it and when (`moderatedBy`, `moderatedAt`; `posts.moderated_by`, `posts.moderated_at` from migration 0024). Posts moderated before 0024 have no record and show none.
+- The post records who last hid or restored it and when (`moderatedBy`, `moderatedAt`; `posts.moderated_by`, `posts.moderated_at` from migration 0031). Posts moderated before 0031 have no record and show none.
 - Hiding someone else's post sends them a notice, "Your post was hidden", which opens **Appeals** (`/appeals`). Like notices about a person's own access, it always arrives, whatever their notification settings.
 - A hidden post is visible to moderators, administrators, the owner and its own author. The author sees "A moderator hid this post. It is hidden only to you" and cannot reply to it, react to it or save it while it is hidden.
 
@@ -25,7 +25,7 @@ How community-post moderation works, and how a member asks for a second look. Se
 
 ## Data and security
 
-- `moderation_appeals` (migration 0024) holds the appeal. Forced row security: the appellant and the community's active owners and administrators read; only the active author inserts, in their own name, for their own hidden post, and only as an open appeal; only the appellant withdraws; only an active owner or administrator who is not the appellant and not the post's moderator decides, in their own name. A partial unique index allows one open appeal per item. The runtime role may change only `status`, `decided_by`, `decided_at` and `response` (column grant); `reason` and the rest never change.
+- `moderation_appeals` (migration 0031) holds the appeal. Forced row security: the appellant and the community's active owners and administrators read; only the active author inserts, in their own name, for their own hidden post, and only as an open appeal; only the appellant withdraws; only an active owner or administrator who is not the appellant and not the post's moderator decides, in their own name. A partial unique index allows one open appeal per item. The runtime role may change only `status`, `decided_by`, `decided_at` and `response` (column grant); `reason` and the rest never change.
 - Deleting the appellant's account removes their appeals inside the account-deletion transaction. Decisions stay in the audit trail.
 - The browser demo runs the same rules through the domain, on fictional data: Alex Morgan's post "Selling my old camera kit" was hidden by the moderator Maya Bennett, so preview as the member to appeal and as admin (the owner, Amina Okafor) to decide.
 
