@@ -89,6 +89,7 @@ These are every variable the server code reads (`apps/api/src/bootstrap.ts`, `ap
 | `DATABASE_URL` | Yes | Pooled connection as `reunir_app`. | Section 3 |
 | `BETTER_AUTH_SECRET` | Yes | Signs sessions and encrypts two-step sign-in secrets and backup codes. | `<generate: openssl rand -base64 48>` |
 | `ADMIN_TWO_FACTOR` | Recommended | `required` (the production default when unset) or `optional`. When required, owners and administrators must turn on two-step sign-in before using their tools. | `required` |
+| `EMAIL_VERIFICATION` | Recommended | `required` (the production default when unset) or `optional`. When required and mail can be sent, an unconfirmed address gets a fresh link instead of signing in. | `required` |
 | `RESEND_API_KEY` | For mail | Sending-only key for the verified domain. | Section 7 |
 | `EMAIL_FROM` | For mail | Sender, for example `Ferven <pilot@mail.<your-domain>>`. | Section 7 |
 | `EMAIL_ENCRYPTION_KEY` | When mail is set | Encrypts queued mail. Stable: changing it makes pending mail unreadable. | `<generate: openssl rand -base64 48>` |

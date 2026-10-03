@@ -90,6 +90,12 @@ test('owners and administrators need two-step sign-in unless the launch says oth
     assert(failures({ ...good, ADMIN_TWO_FACTOR: 'sometimes' }).includes('ADMIN_TWO_FACTOR'));
 });
 
+test('people confirm their email address unless the launch says otherwise', () => {
+    assert.equal(state(inspectLaunch(good), 'EMAIL_VERIFICATION'), 'pass', 'unset means required in production');
+    assert.equal(state(inspectLaunch({ ...good, EMAIL_VERIFICATION: 'optional' }), 'EMAIL_VERIFICATION'), 'warn');
+    assert(failures({ ...good, EMAIL_VERIFICATION: 'later' }).includes('EMAIL_VERIFICATION'));
+});
+
 test('storage variables are paired and shaped', () => {
     assert.deepEqual(failures({ ...good, GCS_BUCKET: undefined }), ['storage-pair']);
     assert.equal(state(inspectLaunch({ ...good, GCS_BUCKET: undefined, GCS_CREDENTIALS_JSON: undefined }), 'storage-pair'), 'warn');
