@@ -493,3 +493,18 @@ A community's owner hands it to one of its administrators, after re-entering the
 | O06 | The fictional demo runs the same rules in the browser | Demo browser check |
 
 Accepting or declining a handover, transferring to someone who is not yet an administrator, and deleting a community are outside this release.
+
+## Alpha 25: contributor roles
+
+An owner or administrator adds someone to a track as an instructor or a contributor. Contributors write the track's lesson drafts and files; instructors publish them. See `INSTRUCTORS.md` and `decisions/025-contributor-roles.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| R01 | A grant names one role, instructor by default; every existing grant stays an instructor's | Contract, domain and migration 0022 upgrade tests |
+| R02 | A contributor opens, saves, previews and restores drafts and manages lesson files of their own tracks only | Domain and database (restricted role) tests |
+| R03 | Publishing, archiving, reordering and the track cover need an instructor or administrator (403 `INSTRUCTOR_REQUIRED` or the cover refusal) | Domain and database tests, demo browser check |
+| R04 | A contributor never sees or reviews learners' knowledge-check attempts, in the domain or under forced RLS | Domain, page and database tests |
+| R05 | Changing a role replaces the grant in the acting administrator's name; the runtime role cannot update a grant | Domain and database tests |
+| R06 | An invitation to teach is accepted only as an instructor | Migration 0022 policy, invitation tests |
+
+Contributor invitations, asking an instructor to publish, per-lesson grants and instructor-created tracks are outside this release.

@@ -8,6 +8,19 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
+### 0.25.0-alpha.1 (Alpha 25): contributor roles for teaching, 3 October 2026
+
+On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass.
+
+**In plain language:** when you add someone to teach a track you can now make them a contributor instead of an instructor. Contributors write and save lesson drafts and attach files; the track's instructors decide when to publish them. Contributors do not see learners' quiz answers.
+
+Details:
+
+- **Instructor or Contributor** in a track's Instructors dialogue, with a role menu for each person. Instructor stays the default.
+- Publishing, archiving, reordering, the track cover and knowledge-check review need an instructor or administrator (`INSTRUCTOR_REQUIRED`, decision 025).
+- Additive migration 0022 adds `track_instructors.role` and role-aware policies for published revisions, attempts and invitations. Every existing grant stays an instructor's. No grant change.
+- Database upgrade tests now count the migration files instead of a fixed number.
+
 ### 0.22.0-alpha.1 (Alpha 22): cover picture descriptions, 3 October 2026
 
 On a pull request from `claude/build-out-tvzn40`, to be merged once its checks pass.
