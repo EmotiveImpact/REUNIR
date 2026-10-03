@@ -20,7 +20,7 @@ Details:
 - Account deletion keeps attached files as Former member work and removes the person's unfinished uploads; `db:prune-covers` also clears stale task uploads.
 - **Live project work:** the browser checks a small per-project change endpoint every 5 seconds while the tab is visible (304 when nothing changed), pauses when hidden and backs off on errors. No new infrastructure; server-sent events could replace it later behind the same hook.
 - **Edit conflicts:** a task changed by someone else while you edit shows who changed it and when, keeps your text and waits for you to load theirs or keep yours. No presence indicator, by choice.
-- Additive migration 0029 adds `upload_intents.task_id`, `project_tasks.updated_by` and four restrictive row-security policies; no grant change (decision 029). When upload scanning (Alpha 23) lands, task files go through it on the shared upload path.
+- Additive migration 0029 adds `upload_intents.task_id`, `project_tasks.updated_by` and four restrictive row-security policies; no grant change (decision 029). Task files go through Alpha 23 upload scanning on the shared upload path.
 - New demo browser suite `npm run test:browser:task-files`. No new dependency.
 
 ### Alpha 23: virus scanning of uploads (no version change), 3 October 2026
