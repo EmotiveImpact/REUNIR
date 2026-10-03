@@ -45,7 +45,7 @@ test('0014 upgrade adds one delete policy and changes no rows', async () => {
         for (const table of ['quiz_attempts', 'notifications', 'audit'] as const) assert.deepEqual(await read(table), before[table], table);
         assert.deepEqual((await old.query("SELECT policyname,permissive FROM pg_policies WHERE tablename='quiz_attempts' AND cmd='DELETE' ORDER BY policyname")).rows, [
             { policyname: 'attempt_account_erasure', permissive: 'PERMISSIVE' }, { policyname: 'attempt_erasure', permissive: 'PERMISSIVE' }, { policyname: 'attempt_runtime_deletion', permissive: 'RESTRICTIVE' }]);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 18);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 19);
     } finally { await old.close(); }
 });
 

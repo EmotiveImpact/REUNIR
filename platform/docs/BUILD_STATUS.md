@@ -1,4 +1,62 @@
-# Alpha 18 server pages for long lists
+# Alpha 19 notification settings and email digests
+
+3 October 2026. Application 0.19.0-alpha.1. Members can turn off notices about conversations, learning, projects or events in each community, and can ask for a daily or weekly email digest of notices they have not read. Notices about their own access always arrive. See decisions/019-notification-settings-and-digests.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/build-out-tvzn40`, from main `a211a09` (the merge of PR #11, Alpha 18) |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## PR #11 merged into main
+
+Alpha 18 was merged into main on 3 October 2026 as `a211a094c83d37daf68d78c0465c10cd2ea225b4`, a merge commit whose parents are the previous main `a924295` (PR #10) and the tested head `595dee2`; its tree, `acad198e1bbb91867b021d2934f58d546630977a`, is identical to the tested head's tree. CI runs 37118025779 and 37118037759 (application and postgres) passed on `595dee2`. This slice started from that main.
+
+## What changed
+
+- **Notification settings.** On the Notifications page, **Notification settings** opens a dialogue with four topics (conversations, learning, projects, events) and a digest choice (none, daily, weekly). A new command, `notification.preferences.save`, stores them; it writes no audit entry and is refused for suspended members. Notices are grouped by where they lead (`noticeTopic`); access, role, ownership and teaching notices have no switch. Muted notices are dropped when a command creates them, in the domain shared with the demo, and earlier notices stay.
+- **Additive migration 0019** adds `notification_preferences` with checks on the allowed topics and digests, one row per member and community, and row security: members read their community's settings (the domain needs them to filter new notices), but write only their own row, and insert only while active. A narrow read policy lets the digest job list who is due across communities when the transaction sets `app.worker='digest'`. The browser receives only the person's own row. Account deletion removes it.
+- **Email digests.** `DigestService` lists who is due, then works inside each member's own community context: it locks and re-checks the row, skips suspended members and missing accounts, counts unread notices since the last digest, stamps the time and queues one encrypted email with at most 20 notices and a count of the rest. Nothing is queued when there is nothing new. `GET /api/internal/digests` (the existing `CRON_SECRET` bearer) and `npm run digests:queue` run it; the existing mail drain sends what it queues. Digests are only constructed when a mail provider is configured, and `/api/account/capabilities` says whether they are sent.
+- Migrations 0001 to 0018 are byte-identical. No new grants beyond the runtime grant every domain table receives. No new runtime dependency. Release constant and package version are 0.19.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 605 passed, 0 failed (595 existing plus 10: 5 domain rules for topics, muting and privacy; 5 for row security, the digest job and its scheduled route under the restricted role) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 280 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 16 covers, 9 instructors, 10 accounts, 5 notifications (new), 16 monochrome, 20 v4 |
+| Connected-browser suites | 56 passed: 12 connected, 9 resources, 9 assessments, 13 covers, 6 instructors, 7 accounts |
+| `npm run test:postgres` | 19 passed on PostgreSQL 16 (18 existing plus 1: overlapping digest runs queue one email) |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates with 55 pinned sources and 18 register decisions |
+
+Tests changed rather than added: migration-count assertions moved from 18 to 19; the account deletion tests now include notification settings among the personal records removed.
+
+## Corrections made while verifying
+
+- The digest query multiplied a text parameter by an interval; the database test caught it and the parameters are now cast.
+- Being asked to teach a track first counted as a learning notice, so muting learning would have hidden it; it now counts as an access notice and always arrives.
+
+## Not verified, and why
+
+- No mail provider or scheduler is configured, by the user's instruction; digests were exercised with the encrypted outbox and opened in tests, not delivered.
+
+## Next actions
+
+1. Push, open the pull request, drive CI green and merge with the owner's standing approval; read back main.
+2. Instructor email invitations and two-step sign-in for owners and administrators.
+3. When deployment resumes: Neon staging with nineteen migrations and runtime grants, Vercel live mode, a mail provider, a scheduler for `/api/internal/mail` and `/api/internal/digests`, bucket setup (SETUP.md section 6), then hosted privacy tests.
+
+## Historical Alpha 18 evidence: server pages for long lists
 
 3 October 2026. Application 0.18.0-alpha.1. Notices, the knowledge-check review queues and the audit trail now load a page at a time from the server, with exact counts, so a busy community no longer sends ever larger snapshots to every browser. See decisions/018-server-pages-for-long-lists.md.
 
@@ -8,8 +66,8 @@
 | --- | --- |
 | Implemented | Yes, on `claude/build-out-tvzn40`, from main `a924295` (the merge of PR #10, Alpha 17) |
 | Verified locally | Yes: every suite (see below) |
-| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Verified remotely (GitHub Actions) | Yes: runs 37118025779 and 37118037759 on `595dee2` (application and postgres) |
+| Merged | Yes, [PR #11](https://github.com/EmotiveImpact/REUNIR/pull/11) as `a211a09`, under the owner's standing approval (3 October 2026) |
 | Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
 | Operated with real members | No |
 

@@ -14,6 +14,7 @@ import {createSeed,DEMO_USER,DEMO_ADMIN} from '../packages/domain/src/seed';
 import {PilotOperations} from '../apps/api/src/operations';
 import {InvitationService} from '../apps/api/src/invitations';
 import {MailQueue} from '../apps/api/src/mail';
+import {DigestService} from '../apps/api/src/digests';
 import {inspectMigrations} from '../packages/db/src/inspection';
 const url=new URL(process.env.POSTGRES_TEST_URL||'http://unconfigured');
 if(!['postgres:','postgresql:'].includes(url.protocol)||!['127.0.0.1','localhost','[::1]'].includes(url.hostname)||url.pathname!=='/reunir_ci')throw new Error('This test requires a disposable loopback database named reunir_ci. It cannot target remote or customer databases.');
@@ -221,6 +222,19 @@ try{
         assert.equal(await deleting,2,'the deletion sees the membership the acceptance committed');
         assert.equal((await admin.query("SELECT count(*)::int AS n FROM members WHERE user_id=$1 AND (status<>'left' OR name<>'Former member')",[person])).rows[0].n,0,'no active membership outlives the account');
         assert.equal((await admin.query('SELECT count(*)::int AS n FROM auth_user WHERE id=$1',[person])).rows[0].n,0);
+    });
+    await check('overlapping digest runs through the restricted runtime connection queue one email, and only for the member who asked',async()=>{
+        const person='pg_digest_reader',past=new Date(Date.now()-8*864e5).toISOString(),now=new Date().toISOString();
+        await admin.query("INSERT INTO auth_user(id,name,email,email_verified,created_at,updated_at) VALUES($1,'Lena Park','lena@example.test',true,$2,$2)",[person,now]);
+        await admin.query("INSERT INTO members(organization_id,id,created_at,user_id,name,headline,bio,skills,colour,avatar,role,status) VALUES('org_code_black',$1,now(),$2,'Lena Park','','','[]','violet','','member','active')",[randomUUID(),person]);
+        await admin.query("INSERT INTO notification_preferences(id,organization_id,created_at,user_id,muted,digest,updated_at) VALUES($1,'org_code_black',$2,$3,'[]','weekly',$2)",[randomUUID(),past,person]);
+        await admin.query("INSERT INTO notifications(id,organization_id,created_at,user_id,title,body,href,read_at) VALUES($1,'org_code_black',$2,$3,'Unread for Lena','Body','/home',NULL)",[randomUUID(),new Date(Date.now()-864e5).toISOString(),person]);
+        const before=(await admin.query<{n:number}>("SELECT count(*)::int AS n FROM email_outbox")).rows[0].n;
+        const digests=new DigestService(runtime!,new MailQueue(runtime!,'LOCAL_CI_DIGEST_ONLY_123456789012345678'),'https://ferven.test');
+        const runs=await Promise.all([digests.run(),digests.run()]);
+        assert.equal(runs.reduce((n,r)=>n+r.queued,0),1,'one digest however the runs overlap');
+        assert.equal((await admin.query<{n:number}>("SELECT count(*)::int AS n FROM email_outbox")).rows[0].n,before+1);
+        assert.notEqual((await admin.query<{t:Date|null}>('SELECT last_digest_at AS t FROM notification_preferences WHERE user_id=$1',[person])).rows[0].t,null);
     });
     await mkdir('evidence/alpha04',{recursive:true});await writeFile('evidence/alpha04/postgres-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Disposable local PostgreSQL service, not Neon.',results},null,2));
 }finally{await runtime?.close();await admin.close();}

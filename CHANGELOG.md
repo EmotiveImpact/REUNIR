@@ -8,9 +8,26 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### 0.18.0-alpha.1 (Alpha 18): server pages for long lists, 3 October 2026
+### 0.19.0-alpha.1 (Alpha 19): notification settings and email digests, 3 October 2026
 
 On a pull request from `claude/build-out-tvzn40`, to be merged once its checks pass.
+
+**In plain language:** you can now choose which kinds of notices you get in each community, and ask for a daily or weekly email listing what you have not read. Notices about your own access always arrive.
+
+Details:
+
+- Four topics can be turned off per community: conversations, learning, projects and events. Muting stops new notices; earlier ones stay.
+- Additive migration 0019 adds `notification_preferences`; members write only their own row, and the digest job reads only who is due.
+- `GET /api/internal/digests` and `npm run digests:queue` queue digests through the encrypted outbox; nothing is scheduled or sent until a mail provider and scheduler are configured (decision 019).
+- No new runtime dependency.
+
+### Planned
+
+- Instructor email invitations and two-step sign-in for owners and administrators.
+
+## 0.18.0-alpha.1 (Alpha 18): server pages for long lists, 3 October 2026
+
+On main through [PR #11](https://github.com/EmotiveImpact/REUNIR/pull/11), merged as `a211a09`.
 
 **In plain language:** notices, the knowledge-check review queues and the audit trail now load a page at a time, with "Show older" buttons and counts that stay exact, so busy communities stay quick.
 
@@ -20,10 +37,6 @@ Details:
 - The snapshot carries the newest 30 notices, the newest 12 audit entries for administrators, only the person's own attempts and exact counts.
 - Workspace reads skip the outbox, read the newest 100 audit entries and only the acting person's notices (decision 018).
 - No migration, no grant change, no new runtime dependency.
-
-### Planned
-
-- Notification settings and email digests.
 
 ## 0.17.0-alpha.1 (Alpha 17): loose ends after account deletion, 3 October 2026
 

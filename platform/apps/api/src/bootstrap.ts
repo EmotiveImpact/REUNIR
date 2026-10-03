@@ -3,6 +3,7 @@ import { requireSafeRuntimeRole } from '../../../packages/db/src/runtime-safety'
 import { PilotOperations } from './operations';
 import {MailQueue,resendTransport} from './mail';
 import {InvitationService} from './invitations';
+import {DigestService} from './digests';
 import { openDatabase } from '../../../packages/db/src/connection';
 import { WorkspaceRepository } from '../../../packages/db/src/repository';
 import { createAuth, passwordCheck } from './auth';
@@ -22,9 +23,11 @@ export async function bootstrap() {
     const invitations=new InvitationService(repository,new URL(APP_ORIGIN).origin,mail);
     if (process.env.NODE_ENV === 'production') await requireSafeRuntimeRole(db);
     const operations=new PilotOperations(repository,process.env);
-    const app = createApp({ repository, invitations, mail, operations, cronSecret:process.env.CRON_SECRET,
+    // Digests are queued only where mail can be sent; otherwise they would wait in the outbox for no one.
+    const digests=mail.transport?new DigestService(db,mail,new URL(APP_ORIGIN).origin):undefined;
+    const app = createApp({ repository, invitations, mail, operations, cronSecret:process.env.CRON_SECRET, digests,
         registerInvited:async(name,email,password)=>{const result=await registration.api.signUpEmail({body:{name,email,password}});return {id:result.user.id};},
         verifyPassword: passwordCheck(auth), origin: APP_ORIGIN, resolveSession: async (headers) => { const session = await auth.api.getSession({ headers }); return session ? { id: session.user.id, name: session.user.name } : null; }, authHandler: req => auth.handler(req), storage: GCS_BUCKET ? googleStorage(GCS_BUCKET, GCS_CREDENTIALS_JSON) : undefined });
-    return { app, db, repository, auth, mail, invitations };
+    return { app, db, repository, auth, mail, invitations, digests };
     } catch(error) { await db.close(); throw error; }
 }

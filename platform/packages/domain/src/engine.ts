@@ -9,6 +9,7 @@ import { applyCovers, filterCoverLibrary } from './covers';
 import { applyInstructors, filterInstructors } from './instructors';
 import { applyAssessment, filterAssessments } from './assessments';
 import { windowWorkspace } from './pages';
+import { applyNotificationSettings, dropMutedNotices } from './notifications';
 /**
  * What this person may see, shortened for the browser: recent notices and audit entries and only their own attempts, with
  * exact totals in `summary`. The rest of those lists comes a page at a time (`pageOf`). `auditTotal` is the full trail's
@@ -45,6 +46,7 @@ export function visibleRecords(state: Workspace, ctx: TenantContext): Workspace 
     const events = new Set(s.events.map(x => x.id));
     s.rsvps = s.rsvps.filter(x => events.has(x.eventId));
     s.notifications = s.notifications.filter(x => x.userId === ctx.userId);
+    s.notificationPreferences = s.notificationPreferences.filter(x => x.userId === ctx.userId && x.organizationId === ctx.organizationId);
     s.reports = isModerator(actor) ? s.reports.filter(x => posts.has(x.postId)) : [];
     s.audit = isAdmin(actor) ? s.audit.slice(-100) : [];
     s.outbox = [];
@@ -102,7 +104,8 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
     let message = 'Saved.';
     let objectId: string | undefined;
     let changed = true;
-    const purposeResult = applyAuthoring(s, ctx, cmd, now, makeId) ?? applyAssessment(s, ctx, cmd, now, makeId) ?? applyProjectWork(s, ctx, cmd, now, makeId) ?? applyCovers(s, ctx, cmd, now, makeId) ?? applyInstructors(s, ctx, cmd, now, makeId) ?? applyPurposeCommand(s, ctx, cmd, now, makeId);
+    const noticesBefore = new Set(s.notifications.map(n => n.id));
+    const purposeResult = applyNotificationSettings(s, ctx, cmd, now, makeId) ?? applyAuthoring(s, ctx, cmd, now, makeId) ?? applyAssessment(s, ctx, cmd, now, makeId) ?? applyProjectWork(s, ctx, cmd, now, makeId) ?? applyCovers(s, ctx, cmd, now, makeId) ?? applyInstructors(s, ctx, cmd, now, makeId) ?? applyPurposeCommand(s, ctx, cmd, now, makeId);
     if (purposeResult) {
         message = purposeResult.message;
         objectId = purposeResult.objectId;
@@ -434,10 +437,11 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
             throw new DomainError('UNKNOWN_COMMAND', 'This command is not implemented.');
         }
     }
+    dropMutedNotices(s, noticesBefore, ctx.organizationId);
     if (changed) {
         s.revision++;
         s.outbox.push({ ...base(), actorId: ctx.userId, type: cmd.type, objectId: objectId ?? s.organisation.id, payload: { requestId: ctx.requestId } });
     }
     return { workspace: s, message, objectId };
 }
-export const commandsForReference: Command['type'][] = ['cover.library.add','track.instructor.add','track.instructor.remove','track.cover.set','project.cover.set','quiz.attempt.submit','quiz.attempt.review','lesson.draft.create','lesson.draft.save','lesson.draft.publish','lesson.draft.archive','lesson.draft.restore','track.lessons.reorder','task.create','task.edit','task.claim','task.release','task.move','task.archive','task.submit','task.note','task.note.hide', 'member.status', 'member.role', 'space.access', 'post.create', 'post.comment', 'post.react', 'post.bookmark', 'post.report', 'post.moderate', 'track.enrol', 'lesson.complete', 'mission.submit', 'submission.review', 'project.join', 'project.create', 'project.update', 'event.rsvp', 'profile.update', 'notification.read', 'organisation.update', 'space.create', 'track.create', 'lesson.create', 'mission.create', 'event.create', 'purpose.save', 'path.create', 'path.publish', 'path.enrol', 'milestone.create', 'goal.set', 'goal.status', 'project.purpose', 'contribution.submit', 'contribution.resubmit', 'contribution.review', 'outcome.submit', 'outcome.resubmit', 'outcome.review', 'output.publish'];
+export const commandsForReference: Command['type'][] = ['notification.preferences.save','cover.library.add','track.instructor.add','track.instructor.remove','track.cover.set','project.cover.set','quiz.attempt.submit','quiz.attempt.review','lesson.draft.create','lesson.draft.save','lesson.draft.publish','lesson.draft.archive','lesson.draft.restore','track.lessons.reorder','task.create','task.edit','task.claim','task.release','task.move','task.archive','task.submit','task.note','task.note.hide', 'member.status', 'member.role', 'space.access', 'post.create', 'post.comment', 'post.react', 'post.bookmark', 'post.report', 'post.moderate', 'track.enrol', 'lesson.complete', 'mission.submit', 'submission.review', 'project.join', 'project.create', 'project.update', 'event.rsvp', 'profile.update', 'notification.read', 'organisation.update', 'space.create', 'track.create', 'lesson.create', 'mission.create', 'event.create', 'purpose.save', 'path.create', 'path.publish', 'path.enrol', 'milestone.create', 'goal.set', 'goal.status', 'project.purpose', 'contribution.submit', 'contribution.resubmit', 'contribution.review', 'outcome.submit', 'outcome.resubmit', 'outcome.review', 'output.publish'];
