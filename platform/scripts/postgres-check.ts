@@ -56,7 +56,7 @@ try{
         assert.equal((await m.messages('code-black',DEMO_USER,g)).items.length,2);
         assert.equal((await admin.query<{ok:boolean}>("SELECT has_table_privilege('reunir_app','conversation_joins','INSERT') AS ok")).rows[0].ok,true);
     });
-    await check('the retention job lists communities only as its own worker, then clears housekeeping as the runtime role (migration 0023)',async()=>{
+    await check('the retention job lists communities only as its own worker, then clears housekeeping as the runtime role (migration 0030)',async()=>{
         const listed=(worker:string)=>runtime!.transaction(async tx=>{await tx.query("SELECT set_config('app.worker',$1,true)",[worker]);return (await tx.query('SELECT id FROM organisations')).rows.length;});
         assert.equal(await listed(''),0);assert.ok(await listed('retention')>0);
         await admin.query("INSERT INTO request_limits(key,count,window_start) VALUES('retention-check',1,now()-interval '3 days')");

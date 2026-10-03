@@ -1,8 +1,8 @@
-# Alpha 27 data retention rules
+# Alpha 31 data retention rules
 
-3 October 2026. Application 0.27.0-alpha.1. Housekeeping records are cleared on a schedule by one list of rules, and Your account says how long everything is kept. What people make, reviewed evidence and the audit trail are never cleared by the job. See decisions/027-data-retention.md and RETENTION.md.
+3 October 2026. Application 0.31.0-alpha.1. Housekeeping records are cleared on a schedule by one list of rules, and Your account says how long everything is kept. What people make, reviewed evidence and the audit trail are never cleared by the job. See decisions/031-data-retention.md and RETENTION.md.
 
-Numbering: main carries Alpha 26 (PR #18). Open pull requests claim Alpha 23 (#16, #21), 25 (#20) and 26 again (#22), so this is Alpha 27 with decision 027. Main has migrations up to 0022 and two open pull requests propose another 0022, so this takes 0023.
+Numbering follows the project's allocation of 3 October 2026: this thread holds Alpha 31 to 34, decision records 031 to 034 and migrations 0030 to 0033, so data retention is Alpha 31, decision 031 and migration 0030 (first opened as Alpha 27 with migration 0023). Migrations 0023 to 0029 belong to other threads, so a gap before 0030 is expected; the runner applies files in order and does not need consecutive numbers.
 
 ## Status at a glance
 
@@ -20,9 +20,9 @@ Numbering: main carries Alpha 26 (PR #18). Open pull requests claim Alpha 23 (#1
 - **Rules** (`packages/contracts/src/retention.ts`): expired sessions, expired links and rate counters one day after expiry; request receipts 30 days; internal change events 90 days; sent and cancelled mail records 90 days; undelivered mail contents 30 days, the record 90; read notices 180 days. Unread notices and queued mail are never touched.
 - **Job** (`packages/db/src/retention.ts`): records outside any community are cleared directly; each community's receipts, change events and read notices inside its own tenant context. A dry run does the same work and rolls it back, so its counts are exact. Each applied run is recorded as `retention-job` in service observations.
 - **Running it**: `npm run retention:run` (dry run unless `RETENTION=apply`) and `GET /api/internal/retention` with the scheduler secret (applies; `?dry=1` counts). Nothing is scheduled.
-- **Migration 0023** (additive): `email_outbox.failed_at`, `organisations_retention`, a read-only policy that lists communities only when the transaction sets `app.worker` to `retention`, and `notifications_read_idx`. 0001 to 0022 unchanged; no grant change.
+- **Migration 0030** (additive): `email_outbox.failed_at`, `organisations_retention`, a read-only policy that lists communities only when the transaction sets `app.worker` to `retention`, and `notifications_read_idx`. 0001 to 0022 unchanged; no grant change.
 - **How long things are kept** panel on Your account, from the same list. RETENTION.md, PILOT_OPERATIONS.md and SECURITY.md updated.
-- Review fixes on PR #23: migration 0023 also adds `email_outbox.failed_at` (set by the mail worker; mail already failed starts its period at migration), and failed mail is counted from it; `npm run launch:preflight` and LAUNCH_RUNBOOK.md now require `CRON_SECRET` even without mail, and list the retention route; against the blank `.env.example` the preflight now reports 6 failures and 5 warnings.
+- Review fixes on PR #23: migration 0030 also adds `email_outbox.failed_at` (set by the mail worker; mail already failed starts its period at migration), and failed mail is counted from it; `npm run launch:preflight` and LAUNCH_RUNBOOK.md now require `CRON_SECRET` even without mail, and list the retention route; against the blank `.env.example` the preflight now reports 6 failures and 5 warnings.
 - Migration-count assertions moved from 22 to 23.
 
 ## Local verification, 3 October 2026
