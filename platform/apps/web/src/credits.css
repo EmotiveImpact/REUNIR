@@ -1,0 +1,16 @@
+/* Credits on a contribution. Neutral surfaces only. */
+.contribution-credits{display:grid;gap:10px;margin-top:14px}
+.contribution-credits:empty{display:none}
+.credit-line{display:flex;align-items:center;gap:7px;margin:0;font-size:12px;color:var(--muted)}
+.credit-prompt{display:grid;gap:10px;padding:13px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2)}
+.credit-prompt p{margin:0;font-size:12px;line-height:1.7}
+.credit-prompt>div{display:flex;gap:8px;flex-wrap:wrap}
+.credit-manage{display:grid;gap:10px;justify-items:start}
+.credit-list{list-style:none;margin:0;padding:0;display:grid;gap:6px;width:100%}
+.credit-list li{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;flex-wrap:wrap}
+.credit-list li>span{flex:1;min-width:0;display:grid;gap:2px}
+.credit-list strong{font-size:12px;font-weight:550}
+.credit-list small{font-size:11px;color:var(--muted)}
+.modal>.credit-editor{max-width:none;margin:0}
+.credit-editor p{margin:0;font-size:12px;line-height:1.7}
+.credited-on>.muted{font-size:12px;margin:0 0 6px}
