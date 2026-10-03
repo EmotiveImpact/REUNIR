@@ -6,6 +6,8 @@ import { beginResourceUpload, completeResourceUpload, discardResourceUpload, res
 import { beginCoverLibraryUpload, beginCoverUpload, completeCoverUpload, removeCoverLibraryItem, resolveCoverImage, resolveLibraryPicture, staleCoverUploads, type CoverObservation } from '../../domain/src/covers';
 import type { CoverLibraryUploadRequest, CoverSubject, CoverUploadRequest } from '../../contracts/src/covers';
 import { learningRecord } from '../../domain/src/learning-record';
+import { eraseFromCommunity, PERSONAL_COLLECTIONS } from '../../domain/src/account-deletion';
+import type { AccountDeletionSummary } from '../../contracts/src/account';
 import { tables, type TableSpec, type CollectionKey } from './tables';
 import type { Database, SQL } from './connection';
 const slugPattern = /^[a-z0-9][a-z0-9-]{0,99}$/;
@@ -64,12 +66,15 @@ async function saveChanges(sql: SQL, before: Workspace, after: Workspace) {
     }
     await sql.query('UPDATE organisations SET name=$2,tagline=$3,accent=$4,revision=$5 WHERE id=$1', [after.organisation.id, after.organisation.name, after.organisation.tagline, after.organisation.accent, after.revision]);
 }
+/** "A", "A and B", "A, B and C". */
+const listNames = (names: string[]) => names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 export class WorkspaceRepository {
     constructor(readonly db: Database) { }
     async memberships(userId: string) { return this.db.transaction(async (sql) => { await setContext(sql, '', userId); return (await sql.query<{
         slug: string;
         name: string;
-    }>('SELECT o.slug,o.name FROM organisations o JOIN members m ON m.organization_id=o.id WHERE m.user_id=$1 AND m.status=$2 ORDER BY o.name', [userId, 'active'])).rows; }); }
+        role: string;
+    }>('SELECT o.slug,o.name,m.role FROM organisations o JOIN members m ON m.organization_id=o.id WHERE m.user_id=$1 AND m.status=$2 ORDER BY o.name', [userId, 'active'])).rows; }); }
     async within<T>(slug: string, userId: string, write: boolean, fn: (sql: SQL, org: Record<string, unknown>) => Promise<T>) {
         if (!slugPattern.test(slug))
             throw new DomainError('NOT_FOUND', 'Community not found.', 404);
@@ -289,6 +294,74 @@ export class WorkspaceRepository {
             const removed = (await sql.query<{ id: string }>('DELETE FROM upload_intents WHERE organization_id=$1 AND id = ANY($2::text[]) RETURNING id', [orgId, removable])).rows.map(r => r.id);
             await sql.query('INSERT INTO audit(id,organization_id,created_at,actor_id,action,object_id,metadata) VALUES($1,$2,now(),$3,$4,$5,$6)', [randomUUID(), orgId, authorisedBy, 'cover.uploads.pruned', orgId, JSON.stringify({ removed: removed.length })]);
             return removed;
+        });
+    }
+    /**
+     * Delete the acting person's account, in one transaction across every community they belong to. Each membership is
+     * scrubbed to "Former member" and kept, with their posts, comments and project work; their own records go; their
+     * sign-in, sessions and email address go. Owners are refused. The transaction is marked as their own account
+     * deletion, which is all that the policies in migration 0015 admit. Returns counts and the storage keys of their
+     * private files, which the caller removes once this has committed.
+     */
+    async deleteAccount(userId: string, forgetMail?: (sql: SQL, email: string) => Promise<number>): Promise<{ summary: AccountDeletionSummary; files: string[] }> {
+        return this.db.transaction(async (sql) => {
+            await setContext(sql, '', userId);
+            await sql.query("SELECT set_config('app.account_deletion',$1,true)", [userId]);
+            // Locking the account first serialises a repeated request: the second finds nothing left to delete.
+            const account = (await sql.query<{ email: string }>('SELECT email FROM auth_user WHERE id=$1 FOR UPDATE', [userId])).rows[0];
+            if (!account) throw new DomainError('NOT_FOUND', 'This account no longer exists.', 404);
+            const memberships = (await sql.query<{ organization_id: string; role: string }>('SELECT organization_id,role FROM members WHERE user_id=$1 ORDER BY organization_id', [userId])).rows;
+            const owned: string[] = [];
+            for (const m of memberships.filter(x => x.role === 'owner')) {
+                await setContext(sql, m.organization_id, userId);
+                owned.push(String((await sql.query<{ name: string }>('SELECT name FROM organisations WHERE id=$1', [m.organization_id])).rows[0]?.name ?? 'a community'));
+            }
+            if (owned.length) throw new DomainError('OWNER_CANNOT_DELETE', `You own ${listNames(owned)}. A community needs its owner, so this account cannot be deleted while you own one.`, 409);
+            const now = new Date().toISOString(), removed: Record<string, number> = {}, files: string[] = [];
+            const add = (key: string, n: number) => { if (n) removed[key] = (removed[key] ?? 0) + n; };
+            const drop = async (key: string, query: string, params: unknown[]) => { const r = await sql.query<Record<string, unknown>>(query, params); add(key, r.rows.length); return r.rows; };
+            let releasedTasks = 0, rewordedNotices = 0;
+            // Communities are locked in a fixed order, so two deletions never wait on each other in a cycle.
+            for (const { organization_id: orgId } of memberships) {
+                await setContext(sql, orgId, userId);
+                const org = (await sql.query('SELECT * FROM organisations WHERE id=$1 FOR UPDATE', [orgId])).rows[0];
+                if (!org) throw new Error('A community could not be locked for account deletion, so nothing was changed.');
+                const before = await readAll(sql, org);
+                const erasure = eraseFromCommunity(before, userId, now, randomUUID), after = erasure.workspace;
+                // 1. While the membership is still current: claimed tasks go back to their teams, notices lose the name.
+                const staged = structuredClone(before), reworded = new Map(after.notifications.map(n => [n.id, n]));
+                staged.projectTasks = after.projectTasks;
+                staged.notifications = before.notifications.map(n => reworded.get(n.id) ?? n);
+                await saveChanges(sql, before, staged);
+                // 2. Their own records. Row security silently skips rows it does not admit, so a shortfall is refused.
+                for (const key of PERSONAL_COLLECTIONS) {
+                    const spec = tables.find(t => t.key === key)!;
+                    const gone = (await sql.query(`DELETE FROM ${spec.table} WHERE organization_id=$1 AND user_id=$2 RETURNING id`, [orgId, userId])).rows.length;
+                    if (gone !== erasure.removed[key]) throw new Error(`Row security admitted only part of the deletion (${spec.table}), so nothing was changed.`);
+                    add(key, gone);
+                }
+                await drop('messageReceipts', 'DELETE FROM message_receipts WHERE organization_id=$1 AND user_id=$2 RETURNING conversation_id', [orgId, userId]);
+                await drop('memberBlocks', 'DELETE FROM member_blocks WHERE organization_id=$1 AND user_id=$2 RETURNING blocked_user_id', [orgId, userId]);
+                await drop('commandReceipts', 'DELETE FROM command_receipts WHERE organization_id=$1 AND user_id=$2 RETURNING request_key', [orgId, userId]);
+                files.push(...(await drop('privateFiles', "DELETE FROM upload_intents WHERE organization_id=$1 AND user_id=$2 AND purpose='member' RETURNING object_key", [orgId, userId])).map(r => String(r.object_key)));
+                // Invitations to their address hold their email; queued invitation mail goes with them (cascade).
+                await drop('invitations', 'DELETE FROM invitations WHERE organization_id=$1 AND lower(email)=lower($2) RETURNING id', [orgId, account.email]);
+                // 3. The audit entry, then the scrub as the last write: later policies would no longer see an active member.
+                const entry = after.audit.at(-1)!, member = after.members.find(m => m.userId === userId)!;
+                await sql.query('INSERT INTO audit(id,organization_id,created_at,actor_id,action,object_id,metadata) VALUES($1,$2,$3,$4,$5,$6,$7)', [entry.id, orgId, entry.createdAt, entry.actorId, entry.action, entry.objectId, JSON.stringify(entry.metadata)]);
+                await sql.query('UPDATE members SET name=$3,headline=$4,bio=$5,skills=$6,colour=$7,avatar=$8,role=$9,status=$10 WHERE organization_id=$1 AND user_id=$2', [orgId, userId, member.name, member.headline, member.bio, JSON.stringify(member.skills), member.colour, member.avatar, member.role, member.status]);
+                await sql.query('UPDATE organisations SET revision=$2 WHERE id=$1', [orgId, after.revision]);
+                releasedTasks += erasure.releasedTasks; rewordedNotices += erasure.rewordedNotices;
+            }
+            // Account-wide: rate counters, reset tokens and queued mail for their address, then the sign-in itself.
+            await setContext(sql, '', userId);
+            await sql.query('DELETE FROM request_limits WHERE key = ANY($1::text[])', [[`member:${userId}`, `invite-admin:${userId}`, `account-delete:${userId}`]]);
+            await drop('signInTokens', 'DELETE FROM auth_verification WHERE value=$1 OR lower(identifier)=lower($2) RETURNING id', [userId, account.email]);
+            if (forgetMail) add('queuedMail', await forgetMail(sql, account.email));
+            add('sessions', (await sql.query<{ n: number }>('SELECT count(*)::int AS n FROM auth_session WHERE user_id=$1', [userId])).rows[0].n);
+            // Sessions and the stored password hash go with the account (ON DELETE CASCADE).
+            if ((await sql.query('DELETE FROM auth_user WHERE id=$1 RETURNING id', [userId])).rows.length !== 1) throw new Error('The account could not be deleted, so nothing was changed.');
+            return { summary: { communities: memberships.length, removed, releasedTasks, rewordedNotices }, files };
         });
     }
     /** The acting member's own learning record, read inside their own tenant transaction. */

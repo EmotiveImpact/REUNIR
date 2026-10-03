@@ -75,7 +75,7 @@ try{
         assert.deepEqual((await rows('org_code_black',DEMO_USER,'SELECT user_id FROM quiz_attempts')).map(x=>x.user_id),[DEMO_USER]);
         assert.equal((await rows('org_studio_north',DEMO_ADMIN,'SELECT id FROM quiz_attempts')).length,0);
         await assert.rejects(()=>rows('org_code_black',DEMO_ADMIN,"UPDATE quiz_attempts SET answers='[]'::jsonb"),/permission denied/);
-        await assert.rejects(()=>rows('org_code_black',DEMO_ADMIN,'DELETE FROM quiz_attempts'),/permission denied/);
+        assert.equal((await rows('org_code_black',DEMO_ADMIN,'DELETE FROM quiz_attempts RETURNING id')).length,0,'no attempt is deleted outside a member’s own account deletion');
         assert.equal((await rows('org_code_black',DEMO_USER,"UPDATE quiz_attempts SET feedback='Forged' WHERE id='attempt_sofia' RETURNING id")).length,0);
         assert.equal((await rows('org_code_black',DEMO_ADMIN,"UPDATE quiz_attempts SET feedback='Rewritten',score=0,version=2 WHERE id='attempt_sofia' RETURNING id")).length,0,'a finished review cannot be rewritten');
     });
@@ -142,7 +142,7 @@ try{
         assert.deepEqual(await operator.eraseLearnerAnswers('code-black',DEMO_ADMIN,'member_sofia','request pg-1',true),{...planned,applied:true});
         assert.equal(await left(),0);
         assert.deepEqual((await admin.query("SELECT metadata FROM audit WHERE action='learner.answers.erased' AND object_id='member_sofia'")).rows,[{metadata:{reference:'request pg-1',attempts:planned.attempts,notifications:planned.notifications}}]);
-        await assert.rejects(()=>runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',DEMO_ADMIN);await tx.query("SELECT set_config('app.erasure_subject','member_alex',true)");await tx.query("DELETE FROM quiz_attempts WHERE user_id='member_alex'");}),/permission denied/);
+        assert.equal(await runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',DEMO_ADMIN);await tx.query("SELECT set_config('app.erasure_subject','member_alex',true)");return (await tx.query("DELETE FROM quiz_attempts WHERE user_id='member_alex' RETURNING id")).rows.length;}),0,'the runtime role cannot use the operator erasure');
     });
     await check('unused cover files are listed and cleared through a role without row-security bypass',async()=>{
         const scoped=Object.create(admin) as typeof admin;scoped.transaction=fn=>admin.transaction(async tx=>{await tx.query('SET LOCAL ROLE reunir_operator');return fn(tx);});

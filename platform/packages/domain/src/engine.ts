@@ -1,6 +1,6 @@
 import { commandSchema, DomainError, newId, type Command, type Workspace, type TenantContext, type TenantRecord, type Member, type MutationResult } from '../../contracts/src/index';
-import { isAdmin, isModerator, actorFor, canSeeSpace } from './access';
-export { isAdmin, isModerator, actorFor, canSeeSpace } from './access';
+import { isAdmin, isModerator, actorFor, canSeeSpace, isFormer } from './access';
+export { isAdmin, isModerator, actorFor, canSeeSpace, isFormer } from './access';
 import { applyProjectWork, filterProjectWork } from './project-work';
 import { applyAuthoring, filterAuthoring } from './authoring';
 import { normalisePurposeState, filterPurposeWorkspace, applyPurposeCommand } from './purpose';
@@ -42,8 +42,9 @@ export function visibleWorkspace(state: Workspace, ctx: TenantContext): Workspac
     s.completions = s.completions.filter(x => visibleLessons.has(x.lessonId));
     // Keep recognition totals without exposing titles/identifiers from private learning or missions.
     s.reputation = s.reputation.map(r => { const [kind, target] = r.sourceId.split(':'); const hidden = kind === 'lesson' ? !visibleLessons.has(target) : kind === 'mission' ? !missions.has(target) : false; return hidden ? { ...r, sourceId: r.id, description: 'Recognised community activity' } : r; });
-    // Do not expose suspended members as active directory entries. Retain authors already visible.
-    s.members = s.members.filter(x => x.status === 'active' || isAdmin(actor));
+    // Do not expose suspended members as active directory entries. Retain authors already visible. Former members stay
+    // visible to everyone as scrubbed records, so their kept posts and work read "Former member"; directories skip them.
+    s.members = s.members.filter(x => x.status !== 'suspended' || isAdmin(actor));
     s.uploads = visibleUploads(s, actor);
     return filterAssessments(filterAuthoring(filterCoverLibrary(filterInstructors(filterProjectWork(filterPurposeWorkspace(s, ctx, actor), actor), actor), actor), actor), actor);
 }
@@ -80,10 +81,10 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
     const mission = (id: string) => { const m = find(s.missions, id); scope(m.spaceId); if (m.trackId)
         track(m.trackId); return m; };
     const project = (id: string) => { const p = find(s.projects, id); scope(p.spaceId); return p; };
-    const notify = (userId: string, title: string, body: string, href: string) => { if (userId !== ctx.userId)
+    const notify = (userId: string, title: string, body: string, href: string) => { if (userId !== ctx.userId && !isFormer(s, userId))
         s.notifications.push({ ...base(), userId, title, body, href, readAt: null }); };
     const award = (userId: string, dimension: 'learning' | 'building' | 'contribution', points: number, sourceId: string, description: string) => {
-        if (!s.reputation.some(r => r.userId === userId && r.sourceId === sourceId))
+        if (!isFormer(s, userId) && !s.reputation.some(r => r.userId === userId && r.sourceId === sourceId))
             s.reputation.push({ ...base(), userId, dimension, points, sourceId, description });
     };
     const audit = (action: string, objectId: string) => s.audit.push({ ...base(), actorId: ctx.userId, action, objectId, metadata: { requestId: ctx.requestId } });

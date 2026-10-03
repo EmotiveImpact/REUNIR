@@ -1,6 +1,6 @@
 import { DomainError, type Command, type Member, type QuizAttempt, type TenantContext, type Workspace } from '../../contracts/src/index';
 import { MAX_SHORT_ANSWER, learnerQuiz, quizFingerprint, quizPercentage, scoreQuiz, type AuthoredQuiz, type LessonQuiz, type QuizAnswer } from '../../contracts/src/assessments';
-import { actorFor, canSeeSpace, isAdmin } from './access';
+import { actorFor, canSeeSpace, isAdmin, isFormer } from './access';
 import { taughtTracks, teaches, teachesAny } from './instructors';
 
 /** A learner's records per lesson are bounded even when a quiz allows unlimited attempts. */
@@ -49,7 +49,7 @@ export function applyAssessment(s: Workspace, ctx: TenantContext, cmd: Command, 
         if (!lesson || !track || !(lesson.published || isAdmin(actor)) || !(track.published || isAdmin(actor)) || !canSeeSpace(s, actor, track.spaceId)) return gone();
         return { lesson, track };
     };
-    const notify = (userId: string, title: string, body: string, href: string) => { if (userId !== ctx.userId) s.notifications.push({ id: makeId(), organizationId: org, createdAt: now, userId, title, body, href, readAt: null }); };
+    const notify = (userId: string, title: string, body: string, href: string) => { if (userId !== ctx.userId && !isFormer(s, userId)) s.notifications.push({ id: makeId(), organizationId: org, createdAt: now, userId, title, body, href, readAt: null }); };
     if (cmd.type === 'quiz.attempt.submit') {
         const { lesson, track } = open(cmd.lessonId);
         const quiz = lesson.quiz ?? gone('This lesson has no knowledge check.');

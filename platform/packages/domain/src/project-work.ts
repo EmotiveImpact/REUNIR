@@ -1,5 +1,5 @@
 import { DomainError, type Workspace, type Member, type ProjectTask, type Project, type Command, type TenantContext } from '../../contracts/src/index';
-import { actorFor, canSeeSpace, isAdmin } from './access';
+import { actorFor, canSeeSpace, isAdmin, isFormer } from './access';
 import { applyPurposeCommand } from './purpose';
 
 export type TaskStage = 'todo' | 'doing' | 'review' | 'done';
@@ -43,7 +43,7 @@ export function applyProjectWork(s:Workspace,ctx:TenantContext,cmd:Command,now:s
     const mine=(t:ProjectTask)=>{if(t.assigneeId!==ctx.userId)fail('ASSIGNEE_REQUIRED','Only the assigned contributor can do this.',403);};
     const touch=(t:ProjectTask)=>{t.version++;t.updatedAt=now;};
     const notify=(userId:string|null,title:string,projectId:string)=>{
-        if(userId&&userId!==ctx.userId)s.notifications.push({...base(),userId,title,body:'Open your project workspace to see the latest authorised details.',href:`/projects/${projectId}/work`,readAt:null});
+        if(userId&&userId!==ctx.userId&&!isFormer(s,userId))s.notifications.push({...base(),userId,title,body:'Open your project workspace to see the latest authorised details.',href:`/projects/${projectId}/work`,readAt:null});
     };
     const result=(id:string,message:string,changed=true)=>({objectId:id,message,changed,audit:true});
     switch(cmd.type){

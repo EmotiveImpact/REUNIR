@@ -56,7 +56,7 @@ test('0010 upgrade keeps lessons, drafts and history exactly as they were and ad
         }
         assert.deepEqual(await read('completions'), before.completions);
         assert.equal((await old.query('SELECT count(*)::int AS n FROM quiz_attempts')).rows[0].n, 0);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 14);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 15);
     } finally { await old.close(); }
 });
 
@@ -85,11 +85,13 @@ test('members read only their own attempts; administrators read their own commun
     assert.equal((await repo.snapshot('studio-north', DEMO_ADMIN)).quizAttempts.length, 0);
 });
 
-test('attempts are evidence: the runtime role cannot rewrite answers, scores’ basis or delete rows', async () => {
+test('attempts are evidence: the runtime role cannot rewrite answers or the basis of scores, nor delete them', async () => {
     for (const change of ["answers='[]'", "quiz='{}'", 'max_score=1', "user_id='member_sofia'", 'attempt_number=9', "lesson_id='lesson_4'", 'created_at=now()'])
         await fails(as(DEMO_ADMIN, ORG, tx => tx.query(`UPDATE quiz_attempts SET ${change} WHERE id='attempt_sofia'`)), /permission denied/);
-    await fails(as(DEMO_ADMIN, ORG, tx => tx.query("DELETE FROM quiz_attempts WHERE id='attempt_sofia'")), /permission denied/);
-    await fails(as(DEMO_USER, ORG, tx => tx.query('DELETE FROM quiz_attempts WHERE id=$1', [alexAttempt])), /permission denied/);
+    // Row security admits a delete only of the acting member's own attempts while they delete their own account (0015).
+    assert.equal(await as(DEMO_ADMIN, ORG, tx => tx.query("DELETE FROM quiz_attempts WHERE id='attempt_sofia' RETURNING id").then(r => r.rows.length)), 0);
+    assert.equal(await as(DEMO_USER, ORG, tx => tx.query('DELETE FROM quiz_attempts WHERE id=$1 RETURNING id', [alexAttempt]).then(r => r.rows.length)), 0);
+    assert.equal((await db.query('SELECT count(*)::int AS n FROM quiz_attempts WHERE id=$1', [alexAttempt])).rows[0].n, 1);
     assert.equal((await db.query("SELECT count(*)::int AS n FROM quiz_attempts WHERE id='attempt_sofia'")).rows[0].n, 1);
 });
 

@@ -1,6 +1,8 @@
 import { DomainError, type Workspace, type TenantContext, type Member } from '../../contracts/src/index';
 export const isAdmin = (m: Member) => m.role === 'owner' || m.role === 'admin';
 export const isModerator = (m: Member) => isAdmin(m) || m.role === 'moderator';
+/** A former member deleted their account. They receive no new notices, recognition or assignments. */
+export const isFormer = (s: Workspace, userId: string | null | undefined) => !!userId && s.members.some(m => m.userId === userId && m.organizationId === s.organisation.id && m.status === 'left');
 export function actorFor(state: Workspace, ctx: TenantContext): Member {
     if (state.organisation.id !== ctx.organizationId)
         throw new DomainError('NOT_FOUND', 'Community not found.', 404);
