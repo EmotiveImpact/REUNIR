@@ -10,7 +10,7 @@ import {
 import { applyCommand, visibleWorkspace, progress } from '../packages/domain/src/engine';
 import { lessonContent } from '../packages/domain/src/authoring';
 import { beginResourceUpload, completeResourceUpload, discardResourceUpload, resolveResourceDownload, type StoredObservation } from '../packages/domain/src/resources';
-import { DEMO_WORKSHEET_FILE, demoWorksheetPdf } from '../packages/domain/src/demo-files';
+import { DEMO_COVER_LIBRARY_FILE, DEMO_WORKSHEET_FILE, demoWorksheetPdf } from '../packages/domain/src/demo-files';
 import { createSeed, DEMO_ADMIN, DEMO_USER } from '../packages/domain/src/seed';
 import { ResourceList } from '../apps/web/src/components/resource-list';
 
@@ -122,7 +122,7 @@ test('abandoned and rejected intents are pruned; pending and community caps are 
     s = completeResourceUpload(first.workspace, ctx(), 'bad', seen(new TextEncoder().encode('<html>')), NOW).workspace;
     const r = beginResourceUpload(s, ctx(), request('new.pdf'), { id: 'new', objectKey: 'k-new' }, NOW);
     assert.deepEqual(r.expired.map(x => x.objectKey), ['k-bad']);
-    assert.deepEqual(r.workspace.uploads.map(u => u.id).sort(), [DEMO_WORKSHEET_FILE, 'new']);
+    assert.deepEqual(r.workspace.uploads.map(u => u.id).sort(), [DEMO_COVER_LIBRARY_FILE, DEMO_WORKSHEET_FILE, 'new']); // Pruning lesson files leaves the cover library alone.
     s = r.workspace;
     for (let i = 0; i < 4; i++) s = beginResourceUpload(s, ctx(), request(`p${i}.pdf`), { id: 'p' + i, objectKey: 'kp' + i }, NOW).workspace;
     assert.throws(() => beginResourceUpload(s, ctx(), request('sixth.pdf'), { id: 'p6', objectKey: 'kp6' }, NOW), { code: 'UPLOADS_IN_PROGRESS' });

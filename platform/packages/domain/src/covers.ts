@@ -1,7 +1,7 @@
 import { DomainError, newId, type Command, type Member, type Project, type TenantContext, type Track, type Upload, type Workspace } from '../../contracts/src/index';
 import {
-    COVER_UPLOAD_TTL_MS, MAX_COVER_UPLOADS, MAX_PENDING_COVER_UPLOADS, coverUploadRequest, isCoverImageType,
-    type CoverImage, type CoverSubject, type CoverUploadRequest,
+    COVER_UPLOAD_TTL_MS, MAX_COVER_LIBRARY_ITEMS, MAX_COVER_UPLOADS, MAX_PENDING_COVER_UPLOADS, coverLibraryUploadRequest, coverUploadRequest, isCoverImageType,
+    type CoverImage, type CoverLibraryUploadRequest, type CoverSubject, type CoverUploadRequest,
 } from '../../contracts/src/covers';
 import { actorFor, canSeeSpace, isAdmin } from './access';
 import { teaches } from './instructors';
@@ -12,6 +12,12 @@ import { normalisePurposeState } from './purpose';
  * Whoever can see the track or project can see its cover; changing it follows the right to edit that record.
  */
 const coverFile = (u: Upload, organizationId: string) => u.organizationId === organizationId && u.purpose === 'cover_image';
+/** Pictures in the community's cover library may be any track's or project's cover. */
+const libraryFile = (u: Upload, organizationId: string) => u.organizationId === organizationId && u.purpose === 'cover_library';
+const inLibrary = (s: Workspace, organizationId: string, fileId: string) => s.coverLibrary.some(i => i.organizationId === organizationId && i.fileId === fileId);
+/** The verified upload that may serve as this subject's cover: its own upload, or a picture from the library. */
+const coverSource = (s: Workspace, organizationId: string, kind: CoverSubject, id: string, fileId: string) =>
+    s.uploads.find(u => u.id === fileId && ((coverFile(u, organizationId) && belongsTo(u, kind, id)) || (libraryFile(u, organizationId) && inLibrary(s, organizationId, u.id))));
 const gone = (message = 'That cover is not available.'): never => { throw new DomainError('NOT_FOUND', message, 404); };
 type Subject = Track | Project;
 const subjectOf = (u: Upload): { kind: CoverSubject; id: string } | null =>
@@ -36,6 +42,11 @@ function requireEditor(s: Workspace, ctx: TenantContext, kind: CoverSubject, id:
     const subject = visibleSubject(s, actor, kind, id) ?? gone(kind === 'track' ? 'That learning track is not available.' : 'That project is not available.');
     if (!canEditCover(s, actor, kind, subject)) throw new DomainError('COVER_EDITOR_REQUIRED', kind === 'track' ? 'Only a track instructor or a community owner or administrator can change a track cover.' : 'Only the project owner or a community administrator can change this cover.', 403);
     return { actor, subject };
+}
+function requireLibraryAdmin(s: Workspace, ctx: TenantContext): Member {
+    const actor = actorFor(s, ctx);
+    if (!isAdmin(actor)) throw new DomainError('ADMIN_REQUIRED', 'Only a community owner or administrator can change the cover library.', 403);
+    return actor;
 }
 export function isCoverReferenced(s: Workspace, organizationId: string, uploadId: string): boolean {
     const uses = (rows: Subject[]) => rows.some(r => r.organizationId === organizationId && r.coverImage?.fileId === uploadId);
@@ -76,9 +87,9 @@ export function beginCoverUpload(input: Workspace, ctx: TenantContext, raw: Cove
 /** What storage reported for the object. `bytesAcceptable` covers the signature and the declared dimensions. */
 export interface CoverObservation { sizeBytes: number; contentType: string; generation: string | null; bytesAcceptable: boolean }
 export function completeCoverUpload(input: Workspace, ctx: TenantContext, uploadId: string, observed: CoverObservation, now: string, makeId: () => string = newId) {
-    const found = input.uploads.find(u => u.id === uploadId && coverFile(u, ctx.organizationId) && u.userId === ctx.userId) ?? gone('That upload is not available.');
-    const subject = subjectOf(found) ?? gone('That upload is not available.');
-    requireEditor(input, ctx, subject.kind, subject.id);
+    const found = input.uploads.find(u => u.id === uploadId && (coverFile(u, ctx.organizationId) || libraryFile(u, ctx.organizationId)) && u.userId === ctx.userId) ?? gone('That upload is not available.');
+    if (found.purpose === 'cover_library') requireLibraryAdmin(input, ctx);
+    else { const subject = subjectOf(found) ?? gone('That upload is not available.'); requireEditor(input, ctx, subject.kind, subject.id); }
     if (found.status === 'ready') return { workspace: input, upload: found, outcome: 'unchanged' as const };
     if (found.status === 'rejected') throw new DomainError('FILE_REJECTED', 'This image did not pass verification. Choose it again.', 409);
     if (Date.parse(now) - Date.parse(found.createdAt) > COVER_UPLOAD_TTL_MS) throw new DomainError('UPLOAD_EXPIRED', 'This upload expired. Choose the image again.', 409);
@@ -86,13 +97,78 @@ export function completeCoverUpload(input: Workspace, ctx: TenantContext, upload
     const upload = s.uploads.find(u => u.id === found.id && u.organizationId === ctx.organizationId)!;
     const accepted = observed.sizeBytes === upload.sizeBytes && observed.contentType === upload.contentType && observed.bytesAcceptable && !!observed.generation && /^[0-9]{1,20}$/.test(observed.generation);
     Object.assign(upload, { status: accepted ? 'ready' : 'rejected', completedAt: now, generation: accepted ? observed.generation : null });
-    record(s, ctx, now, makeId, accepted ? 'cover.uploaded' : 'cover.rejected', upload.id, true);
+    const kind = upload.purpose === 'cover_library' ? 'cover.library' : 'cover';
+    record(s, ctx, now, makeId, accepted ? `${kind}.uploaded` : `${kind}.rejected`, upload.id, true);
     return { workspace: s, upload, outcome: accepted ? 'ready' as const : 'rejected' as const };
+}
+
+/**
+ * Record an authorised library upload. Uploads never added to the library are pruned once rejected or an hour old;
+ * pictures in the library are never pruned.
+ */
+export function beginCoverLibraryUpload(input: Workspace, ctx: TenantContext, raw: CoverLibraryUploadRequest, ids: { id: string; objectKey: string }, now: string, makeId: () => string = newId) {
+    const request = coverLibraryUploadRequest.parse(raw);
+    requireLibraryAdmin(input, ctx);
+    const s = normalisePurposeState(structuredClone(input));
+    const org = ctx.organizationId, nowMs = Date.parse(now);
+    const expired = s.uploads.filter(u => libraryFile(u, org) && !inLibrary(s, org, u.id) && (u.status === 'rejected' || nowMs - Date.parse(u.createdAt) > COVER_UPLOAD_TTL_MS));
+    s.uploads = s.uploads.filter(u => !expired.includes(u));
+    if (s.coverLibrary.filter(i => i.organizationId === org).length >= MAX_COVER_LIBRARY_ITEMS) throw new DomainError('LIBRARY_FULL', `The cover library holds up to ${MAX_COVER_LIBRARY_ITEMS} pictures. Remove one before adding another.`, 409);
+    if (s.uploads.filter(u => libraryFile(u, org) && u.userId === ctx.userId && u.status === 'pending').length >= MAX_PENDING_COVER_UPLOADS) throw new DomainError('UPLOADS_IN_PROGRESS', 'Let your current uploads finish first.', 429);
+    const upload: Upload = {
+        id: ids.id, organizationId: org, createdAt: now, userId: ctx.userId, purpose: 'cover_library', trackId: null, coverTrackId: null, coverProjectId: null,
+        originalName: 'cover library picture', contentType: request.contentType, sizeBytes: request.sizeBytes,
+        status: 'pending', objectKey: ids.objectKey, completedAt: null, generation: null,
+    };
+    s.uploads.push(upload);
+    record(s, ctx, now, makeId, 'cover.library.upload.started', upload.id, false);
+    return { workspace: s, upload, expired: expired.map(u => ({ id: u.id, objectKey: u.objectKey })) };
+}
+
+/** A picture leaves the library only when no track or project shows it, so no cover silently disappears. */
+export function removeCoverLibraryItem(input: Workspace, ctx: TenantContext, itemId: string, now: string, makeId: () => string = newId) {
+    requireLibraryAdmin(input, ctx);
+    const org = ctx.organizationId;
+    const item = input.coverLibrary.find(i => i.id === itemId && i.organizationId === org) ?? gone('That picture is not in the cover library.');
+    const uses = [...input.tracks, ...input.projects].filter(r => r.organizationId === org && r.coverImage?.fileId === item.fileId).length;
+    if (uses) throw new DomainError('COVER_IN_USE', `This picture is the cover of ${uses} ${uses === 1 ? 'track or project' : 'tracks or projects'}. Choose other covers for them first.`, 409);
+    const s = normalisePurposeState(structuredClone(input));
+    const upload = s.uploads.find(u => u.id === item.fileId && libraryFile(u, org));
+    s.coverLibrary = s.coverLibrary.filter(i => !(i.id === item.id && i.organizationId === org));
+    s.uploads = s.uploads.filter(u => u !== upload);
+    record(s, ctx, now, makeId, 'cover.library.removed', item.id, true);
+    return { workspace: s, item, objectKey: upload?.objectKey ?? null };
+}
+
+/** Every active member of the community can see the library and the pictures in it. */
+export function resolveLibraryPicture(s: Workspace, ctx: TenantContext, itemId: string) {
+    actorFor(s, ctx);
+    const item = s.coverLibrary.find(i => i.id === itemId && i.organizationId === ctx.organizationId) ?? gone();
+    const upload = s.uploads.find(u => u.id === item.fileId && libraryFile(u, ctx.organizationId)) ?? gone();
+    if (upload.status !== 'ready' || !upload.generation || !isCoverImageType(upload.contentType)) gone();
+    return { upload, item };
+}
+export function filterCoverLibrary(s: Workspace, actor: Member): Workspace {
+    s.coverLibrary = s.coverLibrary.filter(i => i.organizationId === actor.organizationId);
+    return s;
 }
 
 type Result = { message: string; objectId: string; changed: boolean; audit?: boolean };
 /** Set, refocus or remove a cover. The stored type and size always come from the verified upload. */
-export function applyCovers(s: Workspace, ctx: TenantContext, cmd: Command): Result | undefined {
+export function applyCovers(s: Workspace, ctx: TenantContext, cmd: Command, now: string, makeId: () => string): Result | undefined {
+    if (cmd.type === 'cover.library.add') {
+        requireLibraryAdmin(s, ctx);
+        const org = ctx.organizationId;
+        const upload = s.uploads.find(u => u.id === cmd.fileId && libraryFile(u, org));
+        if (!upload) throw new DomainError('COVER_UNAVAILABLE', 'This picture is not available. Upload it again.', 409);
+        if (upload.status !== 'ready' || !isCoverImageType(upload.contentType)) throw new DomainError('COVER_NOT_READY', 'This picture has not passed verification yet. Upload it again.', 409);
+        const existing = s.coverLibrary.find(i => i.organizationId === org && i.fileId === upload.id);
+        if (existing) return { message: 'This picture is already in the cover library.', objectId: existing.id, changed: false };
+        if (s.coverLibrary.filter(i => i.organizationId === org).length >= MAX_COVER_LIBRARY_ITEMS) throw new DomainError('LIBRARY_FULL', `The cover library holds up to ${MAX_COVER_LIBRARY_ITEMS} pictures. Remove one before adding another.`, 409);
+        const item = { id: makeId(), organizationId: org, createdAt: now, fileId: upload.id, label: cmd.label, contentType: upload.contentType, sizeBytes: upload.sizeBytes, addedBy: ctx.userId };
+        s.coverLibrary.push(item);
+        return { message: `${cmd.label} is in the cover library.`, objectId: item.id, changed: true, audit: true };
+    }
     if (cmd.type !== 'track.cover.set' && cmd.type !== 'project.cover.set') return undefined;
     const kind: CoverSubject = cmd.type === 'track.cover.set' ? 'track' : 'project';
     const id = cmd.type === 'track.cover.set' ? cmd.trackId : cmd.projectId;
@@ -102,7 +178,7 @@ export function applyCovers(s: Workspace, ctx: TenantContext, cmd: Command): Res
         subject.coverImage = null;
         return { message: 'Cover removed. The plain panel shows instead.', objectId: subject.id, changed: before !== 'null', audit: true };
     }
-    const upload = s.uploads.find(u => u.id === cmd.fileId && coverFile(u, ctx.organizationId) && belongsTo(u, kind, id));
+    const upload = coverSource(s, ctx.organizationId, kind, id, cmd.fileId);
     if (!upload) throw new DomainError('COVER_UNAVAILABLE', 'This image is not available for this cover. Upload it again.', 409);
     if (upload.status !== 'ready' || !isCoverImageType(upload.contentType)) throw new DomainError('COVER_NOT_READY', 'This image has not passed verification yet. Upload it again.', 409);
     subject.coverImage = { fileId: upload.id, contentType: upload.contentType, sizeBytes: upload.sizeBytes, focusX: cmd.focusX, focusY: cmd.focusY };
@@ -115,7 +191,7 @@ export function resolveCoverImage(s: Workspace, ctx: TenantContext, kind: CoverS
     const subject = visibleSubject(s, actor, kind, id) ?? gone();
     const cover = normaliseCover(subject.coverImage);
     if (!cover || cover.fileId !== fileId) gone();
-    const upload = s.uploads.find(u => u.id === fileId && coverFile(u, ctx.organizationId) && belongsTo(u, kind, id)) ?? gone();
+    const upload = coverSource(s, ctx.organizationId, kind, id, fileId) ?? gone();
     if (upload.status !== 'ready' || !upload.generation || !isCoverImageType(upload.contentType)) gone();
     return { upload, cover: cover! };
 }

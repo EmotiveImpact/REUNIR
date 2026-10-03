@@ -43,6 +43,15 @@ export const coverUploadRequest = z.object({
     sizeBytes: z.number().int().positive('This image is empty.').max(MAX_COVER_BYTES, 'Cover images can be up to 3 MB.'),
 }).strict();
 export type CoverUploadRequest = z.infer<typeof coverUploadRequest>;
+/** A community's cover library: pictures owners and administrators supply for anyone who edits a cover to choose. */
+export const MAX_COVER_LIBRARY_ITEMS = 24;
+export const coverLibraryLabel = z.string().trim().min(1, 'Give the picture a short name.').max(80, 'Keep the name under 80 characters.');
+/** Upload intent for a library picture. It has no track or project; the server chooses the key. */
+export const coverLibraryUploadRequest = z.object({
+    purpose: z.literal('cover_library'), contentType: coverImageType,
+    sizeBytes: z.number().int().positive('This image is empty.').max(MAX_COVER_BYTES, 'Cover images can be up to 3 MB.'),
+}).strict();
+export type CoverLibraryUploadRequest = z.infer<typeof coverLibraryUploadRequest>;
 /** `fileId: null` removes the cover. Changing only the focus keeps the same verified file. */
 export const coverChange = { fileId: key.nullable(), focusX: coverFocus.default(50), focusY: coverFocus.default(50) };
 

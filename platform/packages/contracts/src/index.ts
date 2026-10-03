@@ -1,7 +1,7 @@
 import { lessonDocumentSchema, type LessonDocument } from './lesson-document';
 import { lessonResourcesInput, type LessonResource } from './lesson-resources';
 import { lessonQuizSchema, quizAnswersInput, quizFingerprintInput, quizMarksInput, type LessonQuiz, type QuizAnswer, type QuizResult } from './assessments';
-import { coverChange, type CoverImage } from './covers';
+import { coverChange, coverLibraryLabel, type CoverImage, type CoverImageType } from './covers';
 import { z } from 'zod';
 export type Id = string;
 export type Role = 'owner' | 'admin' | 'moderator' | 'member';
@@ -129,7 +129,7 @@ export interface LessonRevision extends TenantRecord, LessonContent {
 }
 /** The existing upload intent. Lesson files are scoped to one track and covers to one track or project; storage keys never leave the server. */
 export interface Upload extends TenantRecord {
-    userId: Id; purpose: 'member' | 'lesson_resource' | 'cover_image'; trackId: Id | null;
+    userId: Id; purpose: 'member' | 'lesson_resource' | 'cover_image' | 'cover_library'; trackId: Id | null;
     coverTrackId?: Id | null; coverProjectId?: Id | null;
     originalName: string; contentType: string; sizeBytes: number;
     status: 'pending' | 'ready' | 'rejected';
@@ -301,7 +301,16 @@ export interface MemberGoal extends TenantRecord {
     userId: Id; purposeId: Id; pathId: Id | null; outcomeId: Id | null; title: string;
     visibility: 'private' | 'members'; status: 'active' | 'paused' | 'completed'; completedAt: string | null;
 }
+/** A picture in the community's cover library. Type and size are copied from the verified upload. */
+export interface CoverLibraryItem extends TenantRecord {
+    fileId: Id;
+    label: string;
+    contentType: CoverImageType;
+    sizeBytes: number;
+    addedBy: Id;
+}
 export interface Workspace {
+    coverLibrary: CoverLibraryItem[];
     trackInstructors: TrackInstructor[];
     quizAttempts: QuizAttempt[];
     uploads: Upload[];
@@ -378,6 +387,7 @@ export const commandSchema = z.discriminatedUnion('type', [
         expectedOrder:z.array(id).max(200),lessonIds:z.array(id).max(200)}).strict(),
     z.object({type:z.literal('track.cover.set'),trackId:id,...coverChange}).strict(),
     z.object({type:z.literal('track.instructor.add'),trackId:id,userId:id}).strict(),
+    z.object({type:z.literal('cover.library.add'),fileId:id,label:coverLibraryLabel}).strict(),
     z.object({type:z.literal('track.instructor.remove'),trackId:id,userId:id}).strict(),
     z.object({type:z.literal('project.cover.set'),projectId:id,...coverChange}).strict(),
     z.object({type:z.literal('task.create'),projectId:id,...taskFields}).strict(),

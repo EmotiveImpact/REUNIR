@@ -22,4 +22,6 @@ export async function grantRuntimeTables(sql: SQL): Promise<void> {
     await sql.query(`GRANT UPDATE (results,score,passed,status,feedback,reviewer_id,reviewed_at,version) ON quiz_attempts TO ${role}`);
     // Instructor grants are added or revoked, never rewritten.
     await sql.query(`REVOKE UPDATE ON track_instructors FROM ${role}`);
+    // Library pictures are added or removed, never rewritten.
+    await sql.query(`REVOKE UPDATE ON cover_library FROM ${role}`);
 }

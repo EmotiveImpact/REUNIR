@@ -1712,7 +1712,7 @@ for (const key of ['lessons','lessonDrafts','lessonRevisions']) tables.find(t=>t
 
 // Alpha 09: lesson files reuse the existing upload intents. Member-private uploads stay outside workspace reads.
 for (const key of ['lessons','lessonDrafts','lessonRevisions']) tables.find(t=>t.key===key)!.fields.push({property:'resources',column:'resources',type:'jsonb'});
-tables.push({key:'uploads',table:'upload_intents',where:"purpose IN ('lesson_resource','cover_image')",fields:[
+tables.push({key:'uploads',table:'upload_intents',where:"purpose IN ('lesson_resource','cover_image','cover_library')",fields:[
     {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
     {property:'userId',column:'user_id',type:'text'},{property:'purpose',column:'purpose',type:'text'},{property:'trackId',column:'track_id',type:'text'},
     {property:'originalName',column:'original_name',type:'text'},{property:'contentType',column:'content_type',type:'text'},{property:'sizeBytes',column:'size_bytes',type:'integer'},
@@ -1738,3 +1738,9 @@ for (const key of ['tracks','projects']) tables.find(t=>t.key===key)!.fields.pus
 tables.push({key:'trackInstructors',table:'track_instructors',mutable:[],fields:[
     {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
     {property:'trackId',column:'track_id',type:'text'},{property:'userId',column:'user_id',type:'text'},{property:'grantedBy',column:'granted_by',type:'text'}]});
+
+// Alpha 13: the community cover library. Pictures are added or removed, never rewritten in place.
+tables.push({key:'coverLibrary',table:'cover_library',mutable:[],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'fileId',column:'file_id',type:'text'},{property:'label',column:'label',type:'text'},{property:'contentType',column:'content_type',type:'text'},
+    {property:'sizeBytes',column:'size_bytes',type:'integer'},{property:'addedBy',column:'added_by',type:'text'}]});

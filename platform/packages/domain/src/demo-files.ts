@@ -1,5 +1,7 @@
 /** Fictional sample file for the browser demonstration. Generated, never real member content. */
 export const DEMO_WORKSHEET_FILE = 'file_problem_worksheet';
+/** The fictional cover library's one picture. The demo shows the bundled photograph for it; no bytes are stored. */
+export const DEMO_COVER_LIBRARY_FILE = 'file_cover_mountain';
 const lines = [
     'Problem interview worksheet',
     'Fictional REUNIR demonstration resource',

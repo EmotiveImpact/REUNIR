@@ -24,6 +24,11 @@ export function coverObjectKey(organizationId: string, subject: CoverSubject, su
     scope(organizationId, subjectId, id);
     return `organisations/${organizationId}/covers/${subject}s/${subjectId}/${id}.${coverImageTypes[contentType]}`;
 }
+/** Library pictures belong to the community, not to a track, project or uploader. */
+export function coverLibraryObjectKey(organizationId: string, contentType: CoverImageType, id: string = randomUUID()) {
+    scope(organizationId, id);
+    return `organisations/${organizationId}/covers/library/${id}.${coverImageTypes[contentType]}`;
+}
 export interface DownloadOptions {
     /** Suggested download name. Disposition is always attachment. */
     filename?: string;

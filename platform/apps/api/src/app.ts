@@ -5,17 +5,17 @@ import { MessagingRepository } from '../../../packages/db/src/messaging';
 import { startConversation, sendMessage, reportMessage } from '../../../packages/contracts/src/messaging';
 import { id } from '../../../packages/contracts/src/index';
 import type { MailQueue } from './mail';
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
 import { ZodError, z } from 'zod';
 import { createHash, timingSafeEqual, randomUUID } from 'node:crypto';
 import { DomainError } from '../../../packages/contracts/src/index';
 import { WorkspaceRepository } from '../../../packages/db/src/repository';
-import { coverObjectKey, isMissingObject, objectKey, resourceObjectKey, uploadSchema, type PrivateStorage } from './storage';
+import { coverLibraryObjectKey, coverObjectKey, isMissingObject, objectKey, resourceObjectKey, uploadSchema, type PrivateStorage } from './storage';
 import { clientUpload, type StoredObservation } from '../../../packages/domain/src/resources';
 import { SIGNATURE_BYTES, fileSignatureMatches, resourceUploadRequest, type ResourceContext } from '../../../packages/contracts/src/lesson-resources';
-import { COVER_HEAD_BYTES, coverBytesAcceptable, coverSubject, coverUploadRequest } from '../../../packages/contracts/src/covers';
+import { COVER_HEAD_BYTES, coverBytesAcceptable, coverLibraryUploadRequest, coverSubject, coverUploadRequest } from '../../../packages/contracts/src/covers';
 export interface SessionIdentity {
     id: string;
     name: string;
@@ -146,6 +146,13 @@ export function createApp({ repository, operations, origin, resolveSession, auth
             const policy = await storage.upload(upload.objectKey, upload.contentType, upload.sizeBytes);
             return c.json({ id: upload.id, ...policy, method: 'POST', expiresIn: 300 }, 201);
         }
+        if (body && typeof body === 'object' && (body as { purpose?: unknown }).purpose === 'cover_library') {
+            const input = coverLibraryUploadRequest.parse(body);
+            const { upload, expired } = await repository.beginCoverLibraryUpload(slug, who.id, input, (organizationId, id) => coverLibraryObjectKey(organizationId, input.contentType, id), c.get('requestId'));
+            await removeQuietly(c.get('requestId'), expired.map(x => x.objectKey));
+            const policy = await storage.upload(upload.objectKey, upload.contentType, upload.sizeBytes);
+            return c.json({ id: upload.id, ...policy, method: 'POST', expiresIn: 300 }, 201);
+        }
         const input = uploadSchema.parse(body);
         const snapshot = await repository.snapshot(slug, who.id);
         const id = randomUUID();
@@ -178,7 +185,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
             }
             return { meta, matches, head };
         };
-        if (intent.purpose === 'cover_image') {
+        if (intent.purpose === 'cover_image' || intent.purpose === 'cover_library') {
             let observed = { sizeBytes: 0, contentType: '', generation: null as string | null, bytesAcceptable: false };
             if (intent.status === 'pending') {
                 const { meta, matches, head } = await inspect(COVER_HEAD_BYTES);
@@ -238,18 +245,13 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         const url = await storage.download(target.objectKey, { filename: target.filename, contentType: target.contentType, generation: target.generation });
         return { url, expiresIn: 120, filename: target.filename };
     };
-    // Cover bytes come through the application so cards need no third-party origin. The URL names the verified file,
-    // so a browser may keep it privately for an hour; access is checked again whenever it asks.
-    app.get('/api/organisations/:slug/covers/:subject/:subjectId/:fileId', async (c) => {
-        if (!storage)
-            throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
-        const subject = coverSubject.parse(c.req.param('subject'));
-        const target = await repository.coverImage(c.req.param('slug'), c.get('identity').id, subject, id.parse(c.req.param('subjectId')), id.parse(c.req.param('fileId')));
+    /** Verified image bytes, pinned to their generation, with headers that only let them render as an image. */
+    const sendImage = async (c: Context, target: { objectKey: string; generation: string; contentType: string; sizeBytes: number }, missing: string) => {
         let bytes: Uint8Array;
-        try { bytes = await storage.head(target.objectKey, target.sizeBytes, target.generation); }
+        try { bytes = await storage!.head(target.objectKey, target.sizeBytes, target.generation); }
         catch (error) {
             if (isMissingObject(error))
-                throw new DomainError('NOT_FOUND', 'That cover is not available.', 404);
+                throw new DomainError('NOT_FOUND', missing, 404);
             throw error;
         }
         c.header('Cache-Control', 'private, max-age=3600');
@@ -258,6 +260,27 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         c.header('X-Content-Type-Options', 'nosniff');
         c.header('Content-Security-Policy', "default-src 'none'; sandbox");
         return c.body(bytes as Uint8Array<ArrayBuffer>, 200);
+    };
+    // Cover bytes come through the application so cards need no third-party origin. The URL names the verified file,
+    // so a browser may keep it privately for an hour; access is checked again whenever it asks.
+    app.get('/api/organisations/:slug/covers/:subject/:subjectId/:fileId', async (c) => {
+        if (!storage)
+            throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
+        const subject = coverSubject.parse(c.req.param('subject'));
+        const target = await repository.coverImage(c.req.param('slug'), c.get('identity').id, subject, id.parse(c.req.param('subjectId')), id.parse(c.req.param('fileId')));
+        return sendImage(c, target, 'That cover is not available.');
+    });
+    // A library entry never changes its picture, so its ID is as stable as a file ID for caching.
+    app.get('/api/organisations/:slug/cover-library/:itemId', async (c) => {
+        if (!storage)
+            throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
+        const target = await repository.coverLibraryPicture(c.req.param('slug'), c.get('identity').id, id.parse(c.req.param('itemId')));
+        return sendImage(c, target, 'That picture is not in the cover library.');
+    });
+    app.post('/api/organisations/:slug/cover-library/:itemId/remove', async (c) => {
+        const result = await repository.removeCoverLibraryItem(c.req.param('slug'), c.get('identity').id, id.parse(c.req.param('itemId')), c.get('requestId'));
+        await removeQuietly(c.get('requestId'), result.objectKey ? [result.objectKey] : []);
+        return c.json({ id: result.id, status: 'removed' });
     });
     for (const [segment, context] of [['lessons', 'lesson'], ['lesson-drafts', 'draft'], ['lesson-revisions', 'revision']] as const)
         app.get(`/api/organisations/:slug/${segment}/:recordId/resources/:resourceId/download`, async (c) => c.json(await resourceDownload(c.req.param('slug'), c.get('identity').id, context, c.req.param('recordId'), c.req.param('resourceId'))));
