@@ -8,6 +8,7 @@ import { grantRuntimeTables } from '../packages/db/src/runtime-role';
 import { WorkspaceRepository, setContext } from '../packages/db/src/repository';
 import { createSeed, DEMO_USER, DEMO_ADMIN } from '../packages/domain/src/seed';
 import { createApp } from '../apps/api/src/app';
+import { MIGRATION_COUNT } from './helpers/migrations';
 const newTables=['purposes','paths','milestones','path_enrolments','contributions','outcomes','community_outputs','member_goals'];
 let db:Database, repo:WorkspaceRepository;
 before(async()=>{db=await openDatabase('pglite:memory');await migrate(db);repo=new WorkspaceRepository(db);await repo.seed(createSeed());await repo.seed(createSeed('studio-north'));});
@@ -25,7 +26,7 @@ test('populated Alpha 01 upgrades in place without fabricated purpose or content
         await old.query("INSERT INTO posts VALUES('old_post','old_org',now(),'old_space','old_user','update','Original post','Keep this exact text',false,false,'')");
         await old.query("INSERT INTO projects VALUES('old_project','old_org',now(),null,'An existing film','Not a new demo','Original project','Film','[]','old_user','building','')");
         await migrate(old);await migrate(old);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 25);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, MIGRATION_COUNT);
         assert.deepEqual((await old.query('SELECT digest FROM schema_migrations WHERE version=$1',['0001'])).rows,before.rows);
         const upgraded=await new WorkspaceRepository(old).snapshot('old-community','old_user');
         assert.equal(upgraded.posts[0].body,'Keep this exact text');assert.equal(upgraded.projects[0].title,'An existing film');assert.equal(upgraded.projects[0].purposeId,null);assert.equal(upgraded.revision,7);
