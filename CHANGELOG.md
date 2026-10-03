@@ -8,36 +8,9 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### Alpha 23: virus scanning of uploads (no version change), 3 October 2026
-
-On a pull request from `claude/upload-scanning-1p9o9m`, to be merged once its checks pass. Alpha 23 was allocated to this slice before it was built; it reaches main after Alpha 31, so the version stays 0.31.0-alpha.1 rather than going backwards.
-
-**In plain language:** once a virus scanner is connected, every file people upload (lesson files, cover pictures, library pictures and attachments) is checked before anyone can use it. A flagged file is deleted straight away and the uploader is told why. If the scanner is briefly unavailable, the upload simply waits and can be tried again.
-
-Details:
-
-- ClamAV's clamd is reached over TCP with its `INSTREAM` command (`CLAMAV_HOST`, `CLAMAV_PORT`); no new runtime dependency and no paid service.
-- The whole stored file is scanned at the exact generation that is then recorded and served. Flagged files return 422 `FILE_FLAGGED` and are deleted; no verdict returns 503 `SCAN_UNAVAILABLE` and the upload stays pending.
-- `UPLOAD_SCANNING` (`required` or `optional`, required by default in production): with a bucket and no scanner, a production server will not start. `npm run scan:check` tests a configured clamd with the EICAR test file (decision 023).
-- `npm run launch:preflight` and LAUNCH_RUNBOOK.md cover the scanner: clamd runs on a private network beside the API, since Vercel functions cannot run it.
-- A rejected member attachment can no longer be completed again. No database migration.
-
-### 0.31.0-alpha.1 (Alpha 31): data retention rules, 3 October 2026
-
-On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. Numbering follows the project's allocation of 3 October 2026: this thread holds Alpha 31 to 34, decision records 031 to 034 and migrations 0030 to 0033, so data retention is Alpha 31, decision 031 and migration 0030 (first opened as Alpha 27 with migration 0023).
-
-**In plain language:** REUNIR now clears its own housekeeping on a schedule: expired sign-in sessions and links, old rate counters, technical receipts, records of email already sent and notices people read long ago. What people make, reviewed evidence and the audit trail are never cleared by it. Your account has a new **How long things are kept** panel that says what is kept and for how long.
-
-Details:
-
-- One list of rules (`packages/contracts/src/retention.ts`) serves the job, the panel and `platform/docs/RETENTION.md` (decision 031).
-- `npm run retention:run` is a dry run with exact counts; `RETENTION=apply` clears. An authenticated `GET /api/internal/retention` applies the rules on a schedule, `?dry=1` only counts. Counts per rule only, never contents.
-- Additive migration 0030: a read-only policy so the job lists communities only as its own worker, and an index for read notices. Each community's records are cleared inside that community's tenant context.
-- Nothing is scheduled; the operator chooses a daily schedule.
-
 ### 0.28.0-alpha.1 (Alpha 28): collections of useful content, 3 October 2026
 
-On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass. Alpha 31 reached main first, so the package version stays at 0.31.0-alpha.1.
+On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass. Alpha 31 and Alpha 39 reached main first, so the package version stays at 0.39.0-alpha.1.
 
 **In plain language:** communities can now gather useful material into collections such as "Start here". Owners, administrators and moderators pick posts, lessons, tracks, paths, projects, events, missions and community outputs, add short notes and choose the order, keeping a collection private until they publish it. Everyone sees only the items they already have access to, and one featured collection appears on Home.
 
@@ -50,10 +23,50 @@ Details:
 - Additive migration 0028 adds `collections` and `collection_items` with forced row security and column-limited updates (decision 028). Run `npm run db:grant-runtime` after migrating.
 - New demo browser suite `npm run test:browser:curation`. No new dependency.
 
+### 0.39.0-alpha.1 (Alpha 39): cover library management and small copies, 3 October 2026
+
+On a pull request from `claude/build-out-tvzn40`, to be merged once its checks pass.
+
+**In plain language:** administrators can rename and tag the pictures in the cover library, which now holds up to 60, and anyone choosing a cover can search the library by name or tag. Cards and lists now load a small copy of each cover, so pages with many covers load faster.
+
+Details:
+
+- Up to five tags per library picture; renaming and tagging are audited and need two-step sign-in when the server requires it.
+- New covers wider than 480 pixels get a 480-pixel copy made in the browser and checked by the server; covers without one fall back to the full picture (decision 039).
+- When a virus scanner is configured (Alpha 23), the small copy is scanned whole as well; a flagged copy is deleted and the picture keeps working at full size.
+- Additive migration 0038; run `npm run db:grant-runtime` after migrating. No new runtime dependency.
+- Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 27 before the blocks were agreed; gaps in the sequence on main are expected.
+
 ### Planned
 
 - Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
-- Virus scanning of uploads, task files with live updates and shared form components.
+
+## Alpha 23: virus scanning of uploads (no version change), 3 October 2026
+
+On main through [PR #16](https://github.com/EmotiveImpact/REUNIR/pull/16), merged as `16b2768`. Alpha 23 was allocated to this slice before it was built; it reaches main after Alpha 31, so the version stays 0.31.0-alpha.1 rather than going backwards.
+
+**In plain language:** once a virus scanner is connected, every file people upload (lesson files, cover pictures, library pictures and attachments) is checked before anyone can use it. A flagged file is deleted straight away and the uploader is told why. If the scanner is briefly unavailable, the upload simply waits and can be tried again.
+
+Details:
+
+- ClamAV's clamd is reached over TCP with its `INSTREAM` command (`CLAMAV_HOST`, `CLAMAV_PORT`); no new runtime dependency and no paid service.
+- The whole stored file is scanned at the exact generation that is then recorded and served. Flagged files return 422 `FILE_FLAGGED` and are deleted; no verdict returns 503 `SCAN_UNAVAILABLE` and the upload stays pending.
+- `UPLOAD_SCANNING` (`required` or `optional`, required by default in production): with a bucket and no scanner, a production server will not start. `npm run scan:check` tests a configured clamd with the EICAR test file (decision 023).
+- `npm run launch:preflight` and LAUNCH_RUNBOOK.md cover the scanner: clamd runs on a private network beside the API, since Vercel functions cannot run it.
+- A rejected member attachment can no longer be completed again. No database migration.
+
+## 0.31.0-alpha.1 (Alpha 31): data retention rules, 3 October 2026
+
+On main through [PR #23](https://github.com/EmotiveImpact/REUNIR/pull/23), merged as `b80fc04`. Numbering follows the project's allocation of 3 October 2026: this thread holds Alpha 31 to 34, decision records 031 to 034 and migrations 0030 to 0033, so data retention is Alpha 31, decision 031 and migration 0030 (first opened as Alpha 27 with migration 0023).
+
+**In plain language:** REUNIR now clears its own housekeeping on a schedule: expired sign-in sessions and links, old rate counters, technical receipts, records of email already sent and notices people read long ago. What people make, reviewed evidence and the audit trail are never cleared by it. Your account has a new **How long things are kept** panel that says what is kept and for how long.
+
+Details:
+
+- One list of rules (`packages/contracts/src/retention.ts`) serves the job, the panel and `platform/docs/RETENTION.md` (decision 031).
+- `npm run retention:run` is a dry run with exact counts; `RETENTION=apply` clears. An authenticated `GET /api/internal/retention` applies the rules on a schedule, `?dry=1` only counts. Counts per rule only, never contents.
+- Additive migration 0030: a read-only policy so the job lists communities only as its own worker, and an index for read notices. Each community's records are cleared inside that community's tenant context.
+- Nothing is scheduled; the operator chooses a daily schedule.
 
 ## 0.27.0-alpha.1 (Alpha 27): loading, error and empty screens, 3 October 2026
 
