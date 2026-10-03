@@ -431,7 +431,7 @@ Invitations to accept, contributor roles beyond instructor, per-lesson grants an
 
 ## Alpha 13: cover library
 
-People who may change a cover can upload their own picture or choose one from a small library their community supplies. Owners and administrators add up to 60 named pictures in Community settings, rename them and give them up to five tags, and remove ones nothing uses; the cover picker filters them by name and tag. Cards and lists load a small copy of each new picture drawn in the browser (decision 023). Choosing does not copy the picture, and each cover keeps its own focal point. See `COVERS.md` and `decisions/013-cover-library.md`.
+People who may change a cover can upload their own picture or choose one from a small library their community supplies. Owners and administrators add up to 60 named pictures in Community settings, rename them and give them up to five tags, and remove ones nothing uses; the cover picker filters them by name and tag. Cards and lists load a small copy of each new picture drawn in the browser (decision 025). Choosing does not copy the picture, and each cover keeps its own focal point. See `COVERS.md` and `decisions/013-cover-library.md`.
 
 | ID | Requirement | Verification |
 | --- | --- | --- |
@@ -493,3 +493,18 @@ A community's owner hands it to one of its administrators, after re-entering the
 | O06 | The fictional demo runs the same rules in the browser | Demo browser check |
 
 Accepting or declining a handover, transferring to someone who is not yet an administrator, and deleting a community are outside this release.
+
+## Alpha 24: group conversations
+
+Members talk privately in a named group as well as one to one. A group is still a private conversation: only the people in it can read it, and nothing from it enters the feed, search, notices or activity. See decision 024.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| G01 | An active member starts a group with a name of up to 80 characters and at least two other active members, up to 20 people in all; suspended, former and unknown members, and anyone with a block either way, are refused | Database, HTTP and demo browser checks |
+| G02 | Only the people in a group read or write it; owners, administrators, moderators, other members and other communities cannot, through the API or a direct query as the runtime role | Database (restricted role), HTTP and PostgreSQL checks |
+| G03 | Anyone in a group adds people and renames it; someone added later reads only what is written after they join, enforced by row security as well as the API | Database, HTTP, PostgreSQL and demo browser checks |
+| G04 | Only the person who started a group removes others; anyone leaves; leaving or removal ends access and the person's messages stay for the others | Database, HTTP, PostgreSQL and demo browser checks |
+| G05 | A block stops two people adding each other to a group but never pauses a group they share; direct threads keep blocking and reporting as before | Database and demo browser checks |
+| G06 | Reporting a message in a group shares only that message with moderators | Database test |
+
+Join and leave lines in the conversation, mentions, attachments, notices or emails about group messages and handing over the starter's role are outside this release.

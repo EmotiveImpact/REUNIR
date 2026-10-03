@@ -51,13 +51,13 @@ test('0013 upgrade keeps tracks, projects, covers and uploads exactly as they we
         const before = { tracks: await read('tracks'), projects: await read('projects'), upload_intents: await read('upload_intents'), members: await read('members') };
         await migrate(old); await migrate(old);
         for (const table of ['tracks', 'projects', 'members'] as const) assert.deepEqual(await read(table), before[table], table);
-        // Migration 0022 adds empty small-copy columns to uploads; every earlier column is unchanged.
+        // Migration 0023 adds empty small-copy columns to uploads; every earlier column is unchanged.
         const thumbnail = ['thumbnail_object_key', 'thumbnail_content_type', 'thumbnail_size_bytes', 'thumbnail_generation'];
         const uploads = await read('upload_intents');
         assert.deepEqual(uploads.map(r => Object.fromEntries(Object.entries(r).filter(([k]) => !thumbnail.includes(k)))), before.upload_intents, 'upload_intents');
         assert(uploads.every(r => thumbnail.every(k => r[k] === null)));
         assert.deepEqual(await read('cover_library'), []);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 22);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 23);
     } finally { await old.close(); }
 });
 

@@ -1,16 +1,16 @@
-# Current continuation: Alpha 23 cover library management and small copies
+# Current continuation: Alpha 25 cover library management and small copies
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, decisions/023-cover-library-management-and-small-copies.md, LAUNCH_RUNBOOK.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, decisions/025-cover-library-management-and-small-copies.md, LAUNCH_RUNBOOK.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `f5ec8d3`, the merge of PR #17 (the launch kit), tree identical to its tested head `8e2fdfc`.
+- Base: main `d62424d`, the merge of PR #19 (Alpha 24 group conversations), tree identical to its tested head `5c97bb4`. This slice was first opened as Alpha 23 on main `f5ec8d3` and renumbered when group conversations took migration 0022.
 - This slice: branch `claude/build-out-tvzn40`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Since 3 October 2026 the remaining work is split across threads in the project. This thread owns covers and launch preparation. Each pull request takes the next free alpha, migration and decision numbers from main when it is opened, and renumbers if another lands first.
 
 ## What is done
 
-Administrators rename and tag cover library pictures (up to five tags), the library holds up to 60, and the cover picker filters by name or tag. New covers wider than 480 pixels carry a 480-pixel copy made in the browser and verified by the server; cards and lists load it through `/thumbnail` routes that fall back to the full picture. Additive migration 0022 adds the tags, an update policy for active owners and administrators, and the checked small-copy columns.
+Administrators rename and tag cover library pictures (up to five tags), the library holds up to 60, and the cover picker filters by name or tag. New covers wider than 480 pixels carry a 480-pixel copy made in the browser and verified by the server; cards and lists load it through `/thumbnail` routes that fall back to the full picture. Additive migration 0023 adds the tags, an update policy for active owners and administrators, and the checked small-copy columns.
 
 ## Run it
 
@@ -20,7 +20,7 @@ npm ci
 VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
 ```
 
-Preview as admin, open Community settings, then the cover library, and choose **Edit** on a picture. For PostgreSQL: `npm run db:migrate` (applies 0022), then `npm run db:grant-runtime`.
+Preview as admin, open Community settings, then the cover library, and choose **Edit** on a picture. For PostgreSQL: `npm run db:migrate` (applies 0023), then `npm run db:grant-runtime`.
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
@@ -34,7 +34,44 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 2. Launch: LAUNCH_RUNBOOK.md and `npm run launch:preflight` are ready; the owner decides when. Provision nothing until then.
 
 ---
-## Historical Alpha 22 and launch kit handover
+## Historical Alpha 24 handover: group conversations
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, decisions/024-group-conversations.md, ARCHITECTURE.md (messaging boundaries), SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `f5ec8d3`, the merge of PR #17 (launch kit) on top of PR #15 (Alpha 22).
+- This slice: [PR #19](https://github.com/EmotiveImpact/REUNIR/pull/19), green in CI runs 37123762116 and 37123778756 and merged into main as `d62424d` (tree identical to the tested head `5c97bb4`). BUILD_STATUS.md records the local runs. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- Parallel work: Alpha 23 (upload scanning, PR #16) and an email confirmation slice (PR #18, also labelled Alpha 24) were open when this was written. Whichever merges after another must take the next free alpha and migration numbers and move the migration-count assertions.
+
+### What is done
+
+Members start named group conversations of up to 20 people from Messages. Anyone in a group adds people and renames it, the starter removes people, anyone leaves. People added later read only what is written after they join, enforced by a restrictive row-security policy as well as the API. A block stops adding but never pauses a group. Additive migration 0022 adds `kind`, `title` and `created_by` to `conversations`, the `conversation_joins` table and the policies for late joiners and leaving.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+In the demo open Messages and choose **New group**. For PostgreSQL: `npm run db:migrate` (applies 0022), then `npm run db:grant-runtime` for the `conversation_joins` grant.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (now including `test:browser:groups`), and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+### Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages (direct and group), scores and notification settings private. Nobody reads a conversation they are not in, and people added to a group do not read what came before. Authority is granted explicitly and must be current when it takes effect. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+### Next
+
+1. Merge PR #16 (Alpha 23) and PR #18 with the numbering rule above.
+2. The remaining account and trust items and the covers follow-ups in ROADMAP.md.
+3. Deployment remains deferred by the user: follow LAUNCH_RUNBOOK.md when they decide; provision nothing before then.
+
+---
+## Historical launch kit handover
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, LAUNCH_RUNBOOK.md, COVERS.md, decisions/022-cover-descriptions.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 

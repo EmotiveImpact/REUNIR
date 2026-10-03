@@ -1,5 +1,5 @@
 -- Additive: library pictures can be renamed and tagged by active owners and administrators, and a cover upload may carry
--- a smaller copy for cards, verified with it. 0001 to 0021 are unchanged. Existing pictures start with no tags and
+-- a smaller copy for cards, verified with it. 0001 to 0022 are unchanged. Existing pictures start with no tags and
 -- existing covers have no small copy, so readers get the full picture as before.
 ALTER TABLE cover_library ADD COLUMN tags jsonb NOT NULL DEFAULT '[]'::jsonb;
 -- At most five tags, each a lower-case string of 1 to 24 characters with no commas, control characters or outer spaces.

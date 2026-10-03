@@ -1,46 +1,50 @@
-# Alpha 23 cover library management and small copies of covers
+# Alpha 25 cover library management and small copies of covers
 
-3 October 2026. Application 0.23.0-alpha.1. Administrators rename and tag cover library pictures, the library holds up to 60, the cover picker can be filtered, and cards and lists load a small copy of each cover instead of the full picture. See decisions/023-cover-library-management-and-small-copies.md and COVERS.md.
+3 October 2026. Application 0.25.0-alpha.1. Administrators rename and tag cover library pictures, the library holds up to 60, the cover picker can be filtered, and cards and lists load a small copy of each cover instead of the full picture. See decisions/025-cover-library-management-and-small-copies.md and COVERS.md.
 
 ## Status at a glance
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/build-out-tvzn40`, from main `f5ec8d3` (the merge of PR #17, the launch kit) |
+| Implemented | Yes, on `claude/build-out-tvzn40` ([PR #21](https://github.com/EmotiveImpact/REUNIR/pull/21)), first opened on main `f5ec8d3` and brought up to main `d62424d` (the merge of PR #19, Alpha 24) |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 
-## PR #17 merged into main
+## PR #19 merged into main
 
-The launch kit was merged into main on 3 October 2026 as `f5ec8d3ebd1f937990ef8139657af3e718cf1301`, a merge commit whose parents are the previous main `ec4285d` (PR #15) and the tested head `8e2fdfc`; its tree, `47a92acd740b5ecfdd79106f5c2941093ba1883c`, is identical to the tested head's tree. CI runs 37122409822 and 37122421213 (application and postgres) passed on `8e2fdfc`. This slice started from that main.
+Alpha 24 (group conversations, from another thread) was merged into main on 3 October 2026 as `d62424dc5b68cf9386757173a89464211f5b7021`, a merge commit whose parents are the previous main `f5ec8d3` (PR #17) and the tested head `5c97bb4`; its tree, `85e91e8022d87830336918d8765392698795b48d`, is identical to the tested head's tree. CI runs 37123762116 and 37123778756 (application and postgres) passed on `5c97bb4`. It took migration 0022 and decision 024 while this slice was open as Alpha 23, so this slice merged main in and became Alpha 25 with migration 0023 and decision 025; decision 023 stays free for upload scanning.
 
 ## What changed
 
 - **Library management.** `POST /api/organisations/:slug/cover-library/:itemId/details` renames a picture and sets up to five tags (lower case, 1 to 24 characters, letters and numbers with single spaces or hyphens; too many or too long are refused, never cut). It requires two-step sign-in when the server does, and each change is audited as `cover.library.updated`. Community settings has an Edit dialogue; the cover picker has **Find a picture** and a toggle per tag.
 - **Limit raised from 24 to 60**, enforced by the domain on every library upload.
 - **Small copies.** When the browser prepares a picture wider than 480 pixels it also draws a 480-pixel copy (WebP, or JPEG where WebP cannot be written), at most 256 KB, uploaded under a second five-minute policy tied to the same upload record. On completion the server checks the copy's signature, size, type and dimensions from its own stored generation; a failed copy is deleted and dropped while the picture is kept. New `/thumbnail` routes serve the copy, or the full picture when there is none, so existing covers keep working. Every deletion path removes both files.
-- **Additive migration 0022** adds `cover_library.tags` with a shape check, an update policy for active owners and administrators, and four checked small-copy columns on `upload_intents`. The runtime role may update only `label` and `tags` on `cover_library`; run `npm run db:grant-runtime` after migrating.
-- Migrations 0001 to 0021 are byte-identical; no new runtime dependency. Release constant and package version are 0.23.0-alpha.1.
+- **Additive migration 0023** adds `cover_library.tags` with a shape check, an update policy for active owners and administrators, and four checked small-copy columns on `upload_intents`. The runtime role may update only `label` and `tags` on `cover_library`; run `npm run db:grant-runtime` after migrating.
+- Migrations 0001 to 0022 are byte-identical; no new runtime dependency. Release constant and package version are 0.25.0-alpha.1.
 
 ## Local verification, 3 October 2026
 
-Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). Every step ran on this branch's tree on top of main `f5ec8d3`.
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). Every step ran on this branch's tree on top of main `d62424d`.
 
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 664 passed, 0 failed (639 existing plus 25: 6 library management, 6 small copies, 6 database tests under the restricted role including cross-tenant and inactive-role refusals, 7 HTTP) |
+| `npm test` | 679 passed, 0 failed (654 on main `d62424d` plus 25: 6 library management, 6 small copies, 6 database tests under the restricted role including cross-tenant and inactive-role refusals, 7 HTTP) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
-| Demo-browser suites | 286 passed: as Alpha 22, with 20 covers (3 new) |
-| Connected-browser suites | 62 passed: as Alpha 22, with 15 connected covers (2 new) |
-| `npm run test:postgres` | 21 passed on PostgreSQL 16 (1 new for renaming and tagging through the restricted role; the existing library case now checks that changing the picture itself is refused) |
+| Demo-browser suites | 297 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 20 covers (3 new), 10 instructors, 11 accounts, 16 monochrome, 20 v4, 5 notifications, 11 groups |
+| Connected-browser suites | 62 passed: 12 connected, 9 resources, 9 assessments, 15 covers (2 new), 6 instructors, 11 accounts |
+| `npm run test:postgres` | 22 passed on PostgreSQL 16 (1 new for renaming and tagging through the restricted role; the existing library case now checks that changing the picture itself is refused) |
 | Python helpers, `scripts/check_research.py` | 35 passed; the register validates with 55 pinned sources and 18 register decisions |
 
-Tests changed rather than added: migration-count assertions moved from 21 to 22; the 0009, 0011 and 0013 upgrade tests strip the four new upload columns and assert they are empty; the operator-erasure test seeds its 0013-era database without uploads; the library grant test also asserts the two updatable columns; the two-step sign-in HTTP test lists the new route among those that refuse.
+Tests changed rather than added: migration-count assertions moved from 22 to 23, and the 0023 upgrade test starts from a database at 0022; the 0009, 0011 and 0013 upgrade tests strip the four new upload columns and assert they are empty; the operator-erasure test seeds its 0013-era database without uploads; the library grant test also asserts the two updatable columns; the two-step sign-in HTTP test lists the new route among those that refuse.
+
+## Corrections made while verifying
+
+- The local disposable PostgreSQL cluster had stopped before the PostgreSQL step; it was restarted and the suite passed unchanged.
 
 ## Not verified, and why
 
@@ -51,6 +55,62 @@ Tests changed rather than added: migration-count assertions moved from 21 to 22;
 
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. When deployment resumes: follow LAUNCH_RUNBOOK.md, and run `npm run db:grant-runtime` after migrating.
+
+## Historical Alpha 24 evidence: group conversations
+
+3 October 2026. Application 0.24.0-alpha.1. Members start named group conversations of up to 20 people from Messages. People added later read only what is written after they join. See decisions/024-group-conversations.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/group-conversations-5arqv6`, from main `b24095a` with main `f5ec8d3` (PR #15 Alpha 22 and PR #17 launch kit) merged in |
+| Verified locally | Yes: every suite on the merged tree (see below) |
+| Verified remotely (GitHub Actions) | Yes: runs 37123762116 and 37123778756 on `5c97bb4` (application and postgres) |
+| Merged | Yes, [PR #19](https://github.com/EmotiveImpact/REUNIR/pull/19) as `d62424d`, under the owner's standing approval (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+## PR #17 merged into main
+
+The launch kit was merged into main on 3 October 2026 as `f5ec8d3ebd1f937990ef8139657af3e718cf1301`, a merge commit whose parents are the previous main `ec4285d` (PR #15, Alpha 22) and the tested head `8e2fdfc`; its tree, `47a92acd740b5ecfdd79106f5c2941093ba1883c`, is identical to the tested head's tree. This slice merged that main in before its final local runs.
+
+## What changed
+
+- **Messages** has **New group**: a name of up to 80 characters and at least two other active members, up to 20 people in all. The inbox lists groups by name and finds them by name or by anyone in them; each message from someone else shows their name; **People** lists everyone, adds people, renames the group and leaves it. Only the person who started a group can remove others. Direct threads, blocking and reporting are unchanged.
+- **Privacy.** Only the people in a group can read it; there is no owner, administrator or moderator access. Someone added later reads only what is written after they join, enforced by a restrictive row-security policy on `messages` as well as the API. Leaving or removal ends access; their messages stay for the others.
+- **Blocks** stop two people adding each other to a group but never pause a group they share.
+- **Additive migration 0022** adds `kind`, `title` and `created_by` to `conversations` (existing rows become `direct`), replaces 0004's two-person column check with one shape check, adds `conversation_joins` with forced row security, and adds the late-joiner and leaving policies. `conversation_joins` is granted explicitly to the runtime role: run `npm run db:grant-runtime` after migrating.
+- Five routes under `/api/organisations/:slug/`: `conversation-groups`, and `conversations/:id/title`, `/participants`, `/participants/:userId/remove` and `/leave`. The browser demo runs the same rules.
+- Migrations 0001 to 0021 are byte-identical; no new runtime dependency. Release constant and package version are 0.24.0-alpha.1. Alpha 23 (PR #16) was still open, so this release skips 0.23.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). Every step below ran on this branch's tree after merging main `f5ec8d3`.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 654 passed, 0 failed (639 on main plus 11 database tests through the restricted runtime role and 4 HTTP tests for groups) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 270 passed across the 15 demo scripts in CI, including 11 in the new `test:browser:groups` (start, send, sender names, people, add, rename, remove, leave, direct threads unchanged, phone width, accessibility and monochrome) |
+| Connected-browser suites | 60 passed (unchanged) |
+| `npm run test:postgres` | 21 passed on PostgreSQL 16 on a fresh database (1 new: late joiners, leaving and the new grant under row security) |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
+
+Tests changed rather than added: migration-count assertions moved from 21 to 22. The groups browser check refreshes a thread after switching preview person, because the demo, like the live inbox between polls, keeps a thread it read under 30 seconds earlier.
+
+## Not verified, and why
+
+- Hosted PostgreSQL, Better Auth and polling under real load were not exercised. Nothing was deployed.
+- A first attempt to apply a group conversations patch prepared by another thread was refused by this session's safety checks, so this slice was written afresh from main rather than from that patch.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Alpha 23 (PR #16) and the email confirmation slice (PR #18) must take the next free alpha and migration numbers when they merge after this.
+3. When the owner decides to launch: follow LAUNCH_RUNBOOK.md, and run `npm run db:grant-runtime` after migrating to 0022.
 
 ## Historical launch kit evidence: runbook and offline preflight (no version change)
 

@@ -35,10 +35,10 @@ before(async () => {
 });
 after(async () => db?.close());
 
-test('0022 upgrade keeps every library picture and upload as it was, with no tags and no small copies', async () => {
+test('0023 upgrade keeps every library picture and upload as it was, with no tags and no small copies', async () => {
     const old = await openDatabase('pglite:memory');
     try {
-        await migrate(old, '0021'); await seedBeforeProjectWork(old);
+        await migrate(old, '0022'); await seedBeforeProjectWork(old);
         await old.query("INSERT INTO upload_intents(organization_id,id,user_id,object_key,content_type,size_bytes,original_name,created_at,status,purpose,completed_at,generation) VALUES('org_code_black','legacy_library','member_amina','organisations/org_code_black/covers/library/legacy.jpg','image/jpeg',100,'cover library picture',now(),'ready','cover_library',now(),'8')");
         await old.query("INSERT INTO cover_library(id,organization_id,created_at,file_id,label,content_type,size_bytes,added_by) VALUES('legacy_item','org_code_black',now(),'legacy_library','Harbour at dawn','image/jpeg',100,'member_amina')");
         await old.query("INSERT INTO upload_intents(organization_id,id,user_id,object_key,content_type,size_bytes,original_name,created_at,status,purpose,completed_at,generation,cover_track_id) VALUES('org_code_black','legacy_cover','member_amina','organisations/org_code_black/covers/tracks/track_story/legacy.png','image/png',100,'track cover',now(),'ready','cover_image',now(),'7','track_story')");
@@ -54,8 +54,8 @@ test('0022 upgrade keeps every library picture and upload as it was, with no tag
         assert.deepEqual(strip(uploadsNow, thumbnail), before.upload_intents);
         assert(uploadsNow.every(r => thumbnail.every(k => r[k] === null)), 'no existing upload gains a small copy');
         assert.deepEqual(await read('tracks'), before.tracks);
-        assert.deepEqual((await old.query("SELECT version,digest FROM schema_migrations WHERE version<='0021' ORDER BY version")).rows, versions, 'earlier migrations are unchanged');
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 22);
+        assert.deepEqual((await old.query("SELECT version,digest FROM schema_migrations WHERE version<='0022' ORDER BY version")).rows, versions, 'earlier migrations are unchanged');
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 23);
     } finally { await old.close(); }
 });
 
