@@ -1,4 +1,76 @@
-# Alpha 12 track instructors
+# Alpha 13 cover library
+
+3 October 2026. Application 0.13.0-alpha.1. Covers can come from a community cover library as well as an upload. Owners and administrators keep up to 24 named pictures in Community settings; anyone who may change a track or project cover chooses one in the cover dialogue, with its own focal point, without copying it. A picture stays in the library while any cover shows it. See COVERS.md and decisions/013-cover-library.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)), after Alpha 11 and Alpha 12 on the same branch |
+| Verified locally | Yes: every suite, from a clean worktree of tested commit `208e9be` after `npm ci` (see below) |
+| Verified remotely (GitHub Actions) | See the publication receipt below |
+| Merged | No. Merging into main needs the owner's approval |
+| Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
+| Operated with real members | No |
+
+## What changed
+
+- Migration `0013_cover_library.sql` (additive): library uploads (`purpose='cover_library'`, no track or project, a generation once ready, at most 3 MB); a `cover_library` table with forced RLS (read in the tenant; inserted only by an active owner or administrator in their own name; deleted only by them; each upload listed once; foreign keys to the upload and the adding member); and a restrictive `cover_library_read` policy that keeps unlisted library uploads with their active uploader and active owners and administrators. Migrations 0001 to 0012 are byte-identical. `npm run db:grant-runtime` grants the table without UPDATE.
+- Command `cover.library.add`; upload purpose `cover_library` under `organisations/{organisation}/covers/library/`; `GET /api/organisations/:slug/cover-library/:itemId` serves the verified bytes with the cover headers; `POST .../cover-library/:itemId/remove` deletes the row, the upload record and the stored object, and answers 409 `COVER_IN_USE` while any cover shows the picture. Choosing a library picture for a cover uses the existing `track.cover.set` and `project.cover.set` commands and rights.
+- The cover dialogue offers **Upload your own** or **Community library** whenever the library holds a picture; pictures are native radio buttons named after their pictures. Community settings gains a Cover library section for owners and administrators: add a named picture, see how many covers use each, remove unused ones.
+- The demo library seeds one picture, Mountain ridge: the bundled landscape cropped to 440 × 288 so its caption does not show.
+- The connected cover suite now runs the live API under the restricted runtime role with forced RLS, as the instructor suite does.
+- No new runtime dependency. Release constant and package version are 0.13.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, `npm ci` from the committed lockfile in a clean worktree of tested commit `208e9be`, Playwright with Chromium 141 at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16.14 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 529 passed, 0 failed (507 existing plus 11 domain, 6 database and 5 HTTP library tests) |
+| `npm run test:http` | 17 passed |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Existing demo-browser suites | 247 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 14 knowledge checks, 9 instructors, 16 monochrome (its settings check now includes the library section), 20 v4 |
+| `npm run test:browser:covers` | 16 passed (11 existing plus 5 for the library): adding a named picture in Community settings through an accessible dialogue; choosing a library picture by pointer and by keyboard, with its own focal point; a picture in use stays until its covers change, then is removed; an instructor choosing one for their own track; members seeing library covers with no controls |
+| Existing connected-browser suites | 35 passed: 12 connected, 9 resources, 8 knowledge checks, 6 instructors |
+| `npm run test:browser:covers-connected` | 13 passed (9 existing plus 4 for the library), now with the API under the restricted runtime role and forced RLS: the owner's picture reaches the bucket under the community key without photo metadata; a member chooses it for their own project; members cannot add pictures and other communities and visitors cannot read them; removal waits until nothing shows the picture and then deletes the stored object |
+| `npm run test:postgres` | 12 passed on PostgreSQL 16.14, including the new restricted-role library check |
+| Python helpers, `scripts/check_research.py` | 34 passed; the register validates with 42 pinned sources and 15 decisions at the documentation commit (35 and 14 at the tested commit, before the Alpha 13 review was recorded) |
+
+Tests changed rather than added: seven migration-count assertions moved from 12 to 13; the lesson file pruning test now expects the seeded library picture and so also checks that pruning leaves it alone; the old-schema fixture skips the new table; the connected cover suite's API moved from the owner connection to the restricted runtime role. No business assertion was weakened.
+
+## Corrections made while verifying
+
+- The bundled landscape photograph carries a caption ("DISCIPLINE TODAY. A BRI…") along its bottom rows, and a cover must carry no words. The demo library uses a copy cropped above it; the original stays where the purpose page uses it. A unit test ties the seeded size, type and dimensions to the real file and checks it has no camera metadata.
+- In the Add a library picture dialogue the name hint sat inside the label, which made the field's accessible name a whole sentence. The hint is now attached with `aria-describedby`.
+- A new test expected a rejected library upload to survive until an hour had passed; the code prunes rejected uploads at the next start, as it does for covers, and the test now says so.
+- Before the library checks were trusted, the restrictive policy was dropped in a throwaway database to confirm a member could then see an unlisted upload, so the test fails when the policy is missing.
+
+## Not verified, and why
+
+- Hosted behaviour on Neon and Vercel, a real bucket's signing, IAM and CORS, email and backups remain deferred by the user.
+- Library pictures, like covers, are served at one size.
+- In connected development against the seeded database, the seeded library picture has no stored object, so it shows the plain panel, as the seeded lesson worksheet cannot be downloaded there.
+
+## Preview
+
+The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `http://127.0.0.1:5173`, reachable only from inside the container. Use the account menu's **Preview as admin**, then **Community settings → Cover library** to add or remove a picture; open a track and choose **Add a cover → Community library** to pick one. Clone the branch and run `npm ci && npm run dev` from `platform/`.
+
+## Publication receipt
+
+Pending: the push, the remote read-back and the GitHub Actions runs are recorded here after they happen.
+
+## Next actions
+
+1. Owner review of PR #5 (Alpha 11, 12 and 13) in the demo; merge only with the owner's approval, then read back main.
+2. A paginated review queue and a learner's export of their own attempts.
+3. An operator erasure procedure covering a learner's answers and removed covers.
+4. When deployment resumes: Neon staging with thirteen migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests.
+
+---
+## Historical Alpha 12 evidence: track instructors
 
 3 October 2026. Application 0.12.0-alpha.1. Owners and administrators name instructors for a track; an instructor authors that track's lessons, files, knowledge checks and cover, and marks its knowledge checks, from a teaching page, without community-wide administrator rights. Being shown as a track's author grants nothing. See INSTRUCTORS.md and decisions/012-track-instructors.md.
 

@@ -1,4 +1,8 @@
-# Research status: Alpha 12
+# Research status: Alpha 13
+
+Alpha 13 (cover library) reviewed how Frappe Learning (cover popover and stock photo requests), ClassroomIO (image dialogue, stock photo route and cover widget) and LearnHouse (course thumbnail editor and media library picker) let people choose a cover as well as upload one, at the same pinned commits; see notes/18_COVER_LIBRARY.md and the `cover-library` decision in reuse-register.json. All three are behavioural references only. Imported donor files: zero. New runtime dependencies: none.
+
+## Alpha 12 record
 
 Alpha 12 (track instructors) reviewed how Frappe Learning (course instructors and modify rules), LearnHouse (resource authors and contributor management) and ClassroomIO (course team middleware) scope course staff, at the same pinned commits; see notes/17_TRACK_INSTRUCTORS.md and the `track-instructors` decision in reuse-register.json. All three are behavioural references only. Imported donor files: zero. New runtime dependencies: none.
 

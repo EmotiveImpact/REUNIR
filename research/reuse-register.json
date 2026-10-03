@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "release": "0.12.0-alpha.1",
+  "release": "0.13.0-alpha.1",
   "reviewedOn": "2026-10-03",
   "scope": "Targeted source/document review, not a fresh whole-repository audit, full runtime comparison or a legal opinion. Previously captured commit snapshots were deliberately re-read; no claim that all are current HEAD.",
   "donorApplicationFilesImported": 0,
@@ -451,6 +451,97 @@
       "lesson": "Course routes allow the course team or an organisation administrator, decided for the course named in the request.",
       "url": "https://github.com/classroomio/classroomio/blob/72791608774f6fb65fbc33ddbb1d52d8a2a11045/apps/api/src/middlewares/course-team-member.ts",
       "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "frappe-cover-image-picker",
+      "project": "Frappe Learning",
+      "repository": "frappe/lms",
+      "revision": "071266699d3ed984eeff7f3e3658d259fd946a97",
+      "file": "frontend/src/components/Modals/EditCoverImage.vue",
+      "blob": "d0b7717e1df9c159afb5bb1a912f04d0a1dabbe1",
+      "reviewedRange": "complete file, 147 lines",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "One cover popover offers stock photo search and an upload side by side; without a configured key the grid is empty, so it now says why instead of showing a blank box. Every option shares one generic alternative text.",
+      "url": "https://github.com/frappe/lms/blob/071266699d3ed984eeff7f3e3658d259fd946a97/frontend/src/components/Modals/EditCoverImage.vue",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "frappe-unsplash-requests",
+      "project": "Frappe Learning",
+      "repository": "frappe/lms",
+      "revision": "071266699d3ed984eeff7f3e3658d259fd946a97",
+      "file": "lms/unsplash.py",
+      "blob": "eedce5e763f4271e1af9d384ad2c506def592405",
+      "reviewedRange": "complete file, 44 lines",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "Stock search depends on a site-wide third-party access key that is usually unset; an unconfigured site is the default case, not an error.",
+      "url": "https://github.com/frappe/lms/blob/071266699d3ed984eeff7f3e3658d259fd946a97/lms/unsplash.py",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "classroomio-image-upload-modal",
+      "project": "ClassroomIO",
+      "repository": "classroomio/classroomio",
+      "revision": "72791608774f6fb65fbc33ddbb1d52d8a2a11045",
+      "file": "packages/ui/src/custom/editor/ui/components/image-upload-modal.svelte",
+      "blob": "fb2bb733b28fca125c6d350cf013badfc7f4eab9",
+      "reviewedRange": "lines 1\u201348, 88\u201397 and 110\u2013219 of 222",
+      "licence": "Root AGPL-3.0; root package metadata says MIT; conflict unresolved, reference only",
+      "lesson": "The image dialogue puts upload (with a fixed-aspect cropper), stock search with photographer credits and a remote link in tabs; a chosen stock photo is stored as its remote address.",
+      "url": "https://github.com/classroomio/classroomio/blob/72791608774f6fb65fbc33ddbb1d52d8a2a11045/packages/ui/src/custom/editor/ui/components/image-upload-modal.svelte",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "classroomio-unsplash-route",
+      "project": "ClassroomIO",
+      "repository": "classroomio/classroomio",
+      "revision": "72791608774f6fb65fbc33ddbb1d52d8a2a11045",
+      "file": "apps/api/src/routes/unsplash/unsplash.ts",
+      "blob": "54ed9cc2d8738b01b8c447861cb589228e38c6d4",
+      "reviewedRange": "complete file, 42 lines",
+      "licence": "Root AGPL-3.0; root package metadata says MIT; conflict unresolved, reference only",
+      "lesson": "The stock search route is public and unauthenticated and spends the server's key on every request.",
+      "url": "https://github.com/classroomio/classroomio/blob/72791608774f6fb65fbc33ddbb1d52d8a2a11045/apps/api/src/routes/unsplash/unsplash.ts",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "classroomio-cover-upload-widget",
+      "project": "ClassroomIO",
+      "repository": "classroomio/classroomio",
+      "revision": "72791608774f6fb65fbc33ddbb1d52d8a2a11045",
+      "file": "apps/dashboard/src/lib/features/ui/upload-widget/upload-widget.svelte",
+      "blob": "939dbd87a76258f3343ca6a8493dd294ec184405",
+      "reviewedRange": "complete file, 52 lines",
+      "licence": "Root AGPL-3.0; root package metadata says MIT; conflict unresolved, reference only",
+      "lesson": "Course covers use the same dialogue with a fixed cover aspect and a configured size limit; an upload or a stock choice both end as one image address.",
+      "url": "https://github.com/classroomio/classroomio/blob/72791608774f6fb65fbc33ddbb1d52d8a2a11045/apps/dashboard/src/lib/features/ui/upload-widget/upload-widget.svelte",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "learnhouse-thumbnail-update",
+      "project": "LearnHouse",
+      "repository": "learnhouse/learnhouse",
+      "revision": "5e28b0723176b34ba8777b9980db352268aa8234",
+      "file": "apps/web/components/Dashboard/Pages/Course/EditCourseGeneral/ThumbnailUpdate.tsx",
+      "blob": "2237f629b06937170f41499a3500e138f6e9cff9",
+      "reviewedRange": "lines 15\u201316, 27\u201347, 74\u201385 and 249\u2013346 of 353",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "The course thumbnail editor uploads an image or a video in separate tabs with size limits; it does not offer the organisation's media library.",
+      "url": "https://github.com/learnhouse/learnhouse/blob/5e28b0723176b34ba8777b9980db352268aa8234/apps/web/components/Dashboard/Pages/Course/EditCourseGeneral/ThumbnailUpdate.tsx",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "learnhouse-library-resource-picker",
+      "project": "LearnHouse",
+      "repository": "learnhouse/learnhouse",
+      "revision": "5e28b0723176b34ba8777b9980db352268aa8234",
+      "file": "apps/web/components/Dashboard/Library/ResourcePicker.tsx",
+      "blob": "a37e0dbc7f84f3e66d6e823573377798b296e10b",
+      "reviewedRange": "lines 1\u201360 of 365",
+      "licence": "AGPL-3.0 at repository root; behavioural reference only",
+      "lesson": "An organisation-wide media library with folders and access is offered for linking resources into activities, separately from course thumbnails.",
+      "url": "https://github.com/learnhouse/learnhouse/blob/5e28b0723176b34ba8777b9980db352268aa8234/apps/web/components/Dashboard/Library/ResourcePicker.tsx",
+      "reviewedOn": "2026-10-03"
     }
   ],
   "decisions": [
@@ -766,6 +857,38 @@
         "platform/tests/instructors-http.test.ts",
         "platform/scripts/instructors-browser-check.ts",
         "platform/scripts/instructors-connected-check.ts",
+        "platform/scripts/postgres-check.ts"
+      ]
+    },
+    {
+      "id": "cover-library",
+      "status": "implemented",
+      "mode": "behaviour_reference",
+      "sources": [
+        "frappe-cover-image-picker",
+        "frappe-unsplash-requests",
+        "classroomio-image-upload-modal",
+        "classroomio-unsplash-route",
+        "classroomio-cover-upload-widget",
+        "learnhouse-thumbnail-update",
+        "learnhouse-library-resource-picker"
+      ],
+      "decision": "Offer a community cover library beside uploading: owners and administrators add verified pictures with a short name, and anyone who may change a track or project cover chooses one in the same dialogue, with its own focal point and without copying it. No stock search, access key, remote address or unauthenticated route. Every active member can see library pictures; other communities, visitors and unlisted uploads cannot, in the domain and in row policies. A picture stays while any cover shows it, and removing an unused one deletes its stored file. No donor source copied; the AGPL projects are behavioural references only.",
+      "implementation": [
+        "platform/packages/domain/src/covers.ts",
+        "platform/packages/contracts/src/covers.ts",
+        "platform/packages/db/migrations/0013_cover_library.sql",
+        "platform/packages/db/src/runtime-role.ts",
+        "platform/apps/api/src/app.ts",
+        "platform/apps/web/src/components/cover.tsx",
+        "platform/apps/web/src/components/cover-library.tsx"
+      ],
+      "tests": [
+        "platform/tests/cover-library.test.ts",
+        "platform/tests/cover-library-database.test.ts",
+        "platform/tests/cover-library-http.test.ts",
+        "platform/scripts/covers-browser-check.ts",
+        "platform/scripts/covers-connected-check.ts",
         "platform/scripts/postgres-check.ts"
       ]
     }

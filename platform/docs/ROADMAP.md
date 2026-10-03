@@ -20,12 +20,13 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 10 | Knowledge checks in lessons: four question kinds, server-side scoring, private attempts, a review queue with marks and feedback, answer reveal under the author's rule | Not credentials or reputation; no question banks, timers, partial credit, exports or erasure procedure |
 | Alpha 11 | Uploaded track and project covers with a focal point, or a plain panel; decorative art and text on pictures retired | No server-side thumbnails or alt text field; removed pictures are pruned later, not erased at once |
 | Alpha 12 | Explicit track instructors who author and review one track from a teaching page, with RLS in depth | No invitations, contributor roles, per-lesson grants or instructor-created tracks |
+| Alpha 13 | A community cover library: administrators add named pictures; anyone who may change a cover uploads their own or chooses one | Up to 24 pictures; no stock search, renaming or tagging |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 
 ## Deployment deferred by the user
 
-The user will clone, deploy and run hosted tests later. Continue product development without treating deployment as a prerequisite or claiming it is complete. Alpha 08 added rich lesson editing, safe external media and compatible revisions (RICH_LESSONS.md); PR #2 was merged after CI run 36969054997 passed. Alpha 09 added private lesson resources (LESSON_RESOURCES.md); PR #3 was merged after CI runs 37061204163 and 37061210244 passed. Alpha 10 added knowledge checks (ASSESSMENTS.md); PR #4 was merged after CI runs 37067079371 and 37067083907 passed. Alpha 11 added cover images (COVERS.md) and Alpha 12 adds track instructors (INSTRUCTORS.md), both on PR #5; BUILD_STATUS.md records their local and remote verification. A hosted bucket needs the storage steps in SETUP.md when deployment resumes.
+The user will clone, deploy and run hosted tests later. Continue product development without treating deployment as a prerequisite or claiming it is complete. Alpha 08 added rich lesson editing, safe external media and compatible revisions (RICH_LESSONS.md); PR #2 was merged after CI run 36969054997 passed. Alpha 09 added private lesson resources (LESSON_RESOURCES.md); PR #3 was merged after CI runs 37061204163 and 37061210244 passed. Alpha 10 added knowledge checks (ASSESSMENTS.md); PR #4 was merged after CI runs 37067079371 and 37067083907 passed. Alpha 11 added cover images (COVERS.md), Alpha 12 track instructors (INSTRUCTORS.md) and Alpha 13 the cover library (COVERS.md), all on PR #5; BUILD_STATUS.md records their local and remote verification. A hosted bucket needs the storage steps in SETUP.md when deployment resumes.
 
 ## Release work when deployment resumes: make the pilot operable
 

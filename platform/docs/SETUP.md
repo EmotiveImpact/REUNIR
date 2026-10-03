@@ -98,6 +98,8 @@ Cookie-authenticated POSTs require the exact application `Origin` and JSON conte
 
 **Track instructors (Alpha 12).** Apply migration 0012 and rerun `npm run db:grant-runtime`, which grants the new `track_instructors` table without UPDATE. No storage or environment change is needed. See INSTRUCTORS.md.
 
+**Cover library (Alpha 13).** Apply migration 0013 and rerun `npm run db:grant-runtime`, which grants the new `cover_library` table without UPDATE. Library pictures use the same upload endpoints with `{purpose:'cover_library',contentType,sizeBytes}` (owners and administrators only), are listed with the `cover.library.add` command and are served from `/api/organisations/:slug/cover-library/:itemId`. Their objects live under `organisations/{organisation}/covers/library/`; no new bucket rule or environment variable is needed. The development seed lists one fictional picture whose object does not exist in a real bucket, as with the seeded lesson worksheet, so connected development shows a plain panel for it. See COVERS.md.
+
 Real Google credentials, CORS, IAM, billing, malware scanning, orphaned-object cleanup and member attachments for posts or missions remain staging/public-launch work.
 
 **Knowledge checks (Alpha 10).** No new environment variables or services. Apply migration 0010 with the administrative connection and rerun `npm run db:grant-runtime`, which revokes UPDATE and DELETE on `quiz_attempts` from the runtime role and grants UPDATE only on the review columns. Commands use the existing `/api/organisations/:slug/commands` route. See ASSESSMENTS.md.

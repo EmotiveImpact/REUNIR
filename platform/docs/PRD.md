@@ -428,3 +428,20 @@ Owners and administrators name instructors for a track. An instructor authors th
 | I09 | The fictional demo previews an instructor with the same rules | Demo browser journey |
 
 Invitations to accept, contributor roles beyond instructor, per-lesson grants and instructor-created tracks are outside this release.
+
+## Alpha 13: cover library
+
+People who may change a cover can upload their own picture or choose one from a small library their community supplies. Owners and administrators add up to 24 named pictures in Community settings and remove ones nothing uses. Choosing does not copy the picture, and each cover keeps its own focal point. See `COVERS.md` and `decisions/013-cover-library.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| L01 | Only active owners and administrators add or remove library pictures, recorded in their own name | Domain, database (forced RLS), HTTP, both browser suites and PostgreSQL tests |
+| L02 | Anyone who may change a cover can choose a library picture; nobody else gains a cover right | Domain, HTTP, demo and connected browser tests |
+| L03 | Every active member sees library pictures; other communities, visitors and unlisted uploads do not | Domain, RLS, HTTP and connected browser tests |
+| L04 | Library uploads follow the verified pipeline: browser resize without metadata, exact policy, signature and dimension checks, deletion of refused files | Domain, HTTP and connected browser tests |
+| L05 | A picture in use cannot be removed; removing an unused one deletes its record, upload and stored file | Domain, database, HTTP and both browser suites |
+| L06 | Each picture has a short name that is its accessible name; choosing works by pointer and keyboard; the dialogues pass automated accessibility checks | Demo and connected browser tests with axe |
+| L07 | Existing tracks, projects, covers and uploads upgrade unchanged | Migration 0013 upgrade test |
+| L08 | The fictional demo offers one wordless library picture with the same rules | Demo browser journey and asset test |
+
+Stock photo search, remote image addresses, renaming, tagging or searching the library, and libraries for other kinds of picture are outside this release.

@@ -1,3 +1,14 @@
+# 0.13.0-alpha.1: cover library
+
+- Covers can now come from a community cover library as well as an upload. The cover dialogue offers **Upload your own** or **Community library** whenever the library holds a picture; choosing one keeps its own focal point and does not copy the picture.
+- Owners and administrators keep up to 24 named pictures under Community settings → Cover library: add one through the same in-browser preparation as covers, see how many covers use each, and remove unused ones, which deletes the stored file.
+- Every active member can see library pictures; other communities, visitors and unlisted uploads cannot. A picture in use cannot be removed.
+- Library options are native radio buttons named after their pictures, so they work from the keyboard and read clearly to screen readers.
+- Additive migration 0013 with forced row security for the library and a restrictive policy for unlisted library uploads; migrations 0001 to 0012 unchanged. No new runtime dependency, no stock photo service.
+- The demo library has one fictional picture: the bundled landscape, cropped so its caption does not show.
+- The connected cover check now runs the live API under the restricted runtime role with forced row security.
+- Deployment remains deferred by the user.
+
 # 0.12.0-alpha.1: track instructors
 
 - Owners and administrators name instructors for a track from an Instructors dialogue on the track page. The new instructor is notified.
