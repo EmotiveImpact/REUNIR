@@ -1,6 +1,6 @@
 # Moderation and appeals
 
-How community-post moderation works, and how a member asks for a second look. See decisions/0NN-moderation-appeals.md for the reasoning.
+How community-post moderation works, and how a member asks for a second look. See decisions/032-moderation-appeals.md for the reasoning.
 
 ## Hiding a post
 

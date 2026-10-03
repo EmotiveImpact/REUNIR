@@ -1,6 +1,6 @@
-# Decision NNN: appealing a hidden post
+# Decision 032: appealing a hidden post
 
-Status: implemented on a local branch, verified locally; not deployed. Date: 3 October 2026.
+Status: implemented in Alpha 32, verified locally; not deployed. Date: 3 October 2026.
 
 ## Problem
 
