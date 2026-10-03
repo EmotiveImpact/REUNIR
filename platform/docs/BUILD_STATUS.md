@@ -21,6 +21,7 @@ Numbering: this thread holds Alpha 31 to 34, decisions 031 to 034 and migrations
 - **Withdrawal** marks the contribution or outcome `withdrawn`. It stops counting for path milestones, profiles, outcome sources, goal completion and the output archive. Verified outcomes built on a withdrawn contribution are withdrawn too; a goal completed with a withdrawn outcome reopens and its owner is told; a waiting correction is declined; a project task whose proof was withdrawn returns to in progress.
 - **Migration 0032** (additive): `withdrawn` added to `contributions_status_check` and `outcomes_status_check`, and `evidence_changes` with forced row security, a tenant policy and a partial unique index for one waiting correction. The runtime role may select and insert, and update only `status`, `decided_by`, `decided_at` and `response`. 0001 to 0031 unchanged.
 - **Web.** Correct, Withdraw, Review a correction and History dialogues on the project view and Community outputs. Neutral colours only.
+- Review fix on PR #29 (Codex): an accepted correction now records the accepting reviewer, time and response on the evidence, and the history keeps the earlier wording with the review it carried (`previous.review`). One new domain test and two new database assertions cover this.
 
 ## Local verification, 3 October 2026
 
@@ -29,7 +30,7 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 793 passed, 0 failed (23 new: 17 in `tests/evidence-history.test.ts`, including cross-tenant and suspended-member cases, and 6 in `tests/evidence-history-database.test.ts` under the restricted role) |
+| `npm test` | 794 passed, 0 failed after the review fix (24 new: 18 in `tests/evidence-history.test.ts`, including cross-tenant and suspended-member cases, and 6 in `tests/evidence-history-database.test.ts` under the restricted role) |
 | `npm run test:http` | 19 passed |
 | `npm run build`, `npm run bundle:preview` | Passed |
 | Demo-browser suites | `evidence` 7 (new), `purpose` 34, `work` 29, `appeals` 7, `curation` 9, `accounts` 13, `monochrome` 16, `v4` 20, `covers` 20, `states` 12, `instructors` 12, `notifications` 5 |

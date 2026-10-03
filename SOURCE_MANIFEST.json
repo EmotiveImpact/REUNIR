@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 33 correcting and withdrawing reviewed evidence",
   "version": "0.39.0-alpha.1",
   "sourceBaseline": "f3efa391e13538fa85899d777e1421791b1be114",
-  "generatedAt": "2026-10-03T19:00:23.422406+00:00",
+  "generatedAt": "2026-10-03T19:14:59.176851+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -241,8 +241,8 @@
     },
     {
       "path": "platform/apps/web/src/components/evidence-history.tsx",
-      "sha256": "64628820cc2743df21bbb8cfd03c1d5d8eb8f8a2be436b277ad8ebbc341acd64",
-      "bytes": 9018
+      "sha256": "f1990451090d7020b5223c408504f9681f17098d7890b59001554a69cd06d6c8",
+      "bytes": 9308
     },
     {
       "path": "platform/apps/web/src/components/featured-collection.tsx",
@@ -631,8 +631,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "a205a0db8afca9a6a968fbdabdcac0afd2ab369968024c0635888fb1efbb02b7",
-      "bytes": 174035
+      "sha256": "d9179f5a387c9a757e6db774189ac8fba30f02561e4ac45bb5cd211d5fb9d36e",
+      "bytes": 174336
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -656,8 +656,8 @@
     },
     {
       "path": "platform/docs/EVIDENCE_HISTORY.md",
-      "sha256": "57e1c76cab2248ec75f06706f528d0d5020b6be8ec2be199231d944a8185854f",
-      "bytes": 2192
+      "sha256": "2e9168c4a56dc3b1ab8133c7f947fb5be586311bdf6542139c9bd6f9c9ad7e85",
+      "bytes": 2329
     },
     {
       "path": "platform/docs/GITHUB_HANDOVER.md",
@@ -886,8 +886,8 @@
     },
     {
       "path": "platform/docs/decisions/033-evidence-history.md",
-      "sha256": "1b97f446eaf1743e2e8fc7bf51cb9194d2ec5f47243c588d767e4c73e827aadc",
-      "bytes": 3321
+      "sha256": "6c174fe1e2a30bea3a005b1215ee47ad781832c12152ff6bd248567d8e517ebf",
+      "bytes": 3504
     },
     {
       "path": "platform/docs/decisions/035-lesson-grants.md",
@@ -1251,8 +1251,8 @@
     },
     {
       "path": "platform/packages/contracts/src/index.ts",
-      "sha256": "a5ed8ef8aed4a3cea9bf1054974e24b9dc5e74f268e0c18e0f272ac8940ea509",
-      "bytes": 29208
+      "sha256": "65009c8c8dcc9d727ac996b0a510a71f470719e61cd5a0b043da2bec45cb1c40",
+      "bytes": 29460
     },
     {
       "path": "platform/packages/contracts/src/lesson-document.ts",
@@ -1561,8 +1561,8 @@
     },
     {
       "path": "platform/packages/domain/src/evidence-history.ts",
-      "sha256": "9a76395c2afa15c6200f98299e3439dc7f6ae36fc8b340c83805bea6c795e51a",
-      "bytes": 13106
+      "sha256": "048f111f073eee5eb76df22b8c6791a6121a087285ce6d31d56500611bbeeae1",
+      "bytes": 13432
     },
     {
       "path": "platform/packages/domain/src/instructors.ts",
@@ -1966,13 +1966,13 @@
     },
     {
       "path": "platform/tests/evidence-history-database.test.ts",
-      "sha256": "ab6f6588b6727c43d7955431b622e7ccdcc76bf5105e0d43846e2c97e8a7f677",
-      "bytes": 11861
+      "sha256": "889be241170b8bce55eb8731a6fef4c5eb13c80e10d4fd03cde21f179d68a31d",
+      "bytes": 12409
     },
     {
       "path": "platform/tests/evidence-history.test.ts",
-      "sha256": "178b9666edff84764fb0d45f35a2640a881e602d9f842fdd06e03909cfeb8f34",
-      "bytes": 18657
+      "sha256": "9a12dbc503fd05327cceba157e1b2a37de05e22129c92aea23c68cd6b1f6c903",
+      "bytes": 19608
     },
     {
       "path": "platform/tests/group-conversations-database.test.ts",

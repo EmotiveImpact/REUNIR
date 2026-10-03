@@ -12,6 +12,8 @@ const ctx = (userId = DEMO_USER, organizationId = 'org_code_black'): TenantConte
 const run = (command: unknown, s: Workspace, user = DEMO_USER) => applyCommand(s, ctx(user), command, () => '2026-10-03T10:00:00.000Z');
 const error = (fn: () => unknown, code: string) => assert.throws(fn, (e: unknown) => e instanceof DomainError && e.code === code);
 const text = { title: 'Tested the booking flow', text: 'Recorded three tasks and revised the confusing confirmation step.', evidenceUrl: 'https://example.com/proof' };
+/** The wording as recognised, with the review that recognised it. */
+const reviewed = { ...text, review: { reviewerId: OWNER, reviewedAt: '2026-10-03T10:00:00.000Z', feedback: 'Checked the notes.' } };
 const corrected = { title: 'Tested the booking flow with three creators', text: 'Recorded three observed tasks and revised the confirmation step.', evidenceUrl: 'https://example.com/proof' };
 
 /** Alex's contribution to Common Ground, recognised by the project owner. */
@@ -50,7 +52,7 @@ test('a correction waits for review and leaves the reviewed wording in place unt
     const c = r.workspace.contributions.find(x => x.id === contributionId)!;
     assert.deepEqual([c.title, c.body, c.status], [text.title, text.text, 'recognised']);
     const change = r.workspace.evidenceChanges.find(x => x.id === r.objectId)!;
-    assert.deepEqual([change.kind, change.status, change.previous, change.proposed], ['correction', 'pending', text, corrected]);
+    assert.deepEqual([change.kind, change.status, change.previous, change.proposed], ['correction', 'pending', reviewed, corrected]);
     assert(r.workspace.notifications.some(n => n.userId === OWNER && n.title === 'A correction to review'), 'the project owner is asked');
     assert(r.workspace.notifications.some(n => n.userId === DEMO_ADMIN && n.title === 'A correction to review'), 'administrators are asked');
     assert(!r.workspace.notifications.some(n => n.userId === DEMO_USER && n.title === 'A correction to review'), 'the author is not asked to review');
@@ -58,9 +60,18 @@ test('a correction waits for review and leaves the reviewed wording in place unt
     const after = a.workspace.contributions.find(x => x.id === contributionId)!;
     assert.deepEqual([after.title, after.body, after.status, after.reviewerId], [corrected.title, corrected.text, 'recognised', OWNER]);
     const decided = a.workspace.evidenceChanges.find(x => x.id === r.objectId)!;
-    assert.deepEqual([decided.status, decided.decidedBy, decided.previous], ['accepted', OWNER, text], 'the earlier wording stays in the history');
+    assert.deepEqual([decided.status, decided.decidedBy, decided.previous], ['accepted', OWNER, reviewed], 'the earlier wording and its review stay in the history');
     assert(a.workspace.notifications.some(n => n.userId === DEMO_USER && n.title === 'Your correction was accepted'));
     assert(a.workspace.audit.some(x => x.action === 'evidence.correction.review' && x.objectId === r.objectId));
+});
+
+test('an accepted correction is attributed to the reviewer who accepted it, and the first review stays with the first wording', () => {
+    const { s, contributionId } = recognised();
+    const r = correct(s, contributionId);
+    const a = run({ type: 'evidence.correction.review', changeId: r.objectId, decision: 'accepted', response: 'Matches the observation notes.' }, r.workspace, DEMO_ADMIN).workspace;
+    const after = a.contributions.find(x => x.id === contributionId)!;
+    assert.deepEqual([after.title, after.reviewerId, after.feedback], [corrected.title, DEMO_ADMIN, 'Matches the observation notes.']);
+    assert.deepEqual(a.evidenceChanges.find(x => x.id === r.objectId)!.previous.review, reviewed.review);
 });
 
 test('a declined correction keeps the reviewed version', () => {

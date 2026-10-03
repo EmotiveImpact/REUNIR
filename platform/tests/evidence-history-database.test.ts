@@ -40,7 +40,9 @@ after(async () => db?.close());
 test('a correction persists under the restricted role, waits, and its acceptance keeps the earlier wording', async () => {
     const r = await exec({ type: 'evidence.correct', subject: 'contribution', subjectId: contributionId, ...wording, reason: 'The tester count was missing.' });
     const row = async () => (await db.query<Record<string, unknown>>('SELECT kind,status,previous,proposed,previous_status,decided_by FROM evidence_changes WHERE id=$1', [r.objectId])).rows[0];
-    assert.deepEqual(await row(), { kind: 'correction', status: 'pending', previous: { title: 'A tested contribution', text: 'An actual persisted record.', evidenceUrl: 'https://example.com/evidence' }, proposed: wording, previous_status: 'recognised', decided_by: null });
+    const firstReview = ((await row()).previous as { review: { reviewedAt: string } }).review;
+    assert.match(firstReview.reviewedAt, /^2\d{3}-/, 'the first review keeps its time');
+    assert.deepEqual(await row(), { kind: 'correction', status: 'pending', previous: { title: 'A tested contribution', text: 'An actual persisted record.', evidenceUrl: 'https://example.com/evidence', review: { reviewerId: OWNER, reviewedAt: firstReview.reviewedAt, feedback: 'Reviewed the evidence.' } }, proposed: wording, previous_status: 'recognised', decided_by: null });
     assert(!(await repo.snapshot('code-black', 'member_jordan')).evidenceChanges.some(c => c.id === r.objectId), 'another member does not see a waiting correction');
     assert((await repo.snapshot('code-black', OWNER)).evidenceChanges.some(c => c.id === r.objectId), 'the project owner does');
     await assert.rejects(() => exec({ type: 'evidence.correct', subject: 'contribution', subjectId: contributionId, ...wording, title: 'Another', reason: 'Again.' }), { code: 'CORRECTION_PENDING' });
@@ -55,6 +57,7 @@ test('an outcome correction updates the published output in the same transaction
     const r = await exec({ type: 'evidence.correct', subject: 'outcome', subjectId: outcomeId, title: 'A usable first version, tested twice', text: 'Verified within our community, twice.', evidenceUrl: '', reason: 'A second test happened.' });
     await exec({ type: 'evidence.correction.review', changeId: r.objectId, decision: 'accepted', response: 'Confirmed.' }, DEMO_ADMIN);
     assert.deepEqual((await db.query('SELECT title,summary FROM community_outputs WHERE organization_id=$1 AND outcome_id=$2', [ORG, outcomeId])).rows, [{ title: 'A usable first version, tested twice', summary: 'Verified within our community, twice.' }]);
+    assert.deepEqual((await db.query('SELECT reviewer_id,feedback FROM outcomes WHERE organization_id=$1 AND id=$2', [ORG, outcomeId])).rows, [{ reviewer_id: DEMO_ADMIN, feedback: 'Confirmed.' }], 'the outcome carries the review that accepted the correction');
 });
 
 test('withdrawal persists through the constraints: the outcome follows and the goal reopens', async () => {

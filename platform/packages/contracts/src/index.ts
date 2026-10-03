@@ -312,7 +312,9 @@ export interface Outcome extends TenantRecord {
     reviewedAt: string | null; feedback: string;
 }
 /** The wording of a piece of evidence: a contribution's title, body and link, or an outcome's title, summary and link. */
-export interface EvidenceText { title: string; text: string; evidenceUrl: string; }
+export interface EvidenceText { title: string; text: string; evidenceUrl: string; review?: EvidenceReview; }
+/** The review a wording carried: who reviewed it, when, and their feedback. Kept with the wording when it is replaced. */
+export interface EvidenceReview { reviewerId: Id | null; reviewedAt: string | null; feedback: string; }
 export type EvidenceSubject = 'contribution' | 'outcome';
 /**
  * One step in the history of reviewed evidence. A correction proposes new wording that a reviewer accepts or declines; a

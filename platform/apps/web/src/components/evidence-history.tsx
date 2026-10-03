@@ -10,8 +10,10 @@ const LIMITS: Record<EvidenceSubject, { title: number; text: number }> = { contr
 const noun = (subject: EvidenceSubject) => subject === 'contribution' ? 'contribution' : 'outcome';
 const read = (f: FormData, k: string) => String(f.get(k) || '');
 
-function Wording({ label, text }: { label: string; text: EvidenceText }) {
-    return <div className="evidence-wording"><span>{label}</span><strong>{text.title}</strong><p className="preline">{text.text}</p>{text.evidenceUrl && <small>{text.evidenceUrl}</small>}</div>;
+function Wording({ label, text, reviewer }: { label: string; text: EvidenceText; reviewer?: (userId: string | null) => string }) {
+    const review = reviewer && text.review?.reviewerId ? text.review : null;
+    return <div className="evidence-wording"><span>{label}</span><strong>{text.title}</strong><p className="preline">{text.text}</p>{text.evidenceUrl && <small>{text.evidenceUrl}</small>}
+        {review && <small>Reviewed by {reviewer!(review.reviewerId)}{review.feedback ? `: ${review.feedback}` : ''}</small>}</div>;
 }
 
 function headline(c: EvidenceChange): string {
@@ -44,8 +46,8 @@ export function EvidenceHistory({ subject, record }: { subject: EvidenceSubject;
             <ol>{history.map(c => <li key={c.id} className={'evidence-change change-' + (c.kind === 'withdrawal' ? 'withdrawn' : c.status)}>
                 <strong>{headline(c)}</strong>
                 <p>{c.kind === 'withdrawal' ? 'Reason' : 'Why'}: {c.reason}<small> · {name(c.requestedBy)}</small></p>
-                {c.status === 'accepted' && <Wording label="Earlier wording" text={c.previous} />}
-                {c.kind === 'withdrawal' && <Wording label="Reviewed wording" text={c.previous} />}
+                {c.status === 'accepted' && <Wording label="Earlier wording" text={c.previous} reviewer={name} />}
+                {c.kind === 'withdrawal' && <Wording label="Reviewed wording" text={c.previous} reviewer={name} />}
                 {c.kind === 'correction' && c.status !== 'accepted' && c.proposed && <Wording label={c.status === 'pending' ? 'Proposed wording' : 'Wording not accepted'} text={c.proposed} />}
                 {c.response && <p className="evidence-response">{name(c.decidedBy)}: {c.response}</p>}
                 {c.status === 'pending' && reviewer && <button className="button secondary compact" onClick={() => setOpen(c)}><Scale size={14} />Review correction</button>}

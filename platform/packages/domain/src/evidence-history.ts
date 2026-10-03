@@ -14,7 +14,8 @@ const commands = new Set(['evidence.correct', 'evidence.correction.review', 'evi
 const LIMITS: Record<EvidenceSubject, { title: number; text: number }> = { contribution: { title: 140, text: 8000 }, outcome: { title: 160, text: 5000 } };
 
 export const evidenceText = (subject: EvidenceSubject, x: EvidenceRecord): EvidenceText =>
-    ({ title: x.title, text: subject === 'contribution' ? (x as Contribution).body : (x as Outcome).summary, evidenceUrl: x.evidenceUrl });
+    ({ title: x.title, text: subject === 'contribution' ? (x as Contribution).body : (x as Outcome).summary, evidenceUrl: x.evidenceUrl,
+        review: { reviewerId: x.reviewerId, reviewedAt: x.reviewedAt, feedback: x.feedback } });
 export const evidenceAuthor = (subject: EvidenceSubject, x: EvidenceRecord): string => subject === 'contribution' ? (x as Contribution).userId : (x as Outcome).authorId;
 /** Recognised contributions and verified outcomes: the evidence that counts, and the only evidence this history changes. */
 export const isReviewedEvidence = (subject: EvidenceSubject, x: EvidenceRecord): boolean => x.status === (subject === 'contribution' ? 'recognised' : 'verified');
@@ -104,6 +105,8 @@ export function applyEvidenceHistory(s: Workspace, ctx: TenantContext, cmd: Comm
                 const t = change.proposed!;
                 x.title = t.title; x.evidenceUrl = t.evidenceUrl;
                 if (change.subject === 'contribution') (x as Contribution).body = t.text; else (x as Outcome).summary = t.text;
+                // The corrected wording carries the review that accepted it; the earlier review stays with the earlier wording.
+                Object.assign(x, { reviewerId: ctx.userId, reviewedAt: now, feedback: cmd.response });
                 // A published output repeats its outcome's words, so it follows the correction.
                 if (change.subject === 'outcome')
                     for (const out of s.communityOutputs.filter(o => o.organizationId === ctx.organizationId && o.outcomeId === x.id))
