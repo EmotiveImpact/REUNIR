@@ -4,12 +4,6 @@ export { FORMER_MEMBER } from '../../contracts/src/account';
 export { isFormer } from './access';
 
 /**
- * Deleting an account, community by community. Posts, comments and project work stay so conversations still make sense,
- * attributed to a scrubbed membership shown as "Former member". Private things and the person's own learning record go.
- */
-export const isFormerMember = (m: Pick<Member, 'status'> | undefined) => m?.status === 'left';
-
-/**
  * The person's own records, removed outright: goals, saved posts, inbox, reactions, attendance, private-space access,
  * learning and recognition, and instructor grants. Project team places stay with the project work that refers to them.
  */
@@ -25,12 +19,14 @@ export interface CommunityErasure {
 }
 
 /** What a scrubbed membership keeps: its identifiers and joining date. Everything that described the person goes. */
-export function scrubbedMember(m: Member): Member {
+function scrubbedMember(m: Member): Member {
     return { ...m, name: FORMER_MEMBER, headline: '', bio: '', skills: [], colour: 'neutral', avatar: '', role: 'member', status: 'left' };
 }
 
 /**
- * Erase one person from one community's full state. The caller has already established who is asking (a verified
+ * Erase one person from one community's full state, as deleting their account does in every community. Posts, comments
+ * and project work stay so conversations still make sense, attributed to a scrubbed membership shown as "Former member";
+ * private things and the person's own learning record go. The caller has already established who is asking (a verified
  * password in live mode) and that they own no community; owners are refused here as well.
  */
 export function eraseFromCommunity(input: Workspace, userId: string, now: string, makeId: () => string = newId): CommunityErasure {
@@ -54,12 +50,15 @@ export function eraseFromCommunity(input: Workspace, userId: string, now: string
             t.assigneeId = null; t.workState = 'todo'; t.version++; t.updatedAt = now; releasedTasks++;
         }
     // Notices about the person's activity begin with their name. Reword those in other inboxes, unless another member
-    // shares the name, when the notice cannot be attributed with confidence and stays as it was.
+    // shares the name, or a notice begins with a longer member name ("Jo Smith" when "Jo" leaves): then it cannot be
+    // attributed with confidence and stays as it was.
     let rewordedNotices = 0;
-    const shared = s.members.some(m => m.organizationId === org && m.userId !== userId && m.name === formerName);
-    if (formerName && !shared)
+    const others = s.members.filter(m => m.organizationId === org && m.userId !== userId).map(m => m.name);
+    if (formerName && !others.includes(formerName))
         for (const n of s.notifications)
-            if (n.organizationId === org && n.body.startsWith(formerName + ' ')) { n.body = 'A former member ' + n.body.slice(formerName.length + 1); rewordedNotices++; }
+            if (n.organizationId === org && n.body.startsWith(formerName + ' ') && !others.some(o => o.length > formerName.length && n.body.startsWith(o + ' '))) {
+                n.body = 'A former member ' + n.body.slice(formerName.length + 1); rewordedNotices++;
+            }
     s.audit.push({ id: makeId(), organizationId: org, createdAt: now, actorId: userId, action: 'member.account.deleted', objectId: member.id, metadata: { removed: Object.values(removed).reduce((a, b) => a + b, 0), releasedTasks, rewordedNotices } });
     s.revision = input.revision + 1;
     return { workspace: s, memberId: member.id, removed, releasedTasks, rewordedNotices };

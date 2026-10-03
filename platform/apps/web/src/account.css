@@ -21,3 +21,4 @@
 .farewell-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:6px}
 .former-member{color:var(--muted)}
 .former-thread{font-size:12px;line-height:1.6;color:var(--muted)}
+.team-list>.team-former{display:flex;align-items:center;gap:10px}

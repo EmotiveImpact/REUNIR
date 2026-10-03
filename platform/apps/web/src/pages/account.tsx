@@ -56,7 +56,7 @@ function DeleteAccountDialogue({ communities, onClose }: { communities: string[]
     };
     return <Modal title="Delete your account?" onClose={() => { if (!working) onClose(); }}>
         <form className="form-stack" onSubmit={submit} noValidate>
-            <p className="account-warning">This deletes your account{communities.length ? ` in ${listNames(communities)}` : ''} and cannot be undone. Your posts, comments and project work stay, shown as {FORMER_MEMBER}.</p>
+            <p className="account-warning">This deletes your account in every community you belong to{communities.length ? `, including ${listNames(communities)},` : ''} and cannot be undone. Your posts, comments and project work stay, shown as {FORMER_MEMBER}.</p>
             {mode === 'live'
                 ? <div className="account-field"><label htmlFor={passwordField}>Your password</label><input id={passwordField} type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} disabled={working}/></div>
                 : <p className="sample-note">This fictional demo has no passwords. A connected community asks for yours here.</p>}

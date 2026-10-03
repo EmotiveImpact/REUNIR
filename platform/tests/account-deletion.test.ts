@@ -76,6 +76,11 @@ test('notices in other inboxes lose the name, unless another member shares it', 
     const kept = eraseFromCommunity(twin, DEMO_USER, NOW, ids);
     assert.equal(kept.rewordedNotices, 0);
     assert.equal(kept.workspace.notifications.filter(n => n.userId === DEMO_ADMIN).at(-1)!.body, 'Alex Morgan replied to your post.', 'it could be about the other Alex Morgan');
+    // A longer name that begins with theirs belongs to someone else.
+    let longer = structuredClone(s); longer.members.find(m => m.userId === 'member_jordan')!.name = 'Alex Morgan Lee';
+    longer = run(longer, { type: 'post.comment', postId: 'post_welcome', body: 'Welcome from me too.' }, 'member_jordan');
+    const both = eraseFromCommunity(longer, DEMO_USER, NOW, ids).workspace.notifications.filter(n => n.userId === DEMO_ADMIN).map(n => n.body);
+    assert(both.includes('A former member replied to your post.') && both.includes('Alex Morgan Lee replied to your post.'));
 });
 
 test('everyone sees the former member as Former member, and they get no new notices, points or access', () => {

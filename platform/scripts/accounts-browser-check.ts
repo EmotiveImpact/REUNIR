@@ -60,7 +60,7 @@ try {
         await account();
         await page.getByRole('button', { name: 'Delete your account…', exact: true }).click();
         await expect(dialog().getByRole('heading', { name: 'Delete your account?' })).toBeVisible();
-        await expect(dialog()).toContainText('This deletes your account in Code Black and Studio North and cannot be undone.');
+        await expect(dialog()).toContainText('This deletes your account in every community you belong to, including Code Black and Studio North, and cannot be undone.');
         await expect(dialog()).toContainText('This fictional demo has no passwords.');
         await expect(dialog().getByLabel('Your password')).toHaveCount(0);
         await dialog().getByLabel('Type delete my account to confirm').fill('delete');
@@ -78,7 +78,7 @@ try {
         await neutral(); await a11y('farewell'); await overflow();
         await page.screenshot({ path: dir + '/farewell.png' });
     });
-    await check('the owner sees the kept comment and conversation as Former member, without a profile, photo or reply box', async () => {
+    await check('the owner sees the kept comment, conversation and team place as Former member, without a profile, photo or reply box', async () => {
         await page.getByRole('button', { name: 'See the community as Amina Okafor', exact: true }).click();
         await expect(page.locator('.topbar')).toBeVisible();
         await go('/discussions');
@@ -100,6 +100,12 @@ try {
         await expect(page.getByRole('note')).toHaveText('You can read this conversation, but you cannot reply to a former member.');
         await expect(page.locator('.message-bubble').first()).toContainText('Welcome, Alex.');
         await neutral(); await a11y('former-thread');
+        await go('/projects'); await page.locator('.project-card[href="/projects/project_common"]').click();
+        const former = page.locator('.team-list .team-former');
+        await expect(former.locator('strong')).toHaveText('Former member');
+        await expect(page.locator('.team-list a[href="/members/member_alex"]')).toHaveCount(0);
+        await expect(page.locator('.team-list a').filter({ hasText: 'Idris Cole' })).toHaveCount(1);
+        await neutral(); await a11y('former-teammate');
         await page.getByRole('button', { name: 'Account menu', exact: true }).click();
         await expect(page.getByRole('menuitem', { name: /Preview as member/ })).toHaveCount(0);
         await page.keyboard.press('Escape');
