@@ -112,7 +112,7 @@ test('the tables refuse a second featured collection, mismatched kinds and other
 test('an upgraded database keeps its records and starts with no collections', async () => {
     const old = await openDatabase('pglite:memory');
     try {
-        await migrate(old, '0021'); await new WorkspaceRepository(old).seed({ ...createSeed(), collections: [], collectionItems: [] });
+        await migrate(old, '0021'); await new WorkspaceRepository(old).seed({ ...createSeed(), collections: [], collectionItems: [], projectTasks: [], taskNotes: [], uploads: [], coverLibrary: [] });
         const posts = (await old.query('SELECT id,title FROM posts ORDER BY organization_id,id')).rows;
         await migrate(old);
         assert.deepEqual((await old.query('SELECT id,title FROM posts ORDER BY organization_id,id')).rows, posts);

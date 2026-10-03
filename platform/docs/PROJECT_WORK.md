@@ -1,6 +1,6 @@
 # Project work: workboards, task files and live updates
 
-Project workboards arrived in Alpha 05 (decisions/005-project-workspaces.md). Alpha A3 (placeholder number) adds files on tasks and live updates (decisions/031-task-files-and-live-project-work.md). UI_DESIGN_DIRECTION.md remains authoritative.
+Project workboards arrived in Alpha 05 (decisions/005-project-workspaces.md). Alpha 29 adds files on tasks and live updates (decisions/029-task-files-and-live-project-work.md). UI_DESIGN_DIRECTION.md remains authoritative.
 
 ## What people see and do
 
@@ -25,7 +25,7 @@ A project's workspace (**Open project workspace** on a project page) shows its t
 
 Access is decided at the moment of asking, so suspension, leaving the team or losing a private space ends it at once. When `ADMIN_TWO_FACTOR` is required, owners and administrators without two-step sign-in cannot attach to a team they are not on, or remove a file only their role lets them remove.
 
-One domain gate decides each kind of request: `canWorkOnProject` for seeing and attaching, `resolveTaskFileDownload` for downloads and `projectWorkVersion` for the change check. PostgreSQL repeats the boundary with four restrictive policies on `upload_intents` (migration 0031) that lean on the team policy for `project_tasks` from 0006.
+One domain gate decides each kind of request: `canWorkOnProject` for seeing and attaching, `resolveTaskFileDownload` for downloads and `projectWorkVersion` for the change check. PostgreSQL repeats the boundary with four restrictive policies on `upload_intents` (migration 0029) that lean on the team policy for `project_tasks` from 0006.
 
 ## Lifecycle (live mode)
 
@@ -50,14 +50,14 @@ The fictional demo runs the same rules in the browser and keeps file bytes in th
 
 ## Running it
 
-Apply migration 0031 with `npm run db:migrate`. No grant changes: task files live in `upload_intents`, already granted explicitly. Private storage needs the bucket configuration from SETUP.md section 6, as lesson files do; do not add a lifecycle rule that deletes objects under `task-files/`.
+Apply migration 0029 with `npm run db:migrate`. No grant changes: task files live in `upload_intents`, already granted explicitly. Private storage needs the bucket configuration from SETUP.md section 6, as lesson files do; do not add a lifecycle rule that deletes objects under `task-files/`.
 
-Checks: `tests/task-files.test.ts` (domain), `tests/task-files-database.test.ts` (0031 upgrade, restricted runtime role, forced RLS for team, non-team, suspended and other-community readers, constraints, account deletion, operator prune), `tests/task-files-http.test.ts` (upload intent, verification, download access, removal, change check with 304, concurrent edit conflict, two-step enforcement), the task-file step in `npm run test:postgres`, and `npm run test:browser:task-files` (two demo tabs: attach, verify, download, remove, live update, both conflict paths, axe on desktop and at 390 px).
+Checks: `tests/task-files.test.ts` (domain), `tests/task-files-database.test.ts` (0029 upgrade, restricted runtime role, forced RLS for team, non-team, suspended and other-community readers, constraints, account deletion, operator prune), `tests/task-files-http.test.ts` (upload intent, verification, download access, removal, change check with 304, concurrent edit conflict, two-step enforcement), the task-file step in `npm run test:postgres`, and `npm run test:browser:task-files` (two demo tabs: attach, verify, download, remove, live update, both conflict paths, axe on desktop and at 390 px).
 
 ## Limits and not yet done
 
-- No virus scanning yet (Alpha 23 adds it to the shared upload path; decision 031 names where its verdict gates download). Signature checks confirm the container, not that a file is harmless. Files are always downloads, never previews.
+- No virus scanning yet (Alpha 23 adds it to the shared upload path; decision 029 names where its verdict gates download). Signature checks confirm the container, not that a file is harmless. Files are always downloads, never previews.
 - No files on individual notes, no versions of a file, no renaming.
-- No presence ("who else is looking"), by choice; see decision 031.
+- No presence ("who else is looking"), by choice; see decision 029.
 - Live updates cover project workboards only, by polling every five seconds; there is no server push.
 - Real Google Cloud Storage signing, CORS and deletion are unverified against a real bucket.
