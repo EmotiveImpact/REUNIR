@@ -6,7 +6,7 @@
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/build-out-tvzn40` ([PR #21](https://github.com/EmotiveImpact/REUNIR/pull/21)), first opened on main `f5ec8d3` and brought up to main `b80fc04` (the merge of PR #23, Alpha 31) |
+| Implemented | Yes, on `claude/build-out-tvzn40` ([PR #21](https://github.com/EmotiveImpact/REUNIR/pull/21)), first opened on main `f5ec8d3` and brought up to main `16b2768` (the merge of PR #16, Alpha 23) |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
@@ -15,7 +15,7 @@
 
 ## Other releases merged into main while this slice was open
 
-Five other threads' releases reached main while this slice was open. Alpha 24 (group conversations) was merged as `d62424dc5b68cf9386757173a89464211f5b7021` on top of `f5ec8d3`, its tree `85e91e8022d87830336918d8765392698795b48d` identical to its tested head `5c97bb4` (CI runs 37123762116 and 37123778756). Alpha 26 (email confirmation and change) was then merged as `9b34cac`, its tree `2e61a0a1ea8f287c3fe3e8dc6a2f455f57a7e3b5` identical to its tested head `a427140` (CI runs 37124821464 and 37124825018). Alpha 25 (contributor roles for teaching, migration 0023) was merged as `fab9510`, its tree `b07530cedae56e6c312e45318a4797e395889069` identical to its tested head `518bc06` (CI runs 37126085213 and 37126087981); it also replaced the fixed migration counts in upgrade tests with a count of the migration files. Alpha 27 (loading, error and empty screens, no migration) was merged as `f9f32d6`, its tree `e9981087152749e62cb402b8f5d3eb0150030215` identical to its tested head `297dab8` (CI runs 37127344409 and 37127347035). Alpha 31 (data retention rules, migration 0030) was merged as `b80fc04`, its tree `3ab0d17291ed1aea25d4d25c5052c458c4cdf65c` identical to its tested head `5635bde` (CI runs 37128602184 and 37128604626). This slice merged all five in.
+Six other threads' releases reached main while this slice was open. Alpha 24 (group conversations) was merged as `d62424dc5b68cf9386757173a89464211f5b7021` on top of `f5ec8d3`, its tree `85e91e8022d87830336918d8765392698795b48d` identical to its tested head `5c97bb4` (CI runs 37123762116 and 37123778756). Alpha 26 (email confirmation and change) was then merged as `9b34cac`, its tree `2e61a0a1ea8f287c3fe3e8dc6a2f455f57a7e3b5` identical to its tested head `a427140` (CI runs 37124821464 and 37124825018). Alpha 25 (contributor roles for teaching, migration 0023) was merged as `fab9510`, its tree `b07530cedae56e6c312e45318a4797e395889069` identical to its tested head `518bc06` (CI runs 37126085213 and 37126087981); it also replaced the fixed migration counts in upgrade tests with a count of the migration files. Alpha 27 (loading, error and empty screens, no migration) was merged as `f9f32d6`, its tree `e9981087152749e62cb402b8f5d3eb0150030215` identical to its tested head `297dab8` (CI runs 37127344409 and 37127347035). Alpha 31 (data retention rules, migration 0030) was merged as `b80fc04`, its tree `3ab0d17291ed1aea25d4d25c5052c458c4cdf65c` identical to its tested head `5635bde` (CI runs 37128602184 and 37128604626). Alpha 23 (virus scanning of uploads, no migration) was merged as `16b2768`, its tree `10e737770f6d871a42842a8fccd6962668c45abe` identical to its tested head `3359707` (CI runs 37139393314 and 37139400276). This slice merged all six in. When a scanner is configured, the small copy of a cover is scanned too, and a flagged copy is deleted while the picture is kept.
 
 Numbering: Parallel threads now take numbers from agreed blocks, and this one holds Alpha 39 to 40, migrations 0038 to 0039 and decisions 039 to 040, so this release is Alpha 39 with migration 0038 and decision 039. It was first opened as Alpha 23, then renumbered to Alpha 27 before the blocks were agreed; gaps in the sequence on main are expected.
 
@@ -29,12 +29,12 @@ Numbering: Parallel threads now take numbers from agreed blocks, and this one ho
 
 ## Local verification, 3 October 2026
 
-Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). The full run below, every step including the new states suite, ran on this branch's tree on top of main `b80fc04`. An earlier full run on top of main `9b34cac`, before the renumbering to Alpha 39, also passed.
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). The full run below, every step including the new states suite, ran on this branch's tree on top of main `16b2768`. An earlier full run on top of main `9b34cac`, before the renumbering to Alpha 39, also passed.
 
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 708 passed, 0 failed (683 on main `b80fc04` plus 25: 6 library management, 6 small copies, 6 database tests under the restricted role including cross-tenant and inactive-role refusals, 7 HTTP) |
+| `npm test` | 722 passed, 0 failed (696 on main `16b2768` plus 26: 6 library management, 6 small copies, 6 database tests under the restricted role including cross-tenant and inactive-role refusals, 7 HTTP, 1 scanning of small copies) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
 | Demo-browser suites | 312 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 20 covers (3 new), 11 instructors, 13 accounts, 16 monochrome, 20 v4, 5 notifications, 11 groups, 12 states |
@@ -57,6 +57,58 @@ Tests changed rather than added: upgrade tests count the migration files (from P
 
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. When deployment resumes: follow LAUNCH_RUNBOOK.md, and run `npm run db:grant-runtime` after migrating.
+
+## Historical Alpha 23 evidence: virus scanning of uploads
+
+3 October 2026. Application version stays 0.31.0-alpha.1: Alpha 23 was allocated before it was built and reaches main after Alpha 31. When a ClamAV scanner is configured, every upload is scanned before it can be used; flagged files are deleted and uploads wait while the scanner is unavailable. Required by default in production. See decisions/023-upload-scanning.md, SECURITY.md and SETUP.md section 6.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/upload-scanning-1p9o9m`, from main `b24095a` (PR #14, Alpha 21), with main merged in at `ec4285d` (Alpha 22) and `b80fc04` (PR #23, Alpha 31, which brought Alpha 24 to 27) |
+| Verified locally | Yes: typecheck, `npm test`, `npm run test:http`, build, preview bundle, Python helpers and the research register (see below) |
+| Verified remotely (GitHub Actions) | Yes: runs 37139393314 and 37139400276 on `3359707` (application and postgres) |
+| Merged | Yes: [PR #16](https://github.com/EmotiveImpact/REUNIR/pull/16), merged into main as `16b2768` |
+| Deployed | No. No clamd, bucket, database or other service was created |
+| Operated with real members | No |
+
+## What changed
+
+- **`apps/api/src/scanner.ts`** speaks clamd's `INSTREAM` protocol over TCP with `node:net`: length-prefixed chunks, a zero-length end, and a strict reading of `stream: OK` or `stream: <signature> FOUND`. Anything else, a timeout (30 seconds) or a refused connection is `ScannerUnavailable`, never clean. No new runtime dependency.
+- **Upload completion** reads the whole object once at the generation just measured, scans it, and uses the same bytes for the signature and dimension checks. Lesson files, track and project covers, library pictures and member attachments are all covered.
+- **Flagged** files become `rejected`, are deleted and return 422 `FILE_FLAGGED`; the log records the request ID and signature name only. **No verdict** returns 503 `SCAN_UNAVAILABLE` and leaves the upload pending with its object kept, so completing again succeeds later.
+- **A rejected member attachment** now returns 409 `FILE_REJECTED` if completion is tried again, so a second upload under the same policy cannot be marked ready unscanned.
+- **Configuration:** `CLAMAV_HOST`, `CLAMAV_PORT` (default 3310) and `UPLOAD_SCANNING` (`required` or `optional`, required by default in production). A new `upload-scanning` pilot check blocks start-up when scanning is required, a bucket is set and no scanner is configured, or when the setting or port is invalid. `/api/account/capabilities` reports `uploadScanning`.
+- **`npm run scan:check`** pings a configured clamd and checks a harmless sample and the EICAR test file. It is not run in CI because no clamd is provisioned.
+- **Launch kit:** `npm run launch:preflight` fails a production environment with a bucket and no `CLAMAV_HOST` (unless `UPLOAD_SCANNING=optional`, which warns) or with an invalid setting or port, and never prints the host. LAUNCH_RUNBOOK.md section 6 adds running clamd on a private network beside the API, since Vercel functions cannot run it.
+- No migration; every existing migration is byte-identical. The release constant, package version and research register stay at main's 0.31.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22, npm 10, on this branch's tree after merging main `b80fc04`.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 696 passed, 0 failed: main's tests plus 12 in `tests/scanner.test.ts` (reply parsing, the clamd client against a stand-in clamd on a real TCP socket, silent, erroring and closed scanners, the settings and pilot check, and HTTP completion for lesson files, covers and member attachments with a stand-in scanner) and 1 launch-preflight test |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory) |
+| Python helpers, `scripts/check_research.py` | Passed; the register validates with 55 pinned sources and 18 register decisions |
+
+Browser suites and `npm run test:postgres` were not rerun locally: no interface, migration or grant changed. CI runs both on the pull request.
+
+## Not verified, and why
+
+- No real clamd was run. The client is tested against a stand-in that speaks the same wire protocol; `npm run scan:check` is the first check to run against a real one.
+- Files made ready before scanning was turned on are not rescanned, and stored files are not rescanned when signatures update.
+- clamd's `StreamMaxLength` must be at least 10 MB; a lower limit makes uploads wait with `SCAN_UNAVAILABLE` rather than pass.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Group conversations (Alpha 24) continue in their own thread.
+3. When deployment resumes: run clamd on a private network beside the API, set `CLAMAV_HOST`, and run `npm run scan:check`.
 
 ## Historical Alpha 31 evidence: data retention rules
 
