@@ -19,6 +19,8 @@ REUNIR kept every housekeeping record for ever: expired sign-in sessions and lin
 
 - Periods: expired sessions, links and rate counters one day after expiry; request receipts 30 days; change events 90 days; sent and cancelled mail records 90 days (their contents are already cleared when sent); failed mail contents 30 days, the record 90; read notices 180 days. Unread notices are never cleared.
 - Deleted content is not purged on a timer: the audit trail and reviewed evidence stay as long as the community exists, so decisions remain accountable and nothing reviewed is rewritten.
+- Undelivered mail is counted from when it finally failed (`email_outbox.failed_at`, added by migration 0023 and set by the mail worker), not from when it was queued, so mail that waited a long time still keeps its contents for 30 days. (Found in review on PR #23.)
+- The scheduler secret is required at launch even without mail, because the retention job needs it; the launch preflight fails without it. (Found in review on PR #23.)
 - Nothing is scheduled. Operators choose a daily schedule with the existing `CRON_SECRET` arrangement (PILOT_OPERATIONS.md).
 
 ## Not decided here

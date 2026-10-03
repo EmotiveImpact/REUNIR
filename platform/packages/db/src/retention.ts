@@ -30,9 +30,9 @@ export class RetentionJob {
                 expiredLinks: await n(sql, 'DELETE FROM auth_verification WHERE expires_at<$1 RETURNING id', [cut('expiredLinks')]),
                 rateCounters: await n(sql, 'DELETE FROM request_limits WHERE window_start<$1 RETURNING key', [cut('rateCounters')])
                     + await n(sql, 'DELETE FROM auth_rate_limit WHERE last_request<$1 RETURNING id', [retentionCutoff('rateCounters', now).getTime()]),
-                // Contents of undelivered mail go first; finished records, failed ones included, later.
-                failedMailContents: await n(sql, "UPDATE email_outbox SET payload='' WHERE status='failed' AND payload<>'' AND created_at<$1 RETURNING id", [cut('failedMailContents')]),
-                finishedMail: await n(sql, "DELETE FROM email_outbox WHERE status IN ('sent','cancelled','failed') AND coalesce(sent_at,created_at)<$1 RETURNING id", [cut('finishedMail')]),
+                // Contents of undelivered mail go first; finished records, failed ones included, later. Failed mail counts from when it failed.
+                failedMailContents: await n(sql, "UPDATE email_outbox SET payload='' WHERE status='failed' AND payload<>'' AND coalesce(failed_at,created_at)<$1 RETURNING id", [cut('failedMailContents')]),
+                finishedMail: await n(sql, "DELETE FROM email_outbox WHERE status IN ('sent','cancelled','failed') AND CASE status WHEN 'sent' THEN coalesce(sent_at,created_at) WHEN 'failed' THEN coalesce(failed_at,created_at) ELSE created_at END<$1 RETURNING id", [cut('finishedMail')]),
             }));
             const communities = await this.db.transaction(async sql => {
                 await sql.query("SELECT set_config('app.worker','retention',true)");
