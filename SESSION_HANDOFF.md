@@ -4,7 +4,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, decisions/025-con
 
 ## Where the source is
 
-- Base: main `3c770b5`, the merge of PR #24 (Alpha 35 teaching grants for chosen lessons), with main `f3efa39` (PR #26, Alpha 32 appeals) and main `e930e39` (PR #29, Alpha 33 evidence history) merged in. The application version stays 0.39.0-alpha.1 because Alpha 39 is already on main.
+- Base: main `3c770b5`, the merge of PR #24 (Alpha 35 teaching grants for chosen lessons), with main `f3efa39` (PR #26, Alpha 32 appeals) and main `e930e39` (PR #29, Alpha 33 evidence history) and main `5f7b827` (PR #30, Alpha 34 credits) merged in. The application version stays 0.39.0-alpha.1 because Alpha 39 is already on main.
 - This slice: branch `claude/courses-teaching-6hum2q`, restarted from that main. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Numbering: courses and teaching uses Alpha 35 to 38, decisions 035 to 038 and migrations 0034 to 0037, as allocated by the project coordinator on 3 October 2026. Other threads hold Alpha 27 to 34 and 39 to 40.
 
@@ -31,6 +31,40 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 ## Next
 
 1. Uploaded lesson video (Alpha 37, migration 0036), built locally in this thread and off until the operator sets `LESSON_VIDEO_MAX_MB`. Question banks, timers and partial marks wait for pilot needs.
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 34 handover: consented credits, the last accounts and trust item
+- Outcome: [PR #30](https://github.com/EmotiveImpact/REUNIR/pull/30), merged into main as `5f7b827`.
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, CREDITS.md, decisions/034-contribution-credits.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `e930e39`, the merge of PR #29 (Alpha 33, correcting and withdrawing reviewed evidence). The application version stays main's 0.39.0-alpha.1.
+- This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+
+### What is done
+
+The author of a contribution credits teammates; each person accepts or declines, and only accepted credits are shown, on the contribution and under Credited on in the person's profile. Credits never count as evidence. Invitations stay between the two people, under forced row security. Migration 0033.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+### Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores, notification settings, appeals and unanswered credits private. Reviewed evidence is corrected only through review and withdrawn only with a reason. A credit is shown only with the credited person's consent and is never evidence. Nobody decides about their own work. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+### Next
+
+1. Accounts and trust is complete for this round once this merges. Undecided: removing someone from a project team, credits on outcomes, and appeals against suspension or message-report outcomes.
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
 
 ---

@@ -23,7 +23,22 @@ Details:
 
 ### Planned
 
-- Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+- Nothing further is planned for accounts and trust in this round. Removing someone from a project team, credits on outcomes and appeals against suspension remain undecided.
+
+## Alpha 34: crediting teammates on a contribution (no version change), 3 October 2026
+
+On main through [PR #30](https://github.com/EmotiveImpact/REUNIR/pull/30), merged as `5f7b827`. This thread holds Alpha 31 to 34 and migrations 0030 to 0033, so this is Alpha 34 with decision 034 and migration 0033. Alpha 39 reached main first, so the application version stays 0.39.0-alpha.1.
+
+**In plain language:** when you record a contribution to a project, you can now credit the teammates who did the work with you. Each person is asked first and only appears once they accept. Accepted credits show on the contribution ("With Nia James") and on the person's profile under Credited on. A credit is a thank-you, not evidence: it never counts towards milestones, goals, outcomes or roles.
+
+Details:
+
+- **Credit a teammate** on your own contribution: an active member of the project's team, with an optional short description such as "co-author". They accept or decline; either of you can later remove an accepted credit.
+- Invitations, refusals and withdrawals are private to the two people involved. Administrators do not see them.
+- Someone who declined, or removed their own credit, cannot be asked again by the author. At most 10 live credits per contribution.
+- A person credited on a contribution cannot review it.
+- Additive migration 0033: `contribution_credits` under forced row security, with column-level updates on the answer and withdrawal fields only. Deleting your account deletes every credit naming you.
+- Community review, not accreditation (decision 034).
 
 ## Alpha 33: correcting and withdrawing reviewed evidence (no version change), 3 October 2026
 
