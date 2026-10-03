@@ -29,7 +29,7 @@ Details:
 
 ## Alpha 36: instructors start their own tracks (no version change), 3 October 2026
 
-On main through [PR #28](https://github.com/EmotiveImpact/REUNIR/pull/28), merged as `A36SHA`. Decision 036 and migration 0035, from the block allocated to courses and teaching. Alpha 39 is already on main, so the version stays 0.39.0-alpha.1.
+On main through [PR #28](https://github.com/EmotiveImpact/REUNIR/pull/28), merged as `99e919a`. Decision 036 and migration 0035, from the block allocated to courses and teaching. Alpha 39 is already on main, so the version stays 0.39.0-alpha.1.
 
 **In plain language:** someone who already teaches a whole track can now start a new track themselves instead of asking an administrator. The new track stays hidden from members until an owner or administrator publishes it. Administrators are told when a track is started, and the person who started it is told when it is published.
 

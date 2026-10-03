@@ -6,7 +6,7 @@
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `A36SHA` (the merge of PR #28, Alpha 36) |
+| Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `99e919a` (the merge of PR #28, Alpha 36) |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
@@ -31,7 +31,7 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 765 passed, 0 failed (7 new in `tests/lesson-video.test.ts`, 1 new in `tests/launch-preflight.test.ts`, which also checks the clamd stream warning) |
+| `npm test` | 831 passed, 0 failed with main's Alpha 32 to 34 merged in; the suites below ran before that merge and are being rerun (7 new in `tests/lesson-video.test.ts`, 1 new in `tests/launch-preflight.test.ts`, which also checks the clamd stream warning) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
 | Demo-browser suites | 300 passed across 17 suites, including 20 lesson resource checks (1 new: a creator uploads a WebM clip and a learner plays it) |
@@ -62,7 +62,7 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `3c770b5` (the merge of PR #24, Alpha 35, which brought Alpha 23, 28 and 39), with main `f3efa39` (PR #26, Alpha 32 appeals) and main `e930e39` (PR #29, Alpha 33 evidence history) and main `5f7b827` (PR #30, Alpha 34 credits) merged in |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Yes: [PR #28](https://github.com/EmotiveImpact/REUNIR/pull/28), merged into main as `A36SHA` |
+| Merged | Yes: [PR #28](https://github.com/EmotiveImpact/REUNIR/pull/28), merged into main as `99e919a` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 

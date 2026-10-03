@@ -4,7 +4,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, LESSON_RESOURCES.md, decisions/03
 
 ## Where the source is
 
-- Base: main `A36SHA`, the merge of PR #28 (Alpha 36 instructors start their own tracks). The application version stays 0.39.0-alpha.1 because Alpha 39 is already on main.
+- Base: main `99e919a`, the merge of PR #28 (Alpha 36 instructors start their own tracks). The application version stays 0.39.0-alpha.1 because Alpha 39 is already on main.
 - This slice: branch `claude/courses-teaching-6hum2q`, restarted from that main. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Numbering: courses and teaching uses Alpha 35 to 38, decisions 035 to 038 and migrations 0034 to 0037, as allocated by the project coordinator on 3 October 2026. Alpha 38 and migration 0037 are unused so far.
 
@@ -35,7 +35,7 @@ People + Purpose + Progress + Projects + Proof. Keep drafts private and publicat
 
 ---
 ## Historical Alpha 36 handover: instructors start their own tracks
-- Outcome: [PR #28](https://github.com/EmotiveImpact/REUNIR/pull/28), merged into main as `A36SHA`.
+- Outcome: [PR #28](https://github.com/EmotiveImpact/REUNIR/pull/28), merged into main as `99e919a`.
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, decisions/025-contributor-roles.md, decisions/035-lesson-grants.md, decisions/036-instructor-tracks.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 

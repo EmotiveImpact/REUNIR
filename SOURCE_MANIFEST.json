@@ -1,8 +1,8 @@
 {
-  "release": "REUNIR Alpha 36 instructors start their own tracks",
+  "release": "REUNIR Alpha 37 uploaded lesson video",
   "version": "0.39.0-alpha.1",
-  "sourceBaseline": "3c770b562edc7db120cd3ada2e40c6bddc639ea9",
-  "generatedAt": "2026-10-03T20:17:28.307616+00:00",
+  "sourceBaseline": "99e919a1ddab643da78adb4cb29159357604b4e4",
+  "generatedAt": "2026-10-03T20:30:15.656502+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "adf03e28f5ff0341db0e3bb0d582364fc85e9a13622b9996b151a2f40062993b",
-      "bytes": 46860
+      "sha256": "7c5e3e38a6ea4b02d3d4e5b4c7f14d57320ff1ca0a89f13fd073815ec38a3543",
+      "bytes": 48453
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "422ca693f1efb1017b2cde03d85437c10d2875f3c4ddfab7d7ea7599b5730c47",
-      "bytes": 103610
+      "sha256": "bdcb6ab8a9cb08af59c4497fa800598342d43809758ab67fcc1f420a120f2d28",
+      "bytes": 107042
     },
     {
       "path": "platform/.dockerignore",
@@ -46,8 +46,8 @@
     },
     {
       "path": "platform/.env.example",
-      "sha256": "334695227aa216e9a42e1b3b2142fc59d689e70ec590fb322f2117274e9074da",
-      "bytes": 2637
+      "sha256": "7c60afc5d898fafb3027577399c0a1073fdf2480de3467946990fc20c0284e72",
+      "bytes": 2768
     },
     {
       "path": "platform/.gitignore",
@@ -81,8 +81,8 @@
     },
     {
       "path": "platform/apps/api/src/app.ts",
-      "sha256": "bf62a2fef229d4033ed99bc2ff5f797f13f5ff8c96f8bafbbceb393743b17c1a",
-      "bytes": 43839
+      "sha256": "32be4f533705d9773bdd0cc729ad2cd45df1d9f4ac65d31639c9d9fd4de6870c",
+      "bytes": 45666
     },
     {
       "path": "platform/apps/api/src/auth.ts",
@@ -91,13 +91,13 @@
     },
     {
       "path": "platform/apps/api/src/bootstrap.ts",
-      "sha256": "b1e344486912fa0f68b6ace009d330cb9ee5cc7fe44264cbb6eb22f8dd834c28",
-      "bytes": 3189
+      "sha256": "60650ef6ffe1b51760079b0dbc3bf136771141690c3c652f2a74a10088cd2372",
+      "bytes": 3250
     },
     {
       "path": "platform/apps/api/src/config.ts",
-      "sha256": "4140cb4ecfe47bc55edca4de535a76f690d627da4fa6e230b6efd8f0e4d6bf73",
-      "bytes": 10350
+      "sha256": "3c82156a04d94d80ffaafa787047825abd5004e18572e2536bf3aae5bbb502ed",
+      "bytes": 10933
     },
     {
       "path": "platform/apps/api/src/digests.ts",
@@ -136,8 +136,8 @@
     },
     {
       "path": "platform/apps/api/src/storage.ts",
-      "sha256": "5b80a2b0dc99ec75316d580616d75b89b5f2eafceb59e295acf678cde2e89771",
-      "bytes": 6057
+      "sha256": "20b930265e3252465bec92841c9b39c400f9b2e51942b7a7ec2e49ea68a75edf",
+      "bytes": 6351
     },
     {
       "path": "platform/apps/web/index.html",
@@ -286,8 +286,8 @@
     },
     {
       "path": "platform/apps/web/src/components/lesson-resources.tsx",
-      "sha256": "d0bc977c5c6c2f22b4c726e0f1b67cd6f65d49ef139559b3fd5b66ad055d0952",
-      "bytes": 8377
+      "sha256": "e7fe95ad178c9640407dd4b6b4ad4b552c864facc27a8de74b3e3a7b7aad5c85",
+      "bytes": 8844
     },
     {
       "path": "platform/apps/web/src/components/notification-settings.tsx",
@@ -316,8 +316,8 @@
     },
     {
       "path": "platform/apps/web/src/components/resource-list.tsx",
-      "sha256": "3c5d385569abbe2038e9a51bbf074e8e89fe32a145ff23dc56e51050aa1718f8",
-      "bytes": 2613
+      "sha256": "22053247ebcf52c2b6a8af218912f92469a71c59f2034f62b9047f4ca65cefed",
+      "bytes": 5076
     },
     {
       "path": "platform/apps/web/src/components/retention.tsx",
@@ -416,8 +416,8 @@
     },
     {
       "path": "platform/apps/web/src/lesson-resources.css",
-      "sha256": "84cd13655485478cb69e180586eb42351d5f172c63f374d55481eb74081df75b",
-      "bytes": 4780
+      "sha256": "6febd1c117688d00aa1c73bb8020e3cdad35a69d629a9d21555037cd82707d71",
+      "bytes": 5059
     },
     {
       "path": "platform/apps/web/src/lib/account.ts",
@@ -426,8 +426,8 @@
     },
     {
       "path": "platform/apps/web/src/lib/context.tsx",
-      "sha256": "ec46424bff026f936a1ebcddeab45dcedb8b1a7dbf59dd6d02f2768966d9f462",
-      "bytes": 12106
+      "sha256": "f7e57e9c541de40d6fc6956a939ef66b0879c1fdc8ea7b5103c4513f691cca66",
+      "bytes": 12574
     },
     {
       "path": "platform/apps/web/src/lib/covers.ts",
@@ -486,8 +486,8 @@
     },
     {
       "path": "platform/apps/web/src/lib/resources.ts",
-      "sha256": "352d6aa5e3f6f8755f7f1bbf3d49fc9eb3e5572dcc10c75447ab5ece97df62a5",
-      "bytes": 6066
+      "sha256": "1f1ca03a0ac0c56436aa2aa86ed89e2f85153bdc33397ffd208d940a5b356863",
+      "bytes": 7665
     },
     {
       "path": "platform/apps/web/src/lib/two-factor.ts",
@@ -521,8 +521,8 @@
     },
     {
       "path": "platform/apps/web/src/pages/authoring.tsx",
-      "sha256": "ed146fb6299ded47784daa51a0e7db1ae2813e5c3fbe83c19edcddb560db6e62",
-      "bytes": 14817
+      "sha256": "3b361071b360cd16210fc8331d649ce904d804bf87b153b02b7bc2b6f68ff67b",
+      "bytes": 15046
     },
     {
       "path": "platform/apps/web/src/pages/collections.tsx",
@@ -546,8 +546,8 @@
     },
     {
       "path": "platform/apps/web/src/pages/learning.tsx",
-      "sha256": "15d3ed589ee905d1e582a317098c61958aa778a1976b1704fdc746afcd4e5037",
-      "bytes": 10426
+      "sha256": "0bec79b069a1da4bc981a377d84c20bd3b1f689cb048b5134537bda6144a2079",
+      "bytes": 10794
     },
     {
       "path": "platform/apps/web/src/pages/message-groups.tsx",
@@ -641,8 +641,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "21e6f159308e5bd605308ab301da37c68bc460637feb456ef85f67c26cf03303",
-      "bytes": 183142
+      "sha256": "1f8dbd6c226d1627c7d6adc0ae9fb30354c41c2190bbfba782e795eb26e46d01",
+      "bytes": 187687
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -686,8 +686,8 @@
     },
     {
       "path": "platform/docs/LAUNCH_RUNBOOK.md",
-      "sha256": "dc42a8dfbc48489fd6063cd8db345b694db474631adc16b645d1edf17a46f87c",
-      "bytes": 21159
+      "sha256": "8ff78b0dbd5a45c86271ea89e189fe4a131f6bc7d2f9f6b5896caf115569c0a9",
+      "bytes": 21410
     },
     {
       "path": "platform/docs/LEARNER_RECORDS.md",
@@ -696,8 +696,8 @@
     },
     {
       "path": "platform/docs/LESSON_RESOURCES.md",
-      "sha256": "7487ed4a48daee54a932af3beb8d7dc7ff1f71f38448188e90129ba238a759be",
-      "bytes": 7987
+      "sha256": "03afccc06fec9ff4b028e73775e1f5ad4cf498218358fff8ec448981fb9a614a",
+      "bytes": 9213
     },
     {
       "path": "platform/docs/MODERATION.md",
@@ -711,8 +711,8 @@
     },
     {
       "path": "platform/docs/PRD.md",
-      "sha256": "6703cfb33a9fd5a27532bd7555d0010645a1e01efa8e98458b0b22aee5e1e50e",
-      "bytes": 58170
+      "sha256": "b1672e12a39ab8dcb708b2485f582e846aba07408607c7dfe8759221c9b4c8a5",
+      "bytes": 59283
     },
     {
       "path": "platform/docs/PRODUCT_DOCTRINE.md",
@@ -741,8 +741,8 @@
     },
     {
       "path": "platform/docs/ROADMAP.md",
-      "sha256": "b396d6196be789ef70ce63c130ad5d34c5c1e470d092833cbfd8893bd3d3004c",
-      "bytes": 14648
+      "sha256": "013289da64bd98d31db38e7f216f7bfb347e504c697db22d81b807a555f16724",
+      "bytes": 14876
     },
     {
       "path": "platform/docs/SECURITY.md",
@@ -918,6 +918,11 @@
       "path": "platform/docs/decisions/036-instructor-tracks.md",
       "sha256": "0dc0f3d6a3e4ed2fc3af2ba932ad80315bb99b8499172e983ea31f2bdc20b37d",
       "bytes": 2198
+    },
+    {
+      "path": "platform/docs/decisions/037-lesson-video.md",
+      "sha256": "e2070f36a0858d055cd1dbc86b81d12f62be55d88ae48503e0d0d56470f586da",
+      "bytes": 2218
     },
     {
       "path": "platform/docs/decisions/039-cover-library-management-and-small-copies.md",
@@ -1291,8 +1296,8 @@
     },
     {
       "path": "platform/packages/contracts/src/lesson-resources.ts",
-      "sha256": "a0532a57723c03770d9d571e513221709ec72e1976c30a9f439253e152f42b3e",
-      "bytes": 8029
+      "sha256": "12877e775eb4765bd61384284c3ec859d4f4408bbeb841000d29c2493c722121",
+      "bytes": 10583
     },
     {
       "path": "platform/packages/contracts/src/messaging.ts",
@@ -1478,6 +1483,11 @@
       "path": "platform/packages/db/migrations/0035_instructor_tracks.sql",
       "sha256": "47a53cfc455ac9a85a5d696fd822b82932e589f8cc348c72c1ea72b65c187331",
       "bytes": 1434
+    },
+    {
+      "path": "platform/packages/db/migrations/0036_lesson_video.sql",
+      "sha256": "ffb7b9ee27e7d3b0943076cbe3f697cb7949049158203e8d4682567c982bd3a0",
+      "bytes": 533
     },
     {
       "path": "platform/packages/db/migrations/0038_cover_library_tags_and_thumbnails.sql",
@@ -1755,6 +1765,11 @@
       "bytes": 9823
     },
     {
+      "path": "platform/scripts/fixtures/lesson-clip.webm",
+      "sha256": "d621a8a8ce312ac5f549351573527344beef20e32dd10736cc8622fb78b150b9",
+      "bytes": 690
+    },
+    {
       "path": "platform/scripts/groups-browser-check.ts",
       "sha256": "a7691d3cae40e16be4c03e9b566a885badf7f6264c1ee3c32fc20a0a11e56b66",
       "bytes": 11024
@@ -1771,8 +1786,8 @@
     },
     {
       "path": "platform/scripts/launch-preflight.ts",
-      "sha256": "8c570b037e90e1a33e0529e9b87f2c0ab9e5292cf37afeee6a46aa46a3645475",
-      "bytes": 15169
+      "sha256": "6b43078696a6d6649b342d79af34453c653944da2c0c770c6cb96383b4f97b00",
+      "bytes": 16202
     },
     {
       "path": "platform/scripts/monochrome-browser-check.ts",
@@ -1831,8 +1846,8 @@
     },
     {
       "path": "platform/scripts/resources-browser-check.ts",
-      "sha256": "2360249406e36ef523bcf4d3932a6e7a357567e5003ebffff184c1e168f4b7d6",
-      "bytes": 14540
+      "sha256": "71fe750ac4d14b40898e793e2ddd38e3c489b108f8af65f776ac130420b92f04",
+      "bytes": 16169
     },
     {
       "path": "platform/scripts/resources-connected-check.ts",
@@ -2106,8 +2121,8 @@
     },
     {
       "path": "platform/tests/launch-preflight.test.ts",
-      "sha256": "71943e705e195af5e495f052132fdd359b48cc3b355e1a7f2a0b373f0ba2b33b",
-      "bytes": 10246
+      "sha256": "e1e590a99a675393c97ead5a5f1319667ee831d457d31a6430e5ac63c600e320",
+      "bytes": 11290
     },
     {
       "path": "platform/tests/learning-record-http.test.ts",
@@ -2128,6 +2143,11 @@
       "path": "platform/tests/lesson-grants.test.ts",
       "sha256": "4e60421ee693aeef05ca20fe316b524e6a5f42c82a3243aa0a33467211a0ef4a",
       "bytes": 7846
+    },
+    {
+      "path": "platform/tests/lesson-video.test.ts",
+      "sha256": "765d9591b0099eb3825028d4410b8a69ec75dba58850ac5daa7e4ff51ee49f64",
+      "bytes": 11823
     },
     {
       "path": "platform/tests/notifications-database.test.ts",
