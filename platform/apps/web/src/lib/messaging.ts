@@ -11,6 +11,14 @@ function store(slug:string):DemoChat {
  const now=new Date().toISOString();
  return memory[slug]={threads:[{id:'conversation_welcome',participantIds:['member_alex','member_amina'],createdAt:now,updatedAt:now,lastBody:'',unread:1,blocked:false,blockedByMe:false}],messages:[{id:'message_welcome',conversationId:'conversation_welcome',senderId:'member_amina',body:'Welcome, Alex. What are you working towards, and what would help you take your next step?',createdAt:now}],read:{},blocks:[],reports:[],keys:{}};
 }
+/** A deleted demo account's read state, blocks and request keys go. Its messages stay with the people it wrote to. */
+export function forgetDemoChat(slug:string,userId:string){
+ const s=store(slug),mine=(key:string)=>key.startsWith(userId+':');
+ for(const key of Object.keys(s.read))if(mine(key))delete s.read[key];
+ for(const key of Object.keys(s.keys))if(mine(key))delete s.keys[key];
+ s.blocks=s.blocks.filter(([blocker])=>blocker!==userId);
+ try{localStorage.setItem('reunir.chat.v1.'+slug,JSON.stringify(s));}catch{}
+}
 export async function messageRequest<T>(slug:string,userId:string,path:string,body?:unknown,key?:string):Promise<T>{
  if(mode==='live')return api<T>(`/api/organisations/${encodeURIComponent(slug)}/${path}`,body,key);
  const w=demoState(slug),actor=actorFor(w,{organizationId:w.organisation.id,userId,requestId:newId()}),s=store(slug);

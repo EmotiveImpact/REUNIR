@@ -13,6 +13,8 @@ export interface Identity {
     memberships: {
         slug: string;
         name: string;
+        /** Present in live mode; the demo reads roles from its fictional communities. */
+        role?: string;
     }[];
 }
 export async function api<T>(path: string, body?: unknown, requestKey?: string): Promise<T> {

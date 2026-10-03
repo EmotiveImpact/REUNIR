@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "release": "0.14.0-alpha.1",
+  "release": "0.15.0-alpha.1",
   "reviewedOn": "2026-10-03",
   "scope": "Targeted source/document review, not a fresh whole-repository audit, full runtime comparison or a legal opinion. Previously captured commit snapshots were deliberately re-read; no claim that all are current HEAD.",
   "donorApplicationFilesImported": 0,
@@ -607,6 +607,58 @@
       "lesson": "Quiz submissions are listed newest first, 24 at a time, with load more and filters by quiz, member and course.",
       "url": "https://github.com/frappe/lms/blob/071266699d3ed984eeff7f3e3658d259fd946a97/frontend/src/pages/QuizSubmissions.vue",
       "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "discourse-user-anonymizer",
+      "project": "Discourse",
+      "repository": "discourse/discourse",
+      "revision": "67bc74d0d83f8037ec538c1299b8d8cb59211319",
+      "file": "app/services/user_anonymizer.rb",
+      "blob": "248109dedd568ae9261faeaa5ad23790ec672ac9",
+      "reviewedRange": "complete file, 128 lines",
+      "licence": "GPL-2.0-or-later at repository root; behavioural reference only",
+      "lesson": "Anonymising keeps posts in one transaction: a fresh anon handle, a random password, profile, avatar and email cleared, every sign-in token and key destroyed, and the old username rewritten where other content refers to it.",
+      "url": "https://github.com/discourse/discourse/blob/67bc74d0d83f8037ec538c1299b8d8cb59211319/app/services/user_anonymizer.rb",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "discourse-user-destroyer",
+      "project": "Discourse",
+      "repository": "discourse/discourse",
+      "revision": "67bc74d0d83f8037ec538c1299b8d8cb59211319",
+      "file": "app/services/user_destroyer.rb",
+      "blob": "4dc074b701dea798650c241a974044029c114419",
+      "reviewedRange": "lines 1\u201390 of 225",
+      "licence": "GPL-2.0-or-later at repository root; behavioural reference only",
+      "lesson": "Deleting a user removes their bookmarks, drafts, flags and every like in one transaction, and refuses while posts remain unless they are deleted too.",
+      "url": "https://github.com/discourse/discourse/blob/67bc74d0d83f8037ec538c1299b8d8cb59211319/app/services/user_destroyer.rb",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "humhub-user-soft-delete",
+      "project": "HumHub",
+      "repository": "humhub/humhub",
+      "revision": "c58fc49f5c99913fe126c4f622822398e194fdb2",
+      "file": "protected/humhub/modules/user/models/User.php",
+      "blob": "0a31f2c349427450d8b8ab07b4c1cb1d37176d3c",
+      "reviewedRange": "lines 503\u2013563 of 1059",
+      "licence": "AGPL-3.0-or-later or proprietary (dual licence) at repository root; behavioural reference only",
+      "lesson": "Soft delete keeps contributions but deletes the profile, images, invitations sent and addressed to the email, follows, passwords, sessions and linked sign-ins, then blanks the email and renames the account.",
+      "url": "https://github.com/humhub/humhub/blob/c58fc49f5c99913fe126c4f622822398e194fdb2/protected/humhub/modules/user/models/User.php",
+      "reviewedOn": "2026-10-03"
+    },
+    {
+      "id": "humhub-user-delete-form",
+      "project": "HumHub",
+      "repository": "humhub/humhub",
+      "revision": "c58fc49f5c99913fe126c4f622822398e194fdb2",
+      "file": "protected/humhub/modules/admin/models/forms/UserDeleteForm.php",
+      "blob": "b1e4291a07094c4323df22fc7fff88bcbd0d5f75",
+      "reviewedRange": "lines 30\u2013131 of 150",
+      "licence": "AGPL-3.0-or-later or proprietary (dual licence) at repository root; behavioural reference only",
+      "lesson": "An administrator chooses whether contributions stay (soft delete) or go, and owned spaces are either transferred to the administrator or deleted.",
+      "url": "https://github.com/humhub/humhub/blob/c58fc49f5c99913fe126c4f622822398e194fdb2/protected/humhub/modules/admin/models/forms/UserDeleteForm.php",
+      "reviewedOn": "2026-10-03"
     }
   ],
   "decisions": [
@@ -985,6 +1037,40 @@
         "platform/scripts/assessments-browser-check.ts",
         "platform/scripts/assessments-connected-check.ts",
         "platform/scripts/postgres-check.ts"
+      ]
+    },
+    {
+      "id": "account-deletion",
+      "status": "implemented",
+      "mode": "behaviour_reference",
+      "sources": [
+        "discourse-user-anonymizer",
+        "discourse-user-destroyer",
+        "humhub-user-soft-delete",
+        "humhub-user-delete-form",
+        "learnhouse-account-deletion",
+        "learnhouse-delete-user-cascade"
+      ],
+      "decision": "Let a signed-in person delete their own account after re-entering their password and typing a phrase. In one transaction across every community, keep posts, comments, project work, lessons, files, covers and sent messages, attributed to one scrubbed membership shown as Former member; delete their personal records (likes, saved posts, notices, goals, learning record, grants, read state, blocks, private files, invitations to their address and queued mail) and their sign-in. Refuse owners rather than delete or transfer a community. Reword notices that name them unless the name is shared, audit counts only, and let row security admit only the person's own rows while the transaction is marked as their own deletion. No donor source copied; the GPL and AGPL projects are behavioural references only.",
+      "implementation": [
+        "platform/packages/domain/src/account-deletion.ts",
+        "platform/packages/contracts/src/account.ts",
+        "platform/packages/db/migrations/0015_account_deletion.sql",
+        "platform/packages/db/src/repository.ts",
+        "platform/packages/db/src/runtime-role.ts",
+        "platform/apps/api/src/app.ts",
+        "platform/apps/api/src/mail.ts",
+        "platform/apps/web/src/pages/account.tsx",
+        "platform/apps/web/src/lib/account.ts"
+      ],
+      "tests": [
+        "platform/tests/account-deletion.test.ts",
+        "platform/tests/account-deletion-database.test.ts",
+        "platform/tests/account-deletion-http.test.ts",
+        "platform/scripts/accounts-browser-check.ts",
+        "platform/scripts/accounts-connected-check.ts",
+        "platform/scripts/postgres-check.ts",
+        "platform/scripts/pilot-http-check.ts"
       ]
     }
   ],

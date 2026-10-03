@@ -16,6 +16,7 @@ import { coverLibraryObjectKey, coverObjectKey, isMissingObject, objectKey, reso
 import { clientUpload, type StoredObservation } from '../../../packages/domain/src/resources';
 import { learningRecordFilename } from '../../../packages/domain/src/learning-record';
 import { SIGNATURE_BYTES, fileSignatureMatches, resourceUploadRequest, type ResourceContext } from '../../../packages/contracts/src/lesson-resources';
+import { accountDeletionRequest } from '../../../packages/contracts/src/account';
 import { COVER_HEAD_BYTES, coverBytesAcceptable, coverLibraryUploadRequest, coverSubject, coverUploadRequest } from '../../../packages/contracts/src/covers';
 export interface SessionIdentity {
     id: string;
@@ -32,8 +33,10 @@ interface Dependencies {
     mail?: MailQueue;
     cronSecret?: string;
     registerInvited?: (name:string,email:string,password:string)=>Promise<{id:string}>;
+    /** Checks the signed-in person's current password. False only for a wrong password. */
+    verifyPassword?: (headers: Headers, password: string) => Promise<boolean>;
 }
-export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, invitations, mail, cronSecret, registerInvited }: Dependencies) {
+export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, invitations, mail, cronSecret, registerInvited, verifyPassword }: Dependencies) {
     const messaging=new MessagingRepository(repository);
     const canonical = new URL(origin).origin;
     const app = new Hono<{
@@ -90,6 +93,22 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         try {user=await registerInvited(body.name,email,body.password);} catch {throw new DomainError('ACCOUNT_ACCESS','Unable to create this account. Already registered? Sign in, or use password recovery.',409);}
         // Registration uses the auth provider. A revoke race can leave a non-member account, never access.
         return c.json(await invitations!.accept(body.token,user.id),201);
+    });
+    // Deleting your own account: password re-entered, the phrase typed, owners refused, one transaction, then the stored
+    // private files. The session rows go with the account, and the cookie is cleared as well.
+    app.post('/api/account/delete', async c => {
+        const who = await resolveSession(c.req.raw.headers);
+        if (!who) throw new DomainError('UNAUTHENTICATED', 'Please sign in.', 401);
+        if (!verifyPassword) throw new DomainError('UNAVAILABLE', 'Account deletion is not configured.', 503);
+        if (!await repository.consumeRateLimit('account-delete:' + who.id, 5, 900)) throw new DomainError('RATE_LIMITED', 'Too many attempts. Wait a few minutes before trying again.', 429);
+        const body = accountDeletionRequest.parse(await c.req.json());
+        if (!await verifyPassword(c.req.raw.headers, body.password)) throw new DomainError('WRONG_PASSWORD', 'That password is not right.', 403);
+        const { summary, files } = await repository.deleteAccount(who.id, mail ? (sql, email) => mail.forget(email, sql) : undefined);
+        await removeQuietly(c.get('requestId'), files);
+        const secure = new URL(canonical).protocol === 'https:';
+        for (const name of secure ? ['__Secure-reunir.session_token', 'reunir.session_token'] : ['reunir.session_token'])
+            c.header('Set-Cookie', `${name}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`, { append: true });
+        return c.json({ deleted: true, summary });
     });
     app.on(['GET', 'POST'], '/api/auth/*', c => authHandler ? authHandler(c.req.raw) : c.json({ error: { code: 'AUTH_UNAVAILABLE', message: 'Authentication is not configured.' } }, 503));
     app.get('/api/session', async (c) => { const who = await resolveSession(c.req.raw.headers); return c.json(who ? { ...who, memberships: await repository.memberships(who.id) } : null); });

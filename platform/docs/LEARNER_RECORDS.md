@@ -37,11 +37,11 @@ This deletes the member's knowledge-check attempts in that community (their answ
 
 What it does not erase, and why:
 
-- The member's account, profile, enrolments, completions, posts, projects and missions. Accounts are shared across communities; account deletion and identity scrubbing are separate work.
+- The member's account, profile, enrolments, completions, posts, projects and missions. Accounts are shared across communities; account deletion and identity scrubbing are separate work (Alpha 15: people delete their own account, see ACCOUNTS.md).
 - Reviewers' notices that the member answered a check ("A knowledge check needs feedback"). They sit in reviewers' inboxes and name the member and lesson only.
 - Audit and outbox entries about attempts, which hold record IDs and actors, not answers.
 
-Migration 0014 makes this possible under forced row security: one delete policy on attempts that admits only the member named in the transaction's `app.erasure_subject`, when the acting user is an active owner. The runtime role has no delete privilege on attempts, so the application itself can never erase.
+Migration 0014 makes this possible under forced row security: one delete policy on attempts that admits only the member named in the transaction's `app.erasure_subject`, when the acting user is an active owner. The runtime role has no delete privilege on attempts, so the application itself can never erase. (From Alpha 15 it holds that privilege only so a person's own attempts can go with their own account; a restrictive policy keeps this erasure out of its reach. See ACCOUNTS.md.)
 
 ### Clear unused cover files
 

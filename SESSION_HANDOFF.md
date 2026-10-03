@@ -1,17 +1,54 @@
-# Current continuation: Alpha 14 learner records
+# Current continuation: Alpha 15 account deletion
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, ACCOUNTS.md, LEARNER_RECORDS.md, ROADMAP.md and research/notes/20_ACCOUNT_DELETION.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+## Where the source is
+
+- Base: main `661fac9d921292f4d7432c1df4c7b98827cf6211`, the merge of PR #5 (Alpha 11 to 14), whose tree matched its tested head and whose push to main passed CI run 37101346869.
+- This slice: branch `claude/laughing-goodall-2p7z0v`, restarted from that main as a fresh change, [PR EmotiveImpact/REUNIR#6](https://github.com/EmotiveImpact/REUNIR/pull/6). Tested commit `67623fb`; BUILD_STATUS.md records the local runs and the CI receipt. Merging into main needs the owner's approval.
+
+## What is done
+
+Account deletion is implemented and verified locally (see BUILD_STATUS.md for exact counts). **Your account** in the account menu lists the person's communities and says what deletion keeps and removes. After the current password (checked by Better Auth) and the typed phrase "delete my account", one transaction deletes the account in every community: each membership becomes the same scrubbed "Former member" record; posts, comments, project work, lessons, files, covers, reports and sent messages stay; personal records, the learning record, private files, invitations to the address, queued mail, sessions and the account go. Owners are refused. Former members read as Former member everywhere, with no photo, profile link or directory place, and conversations with them are read-only. Migration 0015 adds policies that admit only the person's own rows while their own deletion is marked, and 0016 extends that to invitations sent to their own address in any community; 0001 to 0015 are unchanged; rerun `npm run db:grant-runtime` after migrating. The Codex review of PR #6 found three gaps (invitations to communities never joined, older `left` memberships sent in full to the browser, and an invitation accepted during a deletion); all three are fixed with tests, as BUILD_STATUS.md records.
+
+## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Account menu → Your account → Delete your account…, type "delete my account", then See the community as Amina Okafor (the owner) to find the kept comment on Common Ground, the read-only conversation and the team place as Former member; Restart the demo brings everyone back. Preview as admin shows the owner refusal. For PostgreSQL: `npm run db:migrate`, then `npm run db:grant-runtime`.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (including `accounts` and `accounts-connected`), and `npm run test:postgres` against a disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+## Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages and scores private. A deleted person's shared work stays as Former member and is never gathered back into a profile. Authority is granted, never inferred from attribution or engagement. Pictures keep their own colours and carry no words; the interface stays black, white and neutral grey. Community review is not accreditation.
+
+## Next
+
+1. Owner review of the account deletion pull request in the demo, then merge with the owner's approval and read back main.
+2. Ownership transfer, so an owner can hand a community over and then delete their account.
+3. Server-side pagination for review queues and other long lists, beyond the bounded workspace snapshot.
+4. Deployment remains deferred by the user: Neon, Vercel, bucket, sender and scheduler are all unprovisioned.
+
+---
+## Historical Alpha 14 handover: learner records
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, LEARNER_RECORDS.md, COVERS.md, ASSESSMENTS.md, ROADMAP.md and research/notes/19_LEARNER_RECORDS.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
-## Where the source is
+### Where the source was
 
 - Base: main `365e1c9a822297ce471083d891eea1f1256e0c63`, the merge of PR #4 (Alpha 10 knowledge checks). Main had not moved when this slice was pushed.
 - This slice and the three before it: branch `claude/laughing-goodall-2p7z0v`, [PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5). Alpha 11 (receipt `bffa3b7`), Alpha 12 (receipt `98fcee5`) and Alpha 13 (receipt `0fb6903`; CI runs 37098543959 and 37098546160 green on `be9c6c8`) were verified, pushed and recorded first. Alpha 14 learner records follows on the same branch; its head `d52fbcd` passed CI runs 37100233918 (push) and 37100236985 (pull request), recorded in the BUILD_STATUS.md receipt. The owner approved merging PR #5 into main on 3 October 2026 once CI is green.
 
-## What is done
+### What is done
 
 Learner records are implemented and verified locally (see BUILD_STATUS.md for exact counts). A member downloads their own learning record for one community from their profile: everything that is theirs, with titles, names and answer keys exactly as their screen shows them. Operators can erase one member's knowledge-check answers on a request an active owner authorised (`npm run db:erase-learner`, dry run unless `ERASE=yes`, audit of reference and counts only) and clear unused cover files (`npm run db:prune-covers`). Review queues show 20 at a time with exact totals. Migration 0014 adds one owner-scoped delete policy on attempts; 0001 to 0013 are unchanged; the runtime role still cannot delete attempts.
 
-## Run it
+### Run it
 
 ```sh
 cd platform
@@ -23,11 +60,11 @@ Open your profile from the account menu and choose Download your learning record
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (the `assessments` and `assessments-connected` suites include the record download and queue paging), and `npm run test:postgres` against a disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure, tenant isolation and role checks current, private goals, messages and scores private. Authority is granted, never inferred from attribution or engagement. Pictures keep their own colours and carry no words; the interface stays black, white and neutral grey. Community review is not accreditation.
 
-## Next
+### Next, as recorded then
 
 1. Merge PR #5 (Alpha 11 to 14) into main, as the owner approved, and read back main.
 2. Account deletion, as the owner decided: posts, comments and project work stay, shown as "Former member"; name, photo and profile are removed; private things (goals, notes, the learning record) are deleted; direct messages stay for the other person. Owners cannot delete their account until ownership can be handed over.

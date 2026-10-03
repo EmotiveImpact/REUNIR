@@ -25,6 +25,22 @@ export class MailQueue {
         return id;
     }
 
+    /**
+     * Unsent mail outside any invitation (password resets) addressed to an account being deleted. Recipients exist only
+     * inside the sealed payload, so each one is opened to compare. Returns how many were removed.
+     */
+    async forget(email:string, sql:SQL=this.db) {
+        const address=email.trim().toLowerCase();
+        const rows=await sql.query<{id:string;payload:string}>("SELECT id,payload FROM email_outbox WHERE invitation_id IS NULL AND payload<>''");
+        let removed=0;
+        for(const row of rows.rows) {
+            let to='';
+            try { to=this.open(row.payload).to.trim().toLowerCase(); } catch { continue; }
+            if(to===address) removed+=(await sql.query('DELETE FROM email_outbox WHERE id=$1 RETURNING id',[row.id])).rows.length;
+        }
+        return removed;
+    }
+
     async drain(limit=20, maxMilliseconds=18000) {
         if(!Number.isInteger(limit) || limit<1 || limit>50)throw new Error('Mail batch must be an integer from 1 to 50.');
         if(!Number.isFinite(maxMilliseconds) || maxMilliseconds<1 || maxMilliseconds>120000)throw new Error('Invalid mail execution budget.');

@@ -1,5 +1,5 @@
 import { DomainError, type Command, type Workspace, type TenantContext, type Member, type Milestone, type Purpose } from '../../contracts/src/index';
-import { actorFor, canSeeSpace, isAdmin } from './access';
+import { actorFor, canSeeSpace, isAdmin, isFormer } from './access';
 
 /** Additive browser-state upgrade. Never invent a purpose or evidence for existing user data. */
 export function normalisePurposeState(s: Workspace): Workspace {
@@ -65,7 +65,7 @@ export function applyPurposeCommand(s: Workspace, ctx: TenantContext, cmd: Comma
     const project = (id:string) => {const p=find(s.projects,id); space(p.spaceId); return p;};
     const path = (id:string) => {const p=find(s.paths,id); space(p.spaceId); if(p.status!=='published'&&!isAdmin(actor)) missing(); return p;};
     const result = (objectId:string,message:string,audit=false,changed=true):Result=>({objectId,message,audit,changed});
-    const notify = (userId:string,title:string,body:string,href:string) => {if(userId!==ctx.userId) s.notifications.push({...base(),userId,title,body,href,readAt:null});};
+    const notify = (userId:string,title:string,body:string,href:string) => {if(userId!==ctx.userId && !isFormer(s,userId)) s.notifications.push({...base(),userId,title,body,href,readAt:null});};
     const teamMember = (projectId:string) => s.projectMembers.some(m=>m.projectId===projectId&&m.userId===ctx.userId);
     const approvedSubmission = (id:string) => {const x=find(s.submissions,id); const m=find(s.missions,x.missionId); space(m.spaceId); if(m.trackId) space(find(s.tracks,m.trackId).spaceId); return x;};
     const sourceSpaces = (m: Pick<Milestone,'lessonId'|'missionId'|'projectId'>): (string|null)[] => {

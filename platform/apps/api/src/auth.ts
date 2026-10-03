@@ -23,3 +23,10 @@ export function createAuth(db: Database, baseURL: string, secret: string, bootst
         advanced: { cookiePrefix: 'reunir', useSecureCookies: base.protocol === 'https:', defaultCookieAttributes: { httpOnly: true, sameSite: 'lax', secure: base.protocol === 'https:' } },
     });
 }
+/** The signed-in person's current password, checked by Better Auth. False only for a wrong password; other errors rise. */
+export function passwordCheck(auth: ReturnType<typeof createAuth>) {
+    return async (headers: Headers, password: string) => {
+        try { await auth.api.verifyPassword({ body: { password }, headers }); return true; }
+        catch (error) { if ((error as { body?: { code?: string } }).body?.code === 'INVALID_PASSWORD') return false; throw error; }
+    };
+}

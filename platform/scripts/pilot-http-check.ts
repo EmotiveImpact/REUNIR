@@ -8,7 +8,7 @@ import {resolve} from 'node:path';
 import {openDatabase} from '../packages/db/src/connection';
 import {migrate} from '../packages/db/src/migrate';
 import {WorkspaceRepository} from '../packages/db/src/repository';
-import {createAuth} from '../apps/api/src/auth';
+import {createAuth,passwordCheck} from '../apps/api/src/auth';
 import {createApp} from '../apps/api/src/app';
 import {MailQueue,type Mail} from '../apps/api/src/mail';
 import {PilotOperations} from '../apps/api/src/operations';
@@ -25,7 +25,7 @@ const registrar=createAuth(db,origin,secret,true),owner=await registrar.api.sign
 await repo.createCommunity({id:owner.user.id,name:'HTTP Owner'},'pilot','HTTP Pilot');
 const auth=createAuth(db,origin,secret,false,queue),invitations=new InvitationService(repo,origin,queue);
 const ops=new PilotOperations(repo,{NODE_ENV:'test',APP_ORIGIN:origin,DATABASE_URL:'pglite:memory',BETTER_AUTH_SECRET:secret,VITE_DATA_MODE:'live'});
-const app=createApp({repository:repo,origin,operations:ops,mail:queue,invitations,cronSecret:secret,
+const app=createApp({repository:repo,origin,operations:ops,mail:queue,invitations,cronSecret:secret,verifyPassword:passwordCheck(auth),
  registerInvited:async(name,email,password)=>{const r=await registrar.api.signUpEmail({body:{name,email,password}});return {id:r.user.id};},
  authHandler:r=>auth.handler(r),resolveSession:async headers=>{const s=await auth.api.getSession({headers});return s?{id:s.user.id,name:s.user.name}:null;}});handler=app.fetch;
 const results:{name:string;passed:boolean}[]=[];
@@ -51,6 +51,8 @@ await check('owner receives real redacted operational observations over HTTP',as
 await check('unauthenticated requests cannot inspect pilot operations',async()=>{assert.equal((await call('/api/organisations/pilot/pilot-status')).status,401);});
 await check('ordinary active member cannot inspect owner operations',async()=>{const sign=await call('/api/auth/sign-in/email',{email:'creator@example.test',password:'Replacement-test-password-456!'});assert.equal(sign.status,200);assert.equal((await call('/api/organisations/pilot/pilot-status',undefined,cookies(sign))).status,403);});
 await check('operational report excludes actual account addresses and reset credentials',async()=>{const r=await call('/api/organisations/pilot/pilot-status',undefined,ownerCookie),raw=await r.text();for(const sensitive of [origin,secret,'owner@example.test','creator@example.test',resetToken,'My real HTTP message.'])assert(!raw.includes(sensitive));});
+await check('account deletion checks the password with Better Auth and refuses the owner',async()=>{const sign=await call('/api/auth/sign-in/email',{email:'creator@example.test',password:'Replacement-test-password-456!'});guestCookie=cookies(sign);const wrong=await call('/api/account/delete',{password:'Not-the-password-789!',confirmation:'delete my account'},guestCookie);assert.equal(wrong.status,403);assert.equal((await wrong.json()).error.code,'WRONG_PASSWORD');const owned=await call('/api/account/delete',{password:'Owner-test-password-123!',confirmation:'delete my account'},ownerCookie);assert.equal(owned.status,409);assert.match((await owned.json()).error.message,/You own HTTP Pilot/);});
+await check('a member deletes their own account: the session ends, sign-in fails and their messages read as from a former member',async()=>{const r=await call('/api/account/delete',{password:'Replacement-test-password-456!',confirmation:'delete my account'},guestCookie);assert.equal(r.status,200);assert.equal((await r.json()).deleted,true);assert.match(r.headers.getSetCookie().join('\n'),/reunir\.session_token=; Path=\/; Max-Age=0/);assert.equal(await(await call('/api/session',undefined,guestCookie)).json(),null);assert.equal((await call('/api/organisations/pilot/workspace',undefined,guestCookie)).status,401);assert.equal((await call('/api/auth/sign-in/email',{email:'creator@example.test',password:'Replacement-test-password-456!'})).status,401);const seen=await(await call('/api/organisations/pilot/workspace',undefined,ownerCookie)).json();assert.deepEqual(seen.members.filter((m:{userId:string})=>m.userId===guestId).map((m:{name:string;status:string})=>[m.name,m.status]),[['Former member','left']]);const thread=await(await call(`/api/organisations/pilot/conversations/${threadId}/messages`,undefined,ownerCookie)).json();assert(thread.items.some((m:{senderId:string})=>m.senderId===guestId),'the conversation stays with the owner');assert.equal((await db.query('SELECT count(*)::int AS n FROM auth_user WHERE email=$1',['creator@example.test'])).rows[0].n,0);});
 await check('public liveness reveals only version and process response',async()=>{const r=await call('/api/health/live');assert.equal(r.status,200);assert.deepEqual(await r.json(),{status:'ok',version:RELEASE_VERSION});});
 await writeFile(dir+'/http-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Node HTTP server + fetch clients + Better Auth cookies + PGlite. Captured email transport; no external email or cloud deployment.',results},null,2));console.log(`${results.length} real HTTP checks passed`);
 }catch(e){await writeFile(dir+'/http-results.json',JSON.stringify({results,failure:String(e)},null,2));throw e;}finally{await new Promise<void>(r=>server.close(()=>r()));await db.close();}

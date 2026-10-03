@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomUUID, randomBytes, createHash } from 'node:crypto';
 import { plainLessonDocument } from '../packages/contracts/src/lesson-document';
 import { lessonContent } from '../packages/domain/src/authoring';
 import { quizFingerprint } from '../packages/contracts/src/assessments';
@@ -12,6 +12,8 @@ import {runtimeRoleIsSafe} from '../packages/db/src/runtime-safety';
 import {WorkspaceRepository,setContext} from '../packages/db/src/repository';
 import {createSeed,DEMO_USER,DEMO_ADMIN} from '../packages/domain/src/seed';
 import {PilotOperations} from '../apps/api/src/operations';
+import {InvitationService} from '../apps/api/src/invitations';
+import {MailQueue} from '../apps/api/src/mail';
 import {inspectMigrations} from '../packages/db/src/inspection';
 const url=new URL(process.env.POSTGRES_TEST_URL||'http://unconfigured');
 if(!['postgres:','postgresql:'].includes(url.protocol)||!['127.0.0.1','localhost','[::1]'].includes(url.hostname)||url.pathname!=='/reunir_ci')throw new Error('This test requires a disposable loopback database named reunir_ci. It cannot target remote or customer databases.');
@@ -75,7 +77,7 @@ try{
         assert.deepEqual((await rows('org_code_black',DEMO_USER,'SELECT user_id FROM quiz_attempts')).map(x=>x.user_id),[DEMO_USER]);
         assert.equal((await rows('org_studio_north',DEMO_ADMIN,'SELECT id FROM quiz_attempts')).length,0);
         await assert.rejects(()=>rows('org_code_black',DEMO_ADMIN,"UPDATE quiz_attempts SET answers='[]'::jsonb"),/permission denied/);
-        await assert.rejects(()=>rows('org_code_black',DEMO_ADMIN,'DELETE FROM quiz_attempts'),/permission denied/);
+        assert.equal((await rows('org_code_black',DEMO_ADMIN,'DELETE FROM quiz_attempts RETURNING id')).length,0,'no attempt is deleted outside a member’s own account deletion');
         assert.equal((await rows('org_code_black',DEMO_USER,"UPDATE quiz_attempts SET feedback='Forged' WHERE id='attempt_sofia' RETURNING id")).length,0);
         assert.equal((await rows('org_code_black',DEMO_ADMIN,"UPDATE quiz_attempts SET feedback='Rewritten',score=0,version=2 WHERE id='attempt_sofia' RETURNING id")).length,0,'a finished review cannot be rewritten');
     });
@@ -142,7 +144,7 @@ try{
         assert.deepEqual(await operator.eraseLearnerAnswers('code-black',DEMO_ADMIN,'member_sofia','request pg-1',true),{...planned,applied:true});
         assert.equal(await left(),0);
         assert.deepEqual((await admin.query("SELECT metadata FROM audit WHERE action='learner.answers.erased' AND object_id='member_sofia'")).rows,[{metadata:{reference:'request pg-1',attempts:planned.attempts,notifications:planned.notifications}}]);
-        await assert.rejects(()=>runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',DEMO_ADMIN);await tx.query("SELECT set_config('app.erasure_subject','member_alex',true)");await tx.query("DELETE FROM quiz_attempts WHERE user_id='member_alex'");}),/permission denied/);
+        assert.equal(await runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',DEMO_ADMIN);await tx.query("SELECT set_config('app.erasure_subject','member_alex',true)");return (await tx.query("DELETE FROM quiz_attempts WHERE user_id='member_alex' RETURNING id")).rows.length;}),0,'the runtime role cannot use the operator erasure');
     });
     await check('unused cover files are listed and cleared through a role without row-security bypass',async()=>{
         const scoped=Object.create(admin) as typeof admin;scoped.transaction=fn=>admin.transaction(async tx=>{await tx.query('SET LOCAL ROLE reunir_operator');return fn(tx);});
@@ -153,6 +155,42 @@ try{
         assert(stale.includes('pg_stale_cover')&&!stale.includes('pg_fresh_cover'));
         assert.deepEqual(await operator.removeStaleCoverUploads('code-black',DEMO_ADMIN,['pg_stale_cover','pg_fresh_cover']),['pg_stale_cover']);
         assert.deepEqual((await admin.query("SELECT id FROM upload_intents WHERE id IN ('pg_stale_cover','pg_fresh_cover')")).rows,[{id:'pg_fresh_cover'}]);
+    });
+    await check('a member deletes their own account through the restricted runtime connection, keeping shared work as Former member',async()=>{
+        const theo='member_theo',now=new Date().toISOString(),repo=new WorkspaceRepository(runtime!);
+        for(const [id,name,email] of [[theo,'Theo Williams','theo@example.test'],[DEMO_ADMIN,'Amina Okafor','amina@example.test']])await admin.query('INSERT INTO auth_user(id,name,email,email_verified,created_at,updated_at) VALUES($1,$2,$3,true,$4,$4)',[id,name,email,now]);
+        await admin.query("INSERT INTO auth_session(id,expires_at,token,created_at,updated_at,user_id) VALUES('pg_theo_session',now()+interval '1 day','pg_theo_token',$1,$1,$2)",[now,theo]);
+        await repo.execute('code-black',theo,{type:'track.enrol',trackId:'track_product'},randomUUID(),'pg-account');
+        const seen=(await repo.snapshot('code-black',theo)).lessons.find(l=>l.id==='lesson_5')!.quiz!;
+        await repo.execute('code-black',theo,{type:'quiz.attempt.submit',lessonId:'lesson_5',fingerprint:quizFingerprint(seen),answers:[{questionId:'q5_feedback',optionIds:['a']},{questionId:'q5_essentials',optionIds:['a']},{questionId:'q5_outcome',text:'useful'}]},randomUUID(),'pg-account');
+        await repo.execute('code-black',DEMO_ADMIN,{type:'track.instructor.add',trackId:'track_product',userId:theo},randomUUID(),'pg-account');
+        await admin.query("UPDATE members SET status='suspended' WHERE organization_id='org_studio_north' AND user_id=$1",[theo]);
+        await assert.rejects(()=>repo.deleteAccount(DEMO_ADMIN),{code:'OWNER_CANNOT_DELETE'});
+        assert.equal((await admin.query('SELECT count(*)::int AS n FROM auth_user WHERE id=$1',[DEMO_ADMIN])).rows[0].n,1,'a refused owner keeps their account');
+        const {summary}=await repo.deleteAccount(theo);
+        assert.equal(summary.communities,2);assert.equal(summary.removed.quizAttempts,1);assert.equal(summary.removed.trackInstructors,1);
+        assert.deepEqual((await admin.query('SELECT DISTINCT name,status,avatar,bio,role FROM members WHERE user_id=$1',[theo])).rows,[{name:'Former member',status:'left',avatar:'',bio:'',role:'member'}]);
+        for(const table of ['quiz_attempts','track_instructors','enrolments','reactions','rsvps','notifications','reputation','auth_session'])assert.equal((await admin.query(`SELECT count(*)::int AS n FROM ${table} WHERE user_id=$1`,[theo])).rows[0].n,0,table);
+        assert.equal((await admin.query('SELECT count(*)::int AS n FROM auth_user WHERE id=$1',[theo])).rows[0].n,0);
+        assert.equal((await admin.query('SELECT count(*)::int AS n FROM project_members WHERE user_id=$1',[theo])).rows[0].n,2,'team places stay with the work');
+        await assert.rejects(()=>repo.snapshot('code-black',theo),{code:'NOT_FOUND'});
+    });
+    await check('accepting an invitation waits for an account deletion under way, and adds no membership after it',async()=>{
+        const person='pg_newcomer',now=new Date().toISOString(),token=randomBytes(32).toString('base64url');
+        await admin.query("INSERT INTO auth_user(id,name,email,email_verified,created_at,updated_at) VALUES($1,'Noor Patel','noor@example.test',true,$2,$2)",[person,now]);
+        await admin.query("INSERT INTO invitations(id,organization_id,email,token_hash,created_by,expires_at) VALUES($1,'org_studio_north','noor@example.test',$2,$3,now()+interval '7 days')",[randomUUID(),createHash('sha256').update(token).digest('hex'),DEMO_ADMIN]);
+        const invitations=new InvitationService(new WorkspaceRepository(runtime!),'http://127.0.0.1:5173',new MailQueue(runtime!,'postgres_check_secret_5a4b3c2d1e0f9a8b7c6d'));
+        let accepting:Promise<string>|undefined;
+        // The deletion's first step, locking the account, is held open while the acceptance starts on another connection.
+        await runtime!.transaction(async tx=>{
+            await setContext(tx,'',person);await tx.query("SELECT set_config('app.account_deletion',$1,true)",[person]);
+            await tx.query('SELECT id FROM auth_user WHERE id=$1 FOR UPDATE',[person]);
+            accepting=invitations.accept(token,person).then(()=>'accepted',(e:{code?:string})=>e.code??'failed');
+            assert.equal(await Promise.race([accepting,new Promise(r=>setTimeout(()=>r('waiting'),500))]),'waiting','acceptance waits on the account lock');
+            await tx.query('DELETE FROM auth_user WHERE id=$1',[person]);
+        });
+        assert.equal(await accepting,'INVITE_ACCOUNT_MISMATCH');
+        assert.equal((await admin.query('SELECT count(*)::int AS n FROM members WHERE user_id=$1',[person])).rows[0].n,0,'no membership outlives the account');
     });
     await mkdir('evidence/alpha04',{recursive:true});await writeFile('evidence/alpha04/postgres-results.json',JSON.stringify({generatedAt:new Date().toISOString(),method:'Disposable local PostgreSQL service, not Neon.',results},null,2));
 }finally{await runtime?.close();await admin.close();}

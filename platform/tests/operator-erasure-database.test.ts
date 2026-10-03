@@ -43,8 +43,9 @@ test('0014 upgrade adds one delete policy and changes no rows', async () => {
         const before = { quiz_attempts: await read('quiz_attempts'), notifications: await read('notifications'), audit: await read('audit') };
         await migrate(old); await migrate(old);
         for (const table of ['quiz_attempts', 'notifications', 'audit'] as const) assert.deepEqual(await read(table), before[table], table);
-        assert.deepEqual((await old.query("SELECT policyname,cmd FROM pg_policies WHERE tablename='quiz_attempts' AND cmd='DELETE'")).rows, [{ policyname: 'attempt_erasure', cmd: 'DELETE' }]);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 14);
+        assert.deepEqual((await old.query("SELECT policyname,permissive FROM pg_policies WHERE tablename='quiz_attempts' AND cmd='DELETE' ORDER BY policyname")).rows, [
+            { policyname: 'attempt_account_erasure', permissive: 'PERMISSIVE' }, { policyname: 'attempt_erasure', permissive: 'PERMISSIVE' }, { policyname: 'attempt_runtime_deletion', permissive: 'RESTRICTIVE' }]);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 16);
     } finally { await old.close(); }
 });
 
@@ -69,9 +70,12 @@ test('only an active owner may authorise; references, members and communities ar
     assert.equal(await count('SELECT count(*)::int AS n FROM quiz_attempts WHERE user_id=$1', [SOFIA]), 1, 'nothing was erased by a refused request');
 });
 
-test('the runtime role can never delete attempts, and the operator deletes nothing without naming the member', async () => {
+test('the runtime role can never erase another member’s attempts, and the operator deletes nothing without naming the member', async () => {
     const tx = (role: string, fn: (sql: SQL) => Promise<unknown>) => db.transaction(async sql => { await sql.query(`SET LOCAL ROLE ${role}`); await setContext(sql, ORG, DEMO_ADMIN); return fn(sql); });
-    await assert.rejects(() => tx('reunir_app', sql => sql.query("SELECT set_config('app.erasure_subject',$1,true)", [SOFIA]).then(() => sql.query('DELETE FROM quiz_attempts WHERE user_id=$1', [SOFIA]))), /permission denied/);
+    // Since 0015 the runtime role may delete only its own attempts while deleting its own account; the operator
+    // erasure policy stays out of its reach, even for an active owner naming a subject.
+    assert.equal(await tx('reunir_app', sql => sql.query("SELECT set_config('app.erasure_subject',$1,true)", [SOFIA]).then(() => sql.query('DELETE FROM quiz_attempts WHERE user_id=$1 RETURNING id', [SOFIA])).then(r => r.rows.length)), 0);
+    assert.equal(await tx('reunir_app', sql => sql.query("SELECT set_config('app.account_deletion',$1,true)", [SOFIA]).then(() => sql.query('DELETE FROM quiz_attempts WHERE user_id=$1 RETURNING id', [SOFIA])).then(r => r.rows.length)), 0);
     assert.equal(await tx('reunir_operator', sql => sql.query('DELETE FROM quiz_attempts WHERE user_id=$1 RETURNING id', [SOFIA]).then(r => r.rows.length)), 0);
     assert.equal(await count('SELECT count(*)::int AS n FROM quiz_attempts WHERE user_id=$1', [SOFIA]), 1);
 });

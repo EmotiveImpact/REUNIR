@@ -7,11 +7,20 @@ import { Link } from 'react-router-dom';
 import type { Member, Track, Project } from '../../../../packages/contracts/src/index';
 export function Mark({size=27}:{size?:number}) {return <span className="brand-mark" style={{width:size,height:size,fontSize:size*.67}} aria-hidden="true">R</span>;}
 export function Avatar({member,size='md'}:{member?:Member;size?:'xs'|'sm'|'md'|'lg'|'xl'}) {
- const photo=member?.avatar || (mode==='demo'&&member?demoPortraits[member.userId]:undefined);
+ // A former member has no photo: their account is gone, and demo portraits never stand in for one.
+ const photo=member?.status==='left'?undefined:member?.avatar || (mode==='demo'&&member?demoPortraits[member.userId]:undefined);
  return <AvatarRoot role="img" className={`avatar avatar-${size}`} aria-label={member?.name||'Member'}>
   {photo&&<AvatarImage src={photo} alt=""/>}<AvatarFallback><UserRound size={size==='xs'?12:18}/></AvatarFallback>
  </AvatarRoot>;
 }
+/** A person's name, linking to their profile. A former member's name is plain text: there is no profile to open. */
+export function PersonLink({ member, fallback = 'Community member', children }: { member?: Member; fallback?: string; children?: ReactNode }) {
+    if (!member) return <span>{fallback}</span>;
+    if (member.status === 'left') return <span className="former-member">{member.name}</span>;
+    return <Link to={`/members/${member.userId}`}>{children ?? member.name}</Link>;
+}
+/** People who are here now: directories, pickers and avatar rows leave former members out. */
+export const present = (members: Member[]) => members.filter(m => m.status !== 'left');
 export function AvatarStack({ members, limit = 4 }: {
     members: Member[];
     limit?: number;

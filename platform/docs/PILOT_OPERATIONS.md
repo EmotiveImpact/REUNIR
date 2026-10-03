@@ -35,7 +35,7 @@ The browser demo is local fiction, not encrypted storage. Do not put real member
 
 ## Learner requests: records and erasure
 
-A member can download their own learning record from their profile without anyone's help. To erase a learner's knowledge-check answers on request, or to clear unused cover files, follow LEARNER_RECORDS.md: both commands run on the migration connection, need an active owner's authorisation and are dry runs until confirmed. Record the request reference you pass; the audit entry keeps it with counts only. Account deletion is not yet available.
+A member can download their own learning record from their profile without anyone's help. To erase a learner's knowledge-check answers on request, or to clear unused cover files, follow LEARNER_RECORDS.md: both commands run on the migration connection, need an active owner's authorisation and are dry runs until confirmed. Record the request reference you pass; the audit entry keeps it with counts only. Members delete their own accounts from **Your account** (ACCOUNTS.md); their posts, comments and project work stay as Former member. Owners cannot delete their accounts until ownership transfer exists, so plan who owns each community. If a deleted person had claimed tasks in a community where they were suspended, reassign those tasks.
 
 ## Owner console and read-only diagnostics
 

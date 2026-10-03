@@ -1,4 +1,8 @@
-# Research status: Alpha 14
+# Research status: Alpha 15
+
+Alpha 15 (account deletion) reviewed how Discourse anonymises and deletes users, how HumHub soft-deletes them and lets an administrator keep or remove contributions, and how LearnHouse deletes an account from settings, at pinned commits. See notes/20_ACCOUNT_DELETION.md and the `account-deletion` decision in reuse-register.json. Discourse (GPL-2.0-or-later), HumHub (AGPL-3.0-or-later or proprietary) and LearnHouse (AGPL-3.0) are behavioural references only. Imported donor files: zero. New runtime dependencies: none.
+
+## Alpha 14 record
 
 Alpha 14 (learner records) reviewed how LearnHouse exports, anonymises and deletes a user's data and how Frappe Learning pages quiz submissions, at the same pinned commits; ClassroomIO's account code was searched and offers workspace deletion only. See notes/19_LEARNER_RECORDS.md and the `learner-records` decision in reuse-register.json. Both cited projects are behavioural references only. Imported donor files: zero. New runtime dependencies: none.
 

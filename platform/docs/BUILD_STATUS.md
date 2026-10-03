@@ -1,4 +1,92 @@
-# Alpha 14 learner records
+# Alpha 15 account deletion
+
+3 October 2026. Application 0.15.0-alpha.1. People delete their own account from **Your account**. As the owner decided, posts, comments and project work stay so conversations still make sense, shown as "Former member"; name, photo and profile go; private things and the person's own learning record are deleted; direct messages stay for the other person. Owners are refused until ownership can be handed over. See ACCOUNTS.md and decisions/015-account-deletion.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/laughing-goodall-2p7z0v`, restarted from main `661fac9` after PR #5 was merged ([PR EmotiveImpact/REUNIR#6](https://github.com/EmotiveImpact/REUNIR/pull/6)) |
+| Verified locally | Yes: every suite, from a clean worktree of tested commit `67623fb` after `npm ci` (see below) |
+| Verified remotely (GitHub Actions) | Passed on `7343bcf`; the review fixes follow, with CI recorded on PR #6 |
+| Merged | No. Merging into main needs the owner's approval |
+| Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
+| Operated with real members | No |
+
+## PR #5 merged into main
+
+The owner approved merging PR #5 (Alpha 11 to 14) once CI was green. Both jobs had passed on its head `d6407186c1e9de62d3548fb47a5ed9909d321362` in [run 37100742188](https://github.com/EmotiveImpact/REUNIR/actions/runs/37100742188) (push) and [run 37100743793](https://github.com/EmotiveImpact/REUNIR/actions/runs/37100743793) (pull request), with no open review threads. It was merged with a merge commit, no force-push: main is now `661fac9d921292f4d7432c1df4c7b98827cf6211`, whose parents are the previous main `365e1c9` and the tested head `d640718`. Main was fetched back after the merge; its tree, `c49b1665108ca090997ddf785f581c1cce5b3e30`, is identical to the tested head's tree. The push to main then passed CI in [run 37101346869](https://github.com/EmotiveImpact/REUNIR/actions/runs/37101346869). The working branch was restarted from that main for this slice, as a fresh change.
+
+## What changed
+
+- **Your account.** The account menu opens a page listing the person's communities and roles (now returned with the session), what deletion keeps as Former member and what it removes, and a link to download the learning record first. Owners see why deletion is unavailable instead of a button.
+- **Deleting it.** A dialogue names the communities and asks for the current password (live) and the typed phrase "delete my account". `POST /api/account/delete` is same-origin JSON, rate limited to five attempts in fifteen minutes, checks the password with Better Auth (`auth.api.verifyPassword`), deletes everything in one transaction, removes private files from storage after commit and clears the session cookie. The live app returns to sign-in with a notice; the demo explains what happened and can be restarted.
+- **One transaction, every community.** Each membership, suspended ones included, becomes the same scrubbed record (Former member, status `left`). Personal records go: reactions, saved posts, notices, replies to events, goals, private-space access, enrolments, completions, path enrolments, knowledge-check attempts, recognition, instructor grants, read state, blocks they made, request receipts, private files, invitations to their address and queued mail to it, reset tokens, rate counters, sessions, password hash and account. Shared work stays, project team places included. Claimed tasks without proof return to their teams; notices that begin with the person's name are reworded unless the name is shared; the audit entry records counts only. A shortfall between planned and admitted deletes rolls everything back.
+- **Former member everywhere.** No photo (demo portraits never stand in), no profile link, no place in the directory, search, avatar rows, pickers or the access list; the profile route shows "Former member"; a conversation is read-only for the other person, who cannot start a new one. Former members get no new notices, recognition, roles or grants and cannot be restored.
+- **Migration `0015_account_deletion.sql` (additive).** While a transaction is marked as the acting person's own deletion (`app.account_deletion`), policies admit their memberships of any status, their instructor grants and their knowledge-check attempts. A restrictive policy confines the runtime role's deletes on attempts to exactly that case, so it can never use the operator erasure from 0014. The runtime grant on attempts now keeps DELETE; rerun `npm run db:grant-runtime` after migrating. Migrations 0001 to 0014 are byte-identical.
+- No new runtime dependency. Release constant and package version are 0.15.0-alpha.1.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, `npm ci` from the committed lockfile in a clean worktree of tested commit `67623fb`, Playwright with Chromium 141 at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16.14 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 561 passed, 0 failed (544 existing plus 7 account-deletion domain, 4 database and 6 HTTP tests) |
+| `npm run test:http` | 19 passed (17 existing plus 2 real Better Auth deletion checks: a wrong password and an owner are refused; a member deletes their account, after which their session, sign-in and workspace access are gone and their message reads as from a former member) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Existing demo-browser suites | 265 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 16 covers, 9 instructors, 16 monochrome, 20 v4 |
+| `npm run test:browser:accounts` | 9 passed: the account page, the owner's refusal, the dialogue's checks and cancel, deletion and the farewell, the owner's view of the kept comment, conversation and team place as Former member, restarting after a second deletion, restarting straight after the first, and phone width, with axe and neutral-colour checks |
+| Existing connected-browser suites | 49 passed: 12 connected, 9 resources, 9 assessments, 13 covers, 6 instructors |
+| `npm run test:browser:accounts-connected` | 6 passed (live build, Better Auth cookies and password checks, API under the restricted runtime role): the member's page, a wrong password refused, the owner refused, deletion back to sign-in with a notice and the old password refused, and the owner's view of the kept post and read-only conversation |
+| `npm run test:postgres` | 15 passed on PostgreSQL 16.14 (14 existing plus 1: a member, suspended in one community, deletes their account through the restricted runtime connection; answers, grants and personal records go, team places stay, and the owner is refused) |
+| Python helpers, `scripts/check_research.py` | 35 passed (34 existing plus 1: a former member never shows a portrait); the register validates with 51 pinned sources and 17 decisions at the documentation commit (47 and 16 at the tested commit, before the review was recorded) |
+
+Tests changed rather than added: eight migration-count assertions moved from 14 to 15. Five assertions that the runtime role's delete on attempts fails with "permission denied" now assert that it deletes nothing (in `assessments-database`, `operator-erasure-database` and the PostgreSQL check), because the role holds DELETE for a person's own deletion; new tests prove the policies refuse every other case, including another member's attempts with the mark set and the operator erasure path. The upgrade test now lists the three delete policies on attempts.
+
+## Corrections made while verifying
+
+- Deleting a person's project team places first failed a foreign key: kept contributions and proof-carrying tasks refer to them. Team places now stay with the work, shown as Former member.
+- The repository first wrote the scrubbed membership with the other changes. Policies that require an active member would then have refused returning claimed tasks; the scrub is now the last write in each community.
+- The first database test expected one reworded notice; three were right (the reply, and the contribution notices to the owner and the project lead).
+- In a community where the person was suspended, their claimed tasks are invisible to them under row security and stay assigned. The test now records that limit explicitly instead of hiding it.
+- A demo event in the fixture had already ended; the tests create a future one. The owner refusal on real PostgreSQL needed the owner's sign-in row; without it the account correctly reads as not found.
+- Reviewing the diff after a first clean run of release commit `d21fdbf` (every step passed) found four more things, fixed in `886f967` and `67623fb`: the project page linked a former teammate to an empty profile, and now shows them without a link; rewording notices would also have reworded one that begins with a longer member name ("Jo Smith replied…" when "Jo" leaves), and now skips those; the dialogue said the account would be deleted "in" the communities the session lists, which leaves out any where the person is suspended, and now says every community, including those named; and restarting the demo straight after deleting the first persona did not force the page to look again. Each has a test. A second run was stopped when the last fix landed, so the tested commit is `67623fb`.
+
+## Review fixes after PR #6 opened
+
+CI passed on `7343bcf` (runs 37106724144 and 37106726124, both jobs green). The Codex review on `3f29c0d` then raised three findings, each confirmed and fixed with a test:
+
+- **Invitations to communities the person never joined stayed.** Deletion removed invitations only in communities where the person had a membership, but a pending invitation is normally to a community they have not joined, and its queued mail was kept. Migration `0016_account_invitations.sql` (additive) lets the marked transaction see and delete invitations sent to the person's own account email in any community, and deletion now removes them account-wide after the community loop. The database test adds a pending invitation to a third community and another person's invitation there, which stays.
+- **Older `left` memberships reached the browser in full.** `left` has been a valid status since the foundation schema, and the snapshot now included every `left` row for ordinary members. `visibleWorkspace` now sends every `left` membership as the scrubbed Former member record (`formerMember`, shared with the deletion rules), whatever its stored details. A domain test covers a member and an administrator viewing an unscrubbed `left` row.
+- **An invitation accepted during a deletion could leave an active membership.** Acceptance now takes a share lock on the account row before locking the community, the same order as deletion, so it waits for a deletion under way and then finds no account. Deletion also rechecks the membership count before deleting the account. A new PostgreSQL check holds the deletion's account lock on one connection, starts an acceptance on another, and proves it waits, fails with `INVITE_ACCOUNT_MISMATCH` and adds no membership; with the share lock removed the same check fails (the acceptance completes at once).
+
+Local runs on the fix commit `928a0ee`, Node 22.22.0, `npm ci`, PostgreSQL 16 in a disposable loopback cluster: typecheck passed; `npm test` 562 passed (one new domain test; the database test gained invitation assertions); `npm run test:http` 19 passed; build and preview passed; `npm run test:postgres` 16 passed (one new); `test:browser:accounts` 9, `accounts-connected` 6, `monochrome` 16, `v4` 20 and `connected` 12 passed; Python helpers 35 passed; the research register validates. The other browser suites were not rerun locally and run in CI. Nine migration-count assertions moved from 15 to 16.
+
+## Not verified, and why
+
+- Hosted Better Auth, real email delivery, a real bucket's object deletion and hosted PostgreSQL remain deferred by the user; deletion was exercised through PGlite and PostgreSQL 16 with the restricted role, a captured mail queue and an in-process storage stand-in.
+- Ownership transfer does not exist, so owners cannot delete their accounts. Mentions inside other people's posts stay as written.
+- A deletion that begins while an acceptance already holds the account lock waits for it and then deletes the new membership with the rest; that order relies on PostgreSQL's read-committed snapshots and is covered by reasoning and the membership recheck, not by a separate test. Claimed tasks in a community where the person was suspended stay assigned for an administrator.
+
+## Preview
+
+The demo runs inside this workspace with `VITE_DATA_MODE=demo npm run dev` at `http://127.0.0.1:5173`, reachable only from inside the container. Open the account menu → **Your account** → **Delete your account…**, type "delete my account", then choose **See the community as Amina Okafor** to see the kept comment on Common Ground, the read-only conversation and the team place as Former member; **Restart the demo** brings everyone back. Clone the branch and run `npm ci && npm run dev` from `platform/`.
+
+## Publication receipt
+
+Pending. The documentation for the first clean run was pushed as `3f29c0d`; this status, with the final run of `67623fb`, follows on the same branch, and the remote read-back and CI are recorded in the receipt.
+
+## Next actions
+
+1. Owner review of the account deletion pull request in the demo, then merge with the owner's approval and read back main.
+2. Ownership transfer, so owners can hand over a community and then delete their account.
+3. Server-side pagination for review queues and other long lists.
+4. When deployment resumes: Neon staging with sixteen migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests, including account deletion against hosted Better Auth.
+
+---
+## Historical Alpha 14 evidence: learner records
 
 3 October 2026. Application 0.14.0-alpha.1. Members download their own learning record from their profile. Operators can erase a learner's knowledge-check answers on a request an active owner authorised, and clear unused cover files. Review queues show 20 at a time with exact totals. See LEARNER_RECORDS.md and decisions/014-learner-records.md.
 
@@ -9,7 +97,7 @@
 | Implemented | Yes, on `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)), after Alpha 11 to 13 on the same branch |
 | Verified locally | Yes: every suite, from a clean worktree of tested commit `2252441` after `npm ci` (see below) |
 | Verified remotely (GitHub Actions) | Yes: both jobs passed on `d52fbcd` in the push and pull request runs (publication receipt below) |
-| Merged | Approved by the owner on 3 October 2026, to follow once CI is green on the receipt commit; the merge and main's read-back are recorded in the next status update |
+| Merged | Yes: approved by the owner on 3 October 2026 and merged into main as `661fac9` after CI passed on the receipt head; recorded in the Alpha 15 status above |
 | Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
 | Operated with real members | No |
 

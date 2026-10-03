@@ -66,10 +66,11 @@ export class InvitationService {
         const digest=hash(token); await sql.query("SELECT set_config('app.invitation_hash',$1,true)",[digest]);
         const initial=(await sql.query<Invitation>('SELECT * FROM invitations WHERE token_hash=$1',[digest])).rows[0];active(initial);
         await setContext(sql,initial.organization_id,userId);
-        // Same locking order as administration: organisation, then invitation. Recheck after locking.
+        // Same locking order as account deletion and administration: account, organisation, then invitation. Holding the
+        // account lock means a deletion under way finishes first (and the account is gone) or waits for this membership.
+        const u=(await sql.query<{email:string;name:string}>('SELECT email,name FROM auth_user WHERE id=$1 FOR SHARE',[userId])).rows[0];
         const org=(await sql.query<{slug:string;name:string}>('SELECT slug,name FROM organisations WHERE id=$1 FOR UPDATE',[initial.organization_id])).rows[0];
         const i=(await sql.query<Invitation>('SELECT * FROM invitations WHERE id=$1 FOR UPDATE',[initial.id])).rows[0];active(i);
-        const u=(await sql.query<{email:string;name:string}>('SELECT email,name FROM auth_user WHERE id=$1',[userId])).rows[0];
         if(!u||u.email.toLowerCase()!==i.email)throw new DomainError('INVITE_ACCOUNT_MISMATCH','Sign in with the email address this invitation was sent to.',403);
         const existing=await sql.query<{status:string}>('SELECT status FROM members WHERE organization_id=$1 AND user_id=$2',[i.organization_id,userId]);
         if(existing.rows[0]?.status && existing.rows[0].status!=='active')throw new DomainError('MEMBERSHIP_RESTRICTED','Ask the owner to review your community access.',403);

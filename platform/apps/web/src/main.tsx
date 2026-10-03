@@ -26,3 +26,4 @@ import './knowledge-checks.css';
 import './covers.css';
 import './instructors.css';
 import './learning-record.css';
+import './account.css';
