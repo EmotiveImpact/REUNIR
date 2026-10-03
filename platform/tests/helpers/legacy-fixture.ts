@@ -19,7 +19,7 @@ export async function seedBeforeProjectWork(db:Database){
 }
 /**
  * Test-only fixture for an older schema that already has the tables a test needs: inserts the current seed using only the
- * tables and columns that exist at that migration, so columns added later (for example 0022's posts.moderated_by) are skipped.
+ * tables and columns that exist at that migration, so columns added later (for example 0024's posts.moderated_by) are skipped.
  */
 export async function seedAtSchema(db:Database){
     const state=createSeed();

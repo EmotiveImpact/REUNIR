@@ -8,9 +8,66 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### 0.22.0-alpha.1 (Alpha 22): cover picture descriptions, 3 October 2026
+### 0.27.0-alpha.1 (Alpha 27): data retention rules, 3 October 2026
 
-On a pull request from `claude/build-out-tvzn40`, to be merged once its checks pass.
+On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. Alpha 26 (email confirmation and change) is on main; open pull requests claim Alpha 23, 25 and 26 again, so this is Alpha 27 with decision 027 and migration 0023.
+
+**In plain language:** REUNIR now clears its own housekeeping on a schedule: expired sign-in sessions and links, old rate counters, technical receipts, records of email already sent and notices people read long ago. What people make, reviewed evidence and the audit trail are never cleared by it. Your account has a new **How long things are kept** panel that says what is kept and for how long.
+
+Details:
+
+- One list of rules (`packages/contracts/src/retention.ts`) serves the job, the panel and `platform/docs/RETENTION.md` (decision 027).
+- `npm run retention:run` is a dry run with exact counts; `RETENTION=apply` clears. An authenticated `GET /api/internal/retention` applies the rules on a schedule, `?dry=1` only counts. Counts per rule only, never contents.
+- Additive migration 0023: a read-only policy so the job lists communities only as its own worker, and an index for read notices. Each community's records are cleared inside that community's tenant context.
+- Nothing is scheduled; the operator chooses a daily schedule.
+
+### Planned
+
+- Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+
+## 0.26.0-alpha.1 (Alpha 26): confirming and changing your email address, 3 October 2026
+
+On main through [PR #18](https://github.com/EmotiveImpact/REUNIR/pull/18), merged as `9b34cac`.
+
+**In plain language:** people can now confirm their email address with a link, and accepting an invitation confirms it automatically. Once the app is live, an address has to be confirmed before it can sign in. Anyone can also move their account to a new email address: they enter their password, open the link sent to the new address, and their old address is told.
+
+Details:
+
+- **Email address** panel on Your account: the address, Confirmed or Not confirmed, **Send a confirmation link** and **Change email address…**.
+- `EMAIL_VERIFICATION` (`required` or `optional`, required by default in production, applied only where mail can be sent): an unconfirmed address gets a fresh link instead of a session (decision 026).
+- `POST /api/account/email` checks the password, then sends a confirmation link to the new address; the address changes only when it is opened. The current address gets a notice. Better Auth's own change-email route is closed.
+- Changing or resetting the password cancels any change link asked for before it.
+- The launch preflight also checks `EMAIL_VERIFICATION`.
+- No migration and no new runtime dependency: Better Auth's own email verification and change-email flows, through the encrypted outbox.
+
+## 0.24.0-alpha.1 (Alpha 24): group conversations, 3 October 2026
+
+On main through [PR #19](https://github.com/EmotiveImpact/REUNIR/pull/19), merged as `d62424d`.
+
+**In plain language:** you can now start a private group conversation in Messages with two or more people from your community, up to 20 in all. Anyone in the group can add people and rename it, and anyone can leave. Someone added later only sees what is written after they join.
+
+Details:
+
+- **New group** in Messages: a name and at least two other active members. Groups show in the inbox by name, each message shows who wrote it, and **People** lists everyone, adds people, renames the group and leaves it. Only the person who started a group can remove others.
+- Only the people in a group can read it; owners, administrators and moderators have no access to groups they are not in. A block stops two people adding each other but never pauses a group they share. Reporting a message in a group works as before.
+- Additive migration 0022 adds `kind`, `title` and `created_by` to conversations, the `conversation_joins` table and row-security policies for late joiners and leaving (decision 024). Run `npm run db:grant-runtime` after migrating, for the new table's grant.
+- No new runtime dependency.
+
+## Launch kit (no version change), 3 October 2026
+
+On main through [PR #17](https://github.com/EmotiveImpact/REUNIR/pull/17), merged as `f5ec8d3`.
+
+**In plain language:** a step-by-step launch guide and an offline check of the launch settings, so the app is ready to switch on when you decide. Nothing was provisioned and nothing is live.
+
+Details:
+
+- `platform/docs/LAUNCH_RUNBOOK.md` walks through every launch step in order: the Neon database and restricted runtime role, migrations, the first owner, server settings, storage, mail, Vercel, hosted privacy checks, the mail and digest scheduler, backups with a restore rehearsal, monitoring, rollback, and the written approvals needed before inviting pilot members.
+- `npm run launch:preflight` checks the shape of a production environment without printing a value or opening a connection, including `ADMIN_TWO_FACTOR`.
+- No migration, no runtime code change, no new dependency.
+
+## 0.22.0-alpha.1 (Alpha 22): cover picture descriptions, 3 October 2026
+
+On main through [PR #15](https://github.com/EmotiveImpact/REUNIR/pull/15), merged as `ec4285d`.
 
 **In plain language:** when you set a cover for a track or project you can now describe the picture, and people using a screen reader hear that description on the track's or project's own page.
 
@@ -19,10 +76,6 @@ Details:
 - **Describe the picture (optional)**, up to 150 characters, in the cover dialogue. Cards and lists stay decorative because their titles sit beside the picture.
 - A new picture starts without a description; moving the focal point keeps it (decision 022).
 - No migration, no grant change, no new runtime dependency.
-
-### Planned
-
-- Virus scanning of uploads, group conversations, and email verification and change.
 
 ## 0.21.0-alpha.1 (Alpha 21): two-step sign-in, 3 October 2026
 

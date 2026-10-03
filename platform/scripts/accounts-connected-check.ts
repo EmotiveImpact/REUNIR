@@ -3,6 +3,7 @@
  * restricted runtime role and forced row security. A member deletes their own account; the owner sees what is kept, then
  * hands the community to an administrator and deletes their own account too. The new owner then meets a server that
  * requires two-step sign-in, turns it on with a code computed here, signs in with a backup code and turns it off again.
+ * Finally the new owner confirms their email address and moves the account to a new one, by links read from the outbox.
  */
 import { chromium, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
@@ -17,7 +18,8 @@ import { migrate } from '../packages/db/src/migrate';
 import { WorkspaceRepository } from '../packages/db/src/repository';
 import { MessagingRepository } from '../packages/db/src/messaging';
 import { grantRuntimeTables } from '../packages/db/src/runtime-role';
-import { createAuth, passwordCheck, sessionResolver } from '../apps/api/src/auth';
+import { createAuth, emailChanger, passwordCheck, sessionResolver } from '../apps/api/src/auth';
+import { MailQueue } from '../apps/api/src/mail';
 import { totpCode } from '../tests/helpers/totp';
 import { createApp } from '../apps/api/src/app';
 const root = resolve(import.meta.dirname, '..'), dir = root + '/evidence/accounts/connected'; await mkdir(dir, { recursive: true });
@@ -48,9 +50,11 @@ const spaceId = (await repo.snapshot('pilot', member.id)).spaces[0].id;
 await repo.execute('pilot', member.id, { type: 'post.create', spaceId, kind: 'question', title: 'Who has tried a first-run test?', body: 'Looking for two people to try a first version this week.' }, randomUUID(), 'accounts-connected');
 const thread = (await messaging.start('pilot', member.id, owner.id)).id;
 await messaging.send('pilot', member.id, thread, 'Thank you for the invitation. I am glad to be here.', 'member-hello-1');
-const auth = createAuth(db, origin, secret);
+// Mail is captured in the encrypted outbox and never sent; the email checks open its links from there.
+const mail = new MailQueue(db, secret, { send: async () => {} });
+const auth = createAuth(db, origin, secret, false, mail);
 const served = (adminTwoFactor: 'required' | 'optional') => {
-    const app = createApp({ repository: repo, origin, adminTwoFactor, verifyPassword: passwordCheck(auth), authHandler: r => auth.handler(r), resolveSession: sessionResolver(auth) });
+    const app = createApp({ repository: repo, origin, adminTwoFactor, mail, changeEmail: emailChanger(auth), verifyPassword: passwordCheck(auth), authHandler: r => auth.handler(r), resolveSession: sessionResolver(auth) });
     app.get('/assets/*', serveStatic({ root: '.connected-dist' })); app.get('/', serveStatic({ path: '.connected-dist/index.html' }));
     return app;
 };
@@ -215,6 +219,43 @@ try {
         await stewardPage.getByRole('menuitem', { name: 'Your profile' }).click();
         await expect(stewardPage.locator('.two-step-notice')).toBeVisible();
         handler = app.fetch;
+    });
+    const linkTo = async (address: string) => {
+        const rows = (await db.query<{ payload: string }>("SELECT payload FROM email_outbox WHERE status='queued' ORDER BY created_at DESC,id DESC")).rows.map(r => mail.open(r.payload));
+        const found = rows.find(m => m.to === address && /Confirm your email address/.test(m.subject));
+        expect(found, 'a confirmation link to ' + address).toBeTruthy();
+        return found!.text.match(/http:\/\/\S+/)![0];
+    };
+    await check('the new owner confirms their email address by the link sent to it', async () => {
+        await account(stewardPage);
+        const panel = stewardPage.locator('section.email-address');
+        await expect(panel.locator('.email-current')).toHaveText('steward@example.test');
+        await expect(panel.locator('.pill')).toHaveText('Not confirmed');
+        await a11y('email-unconfirmed', stewardPage);
+        await panel.getByRole('button', { name: 'Send a confirmation link', exact: true }).click();
+        await expect(panel.getByRole('status')).toContainText('A confirmation link is on its way.');
+        await stewardPage.goto(await linkTo('steward@example.test'));
+        await expect(stewardPage.locator('section.email-address .email-confirmed')).toHaveText('Thank you. This address is confirmed.');
+        await expect(stewardPage.locator('section.email-address .pill')).toHaveText('Confirmed');
+    });
+    await check('changing the address needs the password and happens only when the new address opens its link', async () => {
+        const panel = stewardPage.locator('section.email-address');
+        await panel.getByRole('button', { name: 'Change email address…', exact: true }).click();
+        await dialog(stewardPage).getByLabel('New email address').fill('steward.new@example.test');
+        await dialog(stewardPage).getByLabel('Your password', { exact: true }).fill('not-the-password-000');
+        await dialog(stewardPage).getByRole('button', { name: 'Send confirmation link', exact: true }).click();
+        await expect(dialog(stewardPage).getByRole('alert')).toHaveText('That password is not right.');
+        await dialog(stewardPage).getByLabel('Your password', { exact: true }).fill(PASSWORDS.steward);
+        await dialog(stewardPage).getByRole('button', { name: 'Send confirmation link', exact: true }).click();
+        await expect(dialog(stewardPage).getByRole('heading', { name: 'Check the new address' })).toBeVisible();
+        await a11y('email-change-sent', stewardPage);
+        await dialog(stewardPage).getByRole('button', { name: 'Done', exact: true }).click();
+        expect((await db.query<{ email: string }>('SELECT email FROM auth_user WHERE id=$1', [steward.id])).rows[0].email).toBe('steward@example.test');
+        await stewardPage.goto(await linkTo('steward.new@example.test'));
+        await expect(stewardPage.locator('section.email-address .email-current')).toHaveText('steward.new@example.test');
+        await expect(stewardPage.locator('section.email-address .pill')).toHaveText('Confirmed');
+        expect((await db.query<{ email: string }>('SELECT email FROM auth_user WHERE id=$1', [steward.id])).rows[0].email).toBe('steward.new@example.test');
+        await stewardPage.screenshot({ path: dir + '/email-changed.png', fullPage: true });
     });
     await check('connected account journeys produced no uncaught browser errors', async () => { expect(errors).toEqual([]); });
     await writeFile(dir + '/results.json', JSON.stringify({ generatedAt: new Date().toISOString(), method: 'Live Vite build + Hono HTTP + Better Auth cookies and password checks + local PGlite database; application under the restricted runtime role with forced row security. No external service.', results, errors }, null, 2));
