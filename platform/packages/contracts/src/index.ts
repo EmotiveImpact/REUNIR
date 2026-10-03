@@ -6,6 +6,7 @@ import { z } from 'zod';
 import type { WorkspaceSummary } from './pages';
 import { notificationPreferencesInput, type DigestFrequency, type MutableTopic } from './notifications';
 import { appealCommands, type AppealStatus, type AppealSubject } from './appeals';
+import { creditRole, type CreditStatus } from './credits';
 import { collectionFields, collectionItemFields, collectionNote, type CollectionItemKind } from './collections';
 export type Id = string;
 export type Role = 'owner' | 'admin' | 'moderator' | 'member';
@@ -309,6 +310,15 @@ export interface Contribution extends TenantRecord {
     projectId: Id; userId: Id; title: string; body: string; evidenceUrl: string;
     status: ReviewStatus; reviewerId: Id | null; reviewedAt: string | null; feedback: string;
 }
+/**
+ * Someone the contribution's author credits on that piece of work. Nothing shows to anyone else until the credited person
+ * accepts. A credit is acknowledgement between people; it never counts towards paths, milestones, recognition, outcomes,
+ * authority or any credential. Only status and the response and withdrawal fields change after it is made.
+ */
+export interface ContributionCredit extends TenantRecord {
+    contributionId: Id; projectId: Id; userId: Id; invitedBy: Id; role: string;
+    status: CreditStatus; respondedAt: string | null; withdrawnBy: Id | null; withdrawnAt: string | null;
+}
 export interface Outcome extends TenantRecord {
     purposeId: Id; projectId: Id | null; submissionId: Id | null; contributionId: Id | null;
     authorId: Id; title: string; summary: string; evidenceUrl: string;
@@ -410,6 +420,7 @@ export interface Workspace {
     milestones: Milestone[];
     pathEnrolments: PathEnrolment[];
     contributions: Contribution[];
+    contributionCredits: ContributionCredit[];
     outcomes: Outcome[];
     communityOutputs: CommunityOutput[];
     memberGoals: MemberGoal[];
@@ -501,6 +512,9 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('contribution.submit'), projectId: id, title: text(140), body: text(8000), evidenceUrl: link.default('') }).strict(),
     z.object({ type: z.literal('contribution.resubmit'), contributionId: id, title: text(140), body: text(8000), evidenceUrl: link.default('') }).strict(),
     z.object({ type: z.literal('contribution.review'), contributionId: id, decision: z.enum(['recognised', 'changes_requested']), feedback: text(2000) }).strict(),
+    z.object({ type: z.literal('credit.invite'), contributionId: id, userId: id, role: creditRole }).strict(),
+    z.object({ type: z.literal('credit.respond'), creditId: id, decision: z.enum(['accepted', 'declined']) }).strict(),
+    z.object({ type: z.literal('credit.withdraw'), creditId: id }).strict(),
     z.object({ type: z.literal('outcome.submit'), purposeId: id, submissionId: optionalSpace.default(null), contributionId: optionalSpace.default(null), title: text(160), summary: text(5000), evidenceUrl: link.default('') }).strict(),
     z.object({ type: z.literal('outcome.resubmit'), outcomeId: id, title: text(160), summary: text(5000), evidenceUrl: link.default('') }).strict(),
     z.object({ type: z.literal('outcome.review'), outcomeId: id, decision: z.enum(['verified', 'changes_requested']), feedback: text(2000) }).strict(),
