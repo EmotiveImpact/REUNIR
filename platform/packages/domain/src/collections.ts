@@ -29,7 +29,8 @@ function targets(view: Workspace): Record<CollectionItemKind, Map<string, Collec
         project: map(view.projects, p => ({ title: p.title, href: `/projects/${p.id}`, detail: p.tagline, spaceId: p.spaceId })),
         event: map(view.events, e => ({ title: e.title, href: `/events/${e.id}`, detail: e.summary, spaceId: e.spaceId })),
         path: map(view.paths, p => ({ title: p.title, href: `/paths/${p.id}`, detail: p.summary, draft: p.status !== 'published', spaceId: p.spaceId })),
-        mission: map(view.missions, m => ({ title: m.title, href: `/missions/${m.id}`, detail: m.category, spaceId: m.spaceId })),
+        // A mission on an unpublished track is a draft too: members lose it with the track.
+        mission: map(view.missions, m => ({ title: m.title, href: `/missions/${m.id}`, detail: m.category, draft: !!m.trackId && !track(m.trackId)?.published, spaceId: m.spaceId })),
         output: map(view.communityOutputs, o => ({ title: o.title, href: '/outputs', detail: o.summary, spaceId: project(o.projectId)?.spaceId })),
     };
 }

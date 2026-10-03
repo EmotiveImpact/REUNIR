@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 29 files on project tasks and live project work",
   "version": "0.29.0-alpha.1",
   "sourceBaseline": "f9f32d6db2d9a028e33395ce540114af683364ad",
-  "generatedAt": "2026-10-03T14:06:43.148296+00:00",
+  "generatedAt": "2026-10-03T14:13:54.057659+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "eb5be9f9d0a2c7d70928c23e52b5c5b4cf7229bc1becee6d0887894cfa8c6f16",
-      "bytes": 36934
+      "sha256": "0e64485ebf587c2b90e0192fdf39c0f77beb86cc21bcfbe9619f5ec69b6aacbe",
+      "bytes": 36970
     },
     {
       "path": "README.md",
@@ -611,8 +611,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "fcb05d3d0b1e9c8ff00b11215a2bc53d2299d6a950dbe273148a02597da02831",
-      "bytes": 145431
+      "sha256": "a7aac8a766091f5cf7864070f438e3cb0d2d631b55b87888b0ade03a6e671a1a",
+      "bytes": 145814
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -1451,8 +1451,8 @@
     },
     {
       "path": "platform/packages/domain/src/collections.ts",
-      "sha256": "bd5cde3883168c041e379496bfb30f17d9091b3720f8d5b1773e062fb6487892",
-      "bytes": 12535
+      "sha256": "2931789caadd6be4ed7bfa4a469aa2b5194ce77eb2a9548beee9e6d8485b70c4",
+      "bytes": 12680
     },
     {
       "path": "platform/packages/domain/src/covers.ts",
@@ -1771,8 +1771,8 @@
     },
     {
       "path": "platform/tests/collections.test.ts",
-      "sha256": "efdc60b4bb6b732bf6168134ef6a87c75cf2dbdc40cbbefaf538a907d77f1181",
-      "bytes": 16153
+      "sha256": "a230e48b8e31666c3f50bea3274182c7ff7688f094d349f0f402245c2171a492",
+      "bytes": 16221
     },
     {
       "path": "platform/tests/contributor-roles-database.test.ts",

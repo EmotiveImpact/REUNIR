@@ -115,6 +115,7 @@ test('curators add only content they can see that is live; duplicates and limits
     s.tracks.find(t => t.id === 'track_brand')!.published = false;
     throwsCode(() => add('track', 'track_brand'), 'NOT_FOUND');
     throwsCode(() => add('lesson', 'lesson_7'), 'NOT_FOUND');
+    throwsCode(() => add('mission', 'mission_brand'), 'NOT_FOUND');
     s.paths.find(p => p.id === 'path_offer')!.status = 'draft';
     throwsCode(() => add('path', 'path_offer'), 'NOT_FOUND');
     // The kinds must match the record: a lesson ID is not a track.
