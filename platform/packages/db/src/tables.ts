@@ -1751,6 +1751,8 @@ tables.push({key:'notificationPreferences',table:'notification_preferences',fiel
     {property:'userId',column:'user_id',type:'text'},{property:'muted',column:'muted',type:'jsonb'},{property:'digest',column:'digest',type:'text'},
     {property:'updatedAt',column:'updated_at',type:'timestamptz'},{property:'lastDigestAt',column:'last_digest_at',type:'timestamptz'}]});
 
+// Alpha 25: a teaching grant names its role. Changing a role replaces the grant; it is never rewritten in place.
+tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'role',column:'role',type:'text'});
 // Appeals against moderation. Posts record who last hid or restored them; an appeal changes only its decision fields.
 tables.find(t => t.key === 'posts')!.fields.push({property:'moderatedBy',column:'moderated_by',type:'text'},{property:'moderatedAt',column:'moderated_at',type:'timestamptz'});
 tables.push({key:'moderationAppeals',table:'moderation_appeals',mutable:['status','decidedBy','decidedAt','response'],fields:[

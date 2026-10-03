@@ -42,6 +42,8 @@ export function usePagedList<L extends PagedList>(list: L, options: { limit?: nu
         hasMore: !!query.hasNextPage,
         loadingMore: query.isFetchingNextPage,
         more: () => query.fetchNextPage(),
+        /** Read the list again after a failure. */
+        retry: () => { void query.refetch(); },
         /** How many items the last page fetch added, for moving focus to the first of them. */
         pageCount: pages.length,
     };

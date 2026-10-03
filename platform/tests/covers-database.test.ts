@@ -9,6 +9,7 @@ import { createSeed, DEMO_ADMIN, DEMO_USER } from '../packages/domain/src/seed';
 import { coverBytesAcceptable } from '../packages/contracts/src/covers';
 import { seedBeforeProjectWork } from './helpers/legacy-fixture';
 import { pngHeader } from './helpers/images';
+import { MIGRATION_COUNT } from './helpers/migrations';
 
 let db: Database, repo: WorkspaceRepository;
 const png = pngHeader(1600, 900);
@@ -53,7 +54,7 @@ test('0011 upgrade keeps tracks, projects and uploads exactly as they were and s
         const uploads = await read('upload_intents');
         assert.deepEqual(strip(uploads, ['cover_track_id', 'cover_project_id']), before.uploads);
         assert.deepEqual(uploads.map(u => [u.purpose, u.cover_track_id, u.cover_project_id]), [['member', null, null]]);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 24);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, MIGRATION_COUNT);
     } finally { await old.close(); }
 });
 test('the restricted runtime role records, verifies and sets a track cover and a project owner’s cover', async () => {

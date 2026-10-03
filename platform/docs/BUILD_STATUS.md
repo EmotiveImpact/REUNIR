@@ -2,13 +2,13 @@
 
 3 October 2026. Application 0.31.0-alpha.1. Housekeeping records are cleared on a schedule by one list of rules, and Your account says how long everything is kept. What people make, reviewed evidence and the audit trail are never cleared by the job. See decisions/031-data-retention.md and RETENTION.md.
 
-Numbering follows the project's allocation of 3 October 2026: this thread holds Alpha 31 to 34, decision records 031 to 034 and migrations 0030 to 0033, so data retention is Alpha 31, decision 031 and migration 0030 (first opened as Alpha 27 with migration 0023). Migrations 0023 to 0029 belong to other threads, so a gap before 0030 is expected; the runner applies files in order and does not need consecutive numbers.
+Numbering follows the project's allocation of 3 October 2026: this thread holds Alpha 31 to 34, decision records 031 to 034 and migrations 0030 to 0033, so data retention is Alpha 31, decision 031 and migration 0030 (first opened as Alpha 27 with migration 0023). Migration 0023 (contributor roles, Alpha 25) is on main and 0024 to 0029 belong to other threads, so a gap before 0030 is expected; the runner applies files in order and does not need consecutive numbers.
 
 ## Status at a glance
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/accounts-trust-zojuqs`, restarted from main `9b34cac` (the merge of PR #18, Alpha 26) |
+| Implemented | Yes, on `claude/accounts-trust-zojuqs`, restarted from main `9b34cac` (the merge of PR #18, Alpha 26), with main `fab9510` (PR #20, Alpha 25 contributor roles, migration 0023) and main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) merged in |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
@@ -20,10 +20,10 @@ Numbering follows the project's allocation of 3 October 2026: this thread holds 
 - **Rules** (`packages/contracts/src/retention.ts`): expired sessions, expired links and rate counters one day after expiry; request receipts 30 days; internal change events 90 days; sent and cancelled mail records 90 days; undelivered mail contents 30 days, the record 90; read notices 180 days. Unread notices and queued mail are never touched.
 - **Job** (`packages/db/src/retention.ts`): records outside any community are cleared directly; each community's receipts, change events and read notices inside its own tenant context. A dry run does the same work and rolls it back, so its counts are exact. Each applied run is recorded as `retention-job` in service observations.
 - **Running it**: `npm run retention:run` (dry run unless `RETENTION=apply`) and `GET /api/internal/retention` with the scheduler secret (applies; `?dry=1` counts). Nothing is scheduled.
-- **Migration 0030** (additive): `email_outbox.failed_at`, `organisations_retention`, a read-only policy that lists communities only when the transaction sets `app.worker` to `retention`, and `notifications_read_idx`. 0001 to 0022 unchanged; no grant change.
+- **Migration 0030** (additive): `email_outbox.failed_at`, `organisations_retention`, a read-only policy that lists communities only when the transaction sets `app.worker` to `retention`, and `notifications_read_idx`. 0001 to 0023 unchanged; no grant change.
 - **How long things are kept** panel on Your account, from the same list. RETENTION.md, PILOT_OPERATIONS.md and SECURITY.md updated.
 - Review fixes on PR #23: migration 0030 also adds `email_outbox.failed_at` (set by the mail worker; mail already failed starts its period at migration), and failed mail is counted from it; `npm run launch:preflight` and LAUNCH_RUNBOOK.md now require `CRON_SECRET` even without mail, and list the retention route; against the blank `.env.example` the preflight now reports 6 failures and 5 warnings.
-- Migration-count assertions moved from 22 to 23.
+- Upgrade tests count the migration files (`tests/helpers/migrations.ts`, from Alpha 25), so no count changed.
 
 ## Local verification, 3 October 2026
 
@@ -32,11 +32,11 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 671 passed, 0 failed after the review fixes (5 new in `tests/retention-database.test.ts`: one list of rules, the worker-only community listing, an exact dry run then a real run that clears only what the rules name, the scheduled route, and failed mail counted from its failure) |
+| `npm test` | 671 passed, 0 failed after the review fixes; 683 passed, 0 failed after main's Alpha 25 and Alpha 27 were merged in (5 new in `tests/retention-database.test.ts`: one list of rules, the worker-only community listing, an exact dry run then a real run that clears only what the rules name, the scheduled route, and failed mail counted from its failure) |
 | `npm run test:http` | 19 passed |
 | `npm run build`, `npm run bundle:preview` | Passed |
 | Demo-browser suites | `accounts` 13 (1 new: the retention panel, at phone width too), `monochrome` 16, `v4` 20 |
-| Connected-browser suites | `accounts-connected` 13 |
+| Connected-browser suites | `accounts-connected` 13; `instructors` 11 after the Alpha 25 merge; `states` 12 after the Alpha 27 merge |
 | `npm run test:postgres` | 22 passed on PostgreSQL 16 (1 new: the worker policy and a dry and real run through the restricted runtime role) |
 | Python helpers | 35 passed; research register valid |
 
@@ -50,6 +50,119 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. Appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and consented credit for several contributors, one pull request each.
 3. When deployment resumes: schedule the retention job daily after a dry run on staging.
+
+## Historical Alpha 27 evidence: loading, error and empty screens
+
+3 October 2026. Application 0.27.0-alpha.1. Shared loading, error and empty states across the web app: shell-preserving loading outlines, route error boundaries with Try again, a Not found page, offline and failed-refresh notices, marked command failures and role-aware empty states. See decisions/027-loading-error-empty-states.md and STATES.md. Alpha 23 is claimed by another open pull request, and Alpha 24 to 26 are on main, so this slice takes the next free number.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, from main `f5ec8d3` (the launch kit after Alpha 22), with main `fab9510` (Alpha 24 group conversations, Alpha 26 email confirmation and Alpha 25 contributor roles) merged in |
+| Verified locally | Yes: the full suite on the original base `b24095a`, and the checks below again on top of `f5ec8d3` |
+| Verified remotely (GitHub Actions) | Run 37124475400 (application and postgres) passed on `bc37d8c` before main moved; the merge with Alpha 24 is recorded on the pull request |
+| Merged | Yes: [PR #22](https://github.com/EmotiveImpact/REUNIR/pull/22), merged into main as `f9f32d6` |
+| Deployed | No. Nothing was provisioned |
+| Operated with real members | No |
+
+## What changed
+
+- `apps/web/src/components/states.tsx` and `states.css`: `Loading`, `PageLoading`, `ShellLoading`, `ErrorState`, `InlineError`, `PageBoundary`, `NotFound` and `ConnectionNotice`; `apps/web/src/lib/errors.ts` sorts failures into offline, session ended, two-step sign-in required, no access, not found, outdated code or unknown.
+- Routes sit inside a page error boundary and a skeleton fallback; unknown addresses show Not found. A failed background refresh keeps the page and shows a notice; failed commands, uploads and downloads show a marked error toast and keep what was typed. The existing `TWO_FACTOR_REQUIRED` notice is unchanged.
+- Empty states tell first run apart from no results, and offer actions only to roles allowed to take them. "Show more" buttons set `aria-busy`.
+- A demo-only fault page (`#/states/fault`) exists only in the fictional demo build, for the browser check.
+- No migration, no grant change, no new dependency. Migrations 0001 to 0021 are byte-identical.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, Chromium at `/opt/pw-browsers/chromium-1194` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster.
+
+On the original base `b24095a`:
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`, `npm run build`, `npm run bundle:preview` | Passed |
+| `npm test` | 627 passed, 0 failed (2 new in `tests/states.test.ts`) |
+| `npm run test:http` | 19 passed |
+| Demo-browser suites | 294 passed: the 282 existing checks unchanged, plus 12 in the new `test:browser:states` |
+| Connected-browser suites | 60 passed |
+| `npm run test:postgres` | 20 passed |
+| Python helpers, `scripts/check_research.py` | 35 passed; register validates |
+
+After merging main `f5ec8d3` (Alpha 22 and the launch kit), on this branch: typecheck, build and bundle passed; `npm test` 641 passed, 0 failed; `test:browser:states` 12, `covers` 17, `monochrome` 16, `v4` 20 and `work` 29 passed; Python helpers and the research register passed. The merge kept Alpha 22's described covers on the project and track pages, where both sides had changed the same lines.
+
+After merging main `d62424d` (Alpha 24 group conversations): typecheck, build and bundle passed; `npm test` 656 passed, 0 failed; `test:browser` 24 + 34 + 27, `groups` 11, `states` 12, `v4` 20 and `monochrome` 16 passed. In Messages, the group inbox keeps its search by group name and people, and gains the shared loading, error and empty states; the new-message picker list is named `candidates` so it does not clash with the group People dialogue.
+
+After merging main `9b34cac` (Alpha 26 email confirmation, which took the number this slice first used, so this slice became Alpha 27 and decision 027): typecheck, build and bundle passed; `npm test` 668 passed, 0 failed; `states` 12, `accounts` 12, `v4` 20 and `monochrome` 16 passed.
+
+After merging main `fab9510` (Alpha 25 contributor roles): typecheck, build and bundle passed; `npm test` 678 passed, 0 failed; `states` 12, `instructors` 11, `authoring` 27, `v4` 20 and `monochrome` 16 passed. The learning, authoring and teaching pages keep Alpha 25's changes with this slice's empty states applied on top.
+
+## Not verified, and why
+
+- Connected-mode offline, expired-session, failed-refresh and outdated-code screens were not exercised in a browser; their classification is unit-tested and they share components with the browser-checked demo screens.
+- No pilot observations exist yet, so the states follow an audit of every route rather than what members actually hit.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Content curation, task files with live updates, and the shared form components follow as their own pull requests from the same thread.
+
+## Historical Alpha 25 evidence: contributor roles for teaching
+
+3 October 2026. Alpha 26 (PR #18) reached main first, so the application version stays 0.26.0-alpha.1. An owner or administrator adds someone to a track as an instructor or a contributor. Contributors write the track's lesson drafts and files; instructors publish them, and only instructors see and review learners' knowledge-check answers. See decisions/025-contributor-roles.md and INSTRUCTORS.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/courses-teaching-6hum2q`, from main `ec4285d` (the merge of PR #15, Alpha 22), with main `f5ec8d3` (PR #17, the launch kit) main `d62424d` (PR #19, Alpha 24) and main `9b34cac` (PR #18, Alpha 26) merged in |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Passed on `919b352` (run 37125616557) before main moved again; the merge with Alpha 26 is recorded on the pull request |
+| Merged | Yes: [PR #20](https://github.com/EmotiveImpact/REUNIR/pull/20), merged into main as `fab9510` |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
+| Operated with real members | No |
+
+Alpha 23 (upload scanning, PR #16) was still open when this slice started, and Alpha 24 was reserved for group conversations, so this slice took the next unreserved number. Group conversations then merged with migration 0022, so this slice's migration became 0023. Email change (PR #18) then merged as Alpha 26 with no migration.
+
+## What changed
+
+- **Instructor or Contributor** when adding someone in a track's Instructors dialogue, and a role menu beside each person. Instructor is the default for the command, the API and every existing grant.
+- Contributors open, save, preview and restore drafts, upload and attach lesson files, and see the track's drafts, history and upload records. Publishing, archiving, reordering, the cover and knowledge-check attempts need an instructor or administrator (`INSTRUCTOR_REQUIRED`, or the existing cover and reviewer refusals).
+- Changing a role replaces the grant in the acting administrator's name; grants are still never updated in place.
+- Additive migration `0023_contributor_roles.sql`: `track_instructors.role` (`instructor` or `contributor`, NOT NULL, default `instructor`), and role-aware replacements for the published-revision, attempt read, attempt review and invitation policies. 0001 to 0022 are byte-identical; no grant change.
+- Database upgrade tests count the migration files (`tests/helpers/migrations.ts`) instead of a fixed number, so additive migrations from parallel slices no longer edit nine tests.
+- The 0014 upgrade test now seeds without teaching grants, whose newer columns do not exist at 0013.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17). The final run was on `5882bb6`, this branch with main `d62424d` (Alpha 24 group conversations) merged in.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 664 passed, 0 failed (main's 654 plus 6 contributor domain and 4 contributor database tests) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 271 passed across 15 suites, including 11 group conversation checks from main and 11 instructor checks (1 new: adding a contributor and changing their role) |
+| Connected-browser suites | 60 passed (unchanged; the instructor suite follows the renamed controls) |
+| `npm run test:postgres` | Passed on PostgreSQL 16 |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates |
+
+## Corrections made while verifying
+
+- Merging main brought group conversations in as migration 0022, so this slice's migration was renamed from 0022 to 0023 before it reached main. The upgrade test now starts from 0022.
+- The first full `npm test` run failed one test, the 0014 upgrade, because it seeded the current fixture (with a teaching role) into a 0013 schema. The test now seeds without grants; the rerun passed.
+
+## Not verified, and why
+
+- Contributor invitations by email are not built: an invitation still makes an instructor, and the 0023 policy refuses any other role on acceptance.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Per-lesson grants, instructor-started tracks and uploaded lesson video, each its own release.
+3. When deployment resumes: follow the launch runbook once it lands.
 
 ## Historical Alpha 26 evidence: confirming and changing your email address
 

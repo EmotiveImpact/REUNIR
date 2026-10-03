@@ -10,6 +10,7 @@ import { lessonContent } from '../packages/domain/src/authoring';
 import { normaliseQuiz } from '../packages/domain/src/assessments';
 import { quizFingerprint, type QuizAnswer } from '../packages/contracts/src/assessments';
 import { seedBeforeProjectWork } from './helpers/legacy-fixture';
+import { MIGRATION_COUNT } from './helpers/migrations';
 
 let db: Database, repo: WorkspaceRepository;
 const ORG = 'org_code_black', NORTH = 'org_studio_north';
@@ -56,7 +57,7 @@ test('0010 upgrade keeps lessons, drafts and history exactly as they were and ad
         }
         assert.deepEqual(await read('completions'), before.completions);
         assert.equal((await old.query('SELECT count(*)::int AS n FROM quiz_attempts')).rows[0].n, 0);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 24);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, MIGRATION_COUNT);
     } finally { await old.close(); }
 });
 
