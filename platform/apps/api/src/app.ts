@@ -12,9 +12,10 @@ import { ZodError, z } from 'zod';
 import { createHash, timingSafeEqual, randomUUID } from 'node:crypto';
 import { DomainError } from '../../../packages/contracts/src/index';
 import { WorkspaceRepository } from '../../../packages/db/src/repository';
-import { isMissingObject, objectKey, resourceObjectKey, uploadSchema, type PrivateStorage } from './storage';
+import { coverObjectKey, isMissingObject, objectKey, resourceObjectKey, uploadSchema, type PrivateStorage } from './storage';
 import { clientUpload, type StoredObservation } from '../../../packages/domain/src/resources';
 import { SIGNATURE_BYTES, fileSignatureMatches, resourceUploadRequest, type ResourceContext } from '../../../packages/contracts/src/lesson-resources';
+import { COVER_HEAD_BYTES, coverBytesAcceptable, coverSubject, coverUploadRequest } from '../../../packages/contracts/src/covers';
 export interface SessionIdentity {
     id: string;
     name: string;
@@ -54,7 +55,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     });
     app.get('/api/health', async (c) => { await repository.db.query('SELECT 1'); return c.json({ status: 'ok', version: RELEASE_VERSION, mode: 'live', database: repository.db.kind, storage: storage ? 'configured' : 'not-configured' }); });
     app.get('/api/health/live', c=>c.json({status:'ok',version:RELEASE_VERSION}));
-    app.get('/api/account/capabilities', c=>c.json({invitations:!!invitations,passwordRecovery:!!mail?.transport,resourceUploads:!!storage}));
+    app.get('/api/account/capabilities', c=>c.json({invitations:!!invitations,passwordRecovery:!!mail?.transport,resourceUploads:!!storage,coverUploads:!!storage}));
     // Best effort after commit: an orphaned object is private and unreferenced, never served.
     const removeQuietly = async (requestId: string, keys: string[]) => { for (const key of keys) {
         try { await storage?.remove(key); }
@@ -138,6 +139,13 @@ export function createApp({ repository, operations, origin, resolveSession, auth
             const policy = await storage.upload(upload.objectKey, upload.contentType, upload.sizeBytes);
             return c.json({ id: upload.id, ...policy, method: 'POST', expiresIn: 300 }, 201);
         }
+        if (body && typeof body === 'object' && (body as { purpose?: unknown }).purpose === 'cover_image') {
+            const input = coverUploadRequest.parse(body);
+            const { upload, expired } = await repository.beginCoverUpload(slug, who.id, input, (organizationId, id) => coverObjectKey(organizationId, input.subject, input.subjectId, input.contentType, id), c.get('requestId'));
+            await removeQuietly(c.get('requestId'), expired.map(x => x.objectKey));
+            const policy = await storage.upload(upload.objectKey, upload.contentType, upload.sizeBytes);
+            return c.json({ id: upload.id, ...policy, method: 'POST', expiresIn: 300 }, 201);
+        }
         const input = uploadSchema.parse(body);
         const snapshot = await repository.snapshot(slug, who.id);
         const id = randomUUID();
@@ -153,23 +161,41 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         const slug = c.req.param('slug'), who = c.get('identity').id, id = c.req.param('id');
         const intent = await repository.uploadIntent(slug, who, id);
         const key = String(intent.object_key);
+        /** Size, type and generation as stored, plus the first bytes pinned to that generation. */
+        const inspect = async (bytes: number) => {
+            const meta = await storage.metadata(key);
+            if (!meta)
+                throw new DomainError('UPLOAD_MISSING', 'The file has not reached private storage. Try uploading it again.', 409);
+            const matches = meta.size === Number(intent.size_bytes) && meta.contentType === intent.content_type && !!meta.generation;
+            let head: Uint8Array = new Uint8Array();
+            if (matches) {
+                try { head = await storage.head(key, Math.min(bytes, meta.size), meta.generation!); }
+                catch (error) {
+                    if (isMissingObject(error))
+                        throw new DomainError('UPLOAD_CHANGED', 'The file changed while it was being checked. Upload it again.', 409);
+                    throw error;
+                }
+            }
+            return { meta, matches, head };
+        };
+        if (intent.purpose === 'cover_image') {
+            let observed = { sizeBytes: 0, contentType: '', generation: null as string | null, bytesAcceptable: false };
+            if (intent.status === 'pending') {
+                const { meta, matches, head } = await inspect(COVER_HEAD_BYTES);
+                observed = { sizeBytes: meta.size, contentType: meta.contentType, generation: meta.generation ?? null, bytesAcceptable: matches && coverBytesAcceptable(String(intent.content_type), head) };
+            }
+            const result = await repository.completeCoverUpload(slug, who, id, observed, c.get('requestId'));
+            if (result.outcome === 'rejected') {
+                await removeQuietly(c.get('requestId'), [key]);
+                throw new DomainError('FILE_MISMATCH', 'This image is not a JPEG, PNG or WebP of a usable size. Nothing was changed.');
+            }
+            return c.json({ id, status: 'ready', upload: clientUpload(result.upload) });
+        }
         if (intent.purpose === 'lesson_resource') {
             let observed: StoredObservation = { sizeBytes: 0, contentType: '', generation: null, signatureMatches: false };
             if (intent.status === 'pending') {
-                const meta = await storage.metadata(key);
-                if (!meta)
-                    throw new DomainError('UPLOAD_MISSING', 'The file has not reached private storage. Try uploading it again.', 409);
-                const matches = meta.size === Number(intent.size_bytes) && meta.contentType === intent.content_type && !!meta.generation;
                 // Read only the first bytes, pinned to the generation that was just measured.
-                let head: Uint8Array = new Uint8Array();
-                if (matches) {
-                    try { head = await storage.head(key, SIGNATURE_BYTES, meta.generation!); }
-                    catch (error) {
-                        if (isMissingObject(error))
-                            throw new DomainError('UPLOAD_CHANGED', 'The file changed while it was being checked. Upload it again.', 409);
-                        throw error;
-                    }
-                }
+                const { meta, matches, head } = await inspect(SIGNATURE_BYTES);
                 observed = { sizeBytes: meta.size, contentType: meta.contentType, generation: meta.generation ?? null, signatureMatches: matches && fileSignatureMatches(String(intent.content_type), head) };
             }
             const result = await repository.completeResourceUpload(slug, who, id, observed, c.get('requestId'));
@@ -212,6 +238,27 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         const url = await storage.download(target.objectKey, { filename: target.filename, contentType: target.contentType, generation: target.generation });
         return { url, expiresIn: 120, filename: target.filename };
     };
+    // Cover bytes come through the application so cards need no third-party origin. The URL names the verified file,
+    // so a browser may keep it privately for an hour; access is checked again whenever it asks.
+    app.get('/api/organisations/:slug/covers/:subject/:subjectId/:fileId', async (c) => {
+        if (!storage)
+            throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
+        const subject = coverSubject.parse(c.req.param('subject'));
+        const target = await repository.coverImage(c.req.param('slug'), c.get('identity').id, subject, id.parse(c.req.param('subjectId')), id.parse(c.req.param('fileId')));
+        let bytes: Uint8Array;
+        try { bytes = await storage.head(target.objectKey, target.sizeBytes, target.generation); }
+        catch (error) {
+            if (isMissingObject(error))
+                throw new DomainError('NOT_FOUND', 'That cover is not available.', 404);
+            throw error;
+        }
+        c.header('Cache-Control', 'private, max-age=3600');
+        c.header('Content-Type', target.contentType);
+        c.header('Content-Disposition', 'inline');
+        c.header('X-Content-Type-Options', 'nosniff');
+        c.header('Content-Security-Policy', "default-src 'none'; sandbox");
+        return c.body(bytes as Uint8Array<ArrayBuffer>, 200);
+    });
     for (const [segment, context] of [['lessons', 'lesson'], ['lesson-drafts', 'draft'], ['lesson-revisions', 'revision']] as const)
         app.get(`/api/organisations/:slug/${segment}/:recordId/resources/:resourceId/download`, async (c) => c.json(await resourceDownload(c.req.param('slug'), c.get('identity').id, context, c.req.param('recordId'), c.req.param('resourceId'))));
     app.notFound(c => c.json({ error: { code: 'NOT_FOUND', message: 'Endpoint not found.' } }, 404));

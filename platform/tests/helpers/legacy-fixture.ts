@@ -10,7 +10,7 @@ export async function seedBeforeProjectWork(db:Database){
         for(const spec of tables.filter(t=>!['projectTasks','taskNotes','uploads','quizAttempts'].includes(t.key))){
             for(const row of state[spec.key]){
                 const r=row as unknown as Record<string,unknown>;
-                const fields=spec.fields.filter(f=>!['richBody','resources','quiz'].includes(f.property));
+                const fields=spec.fields.filter(f=>!['richBody','resources','quiz','coverImage'].includes(f.property));
                 const values=fields.map(f=>f.type==='jsonb'?JSON.stringify(r[f.property]):r[f.property]);
                 await tx.query(`INSERT INTO ${spec.table} (${fields.map(f=>f.column).join(',')}) VALUES (${values.map((_,i)=>'$'+(i+1)).join(',')})`,values);
             }

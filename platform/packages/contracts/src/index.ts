@@ -1,6 +1,7 @@
 import { lessonDocumentSchema, type LessonDocument } from './lesson-document';
 import { lessonResourcesInput, type LessonResource } from './lesson-resources';
 import { lessonQuizSchema, quizAnswersInput, quizFingerprintInput, quizMarksInput, type LessonQuiz, type QuizAnswer, type QuizResult } from './assessments';
+import { coverChange, type CoverImage } from './covers';
 import { z } from 'zod';
 export type Id = string;
 export type Role = 'owner' | 'admin' | 'moderator' | 'member';
@@ -90,7 +91,10 @@ export interface Track extends TenantRecord {
     category: string;
     level: string;
     colour: string;
+    /** Legacy art name, kept for stored data. Covers now come only from `coverImage`. */
     cover: string;
+    /** Uploaded cover, or none for the plain panel. */
+    coverImage?: CoverImage | null;
     authorId: Id;
     published: boolean;
 }
@@ -123,9 +127,10 @@ export interface LessonRevision extends TenantRecord, LessonContent {
     trackId: Id; lessonId: Id; draftId: Id; sequence: number;
     kind: 'captured' | 'published'; actorId: Id;
 }
-/** The existing upload intent. Lesson files are scoped to one track; storage keys never leave the server. */
+/** The existing upload intent. Lesson files are scoped to one track and covers to one track or project; storage keys never leave the server. */
 export interface Upload extends TenantRecord {
-    userId: Id; purpose: 'member' | 'lesson_resource'; trackId: Id | null;
+    userId: Id; purpose: 'member' | 'lesson_resource' | 'cover_image'; trackId: Id | null;
+    coverTrackId?: Id | null; coverProjectId?: Id | null;
     originalName: string; contentType: string; sizeBytes: number;
     status: 'pending' | 'ready' | 'rejected';
     objectKey: string; completedAt: string | null; generation: string | null;
@@ -181,7 +186,10 @@ export interface Project extends TenantRecord {
     skills: string[];
     ownerId: Id;
     status: 'idea' | 'building' | 'launched';
+    /** Legacy art name, kept for stored data. Covers now come only from `coverImage`. */
     cover: string;
+    /** Uploaded cover, or none for the plain panel. */
+    coverImage?: CoverImage | null;
 }
 export interface ProjectMember extends TenantRecord {
     projectId: Id;
@@ -358,6 +366,8 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({type:z.literal('lesson.draft.restore'),draftId:id,expectedVersion,revisionId:id}).strict(),
     z.object({type:z.literal('track.lessons.reorder'),trackId:id,
         expectedOrder:z.array(id).max(200),lessonIds:z.array(id).max(200)}).strict(),
+    z.object({type:z.literal('track.cover.set'),trackId:id,...coverChange}).strict(),
+    z.object({type:z.literal('project.cover.set'),projectId:id,...coverChange}).strict(),
     z.object({type:z.literal('task.create'),projectId:id,...taskFields}).strict(),
     z.object({type:z.literal('task.edit'),taskId:id,expectedVersion,...taskFields}).strict(),
     z.object({type:z.literal('task.claim'),taskId:id,expectedVersion}).strict(),

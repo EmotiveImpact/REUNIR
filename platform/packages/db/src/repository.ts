@@ -3,6 +3,8 @@ import { applyCommand, visibleWorkspace, actorFor } from '../../domain/src/engin
 import { DomainError, commandSchema, type Workspace, type TenantContext, type MutationResult } from '../../contracts/src/index';
 import type { ResourceRef, ResourceUploadRequest } from '../../contracts/src/lesson-resources';
 import { beginResourceUpload, completeResourceUpload, discardResourceUpload, resolveResourceDownload, type StoredObservation } from '../../domain/src/resources';
+import { beginCoverUpload, completeCoverUpload, resolveCoverImage, type CoverObservation } from '../../domain/src/covers';
+import type { CoverSubject, CoverUploadRequest } from '../../contracts/src/covers';
 import { tables, type TableSpec, type CollectionKey } from './tables';
 import type { Database, SQL } from './connection';
 const slugPattern = /^[a-z0-9][a-z0-9-]{0,99}$/;
@@ -188,6 +190,29 @@ export class WorkspaceRepository {
             const result = discardResourceUpload(before, context(String(org.id), userId, requestId), id, new Date().toISOString());
             await saveChanges(sql, before, result.workspace);
             return { id: result.id, objectKey: result.objectKey };
+        });
+    }
+    /** Cover images follow the same split: domain rules inside the tenant transaction, storage calls outside it. */
+    async beginCoverUpload(slug: string, userId: string, request: CoverUploadRequest, key: (organizationId: string, id: string) => string, requestId: string) {
+        return this.within(slug, userId, true, async (sql, org) => {
+            const before = await readAll(sql, org), orgId = String(org.id), id = randomUUID();
+            const result = beginCoverUpload(before, context(orgId, userId, requestId), request, { id, objectKey: key(orgId, id) }, new Date().toISOString());
+            await saveChanges(sql, before, result.workspace);
+            return { upload: result.upload, expired: result.expired };
+        });
+    }
+    async completeCoverUpload(slug: string, userId: string, id: string, observed: CoverObservation, requestId: string) {
+        return this.within(slug, userId, true, async (sql, org) => {
+            const before = await readAll(sql, org);
+            const result = completeCoverUpload(before, context(String(org.id), userId, requestId), id, observed, new Date().toISOString());
+            if (result.outcome !== 'unchanged') await saveChanges(sql, before, result.workspace);
+            return { upload: result.upload, outcome: result.outcome };
+        });
+    }
+    async coverImage(slug: string, userId: string, kind: CoverSubject, subjectId: string, fileId: string) {
+        return this.within(slug, userId, false, async (sql, org) => {
+            const { upload } = resolveCoverImage(await readAll(sql, org), context(String(org.id), userId), kind, subjectId, fileId);
+            return { objectKey: upload.objectKey, generation: upload.generation!, contentType: upload.contentType, sizeBytes: upload.sizeBytes };
         });
     }
     async resourceDownload(slug: string, userId: string, ref: ResourceRef) {
