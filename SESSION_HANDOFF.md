@@ -61,13 +61,47 @@ Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
 
 ---
-## Historical handover: Alpha 32 appeals, then the rest of accounts and trust
+## Historical handover: Alpha 33 evidence history, then consented credits
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, EVIDENCE_HISTORY.md, decisions/033-evidence-history.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `f3efa39`, the merge of PR #26 (Alpha 32, appealing a hidden post). The application version stays main's 0.39.0-alpha.1.
+- This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+
+### What is done
+
+Reviewed evidence can be corrected through a second review or withdrawn with a reason. The reviewed wording is kept in `evidence_changes`, which the runtime role can add to and decide but never reword or delete. Withdrawn evidence stays visible, marked withdrawn, and stops counting everywhere recognised or verified evidence counts. Migration 0032.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+### Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores, notification settings and appeals private. Reviewed evidence is corrected only through review and withdrawn only with a reason; its history is never rewritten. Nobody decides an appeal or reviews a correction about their own work. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+### Next
+
+1. Consented credit for several contributors (Alpha 34, migration 0033), built locally and opened from main once this merges.
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 32 handover: appealing a hidden post
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, MODERATION.md, decisions/032-moderation-appeals.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ### Where the source is
 
 - Base: main `b80fc04`, the merge of PR #23 (Alpha 31, data retention rules), with main `16b2768` (PR #16, Alpha 23 virus scanning) main `0a818fa` (PR #21, Alpha 39 cover library management, migration 0038) and main `94b130b` (PR #25, Alpha 28 collections, migration 0028) and main `3c770b5` (PR #24, Alpha 35 lesson grants, migration 0034) merged in. The application version stays main's 0.39.0-alpha.1.
+- Outcome: [PR #26](https://github.com/EmotiveImpact/REUNIR/pull/26), merged into main as `f3efa39`.
 - This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ### What is done

@@ -33,6 +33,7 @@ import './groups.css';
 import './learning-record.css';
 import './account.css';
 import './states.css';
+import './evidence-history.css';
 import './collections.css';
 import './project-work.css';
 import './forms.css';
