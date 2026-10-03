@@ -24,6 +24,7 @@ Numbering: this thread holds Alpha 31 to 34, decisions 031 to 034 and migrations
 - **Web.** New Appeals page, an Appeal dialogue on the post, and an Open appeals panel on the Moderation tab. Neutral colours only.
 - **Demo.** Code Black has one fictional hidden post by the demo member, so the whole journey works in the browser demo.
 - **Account deletion** removes the appellant's appeals; decisions stay in the audit trail.
+- Review fix on PR #26 (Codex): an appeal records the hiding it challenges (`hidden_by`, `hidden_at`). Once the post is restored or hidden again, the appeal can no longer be decided, in the domain and under row security, and appealing the current hiding closes it. Two new tests cover this.
 
 ## Local verification, 3 October 2026
 
@@ -32,7 +33,7 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 702 passed, 0 failed (19 new: 14 in `tests/appeals.test.ts`, including cross-tenant and inactive-administrator cases, and 5 in `tests/appeals-database.test.ts` under the restricted role) |
+| `npm test` | 703 passed, 0 failed after the review fix (20 new: 14 in `tests/appeals.test.ts`, including cross-tenant and inactive-administrator cases, and 6 in `tests/appeals-database.test.ts` under the restricted role) |
 | `npm run test:http` | 19 passed |
 | `npm run build`, `npm run bundle:preview` | Passed |
 | Demo-browser suites | `appeals` 7 (new), `accounts` 13, `monochrome` 16, `v4` 20, `covers` 17, `states` 12, `instructors` 11, `notifications` 5 |

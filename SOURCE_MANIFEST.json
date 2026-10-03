@@ -2,7 +2,7 @@
   "release": "REUNIR Alpha 32 appealing a hidden post",
   "version": "0.32.0-alpha.1",
   "sourceBaseline": "b80fc04e119052e0be00f8bcb2ee46f93973029d",
-  "generatedAt": "2026-10-03T14:20:39.726328+00:00",
+  "generatedAt": "2026-10-03T17:14:44.708153+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -211,8 +211,8 @@
     },
     {
       "path": "platform/apps/web/src/components/appeals.tsx",
-      "sha256": "8342661d9fc3231d326d93c422be87fe319e139338f39fa3f62be8fdb21f1081",
-      "bytes": 3144
+      "sha256": "85913c5a83c41b9fbf0675d5af956c145259d4a604403ccc676475f602d8100d",
+      "bytes": 3070
     },
     {
       "path": "platform/apps/web/src/components/cover-library.tsx",
@@ -481,8 +481,8 @@
     },
     {
       "path": "platform/apps/web/src/pages/appeals.tsx",
-      "sha256": "a78dd0c5934f1197884a7b774a044c53d8bff7e55202cfbf85f3f9ebca11f45b",
-      "bytes": 8294
+      "sha256": "eb349b3bd5647cc63d5000d1708b77a5944e823a107b2817618204a942d5be9b",
+      "bytes": 8528
     },
     {
       "path": "platform/apps/web/src/pages/authoring.tsx",
@@ -526,8 +526,8 @@
     },
     {
       "path": "platform/apps/web/src/pages/people.tsx",
-      "sha256": "a99ceb521de84290e51859e387247d82ad4c58d265b1119c5b7bd3af3f087e25",
-      "bytes": 20598
+      "sha256": "b53a83bc8f4a4ed2c8403a92e439d39b57a76406d7330608e43dd01694889142",
+      "bytes": 20701
     },
     {
       "path": "platform/apps/web/src/pages/project-work.tsx",
@@ -601,8 +601,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "c572d580492a47af9378142f1ba4002bb7ac9a5c46360618f19d86315206c9b6",
-      "bytes": 147340
+      "sha256": "86737f4ef9013cb5dc96507b0f3d5d3002fd35db2b97289573795a2dd93059e3",
+      "bytes": 147652
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -646,8 +646,8 @@
     },
     {
       "path": "platform/docs/MODERATION.md",
-      "sha256": "ca721998830da32f69f40c82611da3fbaae641ab1c5d46ac0950670ca883cc7d",
-      "bytes": 4673
+      "sha256": "affe55155769ef6688b69ccaaf68929c4ac9e0d416e4b37a3887f1bdba62b5ae",
+      "bytes": 5083
     },
     {
       "path": "platform/docs/PILOT_OPERATIONS.md",
@@ -831,8 +831,8 @@
     },
     {
       "path": "platform/docs/decisions/032-moderation-appeals.md",
-      "sha256": "fa345d03ea03a2f053ef5782d09494b64764842a413789623725da7a792a7e3b",
-      "bytes": 5470
+      "sha256": "c5f001e62df42fe7111f11d9957b1041ab399f31d9021ae67dba7065ef092abb",
+      "bytes": 5900
     },
     {
       "path": "platform/docs/history/ALPHA_05_BUILD_STATUS.md",
@@ -1181,8 +1181,8 @@
     },
     {
       "path": "platform/packages/contracts/src/index.ts",
-      "sha256": "41265abbbb4402ba5711a99b0028c9f8e79e2c281256bd0a73a4c9016d7d1a03",
-      "bytes": 24700
+      "sha256": "31326291f74c08cc29968b85b9021ec4324ad37206d75fd2e04d0eaeaa597283",
+      "bytes": 24877
     },
     {
       "path": "platform/packages/contracts/src/lesson-document.ts",
@@ -1351,8 +1351,8 @@
     },
     {
       "path": "platform/packages/db/migrations/0031_moderation_appeals.sql",
-      "sha256": "17d232a0f812c81bac0b5c171240c2aa424f45fa90d5f55bbe2181b46b638aff",
-      "bytes": 5445
+      "sha256": "458953c6611737957db2af3bda89ee40dc7b4b5eb4c8f555dd1328dc1bbe3634",
+      "bytes": 6188
     },
     {
       "path": "platform/packages/db/package.json",
@@ -1411,8 +1411,8 @@
     },
     {
       "path": "platform/packages/db/src/tables.ts",
-      "sha256": "cd90bed892ec1d3218784da730b0ec5cc52aabb0ad551abde6df7e5283a10f2a",
-      "bytes": 49109
+      "sha256": "405bdb4020dfc53e5bc060086a6f5b0b652c00654836bc20cf4ba01a3fc89f8e",
+      "bytes": 49227
     },
     {
       "path": "platform/packages/domain/src/access.ts",
@@ -1431,8 +1431,8 @@
     },
     {
       "path": "platform/packages/domain/src/appeals.ts",
-      "sha256": "d7c8baa1e15cdd4572e3d503a8bfdd69c540a46355026478f7bab7e6ed789aaa",
-      "bytes": 8584
+      "sha256": "a675e034649dd3f3c34335c7e39575f046f9200ee497c475e8a15013f4720414",
+      "bytes": 9635
     },
     {
       "path": "platform/packages/domain/src/assessments.ts",
@@ -1716,13 +1716,13 @@
     },
     {
       "path": "platform/tests/appeals-database.test.ts",
-      "sha256": "3101db81e38e003783caf650e52081a4bd7333aeb6578a1eafcb35f28a1f5275",
-      "bytes": 13444
+      "sha256": "a3f00a1c22067e38161d21aedb26a06e6b6dfd6f24bcab7ab36f381d540517d0",
+      "bytes": 16017
     },
     {
       "path": "platform/tests/appeals.test.ts",
-      "sha256": "f54255de7ea22d6f7f5b0f4ed97a31b3ab07f6976fbca5501529888ad825b9a1",
-      "bytes": 16015
+      "sha256": "89ee20dbed635e750598de02eb338db909283e7b0ca0896c0297264d668c86c6",
+      "bytes": 17203
     },
     {
       "path": "platform/tests/assessments-database.test.ts",

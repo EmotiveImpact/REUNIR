@@ -122,6 +122,26 @@ test('the moderator cannot decide at the database either, and a suspended member
     await run(DEMO_ADMIN, { type: 'member.status', memberId: sofia, status: 'active', reason: 'Restored after the test.' });
 });
 
+test('an appeal binds to the hiding it challenges: after the post is moderated again the database refuses to decide it', async () => {
+    await db.query("INSERT INTO posts(id,organization_id,created_at,space_id,author_id,kind,title,body,pinned,hidden,cover) VALUES('post_jordan_again',$1,now(),'space_general',$2,'update','Another test post','Fictional.',false,false,'')", [ORG, JORDAN]);
+    await run(MAYA, { type: 'post.moderate', postId: 'post_jordan_again', hidden: true });
+    const r = await run(JORDAN, { type: 'moderation.appeal', postId: 'post_jordan_again', reason: 'Please look again.' });
+    const bound = (await db.query<{ hidden_by: string; same: boolean }>("SELECT a.hidden_by,a.hidden_at=p.moderated_at AS same FROM moderation_appeals a JOIN posts p ON p.organization_id=a.organization_id AND p.id=a.subject_id WHERE a.organization_id=$1 AND a.id=$2", [ORG, r.objectId])).rows[0];
+    assert.deepEqual(bound, { hidden_by: MAYA, same: true });
+    await run(MAYA, { type: 'post.moderate', postId: 'post_jordan_again', hidden: false });
+    await run(MAYA, { type: 'post.moderate', postId: 'post_jordan_again', hidden: true });
+    await assert.rejects(() => run(DEMO_ADMIN, { type: 'moderation.appeal.decide', appealId: r.objectId!, decision: 'reversed', response: 'Restoring.' }), /moderated again/);
+    await asRuntime(ORG, DEMO_ADMIN, sql => sql.query("UPDATE moderation_appeals SET status='reversed',decided_by=$2,decided_at=now(),response='Direct' WHERE id=$1", [r.objectId, DEMO_ADMIN]));
+    assert.equal((await row(r.objectId!)).status, 'pending', 'row security admits no decision about an earlier hiding');
+    // Appealing the current hiding replaces the out-of-date appeal, and that one can be decided.
+    const fresh = await run(JORDAN, { type: 'moderation.appeal', postId: 'post_jordan_again', reason: 'About the second hiding.' });
+    assert.equal((await row(r.objectId!)).status, 'withdrawn');
+    await run(DEMO_ADMIN, { type: 'moderation.appeal.decide', appealId: fresh.objectId!, decision: 'upheld', response: 'It stays hidden.' });
+    assert.equal((await row(fresh.objectId!)).status, 'upheld');
+    // An appeal that names a hiding other than the post's current one is refused on insert.
+    await assert.rejects(() => asRuntime(ORG, JORDAN, sql => sql.query("INSERT INTO moderation_appeals(id,organization_id,created_at,subject,subject_id,appellant_id,hidden_by,hidden_at,reason) VALUES('stale_appeal',$1,now(),'post','post_jordan_again',$2,$3,now()-interval '1 day','Stale')", [ORG, JORDAN, MAYA])), /row-level security/);
+});
+
 test('deleting the appellant’s account removes their appeals and nobody else’s', async () => {
     const now = new Date().toISOString();
     await db.query('INSERT INTO auth_user(id,name,email,email_verified,created_at,updated_at) VALUES($1,$2,$3,true,$4,$4)', [NIA, 'Nia James', 'nia@example.test', now]);

@@ -7,11 +7,9 @@ import { useWorkspace } from '../lib/context';
 import { APPEAL_TEXT_MAX } from '../../../../packages/contracts/src/appeals';
 import type { ModerationAppeal, Post } from '../../../../packages/contracts/src/index';
 
-/** The appeal about this post that is open, or decided for its current hiding, if any. */
+/** The appeal about this post's current hiding, open or decided, if any. An appeal about an earlier hiding no longer counts. */
 export function currentAppeal(appeals: ModerationAppeal[], post: Post): ModerationAppeal | undefined {
-    const mine = appeals.filter(a => a.subject === 'post' && a.subjectId === post.id);
-    return mine.find(a => a.status === 'pending')
-        ?? mine.filter(a => (a.status === 'upheld' || a.status === 'reversed') && (!post.moderatedAt || a.createdAt >= post.moderatedAt)).at(-1);
+    return appeals.filter(a => a.subject === 'post' && a.subjectId === post.id && a.status !== 'withdrawn' && (a.hiddenAt ?? null) === (post.moderatedAt ?? null)).at(-1);
 }
 
 /** Shown on the author's own hidden post: only they can see it, and they can ask for a second look. */

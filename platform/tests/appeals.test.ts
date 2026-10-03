@@ -164,14 +164,25 @@ test('reversal restores the post, is audited and tells the appellant; upholding 
     assert.deepEqual([notices(u, DEMO_USER).at(-1)!.title, notices(u, DEMO_USER).at(-1)!.body], ['Your post stays hidden', 'Sales posts belong elsewhere.']);
 });
 
-test('a post restored while its appeal waited cannot be kept hidden by the appeal, but the appeal can be closed', () => {
-    let s = appeal(createSeed()).workspace;
-    const a = s.moderationAppeals[0];
+test('an appeal is bound to the hiding it challenges: once the post is moderated again it cannot be decided, and a new appeal replaces it', () => {
+    let s = withRole(appeal(createSeed()).workspace, MAYA, 'admin');
+    const old = s.moderationAppeals[0];
+    assert.deepEqual([old.hiddenBy, old.hiddenAt], [MAYA, post(s).moderatedAt], 'the appeal records the hiding it challenges');
+    // Maya restores the post, then the owner hides it again before anyone decides the first appeal.
     s = run(s, { type: 'post.moderate', postId: SEEDED, hidden: false }, MAYA);
-    throwsCode(() => decide(s, a.id, DEMO_ADMIN, 'upheld'), 'ALREADY_RESTORED');
-    s = decide(s, a.id, DEMO_ADMIN, 'reversed').workspace;
-    assert.equal(s.moderationAppeals[0].status, 'reversed');
-    assert.notEqual(s.audit.at(-1)!.action, 'post.restored', 'nothing was restored by the decision');
+    s = run(s, { type: 'post.moderate', postId: SEEDED, hidden: true }, DEMO_ADMIN, LATER);
+    for (const user of [MAYA, DEMO_ADMIN]) for (const d of ['upheld', 'reversed'] as const) throwsCode(() => decide(s, old.id, user, d), 'APPEAL_OUTDATED');
+    assert.deepEqual(appealDeciders(s, old), [], 'nobody may decide an appeal about an earlier hiding');
+    assert.match(decisionBlock(s, member(s, MAYA), old)!, /moderated again/);
+    assert.equal(post(s).hidden, true, 'the later hiding stands');
+    // The author appeals the current hiding; the out-of-date appeal is closed, and the owner who hid it now cannot decide.
+    const r = exec(s, { type: 'moderation.appeal', postId: SEEDED, reason: 'Please look at this hiding too.' }, DEMO_USER, LATER);
+    s = r.workspace;
+    const fresh = s.moderationAppeals.find(a => a.id === r.objectId)!;
+    assert.deepEqual([s.moderationAppeals.find(a => a.id === old.id)!.status, fresh.status, fresh.hiddenBy, fresh.hiddenAt], ['withdrawn', 'pending', DEMO_ADMIN, LATER]);
+    throwsCode(() => decide(s, fresh.id, DEMO_ADMIN, 'reversed'), 'MODERATOR_CANNOT_DECIDE');
+    s = decide(s, fresh.id, MAYA, 'reversed').workspace;
+    assert.equal(post(s).hidden, false);
 });
 
 test('appeals are private to the appellant and the owners and administrators, and are never community activity', () => {
