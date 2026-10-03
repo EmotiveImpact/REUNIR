@@ -1,8 +1,8 @@
 {
-  "release": "REUNIR Alpha 27 data retention rules",
-  "version": "0.27.0-alpha.1",
+  "release": "REUNIR Alpha 31 data retention rules",
+  "version": "0.31.0-alpha.1",
   "sourceBaseline": "9b34cacaac42ab294cc9897502a49214e92dfd21",
-  "generatedAt": "2026-10-03T13:29:47.251327+00:00",
+  "generatedAt": "2026-10-03T13:32:33.535341+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "09ff86ad8d65a8a2cb47386afd6c01d874c6f4526317275edd62c7da6ca3230a",
-      "bytes": 31991
+      "sha256": "3c6183f9e2910926a52b6cb5aa1da186b021c4100e2776454bfaffc512058bdd",
+      "bytes": 32092
     },
     {
       "path": "README.md",
@@ -36,7 +36,7 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "e88893af9f164672cdf00e376b162ff18da43e927a46e69242fec88d3b6243b2",
+      "sha256": "9eae135168e375daacf11010c0bbbcd01d2fd0e63f6e632273bdad725f7f3b18",
       "bytes": 71381
     },
     {
@@ -156,7 +156,7 @@
     },
     {
       "path": "platform/apps/web/src/account.css",
-      "sha256": "3be16ad2316877cd102741d9f407cf417c7bd6e377fd230c9c6087f7022cb326",
+      "sha256": "811ba45775f5ad8030ef6abf519417377930776efe032f1d665afdbc622c07f9",
       "bytes": 5131
     },
     {
@@ -566,8 +566,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "25df81da794dded120aa4e094250512eb8d42625e8b3bb9de38d91486cca3c0e",
-      "bytes": 132946
+      "sha256": "9b7a04c397e4b5e8ee3ff674e17a895f2f820c2a92234fbf730fc16fc2304409",
+      "bytes": 133109
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -636,7 +636,7 @@
     },
     {
       "path": "platform/docs/RETENTION.md",
-      "sha256": "bce9fef692fb7b5537e344daadffe5d37c3bb4f02df2499f50a2a38307eec872",
+      "sha256": "1e40356ee78966f764b2862576f1db83cb540faedaaa250fb243b6bd5a00c353",
       "bytes": 2634
     },
     {
@@ -646,7 +646,7 @@
     },
     {
       "path": "platform/docs/ROADMAP.md",
-      "sha256": "b68cb715a6dd63b3732aaccaf39e52adade46e403485cb7d4b915179f6d62f89",
+      "sha256": "0658e5a03fdde8992fef2d7517a7d28b20a301bd32cfbb2732405e7804df0449",
       "bytes": 11489
     },
     {
@@ -770,8 +770,8 @@
       "bytes": 5162
     },
     {
-      "path": "platform/docs/decisions/027-data-retention.md",
-      "sha256": "912c661e44fc244a6b6948ac989c6ed3592d414449fddcad81daa7b9fd020fbd",
+      "path": "platform/docs/decisions/031-data-retention.md",
+      "sha256": "80f345a3865a1bb0e5517741e147fd36b0dcff3b5b466977e1b1e2b19c724650",
       "bytes": 3300
     },
     {
@@ -1081,12 +1081,12 @@
     },
     {
       "path": "platform/package-lock.json",
-      "sha256": "0b59b3740094829d07aa6df2af48bcdd971bfe5d31833ce5d955c0fa202a7995",
+      "sha256": "142a81d1c44381701d5c7385058e588cc0ed47d7b4baac97b06643beb7fef0b3",
       "bytes": 173096
     },
     {
       "path": "platform/package.json",
-      "sha256": "14e9778f7f7e6c3a15f6c038150dae3f3e3b0db005318f5c1db1f8b9b19e5116",
+      "sha256": "e8b4554ea445e3fd38d2588f2bedeaefbe693c35adab1a3ec5c87b14c0e659f7",
       "bytes": 4622
     },
     {
@@ -1141,7 +1141,7 @@
     },
     {
       "path": "platform/packages/contracts/src/operations.ts",
-      "sha256": "5739c9933ac9d53d8571a12fa218b88fb68c8d504f6f05c91c60e9ef2e8b49ac",
+      "sha256": "7f89cb65a2aef5182b7d4b3a381a4748e9d394c14a12b4a7ed7e3a93f5c1c885",
       "bytes": 1937
     },
     {
@@ -1275,7 +1275,7 @@
       "bytes": 3635
     },
     {
-      "path": "platform/packages/db/migrations/0023_retention_job.sql",
+      "path": "platform/packages/db/migrations/0030_retention_job.sql",
       "sha256": "eae3e93b40dfc046070d0467001f2cd25fb5be718fc2cff977c9434c96f3acd4",
       "bytes": 957
     },
@@ -1321,7 +1321,7 @@
     },
     {
       "path": "platform/packages/db/src/retention.ts",
-      "sha256": "40e0fff204041244968d20500cf6b7d6011873853735e4771deec7cb432e266f",
+      "sha256": "45a4cb16ab3b333562a8d225a4e70530b52ab99f17713021c81e0e6a4572287c",
       "bytes": 5062
     },
     {
@@ -1561,7 +1561,7 @@
     },
     {
       "path": "platform/scripts/postgres-check.ts",
-      "sha256": "483df651bb0a9ade4f3f60ddfd3fe6ce5ef8e28b1beca8dcbd6c049b8027ddec",
+      "sha256": "d59e9d5e1119c61cb1d3d5352cb171b861d8399d9da013f84ddf78c97bbb7929",
       "bytes": 35042
     },
     {
@@ -2046,7 +2046,7 @@
     },
     {
       "path": "research/reuse-register.json",
-      "sha256": "18f1f94a387f2be0860ab6788181f6dc3a33398d7cfbf1c1f6385ccaf6fd7cf1",
+      "sha256": "6664a9a99f5cdaecd2da1fdb9e320193031e71cdd9cb4da604066c9952ede234",
       "bytes": 64889
     },
     {

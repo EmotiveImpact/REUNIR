@@ -32,7 +32,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 22 | Whoever may change a track or project cover can describe the picture; the track's or project's own page announces it to screen readers | No descriptions for library pictures themselves, automatic descriptions or translations |
 | Alpha 24 | Members start named group conversations of up to 20 people; anyone in a group adds people and renames it, the starter removes people, anyone leaves; people added later read only what follows | No join or leave lines, mentions, attachments or new-message notices; blocks stop adding but never pause a group |
 | Alpha 26 | People confirm their email address by a link, and invitations confirm it; when the server requires it (the production default) an unconfirmed address cannot sign in; anyone changes their address with their password and a link to the new one | Needs a mail sender; no confirmation step at the old address; invitations already sent stay with the old address; real delivery unverified |
-| Alpha 27 | Housekeeping is cleared on a schedule by one list of rules (sessions, links, rate counters, request receipts, change events, finished mail, read notices); Your account says how long everything is kept | The same periods for every community; the audit trail is kept for the life of the community; nothing is scheduled until the operator chooses |
+| Alpha 31 | Housekeeping is cleared on a schedule by one list of rules (sessions, links, rate counters, request receipts, change events, finished mail, read notices); Your account says how long everything is kept | The same periods for every community; the audit trail is kept for the life of the community; nothing is scheduled until the operator chooses |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 
@@ -54,7 +54,7 @@ The user will clone, deploy and run hosted tests later. Continue product develop
 
 **Everyday reliability:** cursor pagination for posts and tasks (notices, review queues and the audit trail page since Alpha 18), notification preferences and digests (Alpha 19), useful content curation. Course and project art is now uploaded by each community (Alpha 11); smaller renditions for thumbnails can follow real usage. Improve loading/error/empty states through real pilot observations.
 
-**Account and trust operations:** data retention rules (Alpha 27; self-service account deletion with Former member attribution arrived in Alpha 15, after the learning record download and answer erasure in Alpha 14, and ownership transfer, which lets owners delete their accounts too, in Alpha 16, two-step sign-in for owners and administrators in Alpha 21, and email confirmation and change in Alpha 26), moderator appeals/escalation, reviewed-evidence correction/revocation history and consented multi-contributor credits.
+**Account and trust operations:** data retention rules (Alpha 31; self-service account deletion with Former member attribution arrived in Alpha 15, after the learning record download and answer erasure in Alpha 14, and ownership transfer, which lets owners delete their accounts too, in Alpha 16, two-step sign-in for owners and administrators in Alpha 21, and email confirmation and change in Alpha 26), moderator appeals/escalation, reviewed-evidence correction/revocation history and consented multi-contributor credits.
 
 ## Commercial platform stage
 

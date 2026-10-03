@@ -9,7 +9,7 @@ class DryRun extends Error { constructor(readonly counts: Partial<RetentionCount
  * The housekeeping in RETENTION_DAYS, cleared on schedule. Records that are not tied to a community (sessions, links, rate
  * counters, mail) are cleared directly; each community's own records (receipts, change events, read notices) inside that
  * community's tenant context, so row security applies as for any request. The job lists communities and nothing else across
- * tenants (migration 0023). A dry run does the same work and rolls it back, so its counts are exact.
+ * tenants (migration 0030). A dry run does the same work and rolls it back, so its counts are exact.
  */
 export class RetentionJob {
     constructor(private readonly db: Database) {}

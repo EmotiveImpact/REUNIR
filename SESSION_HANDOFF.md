@@ -1,6 +1,6 @@
-# Current continuation: Alpha 27 data retention, then the rest of accounts and trust
+# Current continuation: Alpha 31 data retention, then the rest of accounts and trust
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, RETENTION.md, decisions/027-data-retention.md, ACCOUNTS.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, RETENTION.md, decisions/031-data-retention.md, ACCOUNTS.md, SECURITY.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
@@ -9,7 +9,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, RETENTION.md, decisions/027-data-
 
 ## What is done
 
-Housekeeping records are cleared by one list of rules (RETENTION.md): expired sessions and links, rate counters, request receipts, change events, finished mail and read notices. The job is a dry run unless told to apply, reports counts only, and clears each community's records inside its own tenant context. Migration 0023 adds the job's read-only community listing policy. Your account says how long everything is kept. Nothing is scheduled.
+Housekeeping records are cleared by one list of rules (RETENTION.md): expired sessions and links, rate counters, request receipts, change events, finished mail and read notices. The job is a dry run unless told to apply, reports counts only, and clears each community's records inside its own tenant context. Migration 0030 adds the job's read-only community listing policy. Your account says how long everything is kept. Nothing is scheduled.
 
 ## Run it
 
