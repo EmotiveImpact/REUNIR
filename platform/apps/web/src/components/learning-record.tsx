@@ -12,7 +12,7 @@ export function LearningRecordPanel() {
     const download = async () => {
         setWorking(true);
         try { toast(await downloadLearningRecord(slug, userId)); }
-        catch (e) { toast(displayError(e)); }
+        catch (e) { toast(displayError(e),'error'); }
         finally { setWorking(false); }
     };
     return <section className="panel learning-record" aria-labelledby={heading}>

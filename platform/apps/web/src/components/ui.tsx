@@ -2,7 +2,7 @@ import { Avatar as AvatarRoot, AvatarImage, AvatarFallback } from './ui/avatar';
 import { mode } from '../lib/data';
 import { demoPortraits } from '../lib/portraits';
 import { useEffect, useRef, type ReactNode } from 'react';
-import { UserRound, X, Lock, ArrowLeft, Check, BookOpen } from 'lucide-react';
+import { UserRound, X, Lock, ArrowLeft, Check, Inbox, type LucideIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Member, Track, Project } from '../../../../packages/contracts/src/index';
 export function Mark({size=27}:{size?:number}) {return <span className="brand-mark" style={{width:size,height:size,fontSize:size*.67}} aria-hidden="true">R</span>;}
@@ -29,11 +29,16 @@ export function Pill({ children, tone = 'neutral' }: {
     children: ReactNode;
     tone?: string;
 }) { return <span className={`pill tone-${tone}`}>{children}</span>; }
-export function Empty({ title, body, action }: {
+/**
+ * Nothing to show yet, or nothing matches. Choose an icon for the context and offer a next action only when this
+ * viewer's role actually permits it. Conventions: platform/docs/STATES.md.
+ */
+export function Empty({ title, body, action, icon: Icon = Inbox }: {
     title: string;
     body: string;
     action?: ReactNode;
-}) { return <div className="empty-state"><div className="empty-icon"><BookOpen size={25}/></div><h3>{title}</h3><p>{body}</p>{action}</div>; }
+    icon?: LucideIcon;
+}) { return <div className="empty-state"><div className="empty-icon" aria-hidden="true"><Icon size={25}/></div><h3>{title}</h3><p>{body}</p>{action && <div className="empty-actions">{action}</div>}</div>; }
 export function PageHeading({ eyebrow, title, body, action }: {
     eyebrow?: string;
     title: string;

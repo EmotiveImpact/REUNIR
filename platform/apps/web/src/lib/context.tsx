@@ -10,6 +10,8 @@ import { loadWorkspace, sendCommand, displayError, mode, identity, resetDemo, de
 import { demoAccountDeleted, takeDeletionNotice } from './account';
 import { signInWithPassword } from './two-factor';
 import { SecondStepForm } from '../components/second-step';
+import { ErrorState, ShellLoading } from '../components/states';
+import { CircleAlert } from 'lucide-react';
 // Declared after the imports: Vite's development server turns React's named imports into constants in place.
 const AccountAccessPage = lazy(()=>import('../pages/access').then(m=>({default:m.AccountAccessPage})));
 interface Ctx {
@@ -26,8 +28,11 @@ interface Ctx {
     uploadResource: (trackId: string, file: File) => Promise<Upload | undefined>;
     discardUpload: (uploadId: string) => Promise<boolean>;
     downloadResource: (ref: ResourceRef) => Promise<boolean>;
-    toast: (s: string) => void;
+    /** A short message for everyone; `error` marks a failure so it is not mistaken for a success. */
+    toast: (s: string, tone?: 'error') => void;
     reload: () => void;
+    /** The latest background refresh failed while earlier data is still on screen. */
+    refreshError: unknown;
     mode: typeof mode;
     identity: Identity;
     /** After the account is deleted: live mode returns to sign-in; the demo shows what happened. */
@@ -45,14 +50,15 @@ export function WorkspaceProvider({ children }: {
     const [, setDeletions] = useState(0);
     const deletedPersona = mode === 'demo' && demoAccountDeleted(demoUser);
     const [busy, setBusy] = useState(false);
-    const [notice, setNotice] = useState('');
+    const [notice, setNotice] = useState<{ text: string; tone?: 'error' }>({ text: '' });
     const cache = useQueryClient();
     const ident = useQuery({ queryKey: ['identity'], queryFn: identity, retry: false });
     const userId = mode === 'demo' ? demoUser : ident.data?.id || '';
     const activeSlug = ident.data?.memberships.some(m => m.slug === slug) ? slug : ident.data?.memberships[0]?.slug || slug;
     const key = ['workspace', activeSlug, userId];
     const query = useQuery({ queryKey: key, queryFn: () => loadWorkspace(activeSlug, userId), enabled: !!ident.data && !!userId && !deletedPersona, retry: false, refetchInterval: mode==='live'?30000:false, refetchOnWindowFocus: mode === 'live' });
-    const toast = useCallback((s: string) => { setNotice(s); window.setTimeout(() => setNotice(n => n === s ? '' : n), 4800); }, []);
+    // A failure stays a little longer: it usually asks the person to do something.
+    const toast = useCallback((s: string, tone?: 'error') => { const next = { text: s, tone }; setNotice(next); window.setTimeout(() => setNotice(n => n === next ? { text: '' } : n), tone === 'error' ? 8000 : 4800); }, []);
     const command = async (c: CommandInput, options: { onError?: (message: string) => void } = {}) => { if (busy)
         return; setBusy(true); try {
         const r = await sendCommand(activeSlug, userId, c);
@@ -63,7 +69,7 @@ export function WorkspaceProvider({ children }: {
     }
     catch (e) {
         if (options.onError) options.onError(displayError(e));
-        else toast(displayError(e));
+        else toast(displayError(e), 'error');
         return undefined;
     }
     finally {
@@ -77,7 +83,7 @@ export function WorkspaceProvider({ children }: {
         return r.upload;
     }
     catch (e) {
-        toast(displayError(e));
+        toast(displayError(e), 'error');
         return undefined;
     } };
     const discardUpload = async (uploadId: string) => { try {
@@ -87,7 +93,7 @@ export function WorkspaceProvider({ children }: {
         return true;
     }
     catch (e) {
-        toast(displayError(e));
+        toast(displayError(e), 'error');
         return false;
     } };
     const downloadResource = async (ref: ResourceRef) => { try {
@@ -95,18 +101,18 @@ export function WorkspaceProvider({ children }: {
         return true;
     }
     catch (e) {
-        toast(displayError(e));
+        toast(displayError(e), 'error');
         return false;
     } };
     const accountDeleted = () => {
         if (mode === 'live') { cache.clear(); window.location.replace(window.location.origin + window.location.pathname); return; }
         cache.removeQueries({ queryKey: ['workspace'] }); setDeletions(n => n + 1);
     };
-    if(mode==='live'&&['/invite','/reset-password'].includes(location.pathname))return <Suspense fallback={<div role="status" className="loading-page">Opening account access…</div>}><AccountAccessPage identity={ident.data} onDone={()=>{cache.removeQueries({queryKey:['workspace']});ident.refetch();}}/></Suspense>;
+    if(mode==='live'&&['/invite','/reset-password'].includes(location.pathname))return <Suspense fallback={<ShellLoading label="Opening account access…"/>}><AccountAccessPage identity={ident.data} onDone={()=>{cache.removeQueries({queryKey:['workspace']});ident.refetch();}}/></Suspense>;
     if (ident.isPending)
-        return <div className="loading-page"><div className="loading-mark">R</div><p>Finding your people…</p></div>;
+        return <ShellLoading label="Finding your people…"/>;
     if (ident.error)
-        return <div className="loading-page"><h1>Connection needs attention.</h1><p>{displayError(ident.error)}</p><button onClick={() => ident.refetch()}>Try again</button></div>;
+        return <main className="loading-page"><ErrorState error={ident.error} level={1} home={false} onRetry={() => ident.refetch()}/></main>;
     if (!ident.data)
         return <Login onDone={() => ident.refetch()}/>;
     if (!ident.data.memberships.length)
@@ -114,11 +120,14 @@ export function WorkspaceProvider({ children }: {
     if (deletedPersona)
         return <DemoFarewell owner={demoState('code-black').members.find(m => m.userId === DEMO_ADMIN)?.name ?? 'the owner'} onSee={() => { setDemoUser(DEMO_ADMIN); navigate('/'); }} onRestart={() => { resetDemo(); cache.removeQueries({ queryKey: ['workspace'] }); setDemoUser(DEMO_USER); setDeletions(n => n + 1); navigate('/'); }}/>;
     if (query.isPending)
-        return <div className="loading-page"><div className="loading-mark">R</div><p>Opening your community…</p></div>;
-    if (query.error || !query.data)
-        return <div className="loading-page"><h1>Let’s reconnect.</h1><p>{displayError(query.error)}</p><button onClick={() => query.refetch()}>Try again</button><small>No demo data has been substituted.</small></div>;
+        return <ShellLoading label="Opening your community…"/>;
+    // Nothing loaded yet. Once a workspace has loaded, a failed refresh keeps it on screen and says so instead.
+    if (!query.data)
+        return <main className="loading-page"><ErrorState error={query.error} level={1} home={false} saved={mode === 'demo'} onRetry={() => query.refetch()}/>
+            {ident.data.memberships.length > 1 && <div className="empty-actions">{ident.data.memberships.filter(m => m.slug !== activeSlug).map(m => <button key={m.slug} type="button" className="button secondary" onClick={() => setSlug(m.slug)}>Open {m.name}</button>)}</div>}
+            {mode === 'live' && <small>No demo data has been substituted.</small>}</main>;
     const me = query.data.members.find(m => m.userId === userId)!;
-    return <Context.Provider value={{ data: query.data, me, slug: activeSlug, setSlug, userId, setUserId: (id) => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); setDemoUser(id); }, busy, command, uploadResource, discardUpload, downloadResource, toast, reload: () => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); query.refetch(); }, mode, identity: ident.data, accountDeleted }}>{children}<div className={`toast ${notice ? 'visible' : ''}`} role="status" aria-live="polite">{notice}</div></Context.Provider>;
+    return <Context.Provider value={{ data: query.data, me, slug: activeSlug, setSlug, userId, setUserId: (id) => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); setDemoUser(id); }, busy, command, uploadResource, discardUpload, downloadResource, toast, reload: () => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); query.refetch(); }, mode, identity: ident.data, accountDeleted, refreshError: query.error }}>{children}<div className={`toast ${notice.text ? 'visible' : ''} ${notice.tone === 'error' ? 'error' : ''}`} role="status" aria-live="polite" data-tone={notice.tone}>{notice.tone === 'error' && <CircleAlert size={16} aria-hidden="true"/>}<span>{notice.text}</span></div></Context.Provider>;
 }
 function Login({ onDone }: {
     onDone: () => void;
