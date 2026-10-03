@@ -1,17 +1,53 @@
-# Current continuation: Alpha 16 ownership transfer
+# Current continuation: Alpha 17 loose ends, then the rest of the roadmap
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, ACCOUNTS.md, COVERS.md, decisions/017-follow-ups-after-account-deletion.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+## Where the source is
+
+- Base: main `12ed75c`, the merge of PR #8 (Alpha 16 ownership transfer), with PR #9 (its merge record) merged in.
+- This slice: branch `claude/build-out-tvzn40`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+
+## What is done
+
+Deleting your own account hands back tasks you had claimed without proof in every community, including one where you were suspended (additive migration 0018, admitted only during your own deletion). A replaced or removed track or project cover loses its upload record in the same change and its stored file straight after commit. The PostgreSQL check covers a deletion that starts while an invitation acceptance holds the account. Mentions of a former member in other people's posts stay as written (decision 017).
+
+## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+For PostgreSQL: `npm run db:migrate` (applies 0018; no grant changes).
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+## Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages and scores private. A deleted person's shared work stays as Former member, and other people's words about them are not rewritten. A community has exactly one owner, and ownership changes only by the owner's re-authenticated handover to an administrator. Authority is granted, never inferred from attribution or engagement. Pictures keep their own colours and carry no words; the interface stays black, white and neutral grey. Community review is not accreditation.
+
+## Next
+
+1. Server-side pagination for review queues and other long lists (Alpha 18).
+2. Later roadmap features: instructor email invitations, two-step sign-in for owners and administrators, notification settings and digests, cover descriptions, upload scanning, group conversations and the account and trust items in ROADMAP.md.
+3. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 16 handover: ownership transfer
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, ACCOUNTS.md, decisions/016-ownership-transfer.md, ROADMAP.md and research/notes/21_OWNERSHIP_TRANSFER.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
-## Where the source is
+### Where the source is
 
 - Base: main `cc806e7`, the merge of PR #6 (Alpha 15 account deletion), with main `4bda5e7` (PR #7, the changelog) merged in.
 - This slice: branch `claude/ownership-transfer-7kx603`, [PR EmotiveImpact/REUNIR#8](https://github.com/EmotiveImpact/REUNIR/pull/8). Tested commit `553e0a7`, green in CI runs 37110819170 and 37110833684. Merged into main as `12ed75c` (tree identical to the tested head `d9568fa`); the owner confirmed the merge. BUILD_STATUS.md records the local runs and the CI receipt. Merging into main needs the owner's approval.
 
-## What is done
+### What is done
 
 Ownership transfer is implemented and verified locally (see BUILD_STATUS.md for exact counts). In **Members and access**, the owner opens an administrator's access settings and chooses **Hand over ownership…**; after the current password (checked by Better Auth) and the community's name typed in full, the administrator becomes the owner and the previous owner becomes an administrator, with an audit entry and a notice to the new owner. Only the active owner can do it, only to an active administrator, five attempts in fifteen minutes. `POST /api/organisations/:slug/ownership` is not a workspace command, so the generic command route cannot skip the password. Migration 0017 adds a unique index so a community never holds two owners; 0001 to 0016 are unchanged and no new grants are needed. **Your account** now points owners to the handover; once they own no community, they can delete their account as in Alpha 15.
 
-## Run it
+### Run it
 
 ```sh
 cd platform
@@ -23,11 +59,11 @@ Preview as admin (Amina Okafor, the owner) → Your account → Open members and
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages and scores private. A deleted person's shared work stays as Former member. A community has exactly one owner, and ownership changes only by the owner's re-authenticated handover to an administrator. Authority is granted, never inferred from attribution or engagement. Pictures keep their own colours and carry no words; the interface stays black, white and neutral grey. Community review is not accreditation.
 
-## Next
+### Next
 
 1. Server-side pagination for review queues and other long lists, beyond the bounded workspace snapshot.
 2. Deployment remains deferred by the user: Neon, Vercel, bucket, sender and scheduler are all unprovisioned.

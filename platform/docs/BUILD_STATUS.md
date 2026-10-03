@@ -1,4 +1,65 @@
-# Alpha 16 ownership transfer
+# Alpha 17 loose ends after account deletion and ownership transfer
+
+3 October 2026. Application 0.17.0-alpha.1. Deleting your own account now hands back claimed tasks in every community, including one where you were suspended; a replaced or removed cover picture is erased at once; the deletion-during-acceptance timing case has a PostgreSQL test; mentions in other people's posts stay as written. See decisions/017-follow-ups-after-account-deletion.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/build-out-tvzn40`, from main `12ed75c` (the merge of PR #8, Alpha 16) |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
+| Operated with real members | No |
+
+## PR #8 merged into main
+
+Ownership transfer (Alpha 16) was merged into main on 3 October 2026 as `12ed75c32cefb4eed90e97b9c295524ba57bc6cf`, a merge commit whose parents are the previous main `4bda5e7` and the tested head `d9568fa`; its tree, `94713f44478b95c44b836809a788c4f11ecb4402`, is identical to the tested head's tree. This slice started from that main.
+
+## What changed
+
+- **Claimed tasks go back everywhere.** Deleting your own account releases tasks you had claimed without proof in every community. Where you were suspended, suspension had closed the project's work to you, so they used to stay assigned; additive migration `0018_account_deletion_tasks.sql` now admits exactly those tasks while the transaction is marked as your own deletion, and an update may only leave them unassigned, without proof and in "to do". PostgreSQL also requires an updated row to stay readable, so the deletion names the tasks it releases (`app.released_tasks`) and the read policy admits only those once unassigned. The repository releases tasks with one direct update and refuses the whole deletion if row security admitted fewer than planned.
+- **Replaced covers go at once.** Changing or removing a track or project cover deletes the upload record of the picture nothing shows any more in the same change; `POST /commands` deletes its stored file straight after commit (`releasedCoverKeys`). Moving the focal point keeps the picture; library pictures stay in the library; no storage key reaches the browser.
+- **The timing case is tested.** A new PostgreSQL check holds an acceptance's share lock on an account, starts a deletion on another connection, proves it waits, commits the new membership and proves the deletion removes it with the rest.
+- **Mentions stay as written** (decision 017): REUNIR has no mention links, and rewriting other people's words would alter their record.
+- Migrations 0001 to 0017 are byte-identical; no grants change. Release constant and package version are 0.17.0-alpha.1. No new runtime dependency.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, `npm ci` from the committed lockfile, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 584 passed, 0 failed (581 existing plus 3: a replaced or removed cover in the domain, under the runtime role and through the API with storage removal); the account deletion database test now expects three released tasks, two of them where Alex was suspended, and adds row-security assertions for 0018 |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 275 passed: 85 regression, 17 operations, 29 project work, 27 authoring, 11 rich lessons, 19 resources, 16 assessments, 16 covers, 9 instructors, 10 accounts, 16 monochrome, 20 v4 |
+| Connected-browser suites | 56 passed: 12 connected, 9 resources, 9 assessments, 13 covers, 6 instructors, 7 accounts |
+| `npm run test:postgres` | 18 passed on PostgreSQL 16 (17 existing plus 1: the deletion that starts while an acceptance holds the account) |
+| Python helpers, `scripts/check_research.py` | 35 passed; the register validates with 55 pinned sources and 18 decisions |
+
+Tests changed rather than added: nine migration-count assertions moved from 17 to 18; one cover test now expects the replaced picture to go at once rather than after an hour.
+
+## Corrections made while verifying
+
+- Releasing tasks through the generic upsert failed where the person was suspended: an `INSERT ... ON CONFLICT` needs the insert policy, which suspension closes. The release is now a direct update.
+- A direct update with `RETURNING` then failed, and so did one without it: PostgreSQL requires the updated row to pass the read policies when the statement reads the table. The read policy now admits the tasks the deletion names once they are unassigned, and a test proves an unnamed unassigned task stays hidden and a named one cannot be changed.
+- The local PostgreSQL run needs a fresh database and no leftover `reunir_*` roles; a second run against the same cluster fails its emptiness check by design.
+
+## Not verified, and why
+
+- Hosted PostgreSQL, Better Auth and a real bucket's object deletion remain deferred by the user; the cover removal was exercised with the in-process storage stand-in.
+
+## Next actions
+
+1. Push, open the pull request, drive CI green and merge with the owner's standing approval; read back main.
+2. Server-side pagination for review queues and other long lists (Alpha 18).
+3. When deployment resumes: Neon staging with eighteen migrations and runtime grants, Vercel live mode, bucket setup (SETUP.md section 6), then hosted privacy tests.
+
+---
+## Historical Alpha 16 evidence: ownership transfer
 
 3 October 2026. Application 0.16.0-alpha.1. A community's owner hands it to one of its administrators, after re-entering their password and typing the community's name. The previous owner stays as an administrator and, once they own no community, can delete their account. See ACCOUNTS.md and decisions/016-ownership-transfer.md.
 

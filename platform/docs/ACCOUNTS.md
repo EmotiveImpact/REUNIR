@@ -67,8 +67,8 @@ On success the administrator becomes the owner, the previous owner becomes an ad
 ## Known limits
 
 - Owners cannot delete their account while they own a community; they hand it to an administrator first (Alpha 16). The new owner is told, not asked.
-- Mentions of the person inside other people's posts and comments stay as their authors wrote them.
-- In a community where the person was suspended, suspension had already closed that project's work to them, so tasks they had claimed stay assigned until an administrator reassigns them.
+- Mentions of the person inside other people's posts and comments stay as their authors wrote them. REUNIR has no mention links, so the text points to no profile; rewriting other people's words would alter their record, so decision 017 keeps them.
+- Since Alpha 17, tasks the person had claimed without proof go back to their teams in every community, including one where they were suspended (migration 0018).
 - Hosted Better Auth, real email delivery and real Google Cloud Storage removal are unverified, as for every connected feature.
 
 ## Running it
