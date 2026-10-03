@@ -6,7 +6,7 @@ import { Modal } from './ui';
 import { useWorkspace } from '../lib/context';
 import { displayError, mode } from '../lib/data';
 import { coverUploadsAvailable, demoCoverUrl, liveCoverUrl, liveLibraryUrl, peekDemoCoverUrl, prepareCover, uploadCover, type PreparedCover } from '../lib/covers';
-import { coverPosition, type CoverSubject } from '../../../../packages/contracts/src/covers';
+import { MAX_COVER_DESCRIPTION, coverPosition, type CoverSubject } from '../../../../packages/contracts/src/covers';
 import { canEditCover } from '../../../../packages/domain/src/covers';
 import type { CoverLibraryItem, Project, Track } from '../../../../packages/contracts/src/index';
 
@@ -50,14 +50,16 @@ export function LibraryThumb({ item }: { item: CoverLibraryItem }) {
     </span>;
 }
 
-/** An uploaded picture cropped around its focal point, or a plain panel. Decorative: titles always sit outside it. */
-export function Cover({ kind, subject, small = false }: { kind: CoverSubject; subject: Subject; small?: boolean }) {
+/** An uploaded picture cropped around its focal point, or a plain panel. Decorative unless `described` and the editor gave it a description. */
+export function Cover({ kind, subject, small = false, described = false }: { kind: CoverSubject; subject: Subject; small?: boolean; described?: boolean }) {
     const src = useCoverSource(kind, subject);
     const [failed, setFailed] = useState<string | null>(null);
     const cover = subject.coverImage;
     const shown = !!src && !!cover && failed !== src;
     const Icon = kind === 'track' ? BookOpen : Layers;
-    return <div className={`cover-media${small ? ' cover-small' : ''}${shown ? '' : ' cover-plain'}`} aria-hidden="true">
+    // On a track or project's own page a described picture is announced; everywhere else covers stay decorative.
+    const label = described && shown ? cover.description : undefined;
+    return <div className={`cover-media${small ? ' cover-small' : ''}${shown ? '' : ' cover-plain'}`} {...(label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true })}>
         {shown ? <img src={src} alt="" loading="lazy" decoding="async" draggable={false} style={{ objectPosition: coverPosition(cover) }} onError={() => setFailed(src)}/> : <Icon size={small ? 16 : 26} strokeWidth={1.5}/>}
     </div>;
 }
@@ -83,22 +85,23 @@ function CoverDialog({ kind, subject, onClose }: { kind: CoverSubject; subject: 
     const [prepared, setPrepared] = useState<PreparedCover | null>(null);
     const [picked, setPicked] = useState<CoverLibraryItem | null>(null);
     const [focus, setFocus] = useState({ x: current?.focusX ?? 50, y: current?.focusY ?? 50 });
+    const [description, setDescription] = useState(current?.description ?? '');
     const [working, setWorking] = useState<'' | 'reading' | 'saving' | 'removing'>('');
     const [status, setStatus] = useState(''), [error, setError] = useState('');
     const picker = useRef<HTMLInputElement>(null);
-    const help = useId(), across = useId(), down = useId(), choice = useId();
+    const help = useId(), across = useId(), down = useId(), choice = useId(), describe = useId(), describeHelp = useId();
     const pickedSrc = useLibrarySource(picked);
     useEffect(() => () => { if (prepared) URL.revokeObjectURL(prepared.url); }, [prepared]);
     const src = prepared?.url ?? (picked ? pickedSrc : currentSrc), canUpload = uploads.data === true;
     const chosenFile = prepared ? null : picked?.fileId ?? current?.fileId ?? null;
-    const changed = !!prepared || (!!picked && picked.fileId !== current?.fileId) || (!!current && (current.focusX !== focus.x || current.focusY !== focus.y));
+    const changed = !!prepared || (!!picked && picked.fileId !== current?.fileId) || (!!current && (current.focusX !== focus.x || current.focusY !== focus.y || (current.description ?? '') !== description.trim()));
     const position = `${focus.x}% ${focus.y}%`;
     const choose = async (file: File | undefined) => {
         if (!file || working || !canUpload) return;
         setSource('upload'); setError(''); setWorking('reading'); setStatus('Preparing the image in your browser…');
         try {
             const next = await prepareCover(file);
-            setPrepared(next); setPicked(null); setFocus({ x: 50, y: 50 });
+            setPrepared(next); setPicked(null); setFocus({ x: 50, y: 50 }); setDescription('');
             setStatus(next.soft ? `Ready. At ${next.width} × ${next.height} pixels it may look soft on large screens.` : 'Ready. Choose the part of the picture to keep in view, then save.');
         }
         catch (e) { setError(displayError(e)); setStatus(''); }
@@ -108,6 +111,7 @@ function CoverDialog({ kind, subject, onClose }: { kind: CoverSubject; subject: 
         setPrepared(null); setPicked(item); setError('');
         // The current picture keeps its focal point; a new one starts centred.
         setFocus(item.fileId === current?.fileId ? { x: current.focusX, y: current.focusY } : { x: 50, y: 50 });
+        setDescription(item.fileId === current?.fileId ? current.description ?? '' : '');
         setStatus(`${item.label} chosen. Choose the part of the picture to keep in view, then save.`);
     };
     const point = (e: PointerEvent<HTMLDivElement>) => {
@@ -115,8 +119,8 @@ function CoverDialog({ kind, subject, onClose }: { kind: CoverSubject; subject: 
         setFocus({ x: clamp((e.clientX - r.left) / r.width * 100), y: clamp((e.clientY - r.top) / r.height * 100) });
     };
     const set = (fileId: string | null) => command(kind === 'track'
-        ? { type: 'track.cover.set', trackId: subject.id, fileId, focusX: focus.x, focusY: focus.y }
-        : { type: 'project.cover.set', projectId: subject.id, fileId, focusX: focus.x, focusY: focus.y }, { onError: setError });
+        ? { type: 'track.cover.set', trackId: subject.id, fileId, focusX: focus.x, focusY: focus.y, ...(fileId ? { description: description.trim() } : {}) }
+        : { type: 'project.cover.set', projectId: subject.id, fileId, focusX: focus.x, focusY: focus.y, ...(fileId ? { description: description.trim() } : {}) }, { onError: setError });
     const save = async () => {
         setError(''); setWorking('saving');
         try {
@@ -175,6 +179,11 @@ function CoverDialog({ kind, subject, onClose }: { kind: CoverSubject; subject: 
                 <div className="cover-slider"><label htmlFor={across}>Left to right</label><input id={across} type="range" min={0} max={100} step={1} value={focus.x} onChange={e => setFocus(f => ({ ...f, x: clamp(Number(e.target.value)) }))}/><span className="cover-slider-value" aria-hidden="true">{focus.x}%</span></div>
                 <div className="cover-slider"><label htmlFor={down}>Top to bottom</label><input id={down} type="range" min={0} max={100} step={1} value={focus.y} onChange={e => setFocus(f => ({ ...f, y: clamp(Number(e.target.value)) }))}/><span className="cover-slider-value" aria-hidden="true">{focus.y}%</span></div>
             </fieldset>}
+            {src && <div className="cover-description">
+                <label htmlFor={describe}>Describe the picture <span className="muted">(optional)</span></label>
+                <input id={describe} type="text" value={description} disabled={!!working} aria-describedby={describeHelp} onChange={e => setDescription(e.target.value)} placeholder="For example: hands sketching on a notebook beside a laptop"/>
+                <small id={describeHelp}>Read aloud on the {kind === 'track' ? 'track' : 'project'} page for people who cannot see it. Say what it shows, not that it is a picture. Leave empty if it is only decoration. {MAX_COVER_DESCRIPTION - Array.from(description.trim()).length} characters left.</small>
+            </div>}
             {src && <div className="cover-previews" aria-hidden="true">
                 {(['Banner', 'Card', 'Small'] as const).map(name => <figure key={name} className={`cover-preview cover-preview-${name.toLowerCase()}`}><div><img src={src} alt="" draggable={false} style={{ objectPosition: position }}/></div><figcaption>{name}</figcaption></figure>)}
             </div>}

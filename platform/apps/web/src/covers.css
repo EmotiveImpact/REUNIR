@@ -67,3 +67,5 @@
 .detail-tools{float:none;justify-content:flex-start;margin:0 0 14px}
 .cover-library-list>li{flex-wrap:wrap}.cover-library-list>li>.button{margin-left:86px}
 }
+.cover-description{display:grid;gap:6px}
+.cover-description small{color:var(--muted);font-size:11px;line-height:1.6}
