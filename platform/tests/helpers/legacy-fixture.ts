@@ -7,7 +7,7 @@ export async function seedBeforeProjectWork(db:Database){
     await db.transaction(async tx=>{
         const o=state.organisation;
         await tx.query('INSERT INTO organisations(id,slug,name,tagline,accent,created_at,revision) VALUES($1,$2,$3,$4,$5,$6,$7)',[o.id,o.slug,o.name,o.tagline,o.accent,o.createdAt,state.revision]);
-        for(const spec of tables.filter(t=>!['projectTasks','taskNotes','uploads','quizAttempts','trackInstructors','coverLibrary'].includes(t.key))){
+        for(const spec of tables.filter(t=>!['projectTasks','taskNotes','uploads','quizAttempts','trackInstructors','coverLibrary','collections','collectionItems'].includes(t.key))){
             for(const row of state[spec.key]){
                 const r=row as unknown as Record<string,unknown>;
                 const fields=spec.fields.filter(f=>!['richBody','resources','quiz','coverImage'].includes(f.property));

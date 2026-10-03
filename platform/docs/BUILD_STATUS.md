@@ -6,7 +6,7 @@
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `fab9510` (the merge of PR #20, Alpha 25), with main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) and main `b80fc04` (PR #23, Alpha 31 data retention, migration 0030) and main `16b2768` (PR #16, Alpha 23 virus scanning, no migration) and main `0a818fa` (PR #21, Alpha 39 cover library, migration 0038) merged in |
+| Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `fab9510` (the merge of PR #20, Alpha 25), with main `f9f32d6` (PR #22, Alpha 27 loading, error and empty screens) and main `b80fc04` (PR #23, Alpha 31 data retention, migration 0030) and main `16b2768` (PR #16, Alpha 23 virus scanning, no migration) and main `0a818fa` (PR #21, Alpha 39 cover library, migration 0038) and main `94b130b` (PR #25, Alpha 28 collections, migration 0028) merged in |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
@@ -30,7 +30,7 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 | Check | Result |
 | --- | --- |
 | `npm run typecheck` | Passed |
-| `npm test` | 731 passed, 0 failed after main's Alpha 27, 31, 23 and 39 were merged in (9 new: 5 lesson grant domain and 4 lesson grant database tests) |
+| `npm test` | 750 passed, 0 failed after main's Alpha 27, 31, 23, 39 and 28 were merged in, as did `test:postgres`; the browser and connected suites below last ran with Alpha 39 merged in (9 new: 5 lesson grant domain and 4 lesson grant database tests) |
 | `npm run test:http` | 19 passed (unchanged) |
 | `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
 | Demo-browser suites | 274 passed across 15 suites, including 12 instructor checks (1 new: an administrator grants chosen lessons only, the list names them, and the grant widens in place) |
@@ -48,6 +48,59 @@ Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. Instructors starting their own tracks (Alpha 36), then uploaded lesson video (Alpha 37).
 3. When deployment resumes: follow LAUNCH_RUNBOOK.md and run `npm run db:migrate`.
+
+## Historical Alpha 28 evidence: collections of useful content
+
+3 October 2026. Release 0.28.0-alpha.1; the package version stays at 0.39.0-alpha.1 because Alpha 31 and Alpha 39 reached main first. Owners, administrators and moderators gather useful posts, tracks, lessons, paths, projects, events, missions and community outputs into collections with notes and a chosen order; one published collection can be featured on Home. See decisions/028-curated-collections.md and CURATION.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, from main `f9f32d6` (the merge of PR #22, Alpha 27), with main `b80fc04` (Alpha 31 data retention), main `16b2768` (Alpha 23 virus scanning of uploads) and main `0a818fa` (Alpha 39 cover library) merged in |
+| Verified locally | Yes: the full suite on base `b24095a`, and the checks below on top of Alpha 27 and main `fab9510` |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Yes: [PR #25](https://github.com/EmotiveImpact/REUNIR/pull/25), merged into main as `94b130b` |
+| Deployed | No. Nothing was provisioned |
+| Operated with real members | No |
+
+## PR #22 merged into main
+
+Alpha 27 was merged into main on 3 October 2026 as `f9f32d6`, a merge commit whose parents are main `fab9510` (PR #20, Alpha 25) and the tested head `297dab8`; its tree is identical to the tested head's tree. CI runs 37127344409 and 37127347035 (application and postgres) passed on `297dab8`.
+
+## What changed
+
+- `packages/contracts/src/collections.ts`, `packages/domain/src/collections.ts`: eight item kinds, curator checks, visibility filtering (run last, after every other filter) and eight commands through the existing command pipeline.
+- Additive migration 0028: `collections` and `collection_items` with composite tenant keys, forced row security, drafts readable only by curators, writes only by an active curator in their own name, one featured collection per community, and runtime updates limited to wording, status, feature flag and editor (collections) and order and note (items). Run `npm run db:grant-runtime` after migrating.
+- Web: Collections page and detail with management for curators, a compact featured block on Home, global search includes collections. The existing private Saved page is unchanged and now browser-checked.
+- Demo: fictional "Start here" (published, featured, with one item from a private space members never see) and a draft by Maya Bennett.
+- Migrations 0001 to 0023 and 0030 are byte-identical; migration counts come from the migrations directory. No new dependency.
+
+## Local verification, 3 October 2026
+
+On base `b24095a` (by the building agent): typecheck, builds, `npm test` 644 passed, `test:http` 19, every demo suite including the new `test:browser:curation` (9), every connected suite (60), `test:postgres` 21 on PostgreSQL 16, Python helpers 35 and the research register.
+
+On this branch, on top of Alpha 27 and main `fab9510`: typecheck, build and bundle passed; `npm test` 697 passed, 0 failed (after main `fab9510`); `test:postgres` passed on a fresh PostgreSQL 16 loopback cluster with no leftover `reunir_*` roles; `curation` 9, `groups` 11, `states` 12, `v4` 20 and `monochrome` 16 passed.
+
+## Review fix
+
+The Codex review of PR #25 found that a mission on an unpublished track was offered to curators as live, although members lose it with the track. Missions now follow their track's publication like lessons do; `tests/collections.test.ts` refuses adding such a mission (failed before the fix, passes after). `npm test` 697 passed and `curation` 9 passed after the fix.
+
+After merging main `b80fc04` (Alpha 31 data retention): typecheck, build and bundle passed; `npm test` 702 passed, 0 failed; `test:postgres` 23 passed on a fresh PostgreSQL 16 cluster; `curation` 9, `v4` 20 and `monochrome` 16 passed.
+
+After merging main `16b2768` (Alpha 23 virus scanning of uploads): typecheck and build passed; `npm test` 715 passed, 0 failed; `curation` 9, `v4` 20 and `monochrome` 16 passed.
+
+After merging main `0a818fa` (Alpha 39 cover library management): the collections upgrade test now leaves library pictures and uploads out of its pre-0038 seed, as main's own upgrade tests do. Typecheck, build and bundle passed; `npm test` 741 passed, 0 failed; `curation` 9, `covers` 20, `v4` 20 and `monochrome` 16 passed.
+
+## Not verified, and why
+
+- PostgreSQL 17 runs in CI only. No hosted deployment.
+- Browsers with older saved demo data see no seeded collections until the demo is restarted; their data upgrades to empty collections.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Task files with live updates (Alpha 29) and shared form components (Alpha 30).
 
 ## Historical Alpha 39 evidence: cover library management and small copies of covers
 
