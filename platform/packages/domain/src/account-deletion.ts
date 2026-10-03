@@ -6,9 +6,10 @@ export { isFormer, formerMember } from './access';
 
 /**
  * The person's own records, removed outright: goals, saved posts, inbox, reactions, attendance, private-space access,
- * learning and recognition, and instructor grants. Project team places stay with the project work that refers to them.
+ * learning and recognition, instructor grants, and credits naming them on other people's contributions (accepted or not).
+ * Project team places stay with the project work that refers to them.
  */
-export const PERSONAL_COLLECTIONS = ['memberGoals', 'bookmarks', 'notifications', 'reactions', 'rsvps', 'enrolments', 'completions', 'pathEnrolments', 'quizAttempts', 'reputation', 'spaceMembers', 'trackInstructors', 'notificationPreferences'] as const satisfies readonly (keyof Workspace)[];
+export const PERSONAL_COLLECTIONS = ['memberGoals', 'bookmarks', 'notifications', 'reactions', 'rsvps', 'enrolments', 'completions', 'pathEnrolments', 'quizAttempts', 'reputation', 'spaceMembers', 'trackInstructors', 'notificationPreferences', 'contributionCredits'] as const satisfies readonly (keyof Workspace)[];
 export type PersonalCollection = typeof PERSONAL_COLLECTIONS[number];
 
 export interface CommunityErasure {
