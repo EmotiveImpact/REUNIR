@@ -12,7 +12,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowDown, ArrowUp, ArrowUpRight, BookOpen, Check, Eye, History, LockKeyhole, Pencil, Plus, Save } from 'lucide-react';
 import { type LessonDraft, type MutationResult, safeUrl } from '../../../../packages/contracts/src/index';
 import { lessonContent, type EditableLessonContent } from '../../../../packages/domain/src/authoring';
-import { contributes, teaches } from '../../../../packages/domain/src/instructors';
+import { contributes, holdsGrant, teaches } from '../../../../packages/domain/src/instructors';
 import { useWorkspace } from '../lib/context';
 import { Empty, PageHeading, Pill } from '../components/ui';
 
@@ -20,23 +20,24 @@ export function AuthoringPage() {
     const {id}=useParams(); const {data,me,busy,command}=useWorkspace();
     const [selected,select]=useState<string|null>(null); const [archived,showArchived]=useState(false);
     const track=data.tracks.find(t=>t.id===id);
-    if(!track||!contributes(data,me,track.id))return <Empty icon={LockKeyhole} title="The creator studio is private." body="The track's instructors and contributors and the community's owners and administrators author lessons here."/>;
-    const lead=teaches(data,me,track.id);
+    if(!track||!holdsGrant(data,me,track.id))return <Empty icon={LockKeyhole} title="The creator studio is private." body="The track's instructors and contributors and the community's owners and administrators author lessons here."/>;
+    // Order and new lessons belong to the whole track; a grant for some lessons opens only those.
+    const lead=teaches(data,me,track.id), whole=contributes(data,me,track.id);
     const lessons=data.lessons.filter(l=>l.trackId===track.id).sort((a,b)=>a.position-b.position);
     const drafts=data.lessonDrafts.filter(d=>d.trackId===track.id&&(archived||!d.archived));
     const current=data.lessonDrafts.find(d=>d.trackId===track.id&&d.id===selected);
     const open=async(lessonId:string|null=null)=>{const r=await command({type:'lesson.draft.create',trackId:track.id,lessonId});if(r?.objectId){select(r.objectId);showArchived(true);}};
     const move=async(index:number,delta:number)=>{const ids=lessons.map(l=>l.id),next=[...ids];[next[index],next[index+delta]]=[next[index+delta],next[index]];await command({type:'track.lessons.reorder',trackId:track.id,expectedOrder:ids,lessonIds:next});};
     return <section className="creator-studio"><Link className="text-link" to={`/learn/${track.id}`}>← Back to the learning track</Link>
-        <PageHeading eyebrow="CREATOR STUDIO" title="Teach something that matters." body={track.title} action={<button className="button primary" disabled={busy} onClick={()=>open()}><Plus size={17}/>New lesson draft</button>}/>
+        <PageHeading eyebrow="CREATOR STUDIO" title="Teach something that matters." body={track.title} action={whole?<button className="button primary" disabled={busy} onClick={()=>open()}><Plus size={17}/>New lesson draft</button>:undefined}/>
         <div className="creator-notice"><LockKeyhole size={19}/><div><strong>A place to work before you share.</strong><span>{lead?'Drafts and revisions are visible only to this track’s instructors and contributors and your community’s owners and administrators. Publishing is a separate decision.':'You contribute to this track: your drafts are visible only to the people who teach it, and its instructors decide when to publish them.'}</span></div></div>
         <div className="creator-layout"><aside className="panel creator-outline"><h2><BookOpen size={18}/>Curriculum <small>{lessons.length}</small></h2>
             <p className="muted">{lead?'Reorder the live outline without resetting anyone’s progress.':'Open a lesson to draft changes. Instructors set the order.'}</p>
-            <ol className="creator-lessons">{lessons.map((l,i)=><li key={l.id}><span className="creator-position">{String(i+1).padStart(2,'0')}</span><button className="creator-title" disabled={busy} onClick={()=>open(l.id)}>{l.title}<small>Open for editing</small></button>{lead&&<div className="creator-move"><button className="icon-button" aria-label={`Move ${l.title} up`} disabled={busy||i===0} onClick={()=>move(i,-1)}><ArrowUp size={14}/></button><button className="icon-button" aria-label={`Move ${l.title} down`} disabled={busy||i===lessons.length-1} onClick={()=>move(i,1)}><ArrowDown size={14}/></button></div>}</li>)}</ol>
+            <ol className="creator-lessons">{lessons.map((l,i)=><li key={l.id}><span className="creator-position">{String(i+1).padStart(2,'0')}</span>{contributes(data,me,track.id,l.id)?<button className="creator-title" disabled={busy} onClick={()=>open(l.id)}>{l.title}<small>Open for editing</small></button>:<span className="creator-title">{l.title}<small>Not one of your lessons</small></span>}{lead&&<div className="creator-move"><button className="icon-button" aria-label={`Move ${l.title} up`} disabled={busy||i===0} onClick={()=>move(i,-1)}><ArrowUp size={14}/></button><button className="icon-button" aria-label={`Move ${l.title} down`} disabled={busy||i===lessons.length-1} onClick={()=>move(i,1)}><ArrowDown size={14}/></button></div>}</li>)}</ol>
             <div className="creator-draft-heading"><h2><Pencil size={17}/>Your drafts</h2><label><input type="checkbox" checked={archived} onChange={e=>showArchived(e.target.checked)}/>Show archive</label></div>
             <div className="creator-drafts">{drafts.map(d=><button key={d.id} className={d.id===selected?'selected':''} onClick={()=>select(d.id)}><strong>{d.title||'Untitled lesson'}</strong><small>{d.archived?'Archived':d.publishedVersion===d.version?'Matches published version':'Unpublished changes'} · v{d.version}</small></button>)}</div>
             {!drafts.length&&<p className="muted">Open an existing lesson or create your first private draft.</p>}
-        </aside>{current?<DraftEditor key={current.id} draft={current} lead={lead}/>:<div className="panel creator-welcome"><span className="creator-welcome-icon"><Pencil size={32}/></span><h2>Good teaching starts<br/>with a useful first draft.</h2><p>Write, save and preview privately. Publish when the lesson is ready for your people.</p><button className="button primary" disabled={busy} onClick={()=>open()}>Create a lesson draft <ArrowUpRight size={16}/></button><small>Existing lessons, missions and completion records stay in place.</small></div>}</div>
+        </aside>{current?<DraftEditor key={current.id} draft={current} lead={teaches(data,me,track.id,current.lessonId)}/>:<div className="panel creator-welcome"><span className="creator-welcome-icon"><Pencil size={32}/></span><h2>Good teaching starts<br/>with a useful first draft.</h2><p>Write, save and preview privately. Publish when the lesson is ready for your people.</p>{whole?<button className="button primary" disabled={busy} onClick={()=>open()}>Create a lesson draft <ArrowUpRight size={16}/></button>:<small>Open one of your lessons from the curriculum to start a draft.</small>}<small>Existing lessons, missions and completion records stay in place.</small></div>}</div>
     </section>;
 }
 function DraftEditor({draft,lead}:{draft:LessonDraft;lead:boolean}) {
