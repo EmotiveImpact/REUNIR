@@ -1,4 +1,4 @@
-import { DomainError, type Command, type Member, type TeachingRole, type TenantContext, type TrackInstructor, type Workspace } from '../../contracts/src/index';
+import { DomainError, type Command, type Member, type TeachingRole, type TenantContext, type Track, type TrackInstructor, type Workspace } from '../../contracts/src/index';
 import { actorFor, isAdmin } from './access';
 
 /** A grant stored before roles existed is an instructor's. */
@@ -46,6 +46,16 @@ export function teachesPart(s: Workspace, actor: Member, trackId: string): boole
     const grant = grantOf(s, actor, trackId);
     return !!grant && teachingRole(grant) === 'instructor';
 }
+/**
+ * Who may start a new track: owners and administrators, and active instructors of at least one whole track. A track an
+ * instructor starts stays unpublished, seen only by them and administrators, until an administrator publishes it.
+ */
+export function startsTracks(s: Workspace, actor: Member): boolean {
+    if (actor.status !== 'active') return false;
+    return isAdmin(actor) || s.trackInstructors.some(i => i.organizationId === actor.organizationId && i.userId === actor.userId && teachingRole(i) === 'instructor' && !i.lessonIds && s.tracks.some(t => t.id === i.trackId && t.organizationId === actor.organizationId));
+}
+/** A published track is open to everyone who can see its space; an unpublished one to administrators and its own grants. */
+export const seesTrack = (s: Workspace, actor: Member, track: Pick<Track, 'id' | 'published'>) => track.published || holdsGrant(s, actor, track.id);
 /** Tracks where this member publishes or reviews at least one lesson. */
 export function taughtTracks(s: Workspace, actor: Member): Set<string> {
     return new Set(s.tracks.filter(t => t.organizationId === actor.organizationId && teachesPart(s, actor, t.id)).map(t => t.id));

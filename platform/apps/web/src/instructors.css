@@ -34,3 +34,8 @@ span.creator-title{cursor:default;color:var(--muted)}
 .instructor-list li{flex-wrap:wrap}
 .instructor-grant-scope{flex-basis:100%;display:grid;gap:8px;padding-top:8px;border-top:1px solid var(--border)}
 .instructor-grant-scope>div{display:flex;gap:8px;flex-wrap:wrap}
+.teaching-heading-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:28px 0 12px}
+.teaching-heading-row .teaching-heading{margin:0}
+.unpublished-track{margin-bottom:20px;align-items:center}
+.unpublished-track>div{flex:1}
+@media(max-width:560px){.unpublished-track{flex-wrap:wrap}.unpublished-track>.button{width:100%;justify-content:center}}
