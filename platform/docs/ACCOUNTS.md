@@ -66,7 +66,7 @@ On success the administrator becomes the owner, the previous owner becomes an ad
 
 ## Two-step sign-in (Alpha 21)
 
-Your account has a **Two-step sign-in** panel. Any account may turn it on; owners and administrators are told why it matters, and when the server requires it the panel says so.
+Version 0.21.0-alpha.1. Your account has a **Two-step sign-in** panel. Any account may turn it on; owners and administrators are told why it matters, and when the server requires it the panel says so.
 
 - **Turning it on.** Choose **Turn on two-step sign-in…** and enter your password. The dialogue shows a setup key (grouped in fours) and an **Open in an authenticator app** link (`otpauth://totp/REUNIR:…`). Enter the six-digit code the app shows; until a code is accepted nothing changes. Ten backup codes then appear once, with **Copy the codes** and advice to keep them in a password manager. Each works once.
 - **Signing in.** After the password, the sign-in page asks for the six-digit code, or **Use a backup code instead**. The sign-in on an invitation page does the same before accepting. **Start again** returns to the password.

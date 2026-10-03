@@ -8,9 +8,26 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### 0.20.0-alpha.1 (Alpha 20): inviting someone new to teach a track, 3 October 2026
+### 0.21.0-alpha.1 (Alpha 21): two-step sign-in, 3 October 2026
 
 On a pull request from `claude/build-out-tvzn40`, to be merged once its checks pass.
+
+**In plain language:** anyone can now turn on two-step sign-in, using a code from an authenticator app or a one-time backup code. Owners and administrators need it before they can use their community tools when the server asks for it, which it does by default once the app is live.
+
+Details:
+
+- **Two-step sign-in** on Your account: turning it on needs the password and a correct code; ten backup codes are shown once. Turning it off and making new backup codes need the password.
+- `ADMIN_TWO_FACTOR` (`required` or `optional`, required by default in production): without two-step sign-in, an owner or administrator keeps reads and everything a member or moderator can do, but owner and administrator actions return `TWO_FACTOR_REQUIRED` (decision 021).
+- Additive migration 0021 adds `auth_user.two_factor_enabled` and `auth_two_factor`; run `npm run db:grant-runtime` after migrating, for the new table's grant.
+- Uses Better Auth's own two-factor plugin; no new runtime dependency.
+
+### Planned
+
+- Cover picture descriptions, virus scanning of uploads, group conversations, and email verification and change.
+
+## 0.20.0-alpha.1 (Alpha 20): inviting someone new to teach a track, 3 October 2026
+
+On main through [PR #13](https://github.com/EmotiveImpact/REUNIR/pull/13), merged as `c137f90`.
 
 **In plain language:** owners and administrators can now invite someone by email to teach a track. When they accept, they join the community and can teach that track straight away.
 
@@ -20,10 +37,6 @@ Details:
 - The grant is made in the inviting administrator's name, only while they still administer the community.
 - Additive migration 0020 adds the invitation's optional track and one insert policy that also checks the accepting account's address (decision 020).
 - No new runtime dependency.
-
-### Planned
-
-- Two-step sign-in for owners and administrators, and email verification and change.
 
 ## 0.19.0-alpha.1 (Alpha 19): notification settings and email digests, 3 October 2026
 

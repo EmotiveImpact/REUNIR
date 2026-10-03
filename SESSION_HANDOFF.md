@@ -1,17 +1,53 @@
-# Current continuation: Alpha 20 instructor invitations, then the rest of the roadmap
+# Current continuation: Alpha 21 two-step sign-in, then the rest of the roadmap
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, decisions/020-instructor-invitations.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, ACCOUNTS.md, SECURITY.md, decisions/021-two-step-sign-in.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `648df31`, the merge of PR #12 (Alpha 19), tree identical to its tested head `dd50d86`.
+- Base: main `c137f90`, the merge of PR #13 (Alpha 20), tree identical to its tested head `19236bc`.
 - This slice: branch `claude/build-out-tvzn40`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ## What is done
 
-Owners and administrators invite someone who is not yet a member to teach one track from that track's Instructors dialogue. Accepting makes them a member and that track's instructor in the sender's name, only while the sender still administers the community. Additive migration 0020 adds the invitation's optional track and one insert policy that also checks the accepting account's address.
+Anyone can turn on two-step sign-in (authenticator-app codes and ten one-time backup codes) on Your account, using Better Auth's own two-factor plugin. `ADMIN_TWO_FACTOR` (`required` by default in production, `optional` elsewhere) makes owner and administrator authority depend on it: without it, reads and member or moderator actions continue, and owner or administrator actions return 403 `TWO_FACTOR_REQUIRED`. Additive migration 0021 adds `auth_user.two_factor_enabled` and `auth_two_factor`, granted explicitly to the runtime role.
 
 ## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+The demo explains two-step sign-in on Your account but has no accounts, so it shows no key or codes. For PostgreSQL: `npm run db:migrate` (applies 0021), then `npm run db:grant-runtime` for the new table's grant. Set `ADMIN_TWO_FACTOR` deliberately before a pilot.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+## Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Authority is granted explicitly and must be current when it takes effect; teaching is a per-track grant, not a community role. Owner and administrator authority may require two-step sign-in; secrets and backup codes never leave `auth_two_factor`. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+## Next
+
+1. Cover picture descriptions (Alpha 22), virus scanning of uploads (Alpha 23) and group conversations (Alpha 24).
+2. Email verification and change, then the remaining account and trust items in ROADMAP.md.
+3. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 20 handover: instructor invitations
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, INSTRUCTORS.md, decisions/020-instructor-invitations.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `648df31`, the merge of PR #12 (Alpha 19), tree identical to its tested head `dd50d86`.
+- This slice: [PR #13](https://github.com/EmotiveImpact/REUNIR/pull/13), green in CI runs 37119260110 and 37119273038 and merged into main as `c137f90` (tree identical to the tested head `19236bc`). BUILD_STATUS.md records the local runs. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+
+### What is done
+
+Owners and administrators invite someone who is not yet a member to teach one track from that track's Instructors dialogue. Accepting makes them a member and that track's instructor in the sender's name, only while the sender still administers the community. Additive migration 0020 adds the invitation's optional track and one insert policy that also checks the accepting account's address.
+
+### Run it
 
 ```sh
 cd platform
@@ -23,11 +59,11 @@ Preview as admin, open a track, choose **Instructors**, then **Invite someone ne
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Authority is granted explicitly and must be current when it takes effect; teaching is a per-track grant, not a community role. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
 
-## Next
+### Next
 
 1. Two-step sign-in for owners and administrators, and email verification and change.
 2. Later roadmap features: cover descriptions, upload scanning, group conversations and the account and trust items in ROADMAP.md.
