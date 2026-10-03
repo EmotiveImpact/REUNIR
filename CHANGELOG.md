@@ -8,23 +8,39 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### 0.26.0-alpha.1 (Alpha 26): loading, error and empty screens, 3 October 2026
+### 0.27.0-alpha.1 (Alpha 27): loading, error and empty screens, 3 October 2026
 
-On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass. Alpha 23 and 25 are claimed by other open pull requests and Alpha 24 is taken, so this release takes the next free number.
+On a pull request from `claude/everyday-use-4z9rmz`, to be merged once its checks pass. Alpha 23 and 25 are claimed by other open pull requests, and Alpha 24 and 26 are taken, so this release takes the next free number.
 
 **In plain language:** the app now shows calm loading outlines instead of blank areas, and keeps its navigation when a page fails. Failures are explained in plain words with a Try again button, and there is a proper Not found page. Losing the connection, an ended session or a refused change is said clearly instead of silently. Empty lists tell "nothing here yet" apart from "nothing matches", and only offer a next step the person is actually allowed to take.
 
 Details:
 
-- Shared loading, error and empty pieces in `apps/web/src/components/states.tsx` and `states.css`, with the conventions in `platform/docs/STATES.md` (decision 026).
+- Shared loading, error and empty pieces in `apps/web/src/components/states.tsx` and `states.css`, with the conventions in `platform/docs/STATES.md` (decision 027).
 - Route error boundaries with Try again inside the app shell; the top-level boundary stays as the last resort. Unknown addresses show a Not found page.
 - Offline and failed-refresh notices; a failed background refresh keeps the page instead of replacing the app. Failed commands, uploads and downloads show a marked error toast and keep what was typed.
 - Empty states distinguish first run from no results, and actions appear only for roles that may take them.
 - New demo browser suite `npm run test:browser:states`. No migration, no grant change, no new dependency.
 
+### 0.26.0-alpha.1 (Alpha 26): confirming and changing your email address, 3 October 2026
+
+On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. Alpha 23 is claimed by open pull requests (#16, #21), Alpha 24 (group conversations, PR #19) reached main first, and Alpha 25 is on PR #20, so this release is Alpha 26 with decision 026.
+
+**In plain language:** people can now confirm their email address with a link, and accepting an invitation confirms it automatically. Once the app is live, an address has to be confirmed before it can sign in. Anyone can also move their account to a new email address: they enter their password, open the link sent to the new address, and their old address is told.
+
+Details:
+
+- **Email address** panel on Your account: the address, Confirmed or Not confirmed, **Send a confirmation link** and **Change email address…**.
+- `EMAIL_VERIFICATION` (`required` or `optional`, required by default in production, applied only where mail can be sent): an unconfirmed address gets a fresh link instead of a session (decision 026).
+- `POST /api/account/email` checks the password, then sends a confirmation link to the new address; the address changes only when it is opened. The current address gets a notice. Better Auth's own change-email route is closed.
+- Changing or resetting the password cancels any change link asked for before it.
+- The launch preflight also checks `EMAIL_VERIFICATION`.
+- No migration and no new runtime dependency: Better Auth's own email verification and change-email flows, through the encrypted outbox.
+
 ### Planned
 
-- Virus scanning of uploads, email verification and change, content curation, task files with live updates and shared form components.
+- Data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+- Virus scanning of uploads, content curation, task files with live updates and shared form components.
 
 ## 0.24.0-alpha.1 (Alpha 24): group conversations, 3 October 2026
 
