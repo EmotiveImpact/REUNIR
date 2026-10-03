@@ -23,7 +23,7 @@ export async function grantRuntimeTables(sql: SQL): Promise<void> {
     await sql.query(`GRANT UPDATE (results,score,passed,status,feedback,reviewer_id,reviewed_at,version) ON quiz_attempts TO ${role}`);
     // Instructor grants are added or revoked, never rewritten.
     await sql.query(`REVOKE UPDATE ON track_instructors FROM ${role}`);
-    // Library pictures are added or removed, never rewritten.
+    // Library pictures are added or removed; only their name and tags change in place (migration 0038), never the picture.
     await sql.query(`REVOKE UPDATE ON cover_library FROM ${role}`);
     // Appeals: only the decision fields change after an appeal is made (migration 0031).
     await sql.query(`REVOKE UPDATE ON moderation_appeals FROM ${role}`);
@@ -31,4 +31,5 @@ export async function grantRuntimeTables(sql: SQL): Promise<void> {
     // Evidence history is kept: a change is never removed, and only its decision is recorded once.
     await sql.query(`REVOKE UPDATE,DELETE ON evidence_changes FROM ${role}`);
     await sql.query(`GRANT UPDATE (status,decided_by,decided_at,response) ON evidence_changes TO ${role}`);
+    await sql.query(`GRANT UPDATE (label,tags) ON cover_library TO ${role}`);
 }

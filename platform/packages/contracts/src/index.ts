@@ -1,7 +1,7 @@
 import { lessonDocumentSchema, type LessonDocument } from './lesson-document';
 import { lessonResourcesInput, type LessonResource } from './lesson-resources';
 import { lessonQuizSchema, quizAnswersInput, quizFingerprintInput, quizMarksInput, type LessonQuiz, type QuizAnswer, type QuizResult } from './assessments';
-import { coverChange, coverLibraryLabel, type CoverImage, type CoverImageType } from './covers';
+import { coverChange, coverLibraryLabel, coverLibraryTags, type CoverImage, type CoverImageType } from './covers';
 import { z } from 'zod';
 import type { WorkspaceSummary } from './pages';
 import { notificationPreferencesInput, type DigestFrequency, type MutableTopic } from './notifications';
@@ -140,6 +140,11 @@ export interface Upload extends TenantRecord {
     originalName: string; contentType: string; sizeBytes: number;
     status: 'pending' | 'ready' | 'rejected';
     objectKey: string; completedAt: string | null; generation: string | null;
+    /**
+     * Covers only: a smaller copy for cards, stored beside the full picture and verified with it. All null when there is
+     * none, as for every cover uploaded before migration 0038; readers then get the full picture.
+     */
+    thumbnailObjectKey?: string | null; thumbnailContentType?: string | null; thumbnailSizeBytes?: number | null; thumbnailGeneration?: string | null;
 }
 /**
  * One submitted knowledge check. Immutable apart from review fields. Scores are private feedback,
@@ -332,6 +337,8 @@ export interface CoverLibraryItem extends TenantRecord {
     contentType: CoverImageType;
     sizeBytes: number;
     addedBy: Id;
+    /** Up to five short lower-case words for finding the picture. Owners and administrators change them with the name. */
+    tags: string[];
 }
 /**
  * A member's request for a second look at a moderation decision about their own work. Private to the appellant and the
@@ -442,7 +449,7 @@ export const commandSchema = z.discriminatedUnion('type', [
         expectedOrder:z.array(id).max(200),lessonIds:z.array(id).max(200)}).strict(),
     z.object({type:z.literal('track.cover.set'),trackId:id,...coverChange}).strict(),
     z.object({type:z.literal('track.instructor.add'),trackId:id,userId:id,role:z.enum(teachingRoles).default('instructor')}).strict(),
-    z.object({type:z.literal('cover.library.add'),fileId:id,label:coverLibraryLabel}).strict(),
+    z.object({type:z.literal('cover.library.add'),fileId:id,label:coverLibraryLabel,tags:coverLibraryTags.default([])}).strict(),
     z.object({type:z.literal('track.instructor.remove'),trackId:id,userId:id}).strict(),
     z.object({type:z.literal('project.cover.set'),projectId:id,...coverChange}).strict(),
     z.object({type:z.literal('task.create'),projectId:id,...taskFields}).strict(),
