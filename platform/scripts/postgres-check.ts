@@ -190,6 +190,28 @@ try{
         assert.deepEqual(await operator.removeStaleCoverUploads('code-black',DEMO_ADMIN,['pg_stale_cover','pg_fresh_cover']),['pg_stale_cover']);
         assert.deepEqual((await admin.query("SELECT id FROM upload_intents WHERE id IN ('pg_stale_cover','pg_fresh_cover')")).rows,[{id:'pg_fresh_cover'}]);
     });
+    await check('task files verify and stay with the project team, and task edits refuse lost updates, through a restricted PostgreSQL connection',async()=>{
+        const repo=new WorkspaceRepository(runtime!),lead='member_idris',outsider='member_nia',key=(org:string,project:string,id:string)=>`organisations/${org}/task-files/${project}/${id}.pdf`;
+        const request={purpose:'task_file' as const,taskId:'task_test',name:'Postgres notes.pdf',contentType:'application/pdf' as const,sizeBytes:64};
+        await assert.rejects(()=>repo.beginTaskFileUpload('code-black',outsider,request,key,'task-files-postgres'),{code:'NOT_FOUND'});
+        const {upload}=await repo.beginTaskFileUpload('code-black',DEMO_USER,request,key,'task-files-postgres');
+        assert.equal((await repo.completeTaskFileUpload('code-black',DEMO_USER,upload.id,{sizeBytes:64,contentType:'application/pdf',generation:'1712345678907777',signatureMatches:true},'task-files-postgres')).outcome,'ready');
+        const files=(org:string,user:string)=>runtime!.transaction(async tx=>{await setContext(tx,org,user);return (await tx.query<{id:string}>("SELECT id FROM upload_intents WHERE purpose='task_file'")).rows.map(x=>x.id);});
+        assert((await files('org_code_black',lead)).includes(upload.id));assert.deepEqual(await files('org_code_black',outsider),[]);assert.deepEqual(await files('org_studio_north',DEMO_USER),[]);
+        await assert.rejects(()=>runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',outsider);await tx.query("INSERT INTO upload_intents(organization_id,id,user_id,object_key,content_type,size_bytes,original_name,created_at,status,purpose,task_id) VALUES('org_code_black','pg_forged',$1,'k','application/pdf',10,'a.pdf',now(),'pending','task_file','task_test')",[outsider]);}));
+        assert.deepEqual(await repo.taskFileDownload('code-black',lead,'task_test',upload.id),{objectKey:key('org_code_black','project_common',upload.id),generation:'1712345678907777',contentType:'application/pdf',filename:'Postgres notes.pdf'});
+        await assert.rejects(()=>repo.taskFileDownload('code-black',outsider,'task_test',upload.id),{code:'NOT_FOUND'});
+        await admin.query("UPDATE members SET status='suspended' WHERE organization_id='org_code_black' AND user_id=$1",[lead]);
+        try{assert.deepEqual(await files('org_code_black',lead),[]);await assert.rejects(()=>repo.taskFileDownload('code-black',lead,'task_test',upload.id),{code:'NOT_FOUND'});}
+        finally{await admin.query("UPDATE members SET status='active' WHERE organization_id='org_code_black' AND user_id=$1",[lead]);}
+        const version=await repo.projectWorkVersion('code-black',DEMO_USER,'project_common');
+        await assert.rejects(()=>repo.projectWorkVersion('code-black',outsider,'project_common'),{code:'NOT_FOUND'});
+        const t=(await repo.snapshot('code-black',lead)).projectTasks.find(x=>x.id==='task_flow')!,edit=(user:string,title:string)=>repo.execute('code-black',user,{type:'task.edit',taskId:t.id,expectedVersion:t.version,title,brief:t.brief,criteria:t.criteria,assigneeId:t.assigneeId},randomUUID(),'task-files-postgres');
+        await edit(lead,'Saved first');await assert.rejects(()=>edit(DEMO_ADMIN,'Saved second'),{code:'STALE_TASK'});
+        assert.notEqual(await repo.projectWorkVersion('code-black',DEMO_USER,'project_common'),version);
+        const {releasedFiles}=await repo.executeCommand('code-black',lead,{type:'task.file.remove',taskId:'task_test',fileId:upload.id},randomUUID(),'task-files-postgres');
+        assert.deepEqual(releasedFiles,[key('org_code_black','project_common',upload.id)]);assert.deepEqual(await files('org_code_black',lead),[]);
+    });
     await check('a member deletes their own account through the restricted runtime connection, keeping shared work as Former member',async()=>{
         const theo='member_theo',now=new Date().toISOString(),repo=new WorkspaceRepository(runtime!);
         for(const [id,name,email] of [[theo,'Theo Williams','theo@example.test'],[DEMO_ADMIN,'Amina Okafor','amina@example.test']])await admin.query('INSERT INTO auth_user(id,name,email,email_verified,created_at,updated_at) VALUES($1,$2,$3,true,$4,$4)',[id,name,email,now]);

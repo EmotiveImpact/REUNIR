@@ -17,6 +17,8 @@ export interface CommunityErasure {
     removed: Record<PersonalCollection, number>;
     releasedTasks: number;
     rewordedNotices: number;
+    /** Task uploads the person started that never became files (pending or refused), with their storage keys. */
+    unfinishedUploads: { id: string; objectKey: string }[];
 }
 
 
@@ -44,8 +46,12 @@ export function eraseFromCommunity(input: Workspace, userId: string, now: string
     let releasedTasks = 0;
     for (const t of s.projectTasks)
         if (t.organizationId === org && t.assigneeId === userId && !t.archived && !t.contributionId) {
-            t.assigneeId = null; t.workState = 'todo'; t.version++; t.updatedAt = now; releasedTasks++;
+            t.assigneeId = null; t.workState = 'todo'; t.version++; t.updatedAt = now; t.updatedBy = null; releasedTasks++;
         }
+    // Files they attached to tasks are shared work and stay, shown as from a Former member; the project lead or an
+    // administrator can remove one. Uploads they started that never became files are theirs alone and go.
+    const unfinishedUploads = (s.uploads ?? []).filter(u => u.organizationId === org && u.userId === userId && u.purpose === 'task_file' && u.status !== 'ready');
+    s.uploads = (s.uploads ?? []).filter(u => !unfinishedUploads.includes(u));
     // Notices about the person's activity begin with their name. Reword those in other inboxes, unless another member
     // shares the name, or a notice begins with a longer member name ("Jo Smith" when "Jo" leaves): then it cannot be
     // attributed with confidence and stays as it was.
@@ -58,5 +64,5 @@ export function eraseFromCommunity(input: Workspace, userId: string, now: string
             }
     s.audit.push({ id: makeId(), organizationId: org, createdAt: now, actorId: userId, action: 'member.account.deleted', objectId: member.id, metadata: { removed: Object.values(removed).reduce((a, b) => a + b, 0), releasedTasks, rewordedNotices } });
     s.revision = input.revision + 1;
-    return { workspace: s, memberId: member.id, removed, releasedTasks, rewordedNotices };
+    return { workspace: s, memberId: member.id, removed, releasedTasks, rewordedNotices, unfinishedUploads: unfinishedUploads.map(u => ({ id: u.id, objectKey: u.objectKey })) };
 }

@@ -38,15 +38,15 @@ after(async () => db?.close());
 test('0014 upgrade adds one delete policy and changes no rows', async () => {
     const old = await openDatabase('pglite:memory');
     try {
-        // Collections arrive with a later migration, so the older schema is seeded without them.
-        await migrate(old, '0013'); await new WorkspaceRepository(old).seed({ ...createSeed(), collections: [], collectionItems: [] });
+        // Collections, task columns and task uploads arrive with later migrations (0026, 0027), so the 0013 schema is seeded without them.
+        await migrate(old, '0013'); await new WorkspaceRepository(old).seed({ ...createSeed(), collections: [], collectionItems: [], projectTasks: [], taskNotes: [], uploads: [], coverLibrary: [] });
         const read = async (table: string) => (await old.query(`SELECT * FROM ${table} ORDER BY organization_id,id`)).rows;
         const before = { quiz_attempts: await read('quiz_attempts'), notifications: await read('notifications'), audit: await read('audit') };
         await migrate(old); await migrate(old);
         for (const table of ['quiz_attempts', 'notifications', 'audit'] as const) assert.deepEqual(await read(table), before[table], table);
         assert.deepEqual((await old.query("SELECT policyname,permissive FROM pg_policies WHERE tablename='quiz_attempts' AND cmd='DELETE' ORDER BY policyname")).rows, [
             { policyname: 'attempt_account_erasure', permissive: 'PERMISSIVE' }, { policyname: 'attempt_erasure', permissive: 'PERMISSIVE' }, { policyname: 'attempt_runtime_deletion', permissive: 'RESTRICTIVE' }]);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 23);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 24);
     } finally { await old.close(); }
 });
 

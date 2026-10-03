@@ -8,6 +8,8 @@ import { beginResourceUpload, completeResourceUpload, discardResourceUpload, res
 import { releasedCoverKeys, beginCoverLibraryUpload, beginCoverUpload, completeCoverUpload, removeCoverLibraryItem, resolveCoverImage, resolveLibraryPicture, staleCoverUploads, type CoverObservation } from '../../domain/src/covers';
 import type { CoverLibraryUploadRequest, CoverSubject, CoverUploadRequest } from '../../contracts/src/covers';
 import { learningRecord } from '../../domain/src/learning-record';
+import { beginTaskFileUpload, completeTaskFileUpload, projectWorkVersion, releasedTaskFileKeys, resolveTaskFileDownload, staleTaskUploads } from '../../domain/src/task-files';
+import type { TaskFileUploadRequest } from '../../contracts/src/task-files';
 import { eraseFromCommunity, PERSONAL_COLLECTIONS } from '../../domain/src/account-deletion';
 import { ownerRefusal, type AccountDeletionSummary } from '../../contracts/src/account';
 import type { OwnershipTransferResult } from '../../contracts/src/ownership';
@@ -18,6 +20,8 @@ import { tables, type TableSpec, type CollectionKey } from './tables';
 import type { Database, SQL } from './connection';
 const slugPattern = /^[a-z0-9][a-z0-9-]{0,99}$/;
 const limitPerTable = 5000;
+/** What deciding access to project work and drawing its board needs. */
+const WORK_COLLECTIONS: readonly CollectionKey[] = ['members', 'spaces', 'spaceMembers', 'projects', 'projectMembers', 'projectTasks', 'taskNotes', 'contributions', 'uploads'];
 function context(organizationId: string, userId: string, requestId: string = randomUUID()): TenantContext { return { organizationId, userId, requestId }; }
 export async function setContext(sql: SQL, organizationId: string, userId: string) { await sql.query("SELECT set_config('app.organization_id',$1,true),set_config('app.user_id',$2,true)", [organizationId, userId]); }
 function decode(row: Record<string, unknown>, spec: TableSpec) { return Object.fromEntries(spec.fields.map(f => [f.property, row[f.column] instanceof Date ? (row[f.column] as Date).toISOString() : row[f.column]])); }
@@ -51,11 +55,11 @@ const AUDIT_READ = 100;
  * all, the audit trail only its newest entries, and, when `forUser` is given, only that person's own notices. Rules only
  * add to those collections, and `saveChanges` writes differences, so what is not read is never touched.
  */
-async function readAll(sql: SQL, organisation: Record<string, unknown>, forUser?: string): Promise<Workspace> {
+async function readAll(sql: SQL, organisation: Record<string, unknown>, forUser?: string, only?: readonly CollectionKey[]): Promise<Workspace> {
     const state = { organisation: { id: organisation.id, slug: organisation.slug, name: organisation.name, tagline: organisation.tagline, accent: organisation.accent, createdAt: organisation.created_at instanceof Date ? organisation.created_at.toISOString() : organisation.created_at }, revision: organisation.revision } as Workspace;
     let total = 0;
     for (const spec of tables) {
-        if (spec.key === 'outbox') { state.outbox = []; continue; }
+        if (spec.key === 'outbox' || (only && !only.includes(spec.key))) { (state as unknown as Record<string, unknown>)[spec.key] = []; continue; }
         const columns = spec.fields.map(f => f.column).join(','), where = `organization_id=$1${spec.where ? ' AND ' + spec.where : ''}`;
         if (spec.key === 'audit') {
             const recent = await sql.query(`SELECT ${columns} FROM audit WHERE ${where} ORDER BY created_at DESC,id DESC LIMIT $2`, [organisation.id, AUDIT_READ]);
@@ -155,7 +159,7 @@ export class WorkspaceRepository {
                 throw new DomainError(TWO_FACTOR_REQUIRED, TWO_FACTOR_REQUIRED_MESSAGE, 403);
             await saveChanges(sql, before, result.workspace);
             await sql.query('INSERT INTO command_receipts(organization_id,user_id,request_key,body_hash,result) VALUES ($1,$2,$3,$4,$5)', [orgId, userId, key, digest, JSON.stringify({ message: result.message, objectId: result.objectId })]);
-            return { result: { ...result, workspace: await view(sql, result.workspace, ctx) }, releasedFiles: releasedCoverKeys(before, result.workspace) };
+            return { result: { ...result, workspace: await view(sql, result.workspace, ctx) }, releasedFiles: [...releasedCoverKeys(before, result.workspace), ...releasedTaskFileKeys(before, result.workspace)] };
         });
     }
     async consumeRateLimit(key: string, max = 100, seconds = 60) {
@@ -234,6 +238,36 @@ export class WorkspaceRepository {
             await saveChanges(sql, before, result.workspace);
             return { id: result.id, objectKey: result.objectKey };
         });
+    }
+    /** Task files: the same split. The key is chosen from the task's project once the domain has accepted the request. */
+    async beginTaskFileUpload(slug: string, userId: string, request: TaskFileUploadRequest, key: (organizationId: string, projectId: string, id: string) => string, requestId: string, options: { administration?: 'allowed' | 'withheld' } = {}) {
+        return this.within(slug, userId, true, async (sql, org) => {
+            const before = await readAll(sql, org, userId), orgId = String(org.id), id = randomUUID();
+            const result = beginTaskFileUpload(before, context(orgId, userId, requestId), request, { id, objectKey: projectId => key(orgId, projectId, id) }, new Date().toISOString(), randomUUID, options);
+            await saveChanges(sql, before, result.workspace);
+            return { upload: result.upload, expired: result.expired };
+        });
+    }
+    async completeTaskFileUpload(slug: string, userId: string, id: string, observed: StoredObservation, requestId: string) {
+        return this.within(slug, userId, true, async (sql, org) => {
+            const before = await readAll(sql, org, userId);
+            const result = completeTaskFileUpload(before, context(String(org.id), userId, requestId), id, observed, new Date().toISOString());
+            if (result.outcome !== 'unchanged') await saveChanges(sql, before, result.workspace);
+            return { upload: result.upload, outcome: result.outcome };
+        });
+    }
+    async taskFileDownload(slug: string, userId: string, taskId: string, fileId: string) {
+        return this.within(slug, userId, false, async (sql, org) => {
+            const target = resolveTaskFileDownload(await readAll(sql, org, userId, WORK_COLLECTIONS), context(String(org.id), userId), taskId, fileId);
+            return { objectKey: target.upload.objectKey, generation: target.upload.generation, contentType: target.upload.contentType, filename: target.filename };
+        });
+    }
+    /**
+     * The workboard's change check: a fingerprint of what the project team sees, read from only the collections that
+     * decide access and fill the board, inside the person's own tenant transaction.
+     */
+    async projectWorkVersion(slug: string, userId: string, projectId: string) {
+        return this.within(slug, userId, false, async (sql, org) => projectWorkVersion(await readAll(sql, org, userId, WORK_COLLECTIONS), context(String(org.id), userId), projectId));
     }
     /** Cover images follow the same split: domain rules inside the tenant transaction, storage calls outside it. */
     async beginCoverUpload(slug: string, userId: string, request: CoverUploadRequest, key: (organizationId: string, id: string) => string, requestId: string) {
@@ -315,7 +349,8 @@ export class WorkspaceRepository {
     async staleCoverUploads(slug: string, authorisedBy: string) {
         return this.within(slug, authorisedBy, false, async (sql, org) => {
             await this.requireOwner(sql, String(org.id), authorisedBy);
-            return staleCoverUploads(await readAll(sql, org, authorisedBy), String(org.id), new Date().toISOString()).map(u => ({ id: u.id, objectKey: u.objectKey, purpose: u.purpose, status: u.status, createdAt: u.createdAt }));
+            const state = await readAll(sql, org, authorisedBy), now = new Date().toISOString();
+            return [...staleCoverUploads(state, String(org.id), now), ...staleTaskUploads(state, String(org.id), now)].map(u => ({ id: u.id, objectKey: u.objectKey, purpose: u.purpose, status: u.status, createdAt: u.createdAt }));
         });
     }
     /** Delete the records of uploads whose stored files are gone, if they are still unused. Returns the IDs removed. */
@@ -323,7 +358,8 @@ export class WorkspaceRepository {
         return this.within(slug, authorisedBy, true, async (sql, org) => {
             const orgId = String(org.id);
             await this.requireOwner(sql, orgId, authorisedBy);
-            const stale = new Set(staleCoverUploads(await readAll(sql, org, authorisedBy), orgId, new Date().toISOString()).map(u => u.id));
+            const state = await readAll(sql, org, authorisedBy), now = new Date().toISOString();
+            const stale = new Set([...staleCoverUploads(state, orgId, now), ...staleTaskUploads(state, orgId, now)].map(u => u.id));
             const removable = ids.filter(id => stale.has(id));
             if (!removable.length) return [];
             const removed = (await sql.query<{ id: string }>('DELETE FROM upload_intents WHERE organization_id=$1 AND id = ANY($2::text[]) RETURNING id', [orgId, removable])).rows.map(r => r.id);
@@ -373,7 +409,7 @@ export class WorkspaceRepository {
                 if (tasks.length !== erasure.releasedTasks) throw new Error('Row security admitted only part of the deletion (project_tasks), so nothing was changed.');
                 // The released tasks are named for the 0018 read policy, which must still admit each row once it is unassigned.
                 await sql.query("SELECT set_config('app.released_tasks',$1,true)", [tasks.join(',')]);
-                if (tasks.length) await sql.query("UPDATE project_tasks SET assignee_id=NULL,work_state='todo',version=version+1,updated_at=$3 WHERE organization_id=$1 AND id = ANY($2::text[])", [orgId, tasks, now]);
+                if (tasks.length) await sql.query("UPDATE project_tasks SET assignee_id=NULL,work_state='todo',version=version+1,updated_at=$3,updated_by=NULL WHERE organization_id=$1 AND id = ANY($2::text[])", [orgId, tasks, now]);
                 if ((await sql.query(`SELECT id ${claimed}`, [orgId, userId])).rows.length) throw new Error('Row security admitted only part of the deletion (project_tasks), so nothing was changed.');
                 // 2. Their own records. Row security silently skips rows it does not admit, so a shortfall is refused.
                 for (const key of PERSONAL_COLLECTIONS) {
@@ -386,6 +422,10 @@ export class WorkspaceRepository {
                 await drop('memberBlocks', 'DELETE FROM member_blocks WHERE organization_id=$1 AND user_id=$2 RETURNING blocked_user_id', [orgId, userId]);
                 await drop('commandReceipts', 'DELETE FROM command_receipts WHERE organization_id=$1 AND user_id=$2 RETURNING request_key', [orgId, userId]);
                 files.push(...(await drop('privateFiles', "DELETE FROM upload_intents WHERE organization_id=$1 AND user_id=$2 AND purpose='member' RETURNING object_key", [orgId, userId])).map(r => String(r.object_key)));
+                // Files they attached to tasks are shared work and stay (Former member). Uploads that never became files go.
+                const unfinished = (await drop('taskFileUploads', "DELETE FROM upload_intents WHERE organization_id=$1 AND user_id=$2 AND purpose='task_file' AND status<>'ready' RETURNING object_key", [orgId, userId])).map(r => String(r.object_key));
+                if (unfinished.length !== erasure.unfinishedUploads.length) throw new Error('Row security admitted only part of the deletion (upload_intents), so nothing was changed.');
+                files.push(...unfinished);
                 // 3. The audit entry, then the scrub as the last write: later policies would no longer see an active member.
                 const entry = after.audit.at(-1)!, member = after.members.find(m => m.userId === userId)!;
                 await sql.query('INSERT INTO audit(id,organization_id,created_at,actor_id,action,object_id,metadata) VALUES($1,$2,$3,$4,$5,$6,$7)', [entry.id, orgId, entry.createdAt, entry.actorId, entry.action, entry.objectId, JSON.stringify(entry.metadata)]);

@@ -1,0 +1,28 @@
+/* Task files and live project work. Neutral greys only; file contents are never previewed or recoloured. */
+.work-live {display:inline-flex;align-items:center;gap:8px;align-self:center;margin:0 6px 0 0;font-size:12px;color:var(--muted)}
+.work-live span {width:7px;height:7px;border-radius:50%;border:1px solid #8a8a8a;background:transparent}
+.work-live.updated {color:var(--text)}
+.work-live.updated span {background:#e6e6e6;border-color:#e6e6e6}
+.task-files {border-top:1px solid var(--border);margin:27px 0 0;padding-top:15px;min-width:0}
+.task-files-head {display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.task-files-head h3 {display:flex;align-items:center;gap:8px}
+.task-files-head h3 span {color:var(--muted);font-weight:400}
+.task-files-head .button {margin-left:auto}
+.task-files ul {list-style:none;margin:14px 0 0;padding:0;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.task-files>.muted {margin-top:12px;font-size:13px}
+.task-files .sample-note {margin-top:12px}
+.task-files-status {min-height:1px;margin:10px 0 0;font-size:12px;line-height:1.6;color:#d4d4d4}
+.task-files-status:empty {margin:0}
+.task-file-actions {display:flex;align-items:center;gap:12px;flex-shrink:0}
+.task-conflict {display:flex;gap:12px;align-items:flex-start;margin:0;padding:14px 16px;border:1px solid #6a6a6a;border-radius:10px;background:#161616;color:var(--text)}
+.task-conflict:focus {outline:2px solid #d4d4d4;outline-offset:2px}
+.task-conflict strong {display:block;font-size:14px;line-height:1.5}
+.task-conflict p {margin-top:4px;font-size:13px;line-height:1.6;color:#d0d0d0}
+.task-conflict-actions {display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+@media(max-width:600px) {
+  .task-files-head .button {margin-left:0}
+  .task-file {flex-wrap:wrap}
+  .task-file .resource-copy {min-width:calc(100% - 52px)}
+  .task-file-actions {margin-left:50px}
+  .work-live {width:100%}
+}

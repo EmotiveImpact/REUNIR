@@ -1,5 +1,6 @@
 import { api, commitDemo, demoState, mode } from './data';
 import { forgetDemoChat } from './messaging';
+import { removeDemoFile } from './demo-files';
 import { confirmsAccountDeletion, ownerRefusal, ACCOUNT_DELETION_PHRASE, type AccountDeletionSummary } from '../../../../packages/contracts/src/account';
 import { eraseFromCommunity } from '../../../../packages/domain/src/account-deletion';
 
@@ -38,6 +39,7 @@ function deleteDemoAccount(userId: string): AccountDeletionSummary {
         const erasure = eraseFromCommunity(state, userId, now);
         commitDemo(slug, erasure.workspace);
         forgetDemoChat(slug, userId);
+        for (const u of erasure.unfinishedUploads) void removeDemoFile(slug, u.id);
         for (const [key, n] of Object.entries(erasure.removed)) if (n) removed[key] = (removed[key] ?? 0) + n;
         communities++; releasedTasks += erasure.releasedTasks; rewordedNotices += erasure.rewordedNotices;
     }

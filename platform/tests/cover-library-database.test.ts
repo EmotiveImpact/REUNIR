@@ -50,9 +50,10 @@ test('0013 upgrade keeps tracks, projects, covers and uploads exactly as they we
         const read = async (table: string) => (await old.query(`SELECT * FROM ${table} ORDER BY organization_id,id`)).rows;
         const before = { tracks: await read('tracks'), projects: await read('projects'), upload_intents: await read('upload_intents'), members: await read('members') };
         await migrate(old); await migrate(old);
-        for (const table of ['tracks', 'projects', 'upload_intents', 'members'] as const) assert.deepEqual(await read(table), before[table], table);
+        // Task files (migration 0031) add an empty task_id to every upload.
+        for (const table of ['tracks', 'projects', 'upload_intents', 'members'] as const) assert.deepEqual((await read(table)).map(({ task_id, ...row }) => { assert.equal(task_id ?? null, null); return row; }), before[table], table);
         assert.deepEqual(await read('cover_library'), []);
-        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 23);
+        assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, 24);
     } finally { await old.close(); }
 });
 
