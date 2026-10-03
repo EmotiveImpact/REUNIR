@@ -1,3 +1,13 @@
+# 0.15.0-alpha.1: account deletion
+
+- Delete your account: **Your account** in the account menu lists your communities and says what stays and what goes. After you re-enter your password and type "delete my account", the account is deleted in every community at once, in one transaction.
+- Posts, comments, project work, lessons, files, covers and the messages you sent stay, shown as Former member: no name, photo or profile, no place in directories, search or pickers, and conversations with you become read-only for the other person.
+- Your private goals, saved posts, notices, reactions, replies to events, learning record (enrolments, completed lessons, knowledge-check answers, points), instructor grants, private files, invitations to your address, queued mail, sessions, password and email are deleted. Claimed tasks without proof go back to their teams, and notices naming you are reworded unless they could be about someone else with the same or a longer name.
+- Owners are refused, with the communities named, until ownership transfer exists. The fictional demo runs the same rules in the browser and can be restarted.
+- Additive migration 0015: policies that admit only your own rows while your own deletion is under way, including your memberships of any status, instructor grants and knowledge-check attempts; a restrictive policy keeps the operator erasure from 0014 away from the application. Rerun `npm run db:grant-runtime` after migrating. Migrations 0001 to 0014 unchanged. No new runtime dependency.
+- PR #5 (Alpha 11 to 14) was merged into main as `661fac9` after CI passed.
+- Deployment remains deferred by the user.
+
 # 0.14.0-alpha.1: learner records
 
 - Download your learning record: on your own profile, a dated JSON file of the tracks you joined, the lessons you completed, your knowledge-check answers with marks, feedback and reviewer, and your mission work in that community. It includes everything that is yours, with titles, names and answer keys exactly as your screen shows them, and nothing about other members beyond who reviewed you.

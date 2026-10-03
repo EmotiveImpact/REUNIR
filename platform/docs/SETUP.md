@@ -102,9 +102,11 @@ Cookie-authenticated POSTs require the exact application `Origin` and JSON conte
 
 **Learner records (Alpha 14).** Apply migration 0014; no runtime grant changes. Members download their record from `/api/organisations/:slug/me/learning-record`. The operator commands `npm run db:erase-learner` and `npm run db:prune-covers` use the migration connection and need an active owner's user ID in `AUTHORISED_BY`; both are dry runs unless `ERASE=yes` or `PRUNE=yes`. See LEARNER_RECORDS.md.
 
+**Account deletion (Alpha 15).** Apply migration 0015 and rerun `npm run db:grant-runtime`: the runtime role's grant on `quiz_attempts` keeps DELETE, which the new row policies allow only for the acting person's own attempts while they delete their own account. People delete their account from **Your account** through `POST /api/account/delete`, which checks the current password with Better Auth. No storage, email or environment change is needed; private files are removed from the configured bucket after the deletion commits, and queued mail to the address is withdrawn. See ACCOUNTS.md.
+
 Real Google credentials, CORS, IAM, billing, malware scanning, orphaned-object cleanup and member attachments for posts or missions remain staging/public-launch work.
 
-**Knowledge checks (Alpha 10).** No new environment variables or services. Apply migration 0010 with the administrative connection and rerun `npm run db:grant-runtime`, which revokes UPDATE and DELETE on `quiz_attempts` from the runtime role and grants UPDATE only on the review columns. Commands use the existing `/api/organisations/:slug/commands` route. See ASSESSMENTS.md.
+**Knowledge checks (Alpha 10).** No new environment variables or services. Apply migration 0010 with the administrative connection and rerun `npm run db:grant-runtime`, which revokes UPDATE and DELETE on `quiz_attempts` from the runtime role and grants UPDATE only on the review columns. (From Alpha 15 the role keeps DELETE, bounded by row security to a person's own attempts during their own account deletion.) Commands use the existing `/api/organisations/:slug/commands` route. See ASSESSMENTS.md.
 
 ## 7. Database maintenance
 

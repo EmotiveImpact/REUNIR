@@ -455,9 +455,26 @@ Members download their own learning record from their profile. Operators can era
 | R01 | A member downloads only their own record for one community; nobody else, no visitor and no other community can | Domain, HTTP under the restricted role, demo and connected browser tests |
 | R02 | The record includes every record that is the member's own, with titles, names and answer keys exactly as their screen shows them | Domain tests and the demo download check |
 | R03 | Erasure needs an active owner's authorisation and a request reference, is a dry run unless confirmed, refuses partial erasure and keeps an audit entry with counts only | Database and PostgreSQL tests |
-| R04 | Erasure works under forced row security without bypass; the runtime role can never delete attempts | Database tests with a role without bypass, migration 0014 test, PostgreSQL check |
+| R04 | Erasure works under forced row security without bypass; the runtime role can never delete attempts (Alpha 15: never anyone else's; only a person's own, while deleting their own account) | Database tests with a role without bypass, migration 0014 test, PostgreSQL check |
 | R05 | Unused cover files are deleted before their records, and anything chosen again is kept | Database test |
 | R06 | Review queues page 20 at a time, waiting answers oldest first, with exact totals and focus moved to new items | Demo browser check with 45 waiting answers |
 | R07 | Existing rows upgrade unchanged | Migration 0014 upgrade test |
 
-Account deletion, identity scrubbing, administrator exports of someone else's data and server-side queue pagination are outside this release.
+Account deletion, identity scrubbing, administrator exports of someone else's data and server-side queue pagination are outside this release. (Alpha 15 later added account deletion with identity scrubbing.)
+
+## Alpha 15: account deletion
+
+People delete their own account from **Your account**, after re-entering their password and typing "delete my account". Posts, comments and project work stay so conversations still make sense, shown as "Former member"; private things and their own learning record go; direct messages stay for the other person. Owners are refused. See `ACCOUNTS.md` and `decisions/015-account-deletion.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| D01 | Only the signed-in person deletes their own account, from the same origin, with their current password and the typed phrase; attempts are rate limited | HTTP tests, real Better Auth HTTP checks, connected browser check |
+| D02 | One transaction across every community, suspended memberships included; each membership becomes the same scrubbed Former member record | Domain, database (restricted role) and PostgreSQL tests |
+| D03 | Posts, comments, project work, lessons, files, covers, reports and sent messages stay; personal records, the learning record, private files, invitations to the address, queued mail, sessions and the account go | Domain and database tests |
+| D04 | Owners are refused, with the communities named, and nothing changes | Domain, database, HTTP and browser tests |
+| D05 | Row security admits only the person's own rows while the transaction is marked as their deletion; the runtime role cannot use the operator erasure | Database tests under the restricted role, migration 0014 and 0015 tests, PostgreSQL check |
+| D06 | A former member reads as Former member with no photo, profile link or directory entry, gets no new notices, points, roles or messages, and cannot be restored | Domain tests, demo and connected browser checks |
+| D07 | Claimed tasks without proof return to their teams; notices naming the person are reworded unless the name is shared; the audit entry holds counts only | Domain and database tests |
+| D08 | The fictional demo runs the same rules in the browser and can be restarted | Demo browser check |
+
+Ownership transfer, administrator-run deletion of someone else's account, deleting a person's posts with their account and rewriting mentions inside other people's posts are outside this release.
