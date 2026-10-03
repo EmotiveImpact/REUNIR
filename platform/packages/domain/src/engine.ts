@@ -8,7 +8,17 @@ import { visibleUploads } from './resources';
 import { applyCovers, filterCoverLibrary } from './covers';
 import { applyInstructors, filterInstructors } from './instructors';
 import { applyAssessment, filterAssessments } from './assessments';
-export function visibleWorkspace(state: Workspace, ctx: TenantContext): Workspace {
+import { windowWorkspace } from './pages';
+/**
+ * What this person may see, shortened for the browser: recent notices and audit entries and only their own attempts, with
+ * exact totals in `summary`. The rest of those lists comes a page at a time (`pageOf`). `auditTotal` is the full trail's
+ * length when the caller read only its newest entries.
+ */
+export function visibleWorkspace(state: Workspace, ctx: TenantContext, auditTotal?: number): Workspace {
+    return windowWorkspace(visibleRecords(state, ctx), ctx, auditTotal);
+}
+/** Everything this person may see, unshortened. Pages are cut from this. */
+export function visibleRecords(state: Workspace, ctx: TenantContext): Workspace {
     const actor = actorFor(state, ctx);
     const s = normalisePurposeState(structuredClone(state));
     s.spaces = s.spaces.filter(x => canSeeSpace(s, actor, x.id));

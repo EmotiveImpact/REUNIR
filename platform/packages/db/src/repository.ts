@@ -1,5 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { applyCommand, visibleWorkspace, actorFor } from '../../domain/src/engine';
+import { applyCommand, visibleWorkspace, visibleRecords, actorFor, isAdmin } from '../../domain/src/engine';
+import { pageOf } from '../../domain/src/pages';
+import { cursorFor, pageQuery, readCursor, type Page, type PagedItems, type PagedList, type PageQuery } from '../../contracts/src/pages';
 import { DomainError, commandSchema, type Workspace, type TenantContext, type MutationResult } from '../../contracts/src/index';
 import type { ResourceRef, ResourceUploadRequest } from '../../contracts/src/lesson-resources';
 import { beginResourceUpload, completeResourceUpload, discardResourceUpload, resolveResourceDownload, type StoredObservation } from '../../domain/src/resources';
@@ -40,17 +42,38 @@ async function putRow(sql: SQL, spec: TableSpec, row: Record<string, unknown>, e
     }
     await sql.query(`INSERT INTO ${spec.table} (${columns.join(',')}) VALUES (${params.map((_, i) => '$' + (i + 1)).join(',')}) ON CONFLICT(organization_id,id) DO UPDATE SET ${updates}`, params);
 }
-async function readAll(sql: SQL, organisation: Record<string, unknown>): Promise<Workspace> {
+/** Audit entries a workspace read carries. The full trail is read a page at a time (`auditPage`). */
+const AUDIT_READ = 100;
+/**
+ * The community's records for the domain rules. Write-only and personal histories are not read in full: the outbox not at
+ * all, the audit trail only its newest entries, and, when `forUser` is given, only that person's own notices. Rules only
+ * add to those collections, and `saveChanges` writes differences, so what is not read is never touched.
+ */
+async function readAll(sql: SQL, organisation: Record<string, unknown>, forUser?: string): Promise<Workspace> {
     const state = { organisation: { id: organisation.id, slug: organisation.slug, name: organisation.name, tagline: organisation.tagline, accent: organisation.accent, createdAt: organisation.created_at instanceof Date ? organisation.created_at.toISOString() : organisation.created_at }, revision: organisation.revision } as Workspace;
     let total = 0;
     for (const spec of tables) {
-        const rows = await sql.query(`SELECT ${spec.fields.map(f => f.column).join(',')} FROM ${spec.table} WHERE organization_id=$1${spec.where ? ' AND ' + spec.where : ''} ORDER BY created_at,id LIMIT $2`, [organisation.id, limitPerTable + 1]);
+        if (spec.key === 'outbox') { state.outbox = []; continue; }
+        const columns = spec.fields.map(f => f.column).join(','), where = `organization_id=$1${spec.where ? ' AND ' + spec.where : ''}`;
+        if (spec.key === 'audit') {
+            const recent = await sql.query(`SELECT ${columns} FROM audit WHERE ${where} ORDER BY created_at DESC,id DESC LIMIT $2`, [organisation.id, AUDIT_READ]);
+            state.audit = recent.rows.reverse().map(r => decode(r, spec)) as unknown as Workspace['audit'];
+            continue;
+        }
+        const mine = spec.key === 'notifications' && forUser;
+        const rows = await sql.query(`SELECT ${columns} FROM ${spec.table} WHERE ${where}${mine ? ' AND user_id=$3' : ''} ORDER BY created_at,id LIMIT $2`, mine ? [organisation.id, limitPerTable + 1, forUser] : [organisation.id, limitPerTable + 1]);
         total += rows.rows.length;
         if (rows.rows.length > limitPerTable || total > 20000)
             throw new DomainError('WORKSPACE_LIMIT', 'This community needs the paginated workspace release before it can grow further.', 503);
         (state as unknown as Record<string, unknown>)[spec.key] = rows.rows.map(r => decode(r, spec));
     }
     return state;
+}
+/** The browser's view. Administrators see the audit trail's true length, which a workspace read does not hold. */
+async function view(sql: SQL, state: Workspace, ctx: TenantContext): Promise<Workspace> {
+    const actor = state.members.find(m => m.userId === ctx.userId && m.organizationId === ctx.organizationId);
+    const auditTotal = actor && isAdmin(actor) ? (await sql.query<{ n: number }>('SELECT count(*)::int AS n FROM audit WHERE organization_id=$1', [ctx.organizationId])).rows[0].n : undefined;
+    return visibleWorkspace(state, ctx, auditTotal);
 }
 async function saveChanges(sql: SQL, before: Workspace, after: Workspace) {
     // Delete children before parents. Insert parents before children. Only actual diffs are written.
@@ -95,7 +118,7 @@ export class WorkspaceRepository {
             return fn(sql, locked.rows[0]);
         });
     }
-    async snapshot(slug: string, userId: string) { return this.within(slug, userId, false, async (sql, org) => visibleWorkspace(await readAll(sql, org), context(String(org.id), userId))); }
+    async snapshot(slug: string, userId: string) { return this.within(slug, userId, false, async (sql, org) => await view(sql, await readAll(sql, org, userId), context(String(org.id), userId))); }
     async execute(slug: string, userId: string, raw: unknown, key: string, requestId: string): Promise<MutationResult> {
         return (await this.executeCommand(slug, userId, raw, key, requestId)).result;
     }
@@ -107,7 +130,7 @@ export class WorkspaceRepository {
         const digest = createHash('sha256').update(JSON.stringify(command)).digest('hex');
         return this.within(slug, userId, true, async (sql, org) => {
             const orgId = String(org.id), ctx = context(orgId, userId, requestId);
-            const before = await readAll(sql, org);
+            const before = await readAll(sql, org, userId);
             actorFor(before, ctx);
             const old = await sql.query<{
                 body_hash: string;
@@ -119,12 +142,12 @@ export class WorkspaceRepository {
             if (old.rows[0]) {
                 if (old.rows[0].body_hash !== digest)
                     throw new DomainError('KEY_REUSED', 'This request key was already used for a different action.', 409);
-                return { result: { ...old.rows[0].result, workspace: visibleWorkspace(before, ctx) }, releasedFiles: [] };
+                return { result: { ...old.rows[0].result, workspace: await view(sql, before, ctx) }, releasedFiles: [] };
             }
             const result = applyCommand(before, ctx, command);
             await saveChanges(sql, before, result.workspace);
             await sql.query('INSERT INTO command_receipts(organization_id,user_id,request_key,body_hash,result) VALUES ($1,$2,$3,$4,$5)', [orgId, userId, key, digest, JSON.stringify({ message: result.message, objectId: result.objectId })]);
-            return { result: { ...result, workspace: visibleWorkspace(result.workspace, ctx) }, releasedFiles: releasedCoverKeys(before, result.workspace) };
+            return { result: { ...result, workspace: await view(sql, result.workspace, ctx) }, releasedFiles: releasedCoverKeys(before, result.workspace) };
         });
     }
     async consumeRateLimit(key: string, max = 100, seconds = 60) {
@@ -182,7 +205,7 @@ export class WorkspaceRepository {
     /** Lesson files. Domain rules run inside the tenant transaction; storage calls happen outside it. */
     async beginResourceUpload(slug: string, userId: string, request: ResourceUploadRequest, key: (organizationId: string, id: string) => string, requestId: string) {
         return this.within(slug, userId, true, async (sql, org) => {
-            const before = await readAll(sql, org), orgId = String(org.id), id = randomUUID();
+            const before = await readAll(sql, org, userId), orgId = String(org.id), id = randomUUID();
             const result = beginResourceUpload(before, context(orgId, userId, requestId), request, { id, objectKey: key(orgId, id) }, new Date().toISOString());
             await saveChanges(sql, before, result.workspace);
             return { upload: result.upload, expired: result.expired };
@@ -190,7 +213,7 @@ export class WorkspaceRepository {
     }
     async completeResourceUpload(slug: string, userId: string, id: string, observed: StoredObservation, requestId: string) {
         return this.within(slug, userId, true, async (sql, org) => {
-            const before = await readAll(sql, org);
+            const before = await readAll(sql, org, userId);
             const result = completeResourceUpload(before, context(String(org.id), userId, requestId), id, observed, new Date().toISOString());
             if (result.outcome !== 'unchanged') await saveChanges(sql, before, result.workspace);
             return { upload: result.upload, outcome: result.outcome };
@@ -198,7 +221,7 @@ export class WorkspaceRepository {
     }
     async discardResourceUpload(slug: string, userId: string, id: string, requestId: string) {
         return this.within(slug, userId, true, async (sql, org) => {
-            const before = await readAll(sql, org);
+            const before = await readAll(sql, org, userId);
             const result = discardResourceUpload(before, context(String(org.id), userId, requestId), id, new Date().toISOString());
             await saveChanges(sql, before, result.workspace);
             return { id: result.id, objectKey: result.objectKey };
@@ -207,7 +230,7 @@ export class WorkspaceRepository {
     /** Cover images follow the same split: domain rules inside the tenant transaction, storage calls outside it. */
     async beginCoverUpload(slug: string, userId: string, request: CoverUploadRequest, key: (organizationId: string, id: string) => string, requestId: string) {
         return this.within(slug, userId, true, async (sql, org) => {
-            const before = await readAll(sql, org), orgId = String(org.id), id = randomUUID();
+            const before = await readAll(sql, org, userId), orgId = String(org.id), id = randomUUID();
             const result = beginCoverUpload(before, context(orgId, userId, requestId), request, { id, objectKey: key(orgId, id) }, new Date().toISOString());
             await saveChanges(sql, before, result.workspace);
             return { upload: result.upload, expired: result.expired };
@@ -215,7 +238,7 @@ export class WorkspaceRepository {
     }
     async completeCoverUpload(slug: string, userId: string, id: string, observed: CoverObservation, requestId: string) {
         return this.within(slug, userId, true, async (sql, org) => {
-            const before = await readAll(sql, org);
+            const before = await readAll(sql, org, userId);
             const result = completeCoverUpload(before, context(String(org.id), userId, requestId), id, observed, new Date().toISOString());
             if (result.outcome !== 'unchanged') await saveChanges(sql, before, result.workspace);
             return { upload: result.upload, outcome: result.outcome };
@@ -224,7 +247,7 @@ export class WorkspaceRepository {
     /** Library pictures: only active owners and administrators add or remove them; every member may show one. */
     async beginCoverLibraryUpload(slug: string, userId: string, request: CoverLibraryUploadRequest, key: (organizationId: string, id: string) => string, requestId: string) {
         return this.within(slug, userId, true, async (sql, org) => {
-            const before = await readAll(sql, org), orgId = String(org.id), id = randomUUID();
+            const before = await readAll(sql, org, userId), orgId = String(org.id), id = randomUUID();
             const result = beginCoverLibraryUpload(before, context(orgId, userId, requestId), request, { id, objectKey: key(orgId, id) }, new Date().toISOString());
             await saveChanges(sql, before, result.workspace);
             return { upload: result.upload, expired: result.expired };
@@ -232,7 +255,7 @@ export class WorkspaceRepository {
     }
     async removeCoverLibraryItem(slug: string, userId: string, itemId: string, requestId: string) {
         return this.within(slug, userId, true, async (sql, org) => {
-            const before = await readAll(sql, org);
+            const before = await readAll(sql, org, userId);
             const result = removeCoverLibraryItem(before, context(String(org.id), userId, requestId), itemId, new Date().toISOString());
             await saveChanges(sql, before, result.workspace);
             return { id: result.item.id, objectKey: result.objectKey };
@@ -240,13 +263,13 @@ export class WorkspaceRepository {
     }
     async coverLibraryPicture(slug: string, userId: string, itemId: string) {
         return this.within(slug, userId, false, async (sql, org) => {
-            const { upload } = resolveLibraryPicture(await readAll(sql, org), context(String(org.id), userId), itemId);
+            const { upload } = resolveLibraryPicture(await readAll(sql, org, userId), context(String(org.id), userId), itemId);
             return { objectKey: upload.objectKey, generation: upload.generation!, contentType: upload.contentType, sizeBytes: upload.sizeBytes };
         });
     }
     async coverImage(slug: string, userId: string, kind: CoverSubject, subjectId: string, fileId: string) {
         return this.within(slug, userId, false, async (sql, org) => {
-            const { upload } = resolveCoverImage(await readAll(sql, org), context(String(org.id), userId), kind, subjectId, fileId);
+            const { upload } = resolveCoverImage(await readAll(sql, org, userId), context(String(org.id), userId), kind, subjectId, fileId);
             return { objectKey: upload.objectKey, generation: upload.generation!, contentType: upload.contentType, sizeBytes: upload.sizeBytes };
         });
     }
@@ -284,7 +307,7 @@ export class WorkspaceRepository {
     async staleCoverUploads(slug: string, authorisedBy: string) {
         return this.within(slug, authorisedBy, false, async (sql, org) => {
             await this.requireOwner(sql, String(org.id), authorisedBy);
-            return staleCoverUploads(await readAll(sql, org), String(org.id), new Date().toISOString()).map(u => ({ id: u.id, objectKey: u.objectKey, purpose: u.purpose, status: u.status, createdAt: u.createdAt }));
+            return staleCoverUploads(await readAll(sql, org, authorisedBy), String(org.id), new Date().toISOString()).map(u => ({ id: u.id, objectKey: u.objectKey, purpose: u.purpose, status: u.status, createdAt: u.createdAt }));
         });
     }
     /** Delete the records of uploads whose stored files are gone, if they are still unused. Returns the IDs removed. */
@@ -292,7 +315,7 @@ export class WorkspaceRepository {
         return this.within(slug, authorisedBy, true, async (sql, org) => {
             const orgId = String(org.id);
             await this.requireOwner(sql, orgId, authorisedBy);
-            const stale = new Set(staleCoverUploads(await readAll(sql, org), orgId, new Date().toISOString()).map(u => u.id));
+            const stale = new Set(staleCoverUploads(await readAll(sql, org, authorisedBy), orgId, new Date().toISOString()).map(u => u.id));
             const removable = ids.filter(id => stale.has(id));
             if (!removable.length) return [];
             const removed = (await sql.query<{ id: string }>('DELETE FROM upload_intents WHERE organization_id=$1 AND id = ANY($2::text[]) RETURNING id', [orgId, removable])).rows.map(r => r.id);
@@ -385,23 +408,44 @@ export class WorkspaceRepository {
      */
     async transferOwnership(slug: string, userId: string, memberId: string, confirmation: string, requestId: string): Promise<OwnershipTransferResult & { workspace: Workspace }> {
         return this.within(slug, userId, true, async (sql, org) => {
-            const ctx = context(String(org.id), userId, requestId), before = await readAll(sql, org);
+            const ctx = context(String(org.id), userId, requestId), before = await readAll(sql, org, userId);
             const t = transferOwnership(before, ctx, memberId, confirmation, new Date().toISOString());
             const demoted = (await sql.query("UPDATE members SET role='admin' WHERE organization_id=$1 AND id=$2 AND role='owner' RETURNING id", [ctx.organizationId, t.previousOwner.id])).rows;
             if (demoted.length !== 1) throw new DomainError('OWNERSHIP_CONFLICT', 'This community’s ownership needs attention before it can change hands.', 409);
             const step = structuredClone(before);
             step.members = step.members.map(m => m.id === t.previousOwner.id ? { ...m, role: 'admin' } : m);
             await saveChanges(sql, step, t.workspace);
-            return { message: t.message, ownerMemberId: t.owner.id, previousOwnerMemberId: t.previousOwner.id, workspace: visibleWorkspace(t.workspace, ctx) };
+            return { message: t.message, ownerMemberId: t.owner.id, previousOwnerMemberId: t.previousOwner.id, workspace: await view(sql, t.workspace, ctx) };
+        });
+    }
+    /**
+     * One page of a long list, read inside the person's own tenant transaction. The audit trail is paged in SQL by its
+     * index; the other lists apply the same visibility rules as the workspace snapshot before cutting the page.
+     */
+    async page<L extends PagedList>(slug: string, userId: string, list: L, raw: PageQuery = {}): Promise<Page<PagedItems[L]>> {
+        const query = pageQuery.parse(raw);
+        return this.within(slug, userId, false, async (sql, org) => {
+            const ctx = context(String(org.id), userId);
+            if (list !== 'audit') return pageOf(visibleRecords(await readAll(sql, org, userId), ctx), ctx, list, query);
+            const admin = await sql.query("SELECT 1 FROM members WHERE organization_id=$1 AND user_id=$2 AND status='active' AND role IN ('owner','admin')", [ctx.organizationId, userId]);
+            if (!admin.rows[0]) throw new DomainError('FORBIDDEN', 'An administrator is required.', 403);
+            const after = query.cursor ? readCursor(query.cursor) : null;
+            if (query.cursor && !after) throw new DomainError('INVALID_CURSOR', 'That page is not available. Reload the list.', 400);
+            // Positions compare at millisecond precision, the precision a cursor carries.
+            const spec = tables.find(t => t.key === 'audit')!, ms = "date_trunc('milliseconds',created_at)";
+            const rows = (await sql.query(`SELECT ${spec.fields.map(f => f.column).join(',')} FROM audit WHERE organization_id=$1${after ? ` AND (${ms},id)<($3::timestamptz,$4)` : ''} ORDER BY ${ms} DESC,id DESC LIMIT $2`, after ? [ctx.organizationId, query.limit + 1, after.createdAt, after.id] : [ctx.organizationId, query.limit + 1])).rows.map(r => decode(r, spec)) as unknown as PagedItems['audit'][];
+            const total = (await sql.query<{ n: number }>('SELECT count(*)::int AS n FROM audit WHERE organization_id=$1', [ctx.organizationId])).rows[0].n;
+            const items = rows.slice(0, query.limit);
+            return { items: items as PagedItems[L][], total, nextCursor: rows.length > query.limit ? cursorFor(items[items.length - 1]) : null };
         });
     }
     /** The acting member's own learning record, read inside their own tenant transaction. */
     async learningRecord(slug: string, userId: string) {
-        return this.within(slug, userId, false, async (sql, org) => learningRecord(await readAll(sql, org), context(String(org.id), userId), new Date().toISOString()));
+        return this.within(slug, userId, false, async (sql, org) => learningRecord(await readAll(sql, org, userId), context(String(org.id), userId), new Date().toISOString()));
     }
     async resourceDownload(slug: string, userId: string, ref: ResourceRef) {
         return this.within(slug, userId, false, async (sql, org) => {
-            const target = resolveResourceDownload(await readAll(sql, org), context(String(org.id), userId), ref);
+            const target = resolveResourceDownload(await readAll(sql, org, userId), context(String(org.id), userId), ref);
             return { objectKey: target.upload.objectKey, generation: target.upload.generation, contentType: target.upload.contentType, filename: target.filename };
         });
     }

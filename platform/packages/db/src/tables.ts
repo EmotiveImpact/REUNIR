@@ -1,5 +1,5 @@
 import type { Workspace } from '../../contracts/src/index';
-export type CollectionKey = Exclude<keyof Workspace, 'organisation' | 'revision'>;
+export type CollectionKey = Exclude<keyof Workspace, 'organisation' | 'revision' | 'summary'>;
 export interface TableSpec {
     key: CollectionKey;
     table: string;

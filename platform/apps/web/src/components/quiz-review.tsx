@@ -6,59 +6,60 @@ import { Avatar, Empty } from './ui';
 import { AttemptView, attemptStatus } from './quiz-view';
 import { useWorkspace } from '../lib/context';
 import type { QuizAttempt } from '../../../../packages/contracts/src/index';
-import { teaches } from '../../../../packages/domain/src/instructors';
+import { PAGE_SIZE } from '../../../../packages/contracts/src/pages';
+import { usePagedList } from '../lib/pages';
+import { displayError } from '../lib/data';
 
-const oldestFirst = (a: QuizAttempt, b: QuizAttempt) => a.createdAt.localeCompare(b.createdAt);
-const newestFirst = (a: QuizAttempt, b: QuizAttempt) => b.createdAt.localeCompare(a.createdAt);
-/** Long lists open a page at a time. The counts beside each heading are always the full totals. */
-export const REVIEW_PAGE = 20;
+/** Long lists open a page at a time from the server. The counts beside each heading are always the full totals. */
+export const REVIEW_PAGE = PAGE_SIZE;
 const reviewHeading = (attempt: QuizAttempt) => `quiz-review-${attempt.id}`;
+type Review = 'review-waiting' | 'review-scored' | 'review-reviewed';
 
 /**
- * Shows the first page of a list and a button for the next. After more appear, focus moves to the first new item, so
- * keyboard and screen reader users continue where the new items begin.
+ * Shows the first page of a list and a button for the next, which the server sends. After more appear, focus moves to the
+ * first new item, so keyboard and screen reader users continue where the new items begin.
  */
-export function Paged({ items, noun, children }: { items: QuizAttempt[]; noun: string; children: (shown: QuizAttempt[]) => ReactNode }) {
-    const [count, setCount] = useState(REVIEW_PAGE);
+export function Paged({ list, noun, empty, children }: { list: ReturnType<typeof usePagedList<Review>>; noun: string; empty: ReactNode; children: (shown: QuizAttempt[]) => ReactNode }) {
     const firstNew = useRef<string | null>(null);
     useEffect(() => {
-        if (!firstNew.current) return;
+        if (!firstNew.current || list.loadingMore) return;
         document.getElementById(firstNew.current)?.focus();
         firstNew.current = null;
-    }, [count]);
-    const shown = items.slice(0, count), rest = items.length - shown.length;
-    const more = () => { firstNew.current = reviewHeading(items[count]); setCount(c => c + REVIEW_PAGE); };
+    }, [list.items.length, list.loadingMore]);
+    if (list.loading) return <p className="muted" role="status">Loading…</p>;
+    if (list.error) return <p className="muted" role="alert">{displayError(list.error)}</p>;
+    if (!list.items.length) return <>{empty}</>;
+    const shown = list.items, rest = list.total - shown.length;
+    const more = async () => { const r = await list.more(); const page = r.data?.pages.at(-1)?.items[0]; if (page) firstNew.current = reviewHeading(page as QuizAttempt); };
     return <>
         {children(shown)}
-        {rest > 0 && <div className="review-more">
-            <span>Showing {shown.length} of {items.length} {noun}.</span>
-            <button type="button" className="button secondary" onClick={more}>Show {Math.min(REVIEW_PAGE, rest)} more</button>
+        {list.hasMore && <div className="review-more">
+            <span>Showing {shown.length} of {list.total} {noun}.</span>
+            <button type="button" className="button secondary" disabled={list.loadingMore} onClick={() => void more()}>{list.loadingMore ? 'Loading…' : `Show ${Math.min(REVIEW_PAGE, Math.max(rest, 0))} more`}</button>
         </div>}
     </>;
 }
 
 /** Mark written answers and send feedback: for owners and administrators in Community studio, and for instructors on their teaching page. */
 export function QuizReviewQueue() {
-    const { data, me } = useWorkspace();
-    // Only attempts on tracks this person teaches, and never their own.
-    const reviewable = data.quizAttempts.filter(a => teaches(data, me, a.trackId) && a.userId !== me.userId);
-    const waiting = reviewable.filter(a => a.status === 'awaiting_review').sort(oldestFirst);
-    const scored = reviewable.filter(a => a.status === 'scored').sort(newestFirst);
-    const reviewed = reviewable.filter(a => a.status === 'reviewed').sort(newestFirst);
+    const { data } = useWorkspace();
+    // Only attempts on tracks this person teaches, and never their own: the server applies the rule and sends pages.
+    const [scoredOpen, setScoredOpen] = useState(false), [reviewedOpen, setReviewedOpen] = useState(false);
+    const waiting = usePagedList('review-waiting'), scored = usePagedList('review-scored', { enabled: scoredOpen }), reviewed = usePagedList('review-reviewed', { enabled: reviewedOpen });
+    const totals = data.summary?.review ?? { waiting: waiting.total, scored: scored.total, reviewed: reviewed.total };
     const name = (id: string | null) => data.members.find(m => m.userId === id)?.name;
     return <div className="quiz-review">
         <p className="quiz-review-intro">Written answers wait here for marks and feedback. You can also send feedback on an attempt that was scored automatically. Scores are private feedback for the learner, not points, completion or a credential.</p>
-        <h2 className="quiz-review-heading">Waiting for feedback <span>{waiting.length}</span></h2>
-        {waiting.length ? <Paged items={waiting} noun="waiting answers">{shown => <div className="review-grid">{shown.map(a => <ReviewCard key={a.id} attempt={a}/>)}</div>}</Paged>
-            : <Empty title="No written answers are waiting." body="Knowledge-check answers that need marking will appear here."/>}
-        <details className="quiz-history"><summary>Scored automatically <span>{scored.length}</span></summary>
-            {scored.length ? <Paged items={scored} noun="scored attempts">{shown => <div className="review-grid">{shown.map(a => <ReviewCard key={a.id} attempt={a}/>)}</div>}</Paged> : <p className="muted">No automatically scored attempts yet.</p>}
+        <h2 className="quiz-review-heading">Waiting for feedback <span>{totals.waiting}</span></h2>
+        <Paged list={waiting} noun="waiting answers" empty={<Empty title="No written answers are waiting." body="Knowledge-check answers that need marking will appear here."/>}>{shown => <div className="review-grid">{shown.map(a => <ReviewCard key={a.id} attempt={a}/>)}</div>}</Paged>
+        <details className="quiz-history" onToggle={e => setScoredOpen((e.target as HTMLDetailsElement).open)}><summary>Scored automatically <span>{totals.scored}</span></summary>
+            {scoredOpen && <Paged list={scored} noun="scored attempts" empty={<p className="muted">No automatically scored attempts yet.</p>}>{shown => <div className="review-grid">{shown.map(a => <ReviewCard key={a.id} attempt={a}/>)}</div>}</Paged>}
         </details>
-        <details className="quiz-history"><summary>Reviewed <span>{reviewed.length}</span></summary>
-            {reviewed.length ? <Paged items={reviewed} noun="reviewed attempts">{shown => shown.map(a => <div className="quiz-reviewed" key={a.id}>
+        <details className="quiz-history" onToggle={e => setReviewedOpen((e.target as HTMLDetailsElement).open)}><summary>Reviewed <span>{totals.reviewed}</span></summary>
+            {reviewedOpen && <Paged list={reviewed} noun="reviewed attempts" empty={<p className="muted">Reviewed attempts will appear here.</p>}>{shown => shown.map(a => <div className="quiz-reviewed" key={a.id}>
                 <p id={reviewHeading(a)} tabIndex={-1}><strong>{name(a.userId) ?? 'Former member'}</strong> · {data.lessons.find(l => l.id === a.lessonId)?.title ?? 'Lesson'}</p>
                 <AttemptView attempt={a} revealed reviewerName={name(a.reviewerId)} chosenLabel="Chosen"/>
-            </div>)}</Paged> : <p className="muted">Reviewed attempts will appear here.</p>}
+            </div>)}</Paged>}
         </details>
     </div>;
 }
