@@ -12,7 +12,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 02 | Purpose, paths, milestones, private goals, contributions, reviewed outcomes and outputs | Community review, not accreditation or portable credentials |
 | Alpha 03 | Invitations/recovery, durable mail queue, participant-private 1:1 messaging, blocking/reporting and member access | Email needs configured delivery; no group chat/MFA |
 | Alpha 04 | Pilot console, runtime privilege guards, fenced retries and release tooling | Observations are not production certification |
-| Alpha 05 | Project workboards, assignments, task discussion and existing proof review | No task file uploads or realtime collaboration |
+| Alpha 05 | Project workboards, assignments, task discussion and existing proof review | Task files and live board updates followed in Alpha A3 (decision 031); no files on notes, presence or server push |
 | Alpha 06 | Private lesson drafts, explicit publishing, revision history, restore-as-draft and ordering | Plain text/resource links; no rich blocks/private attachments |
 | Alpha 07 | Approved v4 shell/Home in the actual React application, shadcn Button/Avatar/Menu, photo fixtures and responsive navigation | Not a full replacement of every form with shadcn; hosted pilot remains separate |
 | Alpha 08 | Rich lesson editing with Tiptap, safe external images and YouTube/Vimeo, compatible rich and plain revisions | External media only; no uploads |

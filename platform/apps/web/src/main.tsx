@@ -27,3 +27,4 @@ import './covers.css';
 import './instructors.css';
 import './learning-record.css';
 import './account.css';
+import './project-work.css';
