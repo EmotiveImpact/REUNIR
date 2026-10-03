@@ -32,6 +32,8 @@ export interface CoverImage {
     fileId: string; contentType: CoverImageType; sizeBytes: number;
     /** Percentages used as the object position, so every card keeps the chosen part of the image in view. */
     focusX: number; focusY: number;
+    /** What the picture shows, for people who cannot see it. Empty means it is decorative. */
+    description?: string;
 }
 
 const key = z.string().min(1).max(100).regex(/^[a-zA-Z0-9_-]+$/);
@@ -52,8 +54,15 @@ export const coverLibraryUploadRequest = z.object({
     sizeBytes: z.number().int().positive('This image is empty.').max(MAX_COVER_BYTES, 'Cover images can be up to 3 MB.'),
 }).strict();
 export type CoverLibraryUploadRequest = z.infer<typeof coverLibraryUploadRequest>;
-/** `fileId: null` removes the cover. Changing only the focus keeps the same verified file. */
-export const coverChange = { fileId: key.nullable(), focusX: coverFocus.default(50), focusY: coverFocus.default(50) };
+/** Short enough for a screen reader to read in one breath, and to keep the stored cover within its size check. */
+export const MAX_COVER_DESCRIPTION = 150;
+export const coverDescription = z.string().trim().max(MAX_COVER_DESCRIPTION, `Keep the description under ${MAX_COVER_DESCRIPTION} characters.`)
+    .refine(v => !/[\u0000-\u001f\u007f]/.test(v), 'Use plain text on one line.');
+/**
+ * `fileId: null` removes the cover. Changing only the focus keeps the same verified file. Leaving `description` out keeps
+ * the current one for the same picture; a new picture starts without one.
+ */
+export const coverChange = { fileId: key.nullable(), focusX: coverFocus.default(50), focusY: coverFocus.default(50), description: coverDescription.optional() };
 
 const u16be = (b: Uint8Array, i: number) => (b[i] << 8) | b[i + 1];
 const u32be = (b: Uint8Array, i: number) => ((b[i] << 24) >>> 0) + (b[i + 1] << 16) + (b[i + 2] << 8) + b[i + 3];

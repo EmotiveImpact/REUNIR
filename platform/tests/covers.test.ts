@@ -149,3 +149,26 @@ test('a replaced or removed cover picture goes at once; a library picture and a 
     assert.equal(releasedCoverKeys(replaced, removed).length, 1);
     assert.deepEqual(releasedCoverKeys(removed, removed), [], 'nothing else is released');
 });
+
+test('a cover description is kept with its picture, cleared with a new one, and validated', () => {
+    let { s, id } = verified(createSeed(), DEMO_ADMIN, 'track', 'track_story');
+    const set = (extra: Record<string, unknown>) => run(s, DEMO_ADMIN, { type: 'track.cover.set', trackId: 'track_story', fileId: id, focusX: 40, focusY: 60, ...extra });
+    let r = set({ description: '  Hands sketching on a notebook beside a laptop  ' });
+    assert.equal(r.message, 'Cover and its description saved.');
+    s = r.workspace;
+    const cover = () => s.tracks.find(t => t.id === 'track_story')!.coverImage!;
+    assert.equal(cover().description, 'Hands sketching on a notebook beside a laptop', 'trimmed');
+    s = set({ focusX: 10 }).workspace;
+    assert.equal(cover().description, 'Hands sketching on a notebook beside a laptop', 'moving the focal point without a description keeps it');
+    s = set({ description: '' }).workspace;
+    assert.equal(cover().description, undefined, 'an empty description makes the picture decorative');
+    s = set({ description: 'A quiet studio' }).workspace;
+    const next = verified(s, DEMO_ADMIN, 'track', 'track_story');
+    s = next.s; id = next.id;
+    s = set({}).workspace;
+    assert.equal(cover().description, undefined, 'a new picture starts without the old description');
+    for (const bad of ['x'.repeat(151), 'Line one\nline two', 'Tab\there'])
+        assert.equal(commandSchema.safeParse({ type: 'track.cover.set', trackId: 'track_story', fileId: id, description: bad }).success, false, JSON.stringify(bad));
+    assert.equal(commandSchema.safeParse({ type: 'project.cover.set', projectId: 'project_still', fileId: null }).success, true, 'removal needs no description');
+    assert.equal(visibleWorkspace(set({ description: 'A quiet studio' }).workspace, ctx(DEMO_USER)).tracks.find(t => t.id === 'track_story')?.coverImage?.description, 'A quiet studio', 'members receive it to read aloud');
+});
