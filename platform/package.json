@@ -1,6 +1,6 @@
 {
   "name": "reunir",
-  "version": "0.18.0-alpha.1",
+  "version": "0.19.0-alpha.1",
   "description": "Purposeful communities. People, purpose, progress, projects and proof.",
   "scripts": {
     "dev": "tsx scripts/dev.ts",
@@ -25,6 +25,7 @@
     "db:prune-covers": "tsx scripts/database.ts prune-covers",
     "test:browser:purpose": "tsx scripts/purpose-browser-check.ts",
     "mail:drain": "tsx scripts/drain-mail.ts",
+    "digests:queue": "tsx scripts/queue-digests.ts",
     "test:browser:pilot": "tsx scripts/pilot-browser-check.ts",
     "test:http": "tsx scripts/pilot-http-check.ts",
     "test:browser:connected": "tsx scripts/pilot-connected-check.ts",
@@ -45,7 +46,8 @@
     "test:browser:instructors": "tsx scripts/instructors-browser-check.ts",
     "test:browser:instructors-connected": "tsx scripts/instructors-connected-check.ts",
     "test:browser:accounts": "tsx scripts/accounts-browser-check.ts",
-    "test:browser:accounts-connected": "tsx scripts/accounts-connected-check.ts"
+    "test:browser:accounts-connected": "tsx scripts/accounts-connected-check.ts",
+    "test:browser:notifications": "tsx scripts/notifications-browser-check.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.13.0",

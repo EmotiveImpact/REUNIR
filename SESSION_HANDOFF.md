@@ -1,17 +1,53 @@
-# Current continuation: Alpha 18 server pages, then the rest of the roadmap
+# Current continuation: Alpha 19 notification settings and digests, then the rest of the roadmap
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, decisions/018-server-pages-for-long-lists.md, ARCHITECTURE.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, decisions/019-notification-settings-and-digests.md, PILOT_OPERATIONS.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `a924295`, the merge of PR #10 (Alpha 17), tree identical to its tested head `8f73bdd`.
+- Base: main `a211a09`, the merge of PR #11 (Alpha 18), tree identical to its tested head `595dee2`.
 - This slice: branch `claude/build-out-tvzn40`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ## What is done
 
-Notices, the knowledge-check review queues and the audit trail load a page at a time from `GET /api/organisations/:slug/pages/:list` with opaque keyset cursors. The snapshot carries the newest 30 notices, the newest 12 audit entries for administrators, only the person's own attempts and a `summary` of exact counts that badges and tabs read. Workspace reads skip the outbox, read the newest 100 audit entries and only the acting person's notices; account deletion and operator erasure still read in full. No migration and no grant change.
+Members turn off notices about conversations, learning, projects or events per community and may choose a daily or weekly email digest of unread notices (Notifications page, **Notification settings**). Access, role, ownership and teaching notices always arrive. Muting is forward only. Additive migration 0019 adds `notification_preferences` with own-row writes and a narrow read policy for the digest job. `GET /api/internal/digests` and `npm run digests:queue` queue digests through the encrypted outbox; the mail drain sends them. Nothing is scheduled or sent until a mail provider and scheduler are configured.
 
 ## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+For PostgreSQL: `npm run db:migrate` (applies 0019; no grant changes beyond the usual runtime grant).
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script (now including `test:browser:notifications`), and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+## Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Notices about a person's own access always arrive. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. Authority is granted, never inferred from attribution or engagement. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+## Next
+
+1. Instructor email invitations and two-step sign-in for owners and administrators.
+2. Later roadmap features: email verification and change, cover descriptions, upload scanning, group conversations and the account and trust items in ROADMAP.md.
+3. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 18 handover: server pages for long lists
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, decisions/018-server-pages-for-long-lists.md, ARCHITECTURE.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `a924295`, the merge of PR #10 (Alpha 17), tree identical to its tested head `8f73bdd`.
+- This slice: [PR #11](https://github.com/EmotiveImpact/REUNIR/pull/11), green in CI runs 37118025779 and 37118037759 and merged into main as `a211a09` (tree identical to the tested head `595dee2`). BUILD_STATUS.md records the local runs. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+
+### What is done
+
+Notices, the knowledge-check review queues and the audit trail load a page at a time from `GET /api/organisations/:slug/pages/:list` with opaque keyset cursors. The snapshot carries the newest 30 notices, the newest 12 audit entries for administrators, only the person's own attempts and a `summary` of exact counts that badges and tabs read. Workspace reads skip the outbox, read the newest 100 audit entries and only the acting person's notices; account deletion and operator erasure still read in full. No migration and no grant change.
+
+### Run it
 
 ```sh
 cd platform
@@ -23,11 +59,11 @@ For PostgreSQL: `npm run db:migrate` (no new migration in this slice).
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages and scores private. Lists that grow page from the server with keyset cursors, never offsets, and counts come from the summary rather than the window. A deleted person's shared work stays as Former member. A community has exactly one owner. Authority is granted, never inferred from attribution or engagement. The interface stays black, white and neutral grey. Community review is not accreditation.
 
-## Next
+### Next
 
 1. Notification settings and email digests (Alpha 19).
 2. Later roadmap features: instructor email invitations, two-step sign-in for owners and administrators, cover descriptions, upload scanning, group conversations and the account and trust items in ROADMAP.md.
