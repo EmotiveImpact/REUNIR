@@ -109,6 +109,18 @@ try {
         await expect(page.locator('.track-detail-cover img')).toHaveCSS('object-position', '80% 50%');
         expect(await page.locator('.track-detail-cover img').getAttribute('src')).toBe(before);
     });
+    await check('a described cover is read out on the track page; cards stay decorative', async () => {
+        await expect(page.locator('.track-detail-cover .cover-media')).toHaveAttribute('aria-hidden', 'true');
+        await page.getByRole('button', { name: 'Change cover', exact: true }).click();
+        await dialog().getByLabel(/Describe the picture/).fill('Hands sketching on a notebook beside a laptop');
+        await expect(dialog()).toContainText('105 characters left.');
+        await a11y('cover-description'); await save();
+        await expect(page.getByRole('img', { name: 'Hands sketching on a notebook beside a laptop' })).toBeVisible();
+        await page.getByRole('button', { name: 'Change cover', exact: true }).click();
+        await expect(dialog().getByLabel(/Describe the picture/)).toHaveValue('Hands sketching on a notebook beside a laptop');
+        await dialog().getByLabel(/Describe the picture/).fill(''); await save();
+        await expect(page.locator('.track-detail-cover .cover-media')).toHaveAttribute('aria-hidden', 'true');
+    });
     await check('an unreadable file is refused in the dialogue and changes nothing', async () => {
         await page.getByRole('button', { name: 'Change cover', exact: true }).click();
         await choose({ name: 'notes.png', mimeType: 'image/png', buffer: Buffer.from('<html><script>alert(1)</script></html>') });

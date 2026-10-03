@@ -8,22 +8,34 @@ Nothing in this list has been deployed. Deployment remains deferred by the owner
 
 ## Not yet released
 
-### 0.22.0-alpha.1 (Alpha 22): confirming and changing your email address, 3 October 2026
+### 0.24.0-alpha.1 (Alpha 24): confirming and changing your email address, 3 October 2026
 
-On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass.
+On a pull request from `claude/accounts-trust-zojuqs`, to be merged once its checks pass. Alpha 23 (virus scanning of uploads) is on its own pull request; this release took the next number not already claimed.
 
 **In plain language:** people can now confirm their email address with a link, and accepting an invitation confirms it automatically. Once the app is live, an address has to be confirmed before it can sign in. Anyone can also move their account to a new email address: they enter their password, open the link sent to the new address, and their old address is told.
 
 Details:
 
 - **Email address** panel on Your account: the address, Confirmed or Not confirmed, **Send a confirmation link** and **Change email address…**.
-- `EMAIL_VERIFICATION` (`required` or `optional`, required by default in production, applied only where mail can be sent): an unconfirmed address gets a fresh link instead of a session (decision 022).
+- `EMAIL_VERIFICATION` (`required` or `optional`, required by default in production, applied only where mail can be sent): an unconfirmed address gets a fresh link instead of a session (decision 024).
 - `POST /api/account/email` checks the password, then sends a confirmation link to the new address; the address changes only when it is opened. The current address gets a notice. Better Auth's own change-email route is closed.
 - No migration and no new runtime dependency: Better Auth's own email verification and change-email flows, through the encrypted outbox.
 
 ### Planned
 
 - Data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and crediting several contributors with their consent.
+
+## 0.22.0-alpha.1 (Alpha 22): cover picture descriptions, 3 October 2026
+
+On main through [PR #15](https://github.com/EmotiveImpact/REUNIR/pull/15), merged as `ec4285d`.
+
+**In plain language:** when you set a cover for a track or project you can now describe the picture, and people using a screen reader hear that description on the track's or project's own page.
+
+Details:
+
+- **Describe the picture (optional)**, up to 150 characters, in the cover dialogue. Cards and lists stay decorative because their titles sit beside the picture.
+- A new picture starts without a description; moving the focal point keeps it (decision 022).
+- No migration, no grant change, no new runtime dependency.
 
 ## 0.21.0-alpha.1 (Alpha 21): two-step sign-in, 3 October 2026
 

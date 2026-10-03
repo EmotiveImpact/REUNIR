@@ -1,17 +1,89 @@
-# Current continuation: Alpha 21 two-step sign-in, then the rest of the roadmap
+# Current continuation: Alpha 24 email confirmation and change, then the rest of accounts and trust
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, ACCOUNTS.md, SECURITY.md, decisions/021-two-step-sign-in.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, ACCOUNTS.md, SECURITY.md, decisions/024-email-confirmation-and-change.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `c137f90`, the merge of PR #13 (Alpha 20), tree identical to its tested head `19236bc`.
-- This slice: branch `claude/build-out-tvzn40`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- Base: main `b24095a` (Alpha 21), with main `ec4285d` (PR #15, Alpha 22 cover descriptions) merged in. Alpha 23 (virus scanning) is on its own pull request, #16.
+- This slice: branch `claude/accounts-trust-zojuqs`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 
 ## What is done
 
-Anyone can turn on two-step sign-in (authenticator-app codes and ten one-time backup codes) on Your account, using Better Auth's own two-factor plugin. `ADMIN_TWO_FACTOR` (`required` by default in production, `optional` elsewhere) makes owner and administrator authority depend on it: without it, reads and member or moderator actions continue, and owner or administrator actions return 403 `TWO_FACTOR_REQUIRED`. Additive migration 0021 adds `auth_user.two_factor_enabled` and `auth_two_factor`, granted explicitly to the runtime role.
+People confirm their email address by a link from Your account, and accepting an invitation confirms the invited address. `EMAIL_VERIFICATION` (`required` by default in production, applied only where mail can be sent) refuses a session to an unconfirmed address and queues a fresh link. `POST /api/account/email` checks the password and sends a link to the new address; the address changes only when it is opened, and the current address is told. No migration.
 
 ## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+The demo's Your account explains the Email address panel; it has no addresses. In a connected build, configure `RESEND_API_KEY`, `EMAIL_FROM` and `EMAIL_VERIFICATION` deliberately.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+## Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. An address changes only by a link opened at the new address after the password; the old address is always told. Authority is granted explicitly and must be current when it takes effect. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+## Next
+
+1. Data retention rules, appeals of moderation decisions, a correction and withdrawal history for reviewed evidence, and consented credit for several contributors, one pull request each.
+2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 22 handover: cover descriptions
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, COVERS.md, decisions/022-cover-descriptions.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `b24095a`, the merge of PR #14 (Alpha 21), tree identical to its tested head `3f573bd`.
+- This slice: branch `claude/build-out-tvzn40`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+- Outcome: [PR #15](https://github.com/EmotiveImpact/REUNIR/pull/15), green in CI runs 37121503128 and 37121505780, merged into main as `ec4285d`.
+
+### What is done
+
+Whoever may change a track or project cover can add an optional description of up to 150 characters. The track's or project's own page announces a described cover as an image; everywhere else covers stay decorative. A new picture starts without a description. No migration.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Preview as admin, open a track, choose **Cover** and fill in **Describe the picture (optional)**.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+### Product invariants for the next slice
+
+People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Authority is granted explicitly and must be current when it takes effect; teaching is a per-track grant, not a community role. Owner and administrator authority may require two-step sign-in. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
+
+### Next
+
+1. Virus scanning of uploads (Alpha 23) and group conversations (Alpha 24).
+2. Email verification and change, then the remaining account and trust items in ROADMAP.md.
+3. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 21 handover: two-step sign-in
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, ACCOUNTS.md, SECURITY.md, decisions/021-two-step-sign-in.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `c137f90`, the merge of PR #13 (Alpha 20), tree identical to its tested head `19236bc`.
+- This slice: [PR #14](https://github.com/EmotiveImpact/REUNIR/pull/14), green in CI runs 37120425288 and 37120428877 and merged into main as `b24095a` (tree identical to the tested head `3f573bd`). BUILD_STATUS.md records the local runs. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
+
+### What is done
+
+Anyone can turn on two-step sign-in (authenticator-app codes and ten one-time backup codes) on Your account, using Better Auth's own two-factor plugin. `ADMIN_TWO_FACTOR` (`required` by default in production, `optional` elsewhere) makes owner and administrator authority depend on it: without it, reads and member or moderator actions continue, and owner or administrator actions return 403 `TWO_FACTOR_REQUIRED`. Additive migration 0021 adds `auth_user.two_factor_enabled` and `auth_two_factor`, granted explicitly to the runtime role.
+
+### Run it
 
 ```sh
 cd platform
@@ -23,11 +95,11 @@ The demo explains two-step sign-in on Your account but has no accounts, so it sh
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Authority is granted explicitly and must be current when it takes effect; teaching is a per-track grant, not a community role. Owner and administrator authority may require two-step sign-in; secrets and backup codes never leave `auth_two_factor`. Lists that grow page from the server with keyset cursors. A deleted person's shared work stays as Former member. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
 
-## Next
+### Next
 
 1. Cover picture descriptions (Alpha 22), virus scanning of uploads (Alpha 23) and group conversations (Alpha 24).
 2. Email verification and change, then the remaining account and trust items in ROADMAP.md.
