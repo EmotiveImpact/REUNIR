@@ -37,6 +37,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 27 | Calm loading outlines, route error boundaries that keep navigation with Try again, a Not found page, offline and failed-refresh notices, marked command failures and role-aware empty states (STATES.md) | Not yet guided by real pilot observations; connected-mode offline and expired-session screens are unit-tested, not browser-tested |
 | Alpha 31 | Housekeeping is cleared on a schedule by one list of rules (sessions, links, rate counters, request receipts, change events, finished mail, read notices); Your account says how long everything is kept | The same periods for every community; the audit trail is kept for the life of the community; nothing is scheduled until the operator chooses |
 | Alpha 32 | The author of a hidden post is told, still sees it, and can appeal; an owner or administrator who did not hide it decides, replies, and restores or keeps it hidden | Hidden posts only; one level of appeal; no time limit; suspension and message reports are not appealable here |
+| Alpha 39 | Administrators rename and tag cover library pictures (up to 60); the picker filters by name or tag; cards and lists load a 480-pixel copy checked by the server | No stock search or backfilled copies for existing covers; real bucket signing for the second policy unverified |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 

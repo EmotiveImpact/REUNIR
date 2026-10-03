@@ -29,6 +29,12 @@ export function coverLibraryObjectKey(organizationId: string, contentType: Cover
     scope(organizationId, id);
     return `organisations/${organizationId}/covers/library/${id}.${coverImageTypes[contentType]}`;
 }
+/** A cover's smaller copy sits beside its picture, under the same record ID, with its own type's extension. */
+export function coverThumbnailObjectKey(objectKey: string, contentType: CoverImageType) {
+    const base = objectKey.replace(/\.(jpg|png|webp)$/, '');
+    if (base === objectKey || !/^organisations\/[a-zA-Z0-9_-]+\/covers\//.test(objectKey)) throw new DomainError('INVALID_PATH', 'Invalid object scope.');
+    return `${base}-thumb.${coverImageTypes[contentType]}`;
+}
 export interface DownloadOptions {
     /** Suggested download name. Disposition is always attachment. */
     filename?: string;
