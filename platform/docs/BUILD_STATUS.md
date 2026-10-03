@@ -6,7 +6,7 @@
 
 | Item | State |
 | --- | --- |
-| Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of Alpha 28 |
+| Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of main `94b130b` (PR #25, Alpha 28, merged 3 October 2026; tree identical to its tested head `e4d69fa`) |
 | Verified locally | Yes: the full suite on base `b24095a`, and the checks below on top of Alpha 28 and main `0a818fa` |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
 | Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |

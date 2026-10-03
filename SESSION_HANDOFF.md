@@ -4,7 +4,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, PROJECT_WORK.md, decisions/029-ta
 
 ## Where the source is
 
-- Base: Alpha 28 on `claude/everyday-use-4z9rmz`, on main `f9f32d6`.
+- Base: main `94b130b`, the merge of PR #25 (Alpha 28), tree identical to its tested head `e4d69fa`.
 - This slice: branch `claude/everyday-use-4z9rmz`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - This thread holds Alpha 27 to 30, decisions 027 to 030 and migrations 0028 and 0029.
 

@@ -1,8 +1,8 @@
 {
   "release": "REUNIR Alpha 29 files on project tasks and live project work",
   "version": "0.39.0-alpha.1",
-  "sourceBaseline": "0a818fae4c9e145ed059245da5b23e7304e2d6c8",
-  "generatedAt": "2026-10-03T17:56:43.705261+00:00",
+  "sourceBaseline": "94b130b120946a2f6c6276ffe02c0fc892928241",
+  "generatedAt": "2026-10-03T17:57:15.630670+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "d7922def757595f031e285327521cb6ef7fd46bf6f808093905186c5db3bc588",
-      "bytes": 89186
+      "sha256": "65841b02968c7f6e2a9527c73101b2353cb778e765d9097939ff7028804ec17b",
+      "bytes": 89218
     },
     {
       "path": "platform/.dockerignore",
@@ -621,8 +621,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "9698db05093342d97761aa99f37b1b1f589dd09c983445dfc6bf9efc73849f52",
-      "bytes": 164757
+      "sha256": "d33b6eed33ca41b34e4057067f3284eb9bd7797ce7005311fd98fd044f2fae98",
+      "bytes": 164850
     },
     {
       "path": "platform/docs/COVERS.md",
