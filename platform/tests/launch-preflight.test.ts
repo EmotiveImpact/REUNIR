@@ -114,6 +114,16 @@ test('uploads are scanned unless the launch says otherwise', () => {
     assert(!JSON.stringify(inspectLaunch(good)).includes('clamav.internal'), 'the host is never printed');
 });
 
+test('lesson video stays off unless set, and its limit is shaped', () => {
+    assert.equal(state(inspectLaunch(good), 'LESSON_VIDEO_MAX_MB'), undefined);
+    assert.equal(state(inspectLaunch({ ...good, LESSON_VIDEO_MAX_MB: '0' }), 'LESSON_VIDEO_MAX_MB'), undefined);
+    assert.equal(state(inspectLaunch({ ...good, LESSON_VIDEO_MAX_MB: '200' }), 'LESSON_VIDEO_MAX_MB'), 'warn', 'scanned video above clamd\'s default stream limit needs it raised');
+    assert.equal(state(inspectLaunch({ ...good, LESSON_VIDEO_MAX_MB: '20' }), 'LESSON_VIDEO_MAX_MB'), 'pass');
+    assert.equal(state(inspectLaunch({ ...good, LESSON_VIDEO_MAX_MB: '200', CLAMAV_HOST: undefined, UPLOAD_SCANNING: 'optional' }), 'LESSON_VIDEO_MAX_MB'), 'pass');
+    assert.equal(state(inspectLaunch({ ...good, LESSON_VIDEO_MAX_MB: '200', GCS_BUCKET: undefined, GCS_CREDENTIALS_JSON: undefined }), 'LESSON_VIDEO_MAX_MB'), 'warn');
+    for (const bad of ['501', '-1', '2.5', 'lots']) assert(failures({ ...good, LESSON_VIDEO_MAX_MB: bad }).includes('LESSON_VIDEO_MAX_MB'), bad);
+});
+
 test('no secret or credential value ever appears in the output', () => {
     const values = [AUTH, ENC, CRON, DBPASS, KEY, 'pilot@mail.example.test', 'FAKEKEYMATERIALxyz', 'uploader@fake-project', 'fake-bootstrap-pass-123', 'ep-quiet-sky-123456'];
     const variants: Environment[] = [

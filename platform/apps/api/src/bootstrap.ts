@@ -1,4 +1,4 @@
-import { adminTwoFactorMode, emailVerificationMode, validateRuntimeConfiguration } from './config';
+import { adminTwoFactorMode, emailVerificationMode, lessonVideoBytes, validateRuntimeConfiguration } from './config';
 import { requireSafeRuntimeRole } from '../../../packages/db/src/runtime-safety';
 import { PilotOperations } from './operations';
 import {MailQueue,resendTransport} from './mail';
@@ -32,7 +32,7 @@ export async function bootstrap() {
     const digests=mail.transport?new DigestService(db,mail,new URL(APP_ORIGIN).origin):undefined;
     const app = createApp({ repository, invitations, mail, operations, cronSecret:process.env.CRON_SECRET, digests, retention:new RetentionJob(db),
         registerInvited:async(name,email,password)=>{const result=await registration.api.signUpEmail({body:{name,email,password}});return {id:result.user.id};},
-        verifyPassword: passwordCheck(auth), emailVerification, changeEmail: emailChanger(auth), emailChangeLinkValid: emailChangeLinkCheck(auth), origin: APP_ORIGIN, resolveSession: sessionResolver(auth), adminTwoFactor: adminTwoFactorMode(process.env), authHandler: req => auth.handler(req), storage: GCS_BUCKET ? googleStorage(GCS_BUCKET, GCS_CREDENTIALS_JSON) : undefined, scanner: scannerFromEnvironment(process.env) });
+        verifyPassword: passwordCheck(auth), emailVerification, changeEmail: emailChanger(auth), emailChangeLinkValid: emailChangeLinkCheck(auth), origin: APP_ORIGIN, resolveSession: sessionResolver(auth), adminTwoFactor: adminTwoFactorMode(process.env), videoBytes: lessonVideoBytes(process.env), authHandler: req => auth.handler(req), storage: GCS_BUCKET ? googleStorage(GCS_BUCKET, GCS_CREDENTIALS_JSON) : undefined, scanner: scannerFromEnvironment(process.env) });
     return { app, db, repository, auth, mail, invitations, digests };
     } catch(error) { await db.close(); throw error; }
 }

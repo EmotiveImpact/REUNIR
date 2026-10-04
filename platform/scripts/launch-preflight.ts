@@ -141,6 +141,12 @@ export function inspectLaunch(env: Environment): Finding[] {
     else if (clamHost) add('upload-scanning', 'pass', 'A ClamAV scanner is configured. Confirm it answers with npm run scan:check from the same network.');
     else if (scanning === 'required') add('upload-scanning', 'fail', 'Uploads must be scanned, but CLAMAV_HOST is not set. The server refuses to start; run clamd and set CLAMAV_HOST, or set UPLOAD_SCANNING=optional deliberately.');
     else add('upload-scanning', 'warn', 'UPLOAD_SCANNING=optional with no scanner: uploads are only checked for type and size.');
+    const video = env.LESSON_VIDEO_MAX_MB?.trim();
+    if (video && (!/^[0-9]{1,3}$/.test(video) || Number(video) > 500)) add('LESSON_VIDEO_MAX_MB', 'fail', 'LESSON_VIDEO_MAX_MB must be a whole number from 0 to 500. The server refuses to start otherwise.');
+    else if (video && Number(video) > 0 && !bucket) add('LESSON_VIDEO_MAX_MB', 'warn', 'LESSON_VIDEO_MAX_MB is set, but without GCS_BUCKET no uploads, video included, are possible.');
+    // Scanning reads each upload whole, in memory, and clamd refuses streams over its StreamMaxLength (25 MB by default).
+    else if (video && Number(video) > 25 && clamHost) add('LESSON_VIDEO_MAX_MB', 'warn', `Lesson video up to ${Number(video)} MB is on and uploads are scanned. Set clamd StreamMaxLength to at least ${Number(video)}M and give the API memory for a file of that size, or large videos wait as unscanned.`);
+    else if (video && Number(video) > 0) add('LESSON_VIDEO_MAX_MB', 'pass', 'Lesson video uploads are on. Size the bucket and its budget for videos of this size.');
     return out;
 }
 

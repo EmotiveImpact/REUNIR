@@ -1,4 +1,58 @@
-# Alpha 30 every form on the shared shadcn components
+# Alpha 37 uploaded lesson video
+
+3 October 2026. Application version stays 0.39.0-alpha.1: Alpha 39 is already on main. Creators attach MP4 or WebM video to lessons, and learners play it in the page through a signed link, alongside the existing YouTube and Vimeo embeds. Video is off until the operator sets `LESSON_VIDEO_MAX_MB`. See decisions/037-lesson-video.md and LESSON_RESOURCES.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `99e919a` (the merge of PR #28, Alpha 36), with main `2561a00` (PR #27, Alpha 29 files on project tasks and live project work) and `ec9181d` (PR #32, Alpha 30 every form on the shared shadcn components) merged in |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created, and no video storage was provisioned |
+| Operated with real members | No |
+
+Numbering: Alpha 37, decision 037 and migration 0036 come from the block allocated to courses and teaching (Alpha 35 to 38, migrations 0034 to 0037).
+
+## What changed
+
+- **Lesson video**: MP4 and WebM join the lesson file types, verified by signature (`ftyp` for MP4, an EBML header naming `webm` for WebM) and stored privately under the track like every lesson file.
+- **Switch and limit**: `LESSON_VIDEO_MAX_MB` (0 to 500; unset or 0 keeps video off). Capabilities report `videoUploadBytes`; the studio names the limit and only offers video types when it is on. Uploads are refused with 403 `VIDEO_UPLOADS_OFF` or 413 `FILE_TOO_LARGE`; other lesson files stay at 10 MB. An invalid value stops the server at start-up.
+- **Playback**: **Play** calls `GET .../resources/:resourceId/play`, which checks access exactly as a download does and returns a signed inline link valid for two hours; other files get 409 `NOT_A_VIDEO`. Downloads stay two-minute attachments. The demo plays from bytes kept in the browser.
+- **Migration 0036** (additive): replaces the 0001 size check on `upload_intents` so only lesson files declared as MP4 or WebM may exceed 10 MB, never 500 MB. Earlier migrations are byte-identical; no grant change.
+- **Scanning**: when a scanner is configured (Alpha 23), video is scanned whole like every upload. clamd refuses streams over its `StreamMaxLength` (25 MB by default), which counts as no verdict, so such uploads stay pending. `npm run launch:preflight` warns when video above 25 MB is on with a scanner.
+- `npm run launch:preflight`, `.env.example` and LAUNCH_RUNBOOK.md cover `LESSON_VIDEO_MAX_MB`.
+- Review fixes on PR #31 (Codex): a scan's time allowance now grows with the file (30 s plus 1 s per MiB, `scanTimeoutMs` in apps/api/src/scanner.ts), so a large video is not cut off at 30 s; and the lesson file list stops and releases a playing demo video once that file is no longer listed, even when the list stays mounted across lessons.
+
+## Local verification, 3 October 2026
+
+Node 22.22.0, npm 10.9.4, Playwright with Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | Passed |
+| `npm test` | 866 passed, 0 failed with main `ec9181d` merged in, after the review fixes (7 new in `tests/lesson-video.test.ts`, 1 new in `tests/launch-preflight.test.ts`, which also checks the clamd stream warning, 1 new in `tests/scanner.test.ts` for the scan allowance) |
+| `npm run test:http` | 19 passed (unchanged) |
+| `npm run build`, `npm run bundle:preview` | Passed (existing chunk-size advisory on the single-file preview only) |
+| Demo-browser suites | 322 passed across 19 suites (Alpha 29 and 30 brought 12 task files and 10 form checks), including 20 lesson resource checks (1 new: a creator uploads a WebM clip and a learner plays it) |
+| Connected-browser suites | 64 passed (unchanged) |
+| `npm run test:postgres` | 29 passed on PostgreSQL 16 |
+| Python helpers, `scripts/check_research.py` | 40 passed; the register validates |
+
+## Not verified, and why
+
+- No real bucket or large file was used: the browser check plays a 690-byte WebM clip, and signed inline links were tested against the fake bucket. Range requests and seeking depend on the storage provider.
+- No real clamd scanned a large video. The API holds each upload in memory while it is scanned, so a 500 MB limit needs a raised `StreamMaxLength` and memory to match; scanning in chunks is follow-up work.
+- No transcoding, captions, transcripts or poster frames.
+
+## Next actions
+
+1. Drive the pull request green and merge with the owner's standing approval; read back main.
+2. Scan large files in chunks so the API need not hold a whole video in memory.
+3. When deployment resumes: choose `LESSON_VIDEO_MAX_MB` with the bucket's storage and egress in mind, follow LAUNCH_RUNBOOK.md and run `npm run db:migrate`.
+
+## Historical Alpha 30 evidence: every form on the shared shadcn components
 
 3 October 2026. Release 0.30.0-alpha.1; the package version stays at 0.39.0-alpha.1, set by Alpha 39 on main. Every form in the web app uses the shared shadcn Input, Textarea, Label, Native Select, Checkbox, Radio Group, Switch and Button. See decisions/030-shared-form-components.md and FORMS.md.
 
@@ -9,7 +63,7 @@
 | Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of main `2561a00` (Alpha 29, PR #27) |
 | Verified locally | Yes, the checks below |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Merged | Yes: [PR #32](https://github.com/EmotiveImpact/REUNIR/pull/32), merged into main as `ec9181d` |
 | Deployed | No. Nothing was provisioned |
 | Operated with real members | No |
 
@@ -33,7 +87,7 @@ On this branch, on top of Alpha 29 and main `99e919a`: typecheck, build and bund
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. Confirm a real bucket and a real scanner on task files when deployment is switched on.
 
-## Historical evidence: Alpha 29 files on project tasks and live project work
+## Historical Alpha 29 evidence: files on project tasks and live project work
 
 3 October 2026. Release 0.29.0-alpha.1; the package version stays at 0.39.0-alpha.1, set by Alpha 39 on main. Project teams attach files to tasks through the shared verified upload path, boards and open tasks refresh when teammates change something, and concurrent edits are caught and explained. See decisions/029-task-files-and-live-project-work.md and PROJECT_WORK.md.
 
@@ -43,8 +97,8 @@ On this branch, on top of Alpha 29 and main `99e919a`: typecheck, build and bund
 | --- | --- |
 | Implemented | Yes, on `claude/everyday-use-4z9rmz`, on top of main `94b130b` (PR #25, Alpha 28, merged 3 October 2026; tree identical to its tested head `e4d69fa`), with main `3c770b5` (Alpha 35 teaching grants for chosen lessons) `f3efa39` (Alpha 32 appealing a hidden post) `e930e39` (Alpha 33 correcting and withdrawing reviewed evidence) `5f7b827` (Alpha 34 crediting teammates) and `99e919a` (Alpha 36 instructors start their own tracks) merged in |
 | Verified locally | Yes: the full suite on base `b24095a`, and the checks below on top of Alpha 28 and main `0a818fa` |
-| Verified remotely (GitHub Actions) | Yes: `application` and `postgres` passed on head `3546e80` |
-| Merged | Yes: PR #27 merged as `2561a00` on 3 October 2026; its tree is identical to the tested head `3546e80` |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Yes: [PR #27](https://github.com/EmotiveImpact/REUNIR/pull/27), merged into main as `2561a00` |
 | Deployed | No. Nothing was provisioned |
 | Operated with real members | No |
 
@@ -75,7 +129,7 @@ On this branch, on top of Alpha 28 and main `0a818fa`: typecheck, build and bund
 1. Drive the pull request green and merge with the owner's standing approval; read back main.
 2. Shared form components (Alpha 30).
 
-## Historical evidence: Alpha 36 instructors start their own tracks
+## Historical Alpha 36 evidence: instructors start their own tracks
 
 3 October 2026. Application version stays 0.39.0-alpha.1: Alpha 39 is already on main. An active instructor of a whole track starts a new track. It stays unpublished, seen only by its teachers and the community's owners and administrators, until an owner or administrator publishes it. See decisions/036-instructor-tracks.md and INSTRUCTORS.md.
 
@@ -86,7 +140,7 @@ On this branch, on top of Alpha 28 and main `0a818fa`: typecheck, build and bund
 | Implemented | Yes, on `claude/courses-teaching-6hum2q`, restarted from main `3c770b5` (the merge of PR #24, Alpha 35, which brought Alpha 23, 28 and 39), with main `f3efa39` (PR #26, Alpha 32 appeals) and main `e930e39` (PR #29, Alpha 33 evidence history) and main `5f7b827` (PR #30, Alpha 34 credits) merged in |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each feature into main once its checks pass (3 October 2026) |
+| Merged | Yes: [PR #28](https://github.com/EmotiveImpact/REUNIR/pull/28), merged into main as `99e919a` |
 | Deployed | No. No Neon database, Vercel project, bucket, mail sender or scheduler was created |
 | Operated with real members | No |
 

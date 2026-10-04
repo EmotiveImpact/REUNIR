@@ -41,8 +41,12 @@ export function coverThumbnailObjectKey(objectKey: string, contentType: CoverIma
     return `${base}-thumb.${coverImageTypes[contentType]}`;
 }
 export interface DownloadOptions {
-    /** Suggested download name. Disposition is always attachment. */
+    /** Suggested download name. */
     filename?: string;
+    /** Attachment unless a verified lesson video is being played in the page. */
+    disposition?: 'attachment' | 'inline';
+    /** How long the signed link works. Two minutes unless a longer playback window is asked for. */
+    expiresInSeconds?: number;
     /** Server-recorded type, forced on the response. */
     contentType?: string;
     /** Verified object generation. A replaced object is never served in its place. */
@@ -71,7 +75,7 @@ export function googleStorage(bucket: string, credentialJSON?: string, client?: 
     const file = (key: string, generation?: string | null) => generation ? b.file(key, { generation }) : b.file(key);
     return {
         upload: async (key, contentType, sizeBytes) => (await b.file(key).generateSignedPostPolicyV4({ expires: Date.now() + 5 * 60 * 1000, fields: { 'Content-Type': contentType }, conditions: [['content-length-range', sizeBytes, sizeBytes]] }))[0],
-        download: async (key, options = {}) => (await file(key, options.generation).getSignedUrl({ version: 'v4', action: 'read', expires: Date.now() + 2 * 60 * 1000, responseDisposition: options.filename ? attachmentDisposition(options.filename) : 'attachment', ...(options.contentType ? { responseType: options.contentType } : {}) }))[0],
+        download: async (key, options = {}) => (await file(key, options.generation).getSignedUrl({ version: 'v4', action: 'read', expires: Date.now() + (options.expiresInSeconds ?? 120) * 1000, responseDisposition: options.filename ? attachmentDisposition(options.filename, options.disposition) : options.disposition ?? 'attachment', ...(options.contentType ? { responseType: options.contentType } : {}) }))[0],
         metadata: async (key) => {
             try {
                 const [m] = await b.file(key).getMetadata();

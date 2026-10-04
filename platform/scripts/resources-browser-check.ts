@@ -50,7 +50,7 @@ try {
     });
     await check('unsupported and disguised files are refused without changing the draft', async () => {
         await choose('Add file', { name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('plain text') });
-        await expect(page.locator('.toast')).toContainText('Use a PDF, Word, PowerPoint, Excel, JPEG, PNG or WebP file.');
+        await expect(page.locator('.toast')).toContainText('Use a PDF, Word, PowerPoint, Excel, JPEG, PNG, WebP, MP4 or WebM file.');
         await choose('Add file', { name: 'worksheet.pdf', mimeType: 'application/pdf', buffer: Buffer.from('<html><script>alert(1)</script></html>') });
         await expect(page.locator('.toast')).toContainText('does not match its type');
         await expect(rows()).toHaveCount(1); await expect(editor().getByRole('button', { name: 'Save draft', exact: true })).toBeDisabled();
@@ -146,6 +146,26 @@ try {
         await page.screenshot({ path: dir + '/studio-files-mobile.png', fullPage: false, animations: 'disabled' }); await a11y('studio-mobile');
         await page.setViewportSize({ width: 360, height: 800 }); await overflow();
         await page.setViewportSize({ width: 1512, height: 1100 });
+    });
+    await check('an uploaded lesson video is published and plays in the lesson for learners', async () => {
+        await studio();
+        await expect(editor().locator('.resource-editor-head p')).toContainText('MP4 or WebM video up to 500 MB');
+        await choose('Add file', { name: 'Welcome clip.webm', mimeType: 'video/webm', buffer: await readFile(root + '/scripts/fixtures/lesson-clip.webm') });
+        await expect(rows().last()).toContainText('WebM video'); await expect(rows().last()).toContainText('New');
+        await save(); await publish();
+        await role('member'); await lesson();
+        const clip = files().locator('.lesson-resource').filter({ hasText: 'Welcome clip' });
+        await expect(clip).toContainText('WebM video');
+        await clip.getByRole('button', { name: 'Play Welcome clip', exact: true }).click();
+        const video = clip.locator('video.resource-video');
+        await expect(video).toBeVisible();
+        await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.readyState >= 1 && v.duration > 0)).toBe(true);
+        await expect(files()).toContainText('video links after two hours');
+        await overflow(); await a11y('learner-video'); await page.screenshot({ path: dir + '/learner-video.png', fullPage: true, animations: 'disabled' });
+        await clip.getByRole('button', { name: 'Close video Welcome clip', exact: true }).click();
+        await expect(video).toHaveCount(0);
+        const got = await fetchFile(clip.getByRole('button', { name: 'Download Welcome clip', exact: true }));
+        expect(got.name).toBe('Welcome clip.webm');
     });
     await check('the second community does not inherit files from the first', async () => {
         await page.getByRole('button', { name: 'Open Studio North demo community' }).click(); await lesson();

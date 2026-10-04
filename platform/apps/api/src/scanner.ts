@@ -14,8 +14,9 @@ export class ScannerUnavailable extends Error {
 export interface ClamdOptions {
     host: string;
     port?: number;
-    /** Whole conversation, connect to verdict. */
+    /** Whole conversation, connect to verdict, for a small file. A scan adds `msPerMegabyte` for each MiB it sends. */
     timeoutMs?: number;
+    msPerMegabyte?: number;
     chunkBytes?: number;
 }
 /** One clamd command over a fresh TCP connection, returning its null-terminated reply. */
@@ -56,11 +57,13 @@ export function readVerdict(reply: string): ScanVerdict {
  */
 export function clamdScanner(options: ClamdOptions): FileScanner {
     if (!options.host) throw new Error('CLAMAV_HOST is required for upload scanning.');
-    const o: Required<ClamdOptions> = { port: 3310, timeoutMs: 30_000, chunkBytes: 64 * 1024, ...options };
+    const o: Required<ClamdOptions> = { port: 3310, timeoutMs: 30_000, msPerMegabyte: 1_000, chunkBytes: 64 * 1024, ...options };
     if (!Number.isInteger(o.port) || o.port < 1 || o.port > 65535) throw new Error('CLAMAV_PORT must be a TCP port.');
     return {
         async scan(bytes) {
-            const reply = await converse(o, send => {
+            // A lesson video can be hundreds of megabytes, so the allowance grows with the file rather than cutting it off at 30 s.
+            const timeoutMs = scanTimeoutMs(o, bytes.length);
+            const reply = await converse({ ...o, timeoutMs }, send => {
                 send(Buffer.from('zINSTREAM\0'));
                 for (let at = 0; at < bytes.length; at += o.chunkBytes) {
                     const part = bytes.subarray(at, Math.min(bytes.length, at + o.chunkBytes)), size = Buffer.alloc(4);
@@ -76,6 +79,10 @@ export function clamdScanner(options: ClamdOptions): FileScanner {
             catch { return false; }
         },
     };
+}
+/** How long one scan of `size` bytes may take, connect to verdict. */
+export function scanTimeoutMs(options: Pick<Required<ClamdOptions>, 'timeoutMs' | 'msPerMegabyte'>, size: number): number {
+    return options.timeoutMs + Math.ceil(size / (1024 * 1024)) * options.msPerMegabyte;
 }
 /** The scanner the server should use, or none. Throws on a setting that cannot be honoured. */
 export function scannerFromEnvironment(env: Readonly<Record<string, string | undefined>>): FileScanner | undefined {

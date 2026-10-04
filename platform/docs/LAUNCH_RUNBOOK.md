@@ -98,6 +98,7 @@ These are every variable the server code reads (`apps/api/src/bootstrap.ts`, `ap
 | `GCS_CREDENTIALS_JSON` | For uploads on Vercel | Service-account JSON, as one line. Vercel has no application default credentials. | Section 6 |
 | `CLAMAV_HOST`, `CLAMAV_PORT` | With a bucket | Private address of the clamd virus scanner (port 3310 by default). With a bucket and no scanner, the production server refuses to start. | Section 6 |
 | `UPLOAD_SCANNING` | Optional | `required` (the production default when unset) or `optional`. Set `optional` only deliberately. | `required` |
+| `LESSON_VIDEO_MAX_MB` | Optional | Switches on uploaded lesson video, from 1 to 500 MB per file. Unset or `0` keeps video off. Size the bucket's budget first; with a scanner above 25 MB, raise clamd `StreamMaxLength` to match. | `0` until decided |
 
 Never on the deployed runtime: `MIGRATION_DATABASE_URL`, `BOOTSTRAP_EMAIL`, `BOOTSTRAP_NAME`, `BOOTSTRAP_PASSWORD`, `DB_RUNTIME_PASSWORD`, `ALLOW_FICTIONAL_SEED`. Startup refuses the credential ones in production. `HOST`, `PORT`, `COMMUNITY_*`, `ERASE`, `PRUNE` and `AUTHORISED_BY` are for self-hosting or local operator commands only. `VERCEL` is set by the platform.
 
