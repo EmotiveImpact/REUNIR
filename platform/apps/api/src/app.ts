@@ -123,9 +123,11 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     app.use('/api/auth/request-password-reset',async(c,next)=>{if(!mail?.transport)return c.json({error:{code:'EMAIL_UNAVAILABLE',message:'Password recovery is not configured. Contact the community owner.'}},503);await next();});
     app.use('/api/invitations/*',async(c,next)=>{
         if(!invitations)return c.json({error:{code:'INVITATIONS_UNAVAILABLE',message:'Invitations are not configured.'}},503);
-        // Global bounded gate plus per-peer gate. Deploy behind a trusted reverse proxy.
+        // Global bounded gate plus per-peer gate. Deploy behind a trusted reverse proxy. Each route has its own global gate,
+        // so a flood of anonymous look-ups cannot stop real invitees accepting or registering.
         const peer=createHash('sha256').update(c.req.header('x-real-ip')||'local').digest('hex');
-        if(!await repository.consumeRateLimit('invite-global',200)||!await repository.consumeRateLimit('invite-peer:'+peer,30))return c.json({error:{code:'RATE_LIMITED',message:'Try again shortly.'}},429);
+        const route=c.req.path.split('/').pop()||'';
+        if(!await repository.consumeRateLimit('invite-global:'+(['inspect','accept','register'].includes(route)?route:'other'),200)||!await repository.consumeRateLimit('invite-peer:'+peer,30))return c.json({error:{code:'RATE_LIMITED',message:'Try again shortly.'}},429);
         await next();
     });
     const inviteToken=z.object({token:z.string().regex(/^[A-Za-z0-9_-]{43}$/)}).strict();
@@ -177,6 +179,8 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     });
     // Only the route above may change an address, so the password is always asked for.
     app.post('/api/auth/change-email', c => c.json({ error: { code: 'NOT_FOUND', message: 'Endpoint not found.' } }, 404));
+    // Names are set by registration and the profile, under their own rules; Better Auth's own route would skip those rules.
+    app.post('/api/auth/update-user', c => c.json({ error: { code: 'NOT_FOUND', message: 'Endpoint not found.' } }, 404));
     // A change link asked for before the password last changed no longer works, so a password change or reset stops it.
     app.get('/api/auth/verify-email', async (c, next) => {
         const token = c.req.query('token');

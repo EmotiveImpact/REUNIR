@@ -117,6 +117,7 @@ test('when confirmation is optional, an unconfirmed address still signs in and c
 
 test('changing the address needs the password, and the provider route cannot be used to skip it', async () => {
     assert.equal((await post('/api/auth/change-email', { newEmail: 'skip@example.test' }, cookies[DEMO_USER])).status, 404);
+    assert.equal((await post('/api/auth/update-user', { name: 'x'.repeat(5000) }, cookies[DEMO_USER])).status, 404);
     assert.equal(await errorCode(await post('/api/account/email', { newEmail: 'alex.new@example.test', password: 'not-the-password-123' }, cookies[DEMO_USER])), 'WRONG_PASSWORD');
     assert.equal(await errorCode(await post('/api/account/email', { newEmail: 'not an address', password: PASSWORD }, cookies[DEMO_USER])), 'VALIDATION');
     assert.equal(await errorCode(await post('/api/account/email', { newEmail: 'ALEX@example.test', password: PASSWORD }, cookies[DEMO_USER])), 'SAME_EMAIL');
