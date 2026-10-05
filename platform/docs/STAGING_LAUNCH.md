@@ -53,7 +53,7 @@ None of these values ever goes into chat, an issue, a commit or a screenshot. Th
    npm run launch:preflight -- --env-file .env.staging   # must end with "0 failed"
    ```
 
-7. **Vercel**: create the project from the repository with root directory `platform`, paste `.env.staging` into its Environment Variables page, mark the secrets sensitive, deploy, then delete the local file or move it to an encrypted store.
+7. **Vercel**: create the project from the repository with root directory `platform`, paste `.env.staging` into its Environment Variables page, mark the secrets sensitive, deploy. Keep `.env.staging` on your computer until the scheduler jobs below exist, then delete it or move it to an encrypted store.
 
 If you prefer, steps 5 to 7 can run in a Claude session on your own computer, so the values stay on your machine and never pass through this chat.
 
@@ -67,11 +67,13 @@ From `platform/`, in the same shell, so the secret is read from the ignored file
 HOST=https://<name>.vercel.app
 REGION=europe-west3
 CRON_SECRET=$(grep '^CRON_SECRET=' .env.staging | cut -d= -f2-)
+if [ -z "$CRON_SECRET" ]; then echo "CRON_SECRET not found: restore .env.staging first"; else
 for job in "mail|* * * * *" "digests|0 * * * *" "retention|30 3 * * *"; do
   gcloud scheduler jobs create http "reunir-${job%%|*}" --location="$REGION" --schedule="${job#*|}" --time-zone=Etc/UTC \
     --uri="$HOST/api/internal/${job%%|*}" --http-method=GET --attempt-deadline=30s \
     --headers="Authorization=Bearer $CRON_SECRET"
 done
+fi
 unset CRON_SECRET
 ```
 
