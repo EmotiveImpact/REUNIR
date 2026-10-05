@@ -38,7 +38,7 @@ export function LessonStage({video,onPlay,onDownload}:{video:FeaturedVideo;onPla
             <Button variant="default" className="lesson-stage-play" aria-label={`Play ${r.name}`} disabled={pending} onClick={play}>{pending?<LoaderCircle size={22} className="spin" aria-hidden="true"/>:<Play size={22} aria-hidden="true"/>}</Button>
             <strong>{r.name}</strong><span>{describeResource(r)}</span>
         </div>}
-        <figcaption>{r.description||r.name}<button type="button" className="text-link" disabled={pending} onClick={async()=>{ setPending(true); try { await onDownload(r); } finally { setPending(false); } }}><Download size={13} aria-hidden="true"/>Download</button></figcaption>
+        <figcaption>{r.description||r.name}<button type="button" className="text-link" aria-label={`Download ${r.name}`} disabled={pending} onClick={async()=>{ setPending(true); try { await onDownload(r); } finally { setPending(false); } }}><Download size={13} aria-hidden="true"/>Download</button></figcaption>
     </figure>;
 }
 

@@ -147,23 +147,24 @@ try {
         await page.setViewportSize({ width: 360, height: 800 }); await overflow();
         await page.setViewportSize({ width: 1512, height: 1100 });
     });
-    await check('an uploaded lesson video is published and plays in the lesson for learners', async () => {
+    await check('an uploaded lesson video is published and plays at the top of the lesson for learners', async () => {
         await studio();
         await expect(editor().locator('.resource-editor-head p')).toContainText('MP4 or WebM video up to 500 MB');
         await choose('Add file', { name: 'Welcome clip.webm', mimeType: 'video/webm', buffer: await readFile(root + '/scripts/fixtures/lesson-clip.webm') });
         await expect(rows().last()).toContainText('WebM video'); await expect(rows().last()).toContainText('New');
         await save(); await publish();
         await role('member'); await lesson();
-        const clip = files().locator('.lesson-resource').filter({ hasText: 'Welcome clip' });
+        // The lesson leads with its video on a full-width stage instead of listing it among the files.
+        const clip = page.locator('.lesson-content .lesson-stage');
         await expect(clip).toContainText('WebM video');
+        await expect(clip).toHaveCount(1); await expect(files().locator('.lesson-resource').filter({ hasText: 'Welcome clip' })).toHaveCount(0);
+        expect(await clip.evaluate(el => !!(el.compareDocumentPosition(document.querySelector('.lesson-content h2')!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
         await clip.getByRole('button', { name: 'Play Welcome clip', exact: true }).click();
-        const video = clip.locator('video.resource-video');
+        const video = clip.locator('video');
         await expect(video).toBeVisible();
         await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.readyState >= 1 && v.duration > 0)).toBe(true);
         await expect(files()).toContainText('video links after two hours');
         await overflow(); await a11y('learner-video'); await page.screenshot({ path: dir + '/learner-video.png', fullPage: true, animations: 'disabled' });
-        await clip.getByRole('button', { name: 'Close video Welcome clip', exact: true }).click();
-        await expect(video).toHaveCount(0);
         const got = await fetchFile(clip.getByRole('button', { name: 'Download Welcome clip', exact: true }));
         expect(got.name).toBe('Welcome clip.webm');
     });
