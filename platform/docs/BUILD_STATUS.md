@@ -33,6 +33,10 @@ Numbering: Alpha 47 and decision 047 complete the staging block (Alpha 46 to 47)
 | `scripts/scan-check.ts` in the app image with PR #36's source, on the compose network (`CLAMAV_HOST=clamd`) | All three lines passed: PING, harmless sample clean, EICAR flagged |
 | `scripts/scan-worker.ts` in the same image with an unreachable fictional database | Starts and stops on the refused database connection; `restart: unless-stopped` brings it back |
 
+## Follow-up: page colour in a light host
+
+The shared demo showed white panels and dark, hard-to-read text because its viewer wraps the page in a light body (`background:#faf9f5; color:#141413`) and the app set colours only on `:root`. `styles.css` now sets `color-scheme:dark` on `:root` and paints `body` with `var(--bg)` and `#f1f1f1`. Reproduced with that wrapper in Chromium: 17 elements took the host's dark text before, none after. `tests/page-colour.test.ts` fails without the change. `test:browser:monochrome` (16), `test:browser:v4` (20) and `test:browser:states` (12) passed; typecheck clean; Python helpers OK.
+
 ## Not verified, and why
 
 - The worker was not run against a real database and bucket: no Neon project or bucket exists. Its queue logic is covered by PR #36's tests.
