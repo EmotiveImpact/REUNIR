@@ -18,6 +18,10 @@ import { WorkspaceRepository } from '../packages/db/src/repository';
 import { createAuth } from '../apps/api/src/auth';
 import { createApp } from '../apps/api/src/app';
 import type { PrivateStorage } from '../apps/api/src/storage';
+import type { FileScanner } from '../apps/api/src/scanner';
+import { ScanQueue } from '../packages/db/src/scans';
+import { scanWaitingUploads } from '../apps/api/src/scan-worker';
+import { uploadCompletion } from '../apps/api/src/uploads';
 import { attachmentDisposition } from '../packages/contracts/src/lesson-resources';
 const root = resolve(import.meta.dirname, '..'), dir = root + '/evidence/lesson-resources/connected'; await mkdir(dir, { recursive: true });
 process.env.VITE_DATA_MODE = 'live';
@@ -138,6 +142,26 @@ try {
         expect((await api(ownerPage, `/lesson-revisions/${revision}/resources/${resourceId}/download`)).status()).toBe(200);
         expect((await api(learnerPage, `/lesson-revisions/${revision}/resources/${resourceId}/download`)).status()).toBe(404);
         expect(objects.size).toBe(1);
+    });
+    await check('with scanning on, the editor waits while the scan worker checks a file, then attaches it; a flagged file is refused and deleted', async () => {
+        // The scan worker runs beside the app, as `npm run scan:worker` would beside clamd, with a stand-in scanner.
+        const queue = new ScanQueue(repo), MARK = 'REUNIR-TEST-FLAG';
+        const scanner: FileScanner = { async scan(source) { const parts: Uint8Array[] = []; if (source instanceof Uint8Array) parts.push(source); else for await (const p of source.chunks) parts.push(p); return Buffer.concat(parts).includes(MARK) ? { clean: false, signature: 'Reunir.Test.Flag' } : { clean: true }; }, async ping() { return true; } };
+        const scanning = createApp({ repository: repo, origin, storage, scans: queue, authHandler: r => auth.handler(r), resolveSession: async headers => { const s = await auth.api.getSession({ headers }); return s ? { id: s.user.id, name: s.user.name } : null; } });
+        scanning.get('/assets/*', serveStatic({ root: '.connected-dist' })); scanning.get('/', serveStatic({ path: '.connected-dist/index.html' })); handler = scanning.fetch;
+        const complete = uploadCompletion({ repository: repo, storage, scans: queue, remove: async (_, keys) => { for (const k of keys) objects.delete(k); } });
+        let busy = false;
+        const worker = setInterval(() => { if (busy) return; busy = true; void scanWaitingUploads({ queue, storage, scanner, complete, log: () => {} }).catch(() => {}).finally(() => { busy = false; }); }, 1500);
+        try {
+            await studio(); await add('Checked plan.pdf', Buffer.from('%PDF-1.4\n% fictional plan checked by the scan worker\n'));
+            await expect(editor().locator('.resource-status')).toContainText('is ready', { timeout: 20000 });
+            expect((await db.query("SELECT u.status,s.status AS scan FROM upload_intents u JOIN upload_scans s ON s.upload_id=u.id WHERE u.original_name='Checked plan.pdf'")).rows).toEqual([{ status: 'ready', scan: 'clean' }]);
+            const before = objects.size;
+            await add('Flagged plan.pdf', Buffer.from(`%PDF-1.4\n% ${MARK}\n`));
+            await expect(ownerPage.locator('.toast')).toContainText('flagged by the virus scanner', { timeout: 20000 });
+            expect((await db.query("SELECT status FROM upload_intents WHERE original_name='Flagged plan.pdf'")).rows).toEqual([{ status: 'rejected' }]);
+            expect(objects.size).toBe(before);
+        } finally { clearInterval(worker); handler = app.fetch; }
     });
     await check('the connected file journey produced no uncaught browser errors', async () => { expect(errors).toEqual([]); });
     await writeFile(dir + '/results.json', JSON.stringify({ generatedAt: new Date().toISOString(), method: 'Live Vite build + Hono HTTP + Better Auth cookies + local PGlite. In-process stand-in bucket on a second origin; no Google Cloud Storage, IAM or deployment.', results, errors }, null, 2));

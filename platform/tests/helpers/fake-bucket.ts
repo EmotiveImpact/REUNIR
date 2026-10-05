@@ -17,5 +17,13 @@ export class FakeBucket implements PrivateStorage {
         if (!o || o.generation !== generation) throw Object.assign(new Error('No such object generation'), { code: 404 });
         return o.bytes.slice(0, bytes);
     }
+    /** Whole generations, in 1000-byte pieces, as the scan worker reads them. */
+    streams: { key: string; generation: string }[] = [];
+    async *stream(key: string, generation: string) {
+        this.streams.push({ key, generation });
+        const o = this.objects.get(key);
+        if (!o || o.generation !== generation) throw Object.assign(new Error('No such object generation'), { code: 404 });
+        for (let at = 0; at < o.bytes.length; at += 1000) yield o.bytes.slice(at, at + 1000);
+    }
     async remove(key: string) { this.removed.push(key); this.objects.delete(key); }
 }

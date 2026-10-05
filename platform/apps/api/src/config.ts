@@ -51,7 +51,7 @@ export function inspectConfiguration(env: Environment): PilotCheck[] {
         detail:scanning===null ? 'UPLOAD_SCANNING must be required or optional.'
             : !portValid ? 'CLAMAV_PORT must be a TCP port number.'
             : !bucket ? 'No attachment bucket is configured, so there are no uploads to scan.'
-            : scanner ? 'A ClamAV scanner is configured. Every upload is scanned before it is used; confirm it answers with npm run scan:check.'
+            : scanner ? 'A ClamAV scanner is configured. Every upload waits for the scan worker before it is used; run npm run scan:worker beside clamd and confirm it answers with npm run scan:check.'
             : scanning==='required' ? 'Uploads must be scanned, but no scanner is configured. Set CLAMAV_HOST to a clamd service, or UPLOAD_SCANNING=optional.'
             : production ? 'Uploads are only checked for type and size. Production normally scans them with ClamAV.' : 'Uploads are not scanned outside production unless CLAMAV_HOST is set.'});
     checks.push({key:'storage',title:'Attachments',state:filled(env.GCS_BUCKET) ? 'unverified' : 'warning',detail:filled(env.GCS_BUCKET) ? 'A bucket name is configured, but IAM and attachment delivery require separate verification.' : 'No attachment bucket is configured. Text and link-based pilot features still work.'});

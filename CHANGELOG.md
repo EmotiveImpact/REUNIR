@@ -17,6 +17,21 @@ Details:
 - `platform/deploy/scan-host/`: Compose project (clamd and the scan worker, no published port), `scan.env.example` and README with costs.
 - STAGING_LAUNCH.md records the Hobby choice and three Cloud Scheduler jobs that read `CRON_SECRET` from the ignored file.
 
+## Alpha 42: virus scanning in the background (no version change), 5 October 2026
+
+On a pull request from `claude/background-scanning-pxfq5c`, merged once its checks pass. Decision 042 and migration 0040, from the block allocated to background scanning (Alpha 42 to 43, migrations 0040 to 0041). The version stays 0.39.0-alpha.1.
+
+**In plain language:** uploaded files are still checked for viruses before anyone can use them, but the check no longer happens while the person waits. The app says a file is being checked, and attaches it once the scanner says it is clean, even if the person has moved on. Large lesson videos can now be scanned, and the site can run on Vercel with uploads switched on, because the scanner no longer has to be reachable from the website itself.
+
+Details:
+
+- Completion keeps the quick checks (stored size, type, generation and the first bytes) and answers 202 `scanning` for a file that passes them. The upload stays pending and unserved until a verdict exists for exactly that stored generation; a replaced file is scanned again.
+- `npm run scan:worker` (`scripts/scan-worker.ts`) runs beside clamd on a private network. It streams each waiting generation from the bucket to clamd in chunks, records the verdict and completes the upload as its uploader, whose membership and role are checked then. `--once` runs a single pass.
+- Migration 0040 adds `upload_scans` with forced row security: requests see their own community's rows; only transactions that set `app.worker` to `scanner` see rows and community slugs across communities, and never upload records. The runtime role is granted the table.
+- No verdict keeps the file waiting, retried after one minute, doubling to at most fifteen, and given up after 24 hours. A flagged file is deleted and answers 422 `FILE_FLAGGED` every time it is asked about. Member attachments are now served at their scanned generation.
+- The browser asks again while a file is checked, for up to two minutes plus a second per megabyte; lesson and task files still being checked after that appear once ready. The owner's pilot checklist adds "Virus scan worker observed".
+- SETUP.md, LAUNCH_RUNBOOK.md, STAGING_LAUNCH.md, SECURITY.md, `.env.example` and the launch preflight describe the worker; the runbook's 25 MB video caution for Vercel is replaced by the clamd `StreamMaxLength` requirement.
+
 ## Alpha 44: posts and archived tasks a page at a time (no version change), 5 October 2026
 
 On a pull request from `claude/paged-loading-bu4poc`, merged once its checks pass. Decision 044; no migration. The version stays 0.39.0-alpha.1.

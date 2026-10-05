@@ -18,6 +18,7 @@ import {MailQueue} from '../apps/api/src/mail';
 import {DigestService} from '../apps/api/src/digests';
 import {inspectMigrations} from '../packages/db/src/inspection';
 import {MessagingRepository} from '../packages/db/src/messaging';
+import {ScanQueue} from '../packages/db/src/scans';
 const url=new URL(process.env.POSTGRES_TEST_URL||'http://unconfigured');
 if(!['postgres:','postgresql:'].includes(url.protocol)||!['127.0.0.1','localhost','[::1]'].includes(url.hostname)||url.pathname!=='/reunir_ci')throw new Error('This test requires a disposable loopback database named reunir_ci. It cannot target remote or customer databases.');
 const admin=await openDatabase(url.toString());
@@ -314,6 +315,28 @@ try{
         assert.notEqual(await repo.projectWorkVersion('code-black',DEMO_USER,'project_common'),version);
         const {releasedFiles}=await repo.executeCommand('code-black',lead,{type:'task.file.remove',taskId:'task_test',fileId:upload.id},randomUUID(),'task-files-postgres');
         assert.deepEqual(releasedFiles,[key('org_code_black','project_common',upload.id)]);assert.deepEqual(await files('org_code_black',lead),[]);
+    });
+    await check('background scans stay inside their community, and only the scan worker sees across communities (migration 0040)',async()=>{
+        const repo=new WorkspaceRepository(runtime!),queue=new ScanQueue(repo);
+        const {upload}=await repo.beginResourceUpload('code-black',DEMO_ADMIN,{purpose:'lesson_resource',trackId:'track_product',name:'Scan me.pdf',contentType:'application/pdf',sizeBytes:64},(org,id)=>`organisations/${org}/lesson-resources/track_product/${id}.pdf`,'scan-postgres');
+        await queue.request('code-black',DEMO_ADMIN,upload.id,{generation:'1712345678908888',sizeBytes:64});
+        assert.equal((await queue.state('code-black',DEMO_ADMIN,upload.id))?.status,'queued');
+        const rows=(org:string,user:string,worker='')=>runtime!.transaction(async tx=>{await setContext(tx,org,user);if(worker)await tx.query("SELECT set_config('app.worker',$1,true)",[worker]);return (await tx.query<{upload_id:string}>('SELECT upload_id FROM upload_scans')).rows.map(r=>r.upload_id);});
+        assert((await rows('org_code_black',DEMO_ADMIN)).includes(upload.id));
+        assert.deepEqual(await rows('org_studio_north',DEMO_ADMIN),[],'another community never sees the scan');
+        assert.deepEqual(await rows('','',''),[],'no context, no rows');
+        assert.deepEqual(await rows('','','retention'),[],'another worker setting sees nothing');
+        assert((await rows('','','scanner')).includes(upload.id));
+        const seenByWorker=await runtime!.transaction(async tx=>{await tx.query("SELECT set_config('app.worker','scanner',true)");return (await tx.query('SELECT id FROM upload_intents')).rows.length;});
+        assert.equal(seenByWorker,0,'the worker never reads upload records across communities');
+        await assert.rejects(()=>runtime!.transaction(async tx=>{await setContext(tx,'org_studio_north',DEMO_ADMIN);await tx.query("INSERT INTO upload_scans(organization_id,upload_id,user_id,object_key,generation,size_bytes) VALUES('org_code_black',$1,$2,'k','1',1)",[upload.id,DEMO_ADMIN]);}),'no scan row is written into another community');
+        const {jobs}=await queue.claim(10,()=>60_000),job=jobs.find(j=>j.uploadId===upload.id)!;
+        assert.equal(job.slug,'code-black');assert.equal(job.userId,DEMO_ADMIN);
+        assert.equal(await queue.record(job,{clean:true,thumbnailClean:null}),true);
+        assert.equal((await queue.state('code-black',DEMO_ADMIN,upload.id))?.status,'clean');
+        assert.equal((await repo.completeResourceUpload('code-black',DEMO_ADMIN,upload.id,{sizeBytes:64,contentType:'application/pdf',generation:'1712345678908888',signatureMatches:true},'scan-postgres')).outcome,'ready');
+        await repo.discardResourceUpload('code-black',DEMO_ADMIN,upload.id,'scan-postgres');
+        assert.deepEqual(await rows('','','scanner'),[],'discarding an upload removes its scan');
     });
     await check('a member deletes their own account through the restricted runtime connection, keeping shared work as Former member',async()=>{
         const theo='member_theo',now=new Date().toISOString(),repo=new WorkspaceRepository(runtime!);
