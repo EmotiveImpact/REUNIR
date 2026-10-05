@@ -118,3 +118,15 @@ test('the scan host publishes no port and keeps its values out of git and the im
     assert.match(readFileSync(resolve(import.meta.dirname, '../.dockerignore'), 'utf8'), /^deploy\/scan-host\/scan\.env$/m);
     assert.match(readFileSync(resolve(import.meta.dirname, '../../.gitignore'), 'utf8'), /^\/platform\/deploy\/scan-host\/scan\.env$/m);
 });
+
+test('the resend.dev test sender passes with a warning that only the account owner receives mail', () => {
+    const env = parseEnv(fillSecrets(example).text
+        .replace('<fill: https://staging-hostname>', 'https://ferven-staging.example.test')
+        .replace(/<fill: postgresql:[^>]+>/, 'postgresql://reunir_app:fakeRuntimePass9Q@ep-quiet-sky-123456-pooler.eu-central-1.aws.neon.tech/reunir?sslmode=require')
+        .replace('<fill: re_...>', 're_fakeKey_7HqP2mWx9Ld')
+        .replace('Ferven <fill: pilot@mail.your-domain>', 'Ferven <onboarding@resend.dev>'));
+    const f = inspectLaunch(env);
+    assert.deepEqual(fails(f), []);
+    assert.equal(state(f, 'EMAIL_FROM'), 'warn');
+    assert.match(f.find(x => x.key === 'EMAIL_FROM')!.message, /only the Resend account owner/);
+});

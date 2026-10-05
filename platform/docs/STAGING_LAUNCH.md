@@ -10,7 +10,7 @@ The goal is a **private, invitation-only staging site** the owner can sign in to
 | --- | --- | --- |
 | Website and API | One new Vercel project, root directory `platform`, address `<name>.vercel.app` | Already configured in `vercel.json`; no domain needed for the site itself |
 | Database | One new Neon project, region chosen once for everything | Dedicated to REUNIR, with a restricted runtime role |
-| Email | Resend, on a sending subdomain of a domain the owner controls, such as `mail.<your-domain>` | Invitations, password recovery and email confirmation need it; a dedicated subdomain keeps other projects' reputation separate |
+| Email | Resend. **First round: its shared test sender `onboarding@resend.dev`** (recommended to the owner on 5 October 2026); later a sending subdomain of a domain the owner buys, such as `mail.<your-domain>` | The test sender needs no domain but delivers only to the Resend account's own address, so the owner can sign up, confirm and reset a password, but invitations to anyone else wait for a real domain. A made-up domain cannot work: Resend sends only from a domain whose DNS the owner can prove |
 | Scheduler | **Google Cloud Scheduler** with Vercel Hobby (chosen), or Vercel Cron Jobs on Pro | Queued mail goes out about every minute; Hobby cron jobs run at most once a day. Steps below |
 | File uploads | **Off unless the owner approves the scan host** | Uploads need a bucket and a small always-on machine running clamd and the scan worker ([deploy/scan-host](../deploy/scan-host/README.md), decisions 042 and 047). Vercel never talks to the scanner |
 
@@ -26,7 +26,7 @@ Confirm each on the provider's own pricing page before signing up; these change.
 | Vercel | Pro (not chosen) | $20 a month per team member | Per-minute cron jobs; commercial use allowed |
 | Neon | Free | Free | 0.5 GB storage, 6 hour restore window. Move to a paid plan with a longer restore window before real members |
 | Resend | Free | Free | 100 emails a day, 3,000 a month, one domain |
-| Domain | One the owner already holds | Usually nothing extra | Only DNS access is needed, to add Resend's records |
+| Domain | None for the first round; one bought later | About £10 a year from any registrar | Needed only before inviting anyone other than the owner. Only DNS access is needed, to add Resend's records |
 | Google Cloud | Cloud Scheduler, three jobs | Free: three jobs per billing account, then $0.10 a job a month | Needs a billing account with a card, even when nothing is charged |
 | Google Cloud (optional) | Scan host: one e2-small machine, plus a bucket | About $22 a month (machine about $16, address and disk about $6); bucket pennies at staging size | Only if uploads are wanted now. e2-micro is too small for the virus scanner |
 
@@ -36,10 +36,10 @@ Total for the first round on the chosen Hobby route: **nothing**, within the fre
 
 None of these values ever goes into chat, an issue, a commit or a screenshot. The repository's scripts generate the app's own secrets on the owner's computer, and the preflight checks everything without printing a value.
 
-1. **Say go** (given 5 October 2026, on Hobby), and confirm the region (for example Frankfurt, `eu-central-1`, for members in the UK and Europe) and the sending domain.
+1. **Say go** (given 5 October 2026, on Hobby), with the region confirmed as Frankfurt (Neon and Vercel `eu-central-1`, Google Cloud `europe-west3`). Email starts on Resend's test sender unless the owner buys a domain.
 2. **Create the accounts**, each used only for REUNIR: Neon, Vercel (signed in with the GitHub account that owns the repository), Resend and Google Cloud (a new project with a billing account, for the scheduler).
 3. **Neon**: create the project and a database named `reunir`. Keep the owner connection string on your own computer only.
-4. **Resend**: add the sending subdomain, publish the DNS records it shows at your domain's DNS provider, wait for "verified", then create a sending-only API key for that domain.
+4. **Resend**: sign up with the email address you will use on Ferven, create an API key with sending access, and set `EMAIL_FROM=Ferven <onboarding@resend.dev>`. The preflight warns that only your own address will receive mail; that is expected for now. Later, to invite others: add a sending subdomain of a domain you own, publish the DNS records it shows, wait for "verified", switch `EMAIL_FROM` to an address on it and replace the key with one restricted to that domain.
 5. **On your own computer**, from `platform/` after `npm ci` (runbook sections 3 and 4, with only the owner connection string set as `MIGRATION_DATABASE_URL`):
    - `npm run db:migrate`, then `npm run pilot:check -- --migrations --json`
    - generate the runtime password as the runbook shows, then `npm run db:runtime-role` and `npm run db:grant-runtime`

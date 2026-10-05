@@ -17,13 +17,14 @@ Numbering: Alpha 47 and decision 047 complete the staging block (Alpha 46 to 47)
 
 - **`platform/deploy/scan-host/`**: a Compose project with clamd (`clamav/clamav:1.4`) and the scan worker, no published port, a `scan.env.example` with the worker's three values, and a README with the owner's steps and costs. `scan.env` is ignored by git and by the Docker build context.
 - **STAGING_LAUNCH.md**: records the Hobby choice, the Cloud Scheduler commands (secret read from the ignored file, never typed), the optional scan host at about $22 a month, and Google Cloud among the accounts. LAUNCH_RUNBOOK.md points to both.
-- **Test**: `tests/launch-staging.test.ts` checks the scan host publishes no port and keeps its values out of git and the image.
+- **Email without a domain**: staging starts on Resend's test sender, which reaches only the owner; the preflight warns when `EMAIL_FROM` uses `resend.dev`.
+- **Tests**: `tests/launch-staging.test.ts` checks the scan host publishes no port and keeps its values out of git and the image, and the test sender warning.
 
 ## Local verification, 5 October 2026
 
 | Check | Result |
 | --- | --- |
-| `npx tsx --test tests/launch-staging.test.ts` | 8 passed (1 new) |
+| `npm run typecheck`; `npx tsx --test tests/launch-staging.test.ts tests/launch-preflight.test.ts` | Passed; 24 passed (2 new: scan host package, resend.dev test sender warning) |
 | `docker compose config` with a placeholder `scan.env` | Valid; no ports; worker reaches `clamd` by name |
 | Scheduler loop in STAGING_LAUNCH.md, echoed | Expands to the three expected job names, schedules and paths |
 
