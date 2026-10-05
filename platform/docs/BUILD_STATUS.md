@@ -22,6 +22,7 @@ Numbering: Alpha 46 and decision 046 come from the block allocated to the stagin
 - **`npm run launch:secrets`** fills the empty `BETTER_AUTH_SECRET`, `EMAIL_ENCRYPTION_KEY` and `CRON_SECRET` with independent random values, prints none, never overwrites, and refuses a file git would track.
 - **`npm run launch:smoke`** checks a deployed origin with unauthenticated GET requests only: health, live mode on PostgreSQL, the three internal routes refusing strangers, the security headers, and whether a Content-Security-Policy exists.
 - **docs/STAGING_LAUNCH.md**, the owner's page; LAUNCH_RUNBOOK.md links it and uses the new commands.
+- **Source publication** (`scripts/publish_source.py`) accepts `platform/.env.staging.example` beside `.env.example`; every other `.env` file is still refused.
 
 ## Local verification, 5 October 2026
 
