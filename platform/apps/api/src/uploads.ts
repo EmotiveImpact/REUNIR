@@ -33,7 +33,7 @@ export function uploadCompletion({ repository, storage, scans, remove }: {
     return async function complete(slug: string, who: string, id: string, requestId: string): Promise<Completion> {
         const intent = await repository.uploadIntent(slug, who, id);
         const key = String(intent.object_key);
-        const state = scans && intent.status !== 'ready' ? await scans.state(slug, who, id) : null;
+        const state = scans ? await scans.state(slug, who, id) : null;
         // A file the scanner flagged says so every time it is asked about, never only the first time.
         if (intent.status === 'rejected' && state?.status === 'flagged') throw flagged();
         /** Stored size, type and generation, and the first bytes of exactly that generation. */
@@ -130,10 +130,12 @@ export function uploadCompletion({ repository, storage, scans, remove }: {
         // Member attachments. A rejected file stays rejected, so a second upload under the same policy cannot slip past the scanner.
         if (intent.status === 'rejected')
             throw new DomainError('FILE_REJECTED', 'This file did not pass verification. Choose it again.', 409);
-        if (intent.status === 'ready') return { id, status: 'ready' };
         const meta = await storage.metadata(key);
         if (!meta) throw missing();
-        if (meta.size !== Number(intent.size_bytes) || meta.contentType !== intent.content_type) {
+        // A member attachment is measured again whenever it is completed; a ready one whose stored bytes have since been
+        // replaced (a new generation) no longer matches what was checked and is refused rather than scanned afresh.
+        const replaced = scans && intent.status === 'ready' && !!intent.generation && meta.generation !== String(intent.generation);
+        if (meta.size !== Number(intent.size_bytes) || meta.contentType !== intent.content_type || replaced) {
             await repository.markUpload(slug, who, id, 'rejected');
             throw new DomainError('FILE_MISMATCH', 'The uploaded file does not match the permitted type and size.');
         }
