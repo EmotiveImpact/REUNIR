@@ -12,7 +12,7 @@ The goal is a **private, invitation-only staging site** the owner can sign in to
 | Database | One new Neon project, region chosen once for everything | Dedicated to REUNIR, with a restricted runtime role |
 | Email | Resend, on a sending subdomain of a domain the owner controls, such as `mail.<your-domain>` | Invitations, password recovery and email confirmation need it; a dedicated subdomain keeps other projects' reputation separate |
 | Scheduler | Vercel Cron Jobs on a Pro plan (recommended), or a free Hobby plan plus Google Cloud Scheduler | Queued mail goes out about every minute; Hobby cron jobs run at most once a day |
-| File uploads | **Off for the first round** (no bucket) | Vercel functions cannot reach a private virus scanner, and a scanner must never be open to the internet. Uploads return once background scanning lands (the "Background virus scanning" work) |
+| File uploads | **Off for the first round** (no bucket) | Vercel functions cannot reach a private virus scanner, and a scanner must never be open to the internet. Since Alpha 42 the scan runs in a separate worker beside the scanner, so Vercel no longer needs to reach it. Uploads can be switched on in a later round with a bucket and a small always-on container host for clamd and the scan worker (LAUNCH_RUNBOOK.md section 6), costed when chosen |
 
 Text, posts, conversations, goals, projects, courses with links and embeds, invitations and two-step sign-in all work without a bucket. Uploads, lesson files and covers say they are unavailable.
 

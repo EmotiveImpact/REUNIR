@@ -32,9 +32,10 @@ export function ResourceEditor({ trackId, resources, saved, disabled, uploadsAva
     const choose = (target: string | null) => { replacing.current = target; picker.current?.click(); };
     const upload = async (file: File) => {
         const target = replacing.current;
-        setUploading(true); setStatus(`Uploading ${file.name} privately…`);
+        setUploading(true); setStatus(`Uploading ${file.name} privately and checking it…`);
         const u = await uploadResource(trackId, file, videoBytes);
         setUploading(false);
+        if (u === null) { setStatus(`${file.name} is still being checked for viruses. It will be listed under uploaded files not in this draft once it is ready.`); return; }
         if (!u) { setStatus('The file was not attached. Nothing in the draft changed.'); return; }
         const fields = { fileId: u.id, contentType: u.contentType as LessonResource['contentType'], sizeBytes: u.sizeBytes };
         if (target) {

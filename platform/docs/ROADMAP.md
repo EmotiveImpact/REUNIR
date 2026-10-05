@@ -47,6 +47,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 33 | Authors ask to correct reviewed evidence and a reviewer decides; authors or administrators withdraw it with a reason; each item keeps its history | Withdrawal cannot be undone; mission proof has no correction history; no community-wide change log |
 | Alpha 34 | Authors credit teammates on a contribution; each person accepts or declines; accepted credits show on the contribution and the person's profile and never count as evidence | Project team members only; contributions only; no moderation of credit descriptions; no public or cross-community display |
 | Alpha 41 | Pre-pilot review: every suite passed on main; member uploads bounded, Better Auth's update-user route closed, invitation limits split by route, HSTS and Permissions-Policy headers | No Content-Security-Policy until it is tried against the hosted build; scanning still runs inside the upload request |
+| Alpha 42 | Virus scanning runs in a separate worker beside clamd, not in the upload request: files wait as being checked, large videos are streamed to the scanner, and the upload completes even if the person leaves the page | One worker, polling; no rescanning when signatures update; files over clamd's stream limit wait unscanned; real clamd, bucket and worker host unverified |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 

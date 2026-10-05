@@ -8,6 +8,10 @@ import { createSeed, DEMO_ADMIN, DEMO_USER } from '../packages/domain/src/seed';
 import { createApp } from '../apps/api/src/app';
 import { taskFileObjectKey } from '../apps/api/src/storage';
 import { FakeBucket } from './helpers/fake-bucket';
+import { ScanQueue } from '../packages/db/src/scans';
+import { scanWaitingUploads } from '../apps/api/src/scan-worker';
+import { uploadCompletion } from '../apps/api/src/uploads';
+import type { ScanSource } from '../apps/api/src/scanner';
 
 const origin = 'https://reunir.test', base = '/api/organisations/code-black', PDF = 'application/pdf';
 const LEAD = 'member_idris', OUTSIDER = 'member_nia';
@@ -133,20 +137,24 @@ test('with two-step sign-in required, an administrator off the team cannot attac
     identity = { id: DEMO_USER, name: 'Alex', twoFactorEnabled: false };
     assert.equal((await intent('Member.pdf', 40, {}, strict)).status, 201);
 });
-test('with a scanner, task files are scanned whole and a flagged one is rejected and deleted', async () => {
+test('with scanning on, a task file waits for the scan worker, and a flagged one is rejected and deleted', async () => {
     as(DEMO_USER);
-    const flag = 'REUNIR-TEST-FLAG', scanned: Uint8Array[] = [];
-    const scanner = { async scan(b: Uint8Array) { scanned.push(b); return Buffer.from(b).includes(flag) ? { clean: false as const, signature: 'Reunir.Test.Flag' } : { clean: true as const }; }, async ping() { return true; } };
-    const scanning = createApp({ repository: repo, origin, resolveSession: async () => identity, storage: bucket, scanner });
+    const flag = 'REUNIR-TEST-FLAG', scanned: Buffer[] = [];
+    const scanner = { async scan(source: ScanSource) { const parts: Uint8Array[] = []; if (source instanceof Uint8Array) parts.push(source); else for await (const p of source.chunks) parts.push(p); const b = Buffer.concat(parts); scanned.push(b); return b.includes(flag) ? { clean: false as const, signature: 'Reunir.Test.Flag' } : { clean: true as const }; }, async ping() { return true; } };
+    const queue = new ScanQueue(repo);
+    const scanning = createApp({ repository: repo, origin, resolveSession: async () => identity, storage: bucket, scans: queue });
+    const work = () => scanWaitingUploads({ queue, storage: bucket, scanner, complete: uploadCompletion({ repository: repo, storage: bucket, scans: queue, remove: async (_, keys) => { for (const k of keys) await bucket.remove(k); } }), log: () => {} });
     const upload = async (bytes: Uint8Array) => {
         const r = await intent('scanned.pdf', bytes.length, {}, scanning); assert.equal(r.status, 201);
         const { id } = await r.json(), key = bucket.policies.at(-1)!.key;
         bucket.put(key, bytes, PDF);
+        assert.equal((await post(`/uploads/${id}/complete`, {}, scanning)).status, 202, 'it waits for a verdict');
+        await work();
         return { id: id as string, key, done: await post(`/uploads/${id}/complete`, {}, scanning) };
     };
     const clean = await upload(pdf('clean task file'));
     assert.equal(clean.done.status, 200);
-    assert.deepEqual(Buffer.from(scanned.at(-1)!), Buffer.from(pdf('clean task file')), 'every byte was scanned');
+    assert.deepEqual(scanned.at(-1), Buffer.from(pdf('clean task file')), 'every byte was scanned');
     const flagged = await upload(pdf(flag));
     assert.equal(flagged.done.status, 422); assert.equal((await flagged.done.json()).error.code, 'FILE_FLAGGED');
     assert.equal((await db.query<{ status: string }>('SELECT status FROM upload_intents WHERE id=$1', [flagged.id])).rows[0].status, 'rejected');

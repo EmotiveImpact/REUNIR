@@ -138,14 +138,14 @@ export function inspectLaunch(env: Environment): Finding[] {
     if (!scanning) add('UPLOAD_SCANNING', 'fail', 'UPLOAD_SCANNING must be required or optional. The server refuses to start otherwise.');
     else if (clamPort && !(/^\d+$/.test(clamPort) && Number(clamPort) >= 1 && Number(clamPort) <= 65535)) add('CLAMAV_PORT', 'fail', 'CLAMAV_PORT must be a TCP port number. The server refuses to start otherwise.');
     else if (!bucket) { if (clamHost) add('upload-scanning', 'warn', 'CLAMAV_HOST is set without GCS_BUCKET, so there are no uploads to scan.'); }
-    else if (clamHost) add('upload-scanning', 'pass', 'A ClamAV scanner is configured. Confirm it answers with npm run scan:check from the same network.');
+    else if (clamHost) add('upload-scanning', 'pass', 'A ClamAV scanner is configured. Uploads wait until the scan worker has checked them, so run npm run scan:worker beside clamd and confirm clamd answers with npm run scan:check from the same network.');
     else if (scanning === 'required') add('upload-scanning', 'fail', 'Uploads must be scanned, but CLAMAV_HOST is not set. The server refuses to start; run clamd and set CLAMAV_HOST, or set UPLOAD_SCANNING=optional deliberately.');
     else add('upload-scanning', 'warn', 'UPLOAD_SCANNING=optional with no scanner: uploads are only checked for type and size.');
     const video = env.LESSON_VIDEO_MAX_MB?.trim();
     if (video && (!/^[0-9]{1,3}$/.test(video) || Number(video) > 500)) add('LESSON_VIDEO_MAX_MB', 'fail', 'LESSON_VIDEO_MAX_MB must be a whole number from 0 to 500. The server refuses to start otherwise.');
     else if (video && Number(video) > 0 && !bucket) add('LESSON_VIDEO_MAX_MB', 'warn', 'LESSON_VIDEO_MAX_MB is set, but without GCS_BUCKET no uploads, video included, are possible.');
-    // Scanning reads each upload whole, in memory, and clamd refuses streams over its StreamMaxLength (25 MB by default).
-    else if (video && Number(video) > 25 && clamHost) add('LESSON_VIDEO_MAX_MB', 'warn', `Lesson video up to ${Number(video)} MB is on and uploads are scanned. Set clamd StreamMaxLength to at least ${Number(video)}M and give the API memory for a file of that size, or large videos wait as unscanned.`);
+    // The scan worker streams each upload to clamd, which refuses streams over its StreamMaxLength (25 MB by default).
+    else if (video && Number(video) > 25 && clamHost) add('LESSON_VIDEO_MAX_MB', 'warn', `Lesson video up to ${Number(video)} MB is on and uploads are scanned. Set clamd StreamMaxLength to at least ${Number(video)}M, or large videos wait unscanned and are never served.`);
     else if (video && Number(video) > 0) add('LESSON_VIDEO_MAX_MB', 'pass', 'Lesson video uploads are on. Size the bucket and its budget for videos of this size.');
     // Template placeholders from .env.staging.example that were never replaced. Names only, never values.
     const unfilled = Object.keys(env).filter(k => env[k]?.includes('<fill:')).sort();

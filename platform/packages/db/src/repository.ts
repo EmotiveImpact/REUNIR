@@ -220,7 +220,8 @@ export class WorkspaceRepository {
     }
     async uploadIntent(slug: string, userId: string, id: string) { return this.within(slug, userId, false, async (sql, org) => { const rows = await sql.query('SELECT * FROM upload_intents WHERE organization_id=$1 AND user_id=$2 AND id=$3', [org.id, userId, id]); if (!rows.rows[0])
         throw new DomainError('NOT_FOUND', 'File not found.', 404); return rows.rows[0]; }); }
-    async markUpload(slug: string, userId: string, id: string, status: 'ready' | 'rejected') { return this.within(slug, userId, true, async (sql, org) => { const rows = await sql.query("UPDATE upload_intents SET status=$4 WHERE organization_id=$1 AND user_id=$2 AND id=$3 AND purpose='member' RETURNING id", [org.id, userId, id, status]); if (!rows.rows[0])
+    /** A member attachment's verdict. A ready one records the generation that was checked, and that generation is served. */
+    async markUpload(slug: string, userId: string, id: string, status: 'ready' | 'rejected', generation: string | null = null) { return this.within(slug, userId, true, async (sql, org) => { const rows = await sql.query("UPDATE upload_intents SET status=$4,generation=$5 WHERE organization_id=$1 AND user_id=$2 AND id=$3 AND purpose='member' RETURNING id", [org.id, userId, id, status, status === 'ready' ? generation : null]); if (!rows.rows[0])
         throw new DomainError('NOT_FOUND', 'File not found.', 404); }); }
     /** Lesson files. Domain rules run inside the tenant transaction; storage calls happen outside it. */
     async beginResourceUpload(slug: string, userId: string, request: ResourceUploadRequest, key: (organizationId: string, id: string) => string, requestId: string) {

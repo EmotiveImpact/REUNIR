@@ -1,3 +1,46 @@
+# Alpha 42 virus scanning in the background
+
+5 October 2026. Version stays 0.39.0-alpha.1. Uploads are no longer scanned inside the completion request: the request does the quick checks and a separate scan worker beside clamd streams the stored generation to the scanner, records the verdict and completes the upload as its uploader. See decisions/042-background-scanning.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/background-scanning-pxfq5c`, from main `d726e8f` with main `2edf0b0` (PR #33 Alpha 41, PR #34 Alpha 46) and `fd3e587` (PR #35 Alpha 44) merged in |
+| Verified locally | Yes: see below |
+| Verified remotely (GitHub Actions) | [PR #36](https://github.com/EmotiveImpact/REUNIR/pull/36). The first run failed one unit test (below); recorded on the pull request once the fixed run finishes |
+| Merged | Not yet. The owner approved merging each change into main once its checks pass (3 October 2026) |
+| Deployed | No. No clamd, worker host, bucket or database was provisioned |
+
+Numbering: Alpha 42, decision 042 and migration 0040 from the block allocated to background scanning (Alpha 42 to 43, migrations 0040 to 0041). Alpha 43 and migration 0041 are unused.
+
+## What changed
+
+- `apps/api/src/uploads.ts`: completion shared by the route and the worker. Quick checks read only the first bytes; a file that passes waits (202 `scanning`) until `upload_scans` holds a verdict for exactly its stored generation (and its small copy's).
+- `apps/api/src/scan-worker.ts` and `npm run scan:worker`: leased claims, streaming from storage (`PrivateStorage.stream`) to clamd, verdicts, completion as the uploader; retry after 1, 2, 4, 8 then 15 minutes; given up after 24 hours.
+- `apps/api/src/scanner.ts`: `scan` accepts a stream of pieces with its size, waits for the socket to drain, lets I/O run between writes, and stops reading once clamd answers.
+- Migration 0040: `upload_scans` with forced RLS (`tenant_scope`; `scan_worker` and `organisations_scanner` only when `app.worker='scanner'`), removed with its upload; runtime grant added.
+- Member attachments record and are served at their scanned generation. A flagged upload answers `FILE_FLAGGED` every time.
+- Pilot checklist: "Virus scan worker observed" (`scan-worker` heartbeat, warning after 15 minutes of waiting scans).
+- Web: `apps/web/src/lib/uploads.ts` asks again while a file is checked (two minutes plus a second per MB); lesson and task files still waiting appear once ready; a cover asks the person to try again.
+
+## Local verification, 5 October 2026
+
+Node 22.22.0, Chromium at `/opt/pw-browsers/chromium-1194` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster (CI uses PostgreSQL 17).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`, `npm run build`, `npm run bundle:preview` | Passed |
+| `npm test` | 881 tests. The first full run had 1 failure, `tests/http.test.ts` "mismatched storage metadata rejects the upload": completion returned a ready member attachment without measuring it again. Fixed by measuring it again (a replaced generation is refused when scanning is on); `http`, `scanner` and `task-files-http` test files then 59 passed, 0 failed |
+| `npm run test:http` | 19 passed |
+| `npm run test:postgres` | 30 passed on PostgreSQL 16 (1 new: scan rows stay inside their community; only the scan worker sees across communities and never upload records) |
+| Browser suites run | resources 20, task files 12, covers 20, v4 20, monochrome 16, forms 10, connected 12, covers connected 15, instructors connected 6, resources connected 10 (1 new: the editor waits while the worker checks a file, then attaches it; a flagged file is refused and deleted) |
+| Python checks | unittest OK; research register valid |
+
+Not exercised: a real clamd, a real bucket's streamed reads, the worker on a container host, several workers at once.
+
+---
+
 # Alpha 44 posts and archived tasks a page at a time
 
 5 October 2026. Version stays 0.39.0-alpha.1. Feeds load posts a page at a time from the server and archived project tasks leave the snapshot, so a busy community no longer sends every post, reply and old task to every page. See decisions/044-paged-posts-and-tasks.md.

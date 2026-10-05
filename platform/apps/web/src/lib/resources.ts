@@ -1,5 +1,6 @@
 import { api, commitDemo, demoState, mode, snapshot } from './data';
 import { getDemoFile, putDemoFile, removeDemoFile } from './demo-files';
+import { finishUpload, scanPatienceMs } from './uploads';
 import { newId, type Upload, type Workspace } from '../../../../packages/contracts/src/index';
 import { MAX_VIDEO_BYTES, RESOURCE_TYPES_HINT, SIGNATURE_BYTES, fileSignatureMatches, isLessonVideo, resourceSizeProblem, resourceTypeForFile, type LessonResourceType, type ResourceRef } from '../../../../packages/contracts/src/lesson-resources';
 import { beginResourceUpload, clientUpload, completeResourceUpload, discardResourceUpload, resolveResourceDownload } from '../../../../packages/domain/src/resources';
@@ -21,7 +22,8 @@ export function checkResourceFile(file: File, videoBytes = 0): LessonResourceTyp
     return contentType;
 }
 
-export async function uploadLessonResource(slug: string, userId: string, trackId: string, file: File, videoBytes = 0): Promise<ResourceResult & { upload: Upload }> {
+/** `upload` is null when the file is still being checked for viruses; it is listed with the track's uploads once ready. */
+export async function uploadLessonResource(slug: string, userId: string, trackId: string, file: File, videoBytes = 0): Promise<ResourceResult & { upload: Upload | null }> {
     // The fictional preview keeps bytes in this browser, so it shows video at the largest size a server could allow.
     const contentType = checkResourceFile(file, mode === 'demo' ? MAX_VIDEO_BYTES : videoBytes);
     const request = { purpose: 'lesson_resource' as const, trackId, name: file.name.slice(0, 160), contentType, sizeBytes: file.size };
@@ -47,7 +49,8 @@ export async function uploadLessonResource(slug: string, userId: string, trackId
     // Signed policy: exact size and type. No application cookies are sent to storage.
     const stored = await fetch(intent.url, { method: 'POST', body: form, credentials: 'omit' });
     if (!stored.ok) throw new Error('Private storage did not accept the file. Try again.');
-    const done = await api<{ upload: Upload }>(`${base(slug)}/uploads/${encodeURIComponent(intent.id)}/complete`, {});
+    const done = await finishUpload<{ upload: Upload }>(slug, intent.id, scanPatienceMs(file.size));
+    if (!done) return { upload: null, message: `${file.name} is still being checked for viruses. It will be listed under uploaded files not in this draft once it is ready.` };
     return { upload: done.upload, message: 'Uploaded privately. Save the draft to keep it.' };
 }
 

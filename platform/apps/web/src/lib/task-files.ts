@@ -1,6 +1,7 @@
 import { api, commitDemo, demoState, mode, syncDemo } from './data';
 import { getDemoFile, putDemoFile, removeDemoFile } from './demo-files';
 import { checkResourceFile } from './resources';
+import { finishUpload, scanPatienceMs } from './uploads';
 import { newId, type Workspace } from '../../../../packages/contracts/src/index';
 import { SIGNATURE_BYTES, fileSignatureMatches } from '../../../../packages/contracts/src/lesson-resources';
 import { beginTaskFileUpload, completeTaskFileUpload, resolveTaskFileDownload } from '../../../../packages/domain/src/task-files';
@@ -39,7 +40,7 @@ export async function uploadTaskFile(slug: string, userId: string, taskId: strin
     // Signed policy: exact size and type. No application cookies are sent to storage.
     const stored = await fetch(intent.url, { method: 'POST', body: form, credentials: 'omit' });
     if (!stored.ok) throw new Error('Private storage did not accept the file. Try again.');
-    await api(`${base(slug)}/uploads/${encodeURIComponent(intent.id)}/complete`, {});
+    if (!await finishUpload(slug, intent.id, scanPatienceMs(file.size))) return `${file.name} is uploaded and still being checked for viruses. It will appear on the task once it is ready.`;
     return `${file.name} attached for the project team.`;
 }
 
