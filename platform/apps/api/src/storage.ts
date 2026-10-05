@@ -63,6 +63,11 @@ export interface PrivateStorage {
     metadata(key: string): Promise<StoredObject | null>;
     /** The first bytes of one exact generation, for signature checks. */
     head(key: string, bytes: number, generation: string): Promise<Uint8Array>;
+    /**
+     * The whole of one exact generation, in pieces, for the scan worker, so a large video is never held in memory at once.
+     * Stand-ins without it are read whole with `head`.
+     */
+    stream?(key: string, generation: string): AsyncIterable<Uint8Array>;
     remove(key: string): Promise<void>;
 }
 /** Cloud Storage reports a missing object, or a generation that no longer exists, as code 404. */
@@ -88,6 +93,7 @@ export function googleStorage(bucket: string, credentialJSON?: string, client?: 
             }
         },
         head: async (key, bytes, generation) => new Uint8Array((await file(key, generation).download({ start: 0, end: bytes - 1 }))[0]),
+        stream: (key, generation) => file(key, generation).createReadStream(),
         remove: async (key) => { await b.file(key).delete({ ignoreNotFound: true }); },
     };
 }

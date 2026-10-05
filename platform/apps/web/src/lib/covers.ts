@@ -1,3 +1,4 @@
+import { finishUpload } from './uploads';
 import { api, commitDemo, demoState, mode } from './data';
 import { getDemoFile, putDemoFile, removeDemoFile } from './demo-files';
 import mountainImage from '../assets/library-mountain.jpg';
@@ -165,7 +166,7 @@ async function uploadPrepared(slug: string, userId: string, destination: Destina
     if (!await postToStorage(intent, prepared.blob, prepared.contentType, 'cover')) throw new Error('Private storage did not accept the image. Try again.');
     // The small copy is a convenience: if storage refuses it, the server finds none and cards show the full picture.
     if (thumb && intent.thumbnail) await postToStorage(intent.thumbnail, thumb.blob, thumb.contentType, 'cover-thumbnail').catch(() => false);
-    await api(`${base(slug)}/uploads/${encodeURIComponent(intent.id)}/complete`, {});
+    if (!await finishUpload(slug, intent.id)) throw new Error('The image is still being checked for viruses. Try again in a minute. Nothing was changed.');
     return { fileId: intent.id };
 }
 

@@ -8,7 +8,10 @@ import { WorkspaceRepository } from '../packages/db/src/repository';
 import { createSeed, DEMO_ADMIN } from '../packages/domain/src/seed';
 import { createApp } from '../apps/api/src/app';
 import { inspectConfiguration, validateRuntimeConfiguration, uploadScanningSetting } from '../apps/api/src/config';
-import { ScannerUnavailable, clamdScanner, readVerdict, scanTimeoutMs, scannerFromEnvironment, type FileScanner } from '../apps/api/src/scanner';
+import { ScannerUnavailable, clamdScanner, readVerdict, scanTimeoutMs, scannerFromEnvironment, type FileScanner, type ScanSource } from '../apps/api/src/scanner';
+import { ScanQueue, SCAN_GIVE_UP_MS, scanRetryDelayMs } from '../packages/db/src/scans';
+import { scanWaitingUploads } from '../apps/api/src/scan-worker';
+import { uploadCompletion } from '../apps/api/src/uploads';
 import { FakeBucket } from './helpers/fake-bucket';
 import { jpegHeader, webpHeader } from './helpers/images';
 
@@ -17,10 +20,13 @@ const MARKER = 'REUNIR-TEST-FLAG';
 class FakeScanner implements FileScanner {
     down = false;
     scanned: Uint8Array[] = [];
-    async scan(bytes: Uint8Array) {
+    async scan(source: ScanSource) {
         if (this.down) throw new ScannerUnavailable('connection');
+        const parts: Uint8Array[] = [];
+        if (source instanceof Uint8Array) parts.push(source); else for await (const piece of source.chunks) parts.push(piece);
+        const bytes = Buffer.concat(parts);
         this.scanned.push(bytes);
-        return Buffer.from(bytes).includes(MARKER) ? { clean: false as const, signature: 'Reunir.Test.Flag' } : { clean: true as const };
+        return bytes.includes(MARKER) ? { clean: false as const, signature: 'Reunir.Test.Flag' } : { clean: true as const };
     }
     async ping() { return !this.down; }
 }
@@ -77,6 +83,28 @@ test('the clamd client streams every byte in length-prefixed chunks and reads th
         assert.equal(await scanner.ping(), true);
     } finally { await clamd.close(); }
 });
+test('the clamd client streams pieces from storage without holding the whole file, and stops once clamd answers', async () => {
+    const clamd = await fakeClamd(p => p.includes(MARKER) ? 'stream: Reunir.Test.Flag FOUND' : 'stream: OK');
+    try {
+        const scanner = clamdScanner({ host: '127.0.0.1', port: clamd.port, chunkBytes: 700 });
+        const whole = randomBytes(5000);
+        async function* pieces() { for (let at = 0; at < whole.length; at += 1800) yield whole.subarray(at, at + 1800); }
+        assert.deepEqual(await scanner.scan({ chunks: pieces(), size: whole.length }), { clean: true });
+        assert(clamd.received.at(-1)!.equals(whole), 'pieces are re-cut into clamd chunks and arrive in order');
+        await assert.rejects(scanner.scan({ chunks: (async function* () { yield Buffer.from('%PDF'); throw Object.assign(new Error('gone'), { code: 404 }); })(), size: 10 }),
+            (e: unknown) => !(e instanceof ScannerUnavailable) && (e as { code?: number }).code === 404, 'a storage error is reported as itself, not as an unavailable scanner');
+    } finally { await clamd.close(); }
+    // clamd answers as soon as a stream passes its StreamMaxLength, without waiting for the end.
+    const early = createServer(socket => { let seen = 0; socket.on('error', () => {}); socket.on('data', d => { seen += d.length; if (seen > 20_000) socket.end('INSTREAM size limit exceeded. ERROR\0', () => socket.destroy()); }); });
+    await new Promise<void>(r => early.listen(0, '127.0.0.1', () => r()));
+    try {
+        let read = 0;
+        async function* endless() { while (true) { read++; yield new Uint8Array(1000); } }
+        const port = (early.address() as { port: number }).port;
+        await assert.rejects(clamdScanner({ host: '127.0.0.1', port, timeoutMs: 5000 }).scan({ chunks: endless(), size: 10 ** 9 }), ScannerUnavailable);
+        assert(read < 1000, 'reading stops once clamd has answered');
+    } finally { early.close(); }
+});
 test('an unreachable, silent or erroring scanner is unavailable, never clean', async () => {
     const silent = await fakeClamd(() => null), erroring = await fakeClamd(() => 'INSTREAM size limit exceeded. ERROR');
     try {
@@ -122,9 +150,13 @@ test('production with a bucket will not start without a scanner unless scanning 
 });
 
 const origin = 'https://reunir.test', base = '/api/organisations/code-black';
-let db: Database, app: ReturnType<typeof createApp>, bucket: FakeBucket, scanner: FakeScanner;
+let db: Database, repo: WorkspaceRepository, app: ReturnType<typeof createApp>, bucket: FakeBucket, scanner: FakeScanner, queue: ScanQueue;
+const logged: Record<string, unknown>[] = [];
 const post = (path: string, body: unknown) => app.request(base + path, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin, 'Idempotency-Key': randomUUID() }, body: JSON.stringify(body) });
 const status = async (id: string) => (await db.query<{ status: string }>('SELECT status FROM upload_intents WHERE id=$1', [id])).rows[0].status;
+const scanRow = async (id: string) => (await db.query<{ status: string; generation: string; attempts: number }>('SELECT status,generation,attempts FROM upload_scans WHERE upload_id=$1', [id])).rows[0];
+/** One pass of the worker, as `npm run scan:worker` runs it, completing uploads for their uploaders. */
+const work = () => scanWaitingUploads({ queue, storage: bucket, scanner, complete: uploadCompletion({ repository: repo, storage: bucket, scans: queue, remove: async (_, keys) => { for (const k of keys) await bucket.remove(k); } }), limit: 20, log: e => logged.push(e) });
 async function start(body: Record<string, unknown>, bytes: Uint8Array, contentType: string) {
     const r = await post('/uploads', { ...body, contentType, sizeBytes: bytes.length });
     assert.equal(r.status, 201);
@@ -132,15 +164,23 @@ async function start(body: Record<string, unknown>, bytes: Uint8Array, contentTy
     bucket.put(key, bytes, contentType);
     return { id: id as string, key, complete: () => post(`/uploads/${id}/complete`, {}) };
 }
+/** Completes once (the file waits), lets the worker scan it, then asks again as the browser does. */
+async function scanned(u: { id: string; complete: () => Response | Promise<Response> }) {
+    const first = await u.complete();
+    assert.equal(first.status, 202); assert.deepEqual(await first.json(), { id: u.id, status: 'scanning' });
+    assert.equal(await status(u.id), 'pending', 'nothing is usable while it waits');
+    await work();
+    return u.complete();
+}
 const pdf = (text: string) => new TextEncoder().encode(`%PDF-1.4\n% ${text}\n${'x'.repeat(5000)}`);
 const jpeg = (tail = '') => { const b = new Uint8Array(9000); b.set(jpegHeader(1600, 900)); b.set(new TextEncoder().encode(tail), 8000); return b; };
 const lesson = { purpose: 'lesson_resource', trackId: 'track_product', name: 'notes.pdf' };
 
 before(async () => {
     db = await openDatabase('pglite:memory'); await migrate(db);
-    const repo = new WorkspaceRepository(db); await repo.seed(createSeed());
-    bucket = new FakeBucket(); scanner = new FakeScanner();
-    app = createApp({ repository: repo, origin, resolveSession: async () => ({ id: DEMO_ADMIN, name: 'Amina' }), storage: bucket, scanner });
+    repo = new WorkspaceRepository(db); await repo.seed(createSeed());
+    bucket = new FakeBucket(); scanner = new FakeScanner(); queue = new ScanQueue(repo);
+    app = createApp({ repository: repo, origin, resolveSession: async () => ({ id: DEMO_ADMIN, name: 'Amina' }), storage: bucket, scans: queue });
 });
 after(async () => db?.close());
 
@@ -149,38 +189,84 @@ test('capabilities say when uploads are scanned', async () => {
     const plain = createApp({ repository: new WorkspaceRepository(db), origin, resolveSession: async () => null, storage: bucket });
     assert.equal((await (await plain.request('/api/account/capabilities')).json()).uploadScanning, false);
 });
-test('a clean lesson file is scanned whole, at the generation it records, then becomes ready', async () => {
+test('completing reads only the first bytes; the worker streams the whole generation to the scanner, then it becomes ready', async () => {
     const bytes = pdf('clean'), u = await start(lesson, bytes, 'application/pdf');
-    const done = await u.complete();
-    assert.equal(done.status, 200);
+    const first = await u.complete();
+    assert.equal(first.status, 202);
+    assert(bucket.reads.filter(r => r.key === u.key).every(r => r.bytes < bytes.length), 'the request never reads the whole file');
+    assert.equal((await scanRow(u.id)).generation, bucket.objects.get(u.key)!.generation, 'the scan is pinned to the measured generation');
+    assert.equal((await u.complete()).status, 202, 'asking again while it waits changes nothing');
+    const pass = await work();
+    assert.equal(pass.clean, 1);
     assert.deepEqual(Buffer.from(scanner.scanned.at(-1)!), Buffer.from(bytes), 'every byte was scanned, not just the signature');
-    assert.equal(bucket.reads.at(-1)!.generation, bucket.objects.get(u.key)!.generation);
-    assert.equal(await status(u.id), 'ready');
+    assert.deepEqual(bucket.streams.at(-1), { key: u.key, generation: bucket.objects.get(u.key)!.generation }, 'streamed from the generation it records');
+    assert.equal(await status(u.id), 'ready', 'the worker completed it without the browser');
+    const again = await u.complete();
+    assert.equal(again.status, 200); assert.equal((await again.json()).upload.id, u.id);
 });
-test('a flagged lesson file is rejected and deleted, with its own message', async () => {
+test('a flagged lesson file is rejected and deleted, and says so every time it is asked about', async () => {
     const u = await start(lesson, pdf(MARKER), 'application/pdf');
-    const done = await u.complete(), body = await done.json();
+    const done = await scanned(u), body = await done.json();
     assert.equal(done.status, 422); assert.equal(body.error.code, 'FILE_FLAGGED');
     assert.match(body.error.message, /virus scanner/);
     assert.equal(await status(u.id), 'rejected');
     assert(bucket.removed.includes(u.key)); assert(!bucket.objects.has(u.key));
-    assert.equal((await u.complete()).status, 409, 'a flagged file cannot be completed again');
+    assert(logged.some(e => e.event === 'upload.scan.flagged' && e.signature === 'Reunir.Test.Flag' && e.uploadId === u.id));
+    assert(!JSON.stringify(logged).includes('notes.pdf'), 'logs never carry the file name');
+    bucket.put(u.key, pdf('a different file'), 'application/pdf');
+    const again = await u.complete();
+    assert.equal(again.status, 422, 'a flagged file cannot be completed again'); assert.equal(await status(u.id), 'rejected');
 });
-test('while the scanner is down the upload stays pending and succeeds on retry', async () => {
+test('while the scanner is down the upload waits, unserved and undeleted, and is scanned once it is back', async () => {
     const u = await start(lesson, pdf('retry'), 'application/pdf');
+    assert.equal((await u.complete()).status, 202);
     scanner.down = true;
-    const failed = await u.complete();
-    assert.equal(failed.status, 503); assert.equal((await failed.json()).error.code, 'SCAN_UNAVAILABLE');
+    const pass = await work();
+    assert.equal(pass.retried, 1);
     assert.equal(await status(u.id), 'pending'); assert(bucket.objects.has(u.key), 'nothing is deleted without a verdict');
+    assert.equal((await scanRow(u.id)).status, 'queued');
+    assert.equal((await u.complete()).status, 202, 'no verdict is never treated as clean');
+    assert(logged.some(e => e.event === 'upload.scan.unavailable' && e.uploadId === u.id));
+    assert.equal((await db.query<{ state: string }>("SELECT state FROM service_observations WHERE name='scan-worker'")).rows[0].state, 'error');
     scanner.down = false;
-    assert.equal((await u.complete()).status, 200);
+    await db.query("UPDATE upload_scans SET available_at=now() WHERE upload_id=$1", [u.id]);
+    assert.equal((await work()).clean, 1);
     assert.equal(await status(u.id), 'ready');
+    assert.equal((await db.query<{ state: string }>("SELECT state FROM service_observations WHERE name='scan-worker'")).rows[0].state, 'ok');
+});
+test('a file replaced after its scan was asked for is scanned again as it now stands', async () => {
+    const u = await start(lesson, pdf('a harmless first file'.slice(0, MARKER.length)), 'application/pdf');
+    assert.equal((await u.complete()).status, 202);
+    const before = (await scanRow(u.id)).generation;
+    bucket.put(u.key, pdf(MARKER), 'application/pdf');
+    assert.equal((await u.complete()).status, 202);
+    assert.notEqual((await scanRow(u.id)).generation, before, 'the newer generation replaces the request');
+    await work();
+    assert.equal(await status(u.id), 'rejected', 'the verdict belongs to the bytes that would be served');
+});
+test('a generation that vanishes before its scan is dropped, and the next completion measures the file again', async () => {
+    const u = await start(lesson, pdf('vanishing'), 'application/pdf');
+    assert.equal((await u.complete()).status, 202);
+    const generation = bucket.objects.get(u.key)!.generation;
+    bucket.objects.set(u.key, { ...bucket.objects.get(u.key)!, generation: String(Number(generation) + 1) });
+    assert.equal((await work()).dropped, 1);
+    assert.equal(await scanRow(u.id), undefined);
+    assert.equal(await status(u.id), 'pending');
+    assert.equal((await u.complete()).status, 202);
+    await work();
+    assert.equal(await status(u.id), 'ready');
+});
+test('a file that fails its quick checks is refused at once, without waiting for a scan', async () => {
+    const u = await start(lesson, new TextEncoder().encode('not a pdf at all'.repeat(10)), 'application/pdf');
+    const done = await u.complete();
+    assert.equal(done.status, 400); assert.equal((await done.json()).error.code, 'FILE_MISMATCH');
+    assert.equal(await scanRow(u.id), undefined);
 });
 test('cover pictures are scanned too', async () => {
     const clean = await start({ purpose: 'cover_image', subject: 'track', subjectId: 'track_story' }, jpeg(), 'image/jpeg');
-    assert.equal((await clean.complete()).status, 200);
+    assert.equal((await scanned(clean)).status, 200);
     const flagged = await start({ purpose: 'cover_image', subject: 'track', subjectId: 'track_story' }, jpeg(MARKER), 'image/jpeg');
-    const done = await flagged.complete();
+    const done = await scanned(flagged);
     assert.equal(done.status, 422); assert.equal((await done.json()).error.code, 'FILE_FLAGGED');
     assert.equal(await status(flagged.id), 'rejected'); assert(!bucket.objects.has(flagged.key));
 });
@@ -191,7 +277,7 @@ test('a cover\'s small copy is scanned too; a flagged copy is deleted and the pi
         assert.equal(r.status, 201);
         const { id } = await r.json(), [main, small] = bucket.policies.slice(-2);
         bucket.put(main.key, jpeg(), 'image/jpeg'); bucket.put(small.key, thumb, 'image/webp');
-        const done = await post(`/uploads/${id}/complete`, {});
+        const done = await scanned({ id, complete: () => post(`/uploads/${id}/complete`, {}) });
         const row = (await db.query<{ status: string; thumbnail_object_key: string | null }>('SELECT status,thumbnail_object_key FROM upload_intents WHERE id=$1', [id])).rows[0];
         return { done, row, key: main.key, thumbKey: small.key };
     };
@@ -204,15 +290,40 @@ test('a cover\'s small copy is scanned too; a flagged copy is deleted and the pi
     assert.equal(flagged.row.status, 'ready'); assert.equal(flagged.row.thumbnail_object_key, null);
     assert(bucket.objects.has(flagged.key)); assert(!bucket.objects.has(flagged.thumbKey), 'the flagged copy is deleted');
 });
-test('member attachments are scanned, and a flagged one cannot be revived by uploading again', async () => {
+test('member attachments are scanned, served at the scanned generation, and a flagged one cannot be revived', async () => {
     const clean = await start({ name: 'plan.pdf' }, pdf('member'), 'application/pdf');
-    assert.equal((await clean.complete()).status, 200);
+    assert.equal((await scanned(clean)).status, 200);
+    const link = await (await app.request(`${base}/uploads/${clean.id}/download`)).json();
+    assert.match(link.url, new RegExp(`generation=${bucket.objects.get(clean.key)!.generation}`), 'the download is pinned to what was scanned');
     const flagged = await start({ name: 'plan.pdf' }, pdf(MARKER), 'application/pdf');
-    const done = await flagged.complete();
+    const done = await scanned(flagged);
     assert.equal(done.status, 422); assert.equal((await done.json()).error.code, 'FILE_FLAGGED');
     assert.equal(await status(flagged.id), 'rejected'); assert(!bucket.objects.has(flagged.key));
     bucket.put(flagged.key, pdf('a different file'), 'application/pdf');
     const again = await flagged.complete();
-    assert.equal(again.status, 409); assert.equal((await again.json()).error.code, 'FILE_REJECTED');
-    assert.equal(await status(flagged.id), 'rejected');
+    assert.equal(again.status, 422); assert.equal(await status(flagged.id), 'rejected');
+});
+test('the worker completes for the uploader as they stand now: a removed member\'s file is not made ready', async () => {
+    const u = await start(lesson, pdf('left'), 'application/pdf');
+    assert.equal((await u.complete()).status, 202);
+    await db.query("UPDATE members SET status='suspended' WHERE organization_id='org_code_black' AND user_id=$1", [DEMO_ADMIN]);
+    try { await work(); }
+    finally { await db.query("UPDATE members SET status='active' WHERE organization_id='org_code_black' AND user_id=$1", [DEMO_ADMIN]); }
+    assert.equal(await status(u.id), 'pending');
+    assert(logged.some(e => e.event === 'upload.scan.completion-refused' && e.uploadId === u.id));
+    assert.equal((await u.complete()).status, 200, 'the recorded verdict still counts once they are back');
+});
+test('scan claims are leased, retried with growing waits, and abandoned after a day', async () => {
+    assert.deepEqual([1, 2, 3, 5, 9].map(scanRetryDelayMs), [60_000, 120_000, 240_000, 900_000, 900_000]);
+    const u = await start(lesson, pdf('stale'), 'application/pdf');
+    assert.equal((await u.complete()).status, 202);
+    const first = await queue.claim(5, () => 60_000), second = await queue.claim(5, () => 60_000);
+    assert(first.jobs.some(j => j.uploadId === u.id)); assert(!second.jobs.some(j => j.uploadId === u.id), 'a held claim is not claimed twice');
+    await db.query("UPDATE upload_scans SET lease_until=now()-interval '1 second' WHERE upload_id=$1", [u.id]);
+    const third = await queue.claim(5, () => 60_000);
+    assert(third.jobs.some(j => j.uploadId === u.id && j.attempts === 2), 'an expired lease is taken over');
+    assert.equal(await queue.record(first.jobs.find(j => j.uploadId === u.id)!, { clean: true, thumbnailClean: null }), false, 'the earlier holder can no longer record a verdict');
+    await db.query("UPDATE upload_scans SET status='queued',lease_token=NULL,lease_until=NULL,queued_at=now()-($2::double precision*interval '1 millisecond')-interval '1 minute' WHERE upload_id=$1", [u.id, SCAN_GIVE_UP_MS]);
+    assert.equal((await queue.claim(5, () => 60_000)).abandoned, 1);
+    assert.equal(await scanRow(u.id), undefined); assert.equal(await status(u.id), 'pending', 'an abandoned scan never makes a file usable');
 });

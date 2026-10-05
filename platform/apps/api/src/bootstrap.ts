@@ -11,6 +11,7 @@ import { createAuth, emailChangeLinkCheck, emailChanger, passwordCheck, sessionR
 import { createApp } from './app';
 import { googleStorage } from './storage';
 import { scannerFromEnvironment } from './scanner';
+import { ScanQueue } from '../../../packages/db/src/scans';
 export async function bootstrap() {
     const { DATABASE_URL, APP_ORIGIN, BETTER_AUTH_SECRET, GCS_BUCKET, GCS_CREDENTIALS_JSON } = process.env;
     if (!DATABASE_URL || !APP_ORIGIN || !BETTER_AUTH_SECRET)
@@ -32,7 +33,7 @@ export async function bootstrap() {
     const digests=mail.transport?new DigestService(db,mail,new URL(APP_ORIGIN).origin):undefined;
     const app = createApp({ repository, invitations, mail, operations, cronSecret:process.env.CRON_SECRET, digests, retention:new RetentionJob(db),
         registerInvited:async(name,email,password)=>{const result=await registration.api.signUpEmail({body:{name,email,password}});return {id:result.user.id};},
-        verifyPassword: passwordCheck(auth), emailVerification, changeEmail: emailChanger(auth), emailChangeLinkValid: emailChangeLinkCheck(auth), origin: APP_ORIGIN, resolveSession: sessionResolver(auth), adminTwoFactor: adminTwoFactorMode(process.env), videoBytes: lessonVideoBytes(process.env), authHandler: req => auth.handler(req), storage: GCS_BUCKET ? googleStorage(GCS_BUCKET, GCS_CREDENTIALS_JSON) : undefined, scanner: scannerFromEnvironment(process.env) });
+        verifyPassword: passwordCheck(auth), emailVerification, changeEmail: emailChanger(auth), emailChangeLinkValid: emailChangeLinkCheck(auth), origin: APP_ORIGIN, resolveSession: sessionResolver(auth), adminTwoFactor: adminTwoFactorMode(process.env), videoBytes: lessonVideoBytes(process.env), authHandler: req => auth.handler(req), storage: GCS_BUCKET ? googleStorage(GCS_BUCKET, GCS_CREDENTIALS_JSON) : undefined, scans: scannerFromEnvironment(process.env) ? new ScanQueue(repository) : undefined });
     return { app, db, repository, auth, mail, invitations, digests };
     } catch(error) { await db.close(); throw error; }
 }

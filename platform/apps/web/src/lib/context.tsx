@@ -28,7 +28,8 @@ interface Ctx {
     /** Reports failure through `onError` when given (for example inside a dialogue), otherwise as a toast. */
     command: (c: CommandInput, options?: { onError?: (message: string, code?: string) => void }) => Promise<MutationResult | undefined>;
     /** Private lesson files. Each reports its own outcome and leaves the global busy state alone. */
-    uploadResource: (trackId: string, file: File, videoBytes?: number) => Promise<Upload | undefined>;
+    /** The ready upload; null while it is still being checked for viruses; undefined when it failed. */
+    uploadResource: (trackId: string, file: File, videoBytes?: number) => Promise<Upload | null | undefined>;
     discardUpload: (uploadId: string) => Promise<boolean>;
     downloadResource: (ref: ResourceRef) => Promise<boolean>;
     /** A playable address for a lesson video, or undefined after showing why not. */

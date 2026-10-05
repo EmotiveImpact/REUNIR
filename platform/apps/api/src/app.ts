@@ -13,19 +13,18 @@ import { ZodError, z } from 'zod';
 import { createHash, timingSafeEqual, randomUUID } from 'node:crypto';
 import { DomainError, type Upload } from '../../../packages/contracts/src/index';
 import { WorkspaceRepository } from '../../../packages/db/src/repository';
-import { ScannerUnavailable, type FileScanner } from './scanner';
+import { uploadCompletion } from './uploads';
+import type { ScanQueue } from '../../../packages/db/src/scans';
 import { coverLibraryObjectKey, coverObjectKey, coverThumbnailObjectKey, isMissingObject, objectKey, resourceObjectKey, taskFileObjectKey, uploadSchema, type PrivateStorage } from './storage';
 import { taskFileUploadRequest } from '../../../packages/contracts/src/task-files';
-import { clientUpload, type StoredObservation } from '../../../packages/domain/src/resources';
-import type { CoverObservation } from '../../../packages/domain/src/covers';
 import { learningRecordFilename } from '../../../packages/domain/src/learning-record';
-import { SIGNATURE_BYTES, VIDEO_PLAYBACK_TTL_SECONDS, fileSignatureMatches, isLessonVideo, resourceSizeProblem, resourceUploadRequest, type ResourceContext } from '../../../packages/contracts/src/lesson-resources';
+import { VIDEO_PLAYBACK_TTL_SECONDS, isLessonVideo, resourceSizeProblem, resourceUploadRequest, type ResourceContext } from '../../../packages/contracts/src/lesson-resources';
 import { accountDeletionRequest } from '../../../packages/contracts/src/account';
 import { pagedList, pageQuery } from '../../../packages/contracts/src/pages';
 import { ownershipTransferRequest } from '../../../packages/contracts/src/ownership';
 import { EMAIL_CHANGE_SENT, EMAIL_CONFIRMED_PATH, EMAIL_LINK_REFUSED_PATH, changeNoticeMail, emailChangeRequest, type EmailVerification } from '../../../packages/contracts/src/email';
 import { TWO_FACTOR_REQUIRED, TWO_FACTOR_REQUIRED_MESSAGE, type AdminTwoFactor } from '../../../packages/contracts/src/two-factor';
-import { COVER_HEAD_BYTES, coverBytesAcceptable, coverLibraryDetails, coverLibraryUploadRequest, coverSubject, coverThumbnailAcceptable, coverUploadRequest, imageDimensions, type CoverVariant } from '../../../packages/contracts/src/covers';
+import { coverLibraryDetails, coverLibraryUploadRequest, coverSubject, coverUploadRequest, type CoverVariant } from '../../../packages/contracts/src/covers';
 export interface SessionIdentity {
     id: string;
     name: string;
@@ -43,8 +42,11 @@ interface Dependencies {
     resolveSession: (headers: Headers) => Promise<SessionIdentity | null>;
     authHandler?: (request: Request) => Promise<Response>;
     storage?: PrivateStorage;
-    /** When present, every upload is scanned before it can become ready. Absent means type and size checks only. */
-    scanner?: FileScanner;
+    /**
+     * When present, every upload waits for the scan worker's verdict on the exact stored generation before it can become
+     * ready (decision 042). Absent means type, size and signature checks only.
+     */
+    scans?: ScanQueue;
     invitations?: InvitationService;
     mail?: MailQueue;
     cronSecret?: string;
@@ -64,7 +66,7 @@ interface Dependencies {
     /** Largest lesson video this server accepts. 0, the default, leaves video uploads off. */
     videoBytes?: number;
 }
-export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, scanner, invitations, mail, cronSecret, registerInvited, verifyPassword, digests, retention, adminTwoFactor = 'optional', emailVerification = 'optional', changeEmail, emailChangeLinkValid, videoBytes = 0 }: Dependencies) {
+export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, scans, invitations, mail, cronSecret, registerInvited, verifyPassword, digests, retention, adminTwoFactor = 'optional', emailVerification = 'optional', changeEmail, emailChangeLinkValid, videoBytes = 0 }: Dependencies) {
     const messaging=new MessagingRepository(repository);
     const canonical = new URL(origin).origin;
     const app = new Hono<{
@@ -87,12 +89,13 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     });
     app.get('/api/health', async (c) => { await repository.db.query('SELECT 1'); return c.json({ status: 'ok', version: RELEASE_VERSION, mode: 'live', database: repository.db.kind, storage: storage ? 'configured' : 'not-configured' }); });
     app.get('/api/health/live', c=>c.json({status:'ok',version:RELEASE_VERSION}));
-    app.get('/api/account/capabilities', c=>c.json({emailDigests:!!digests&&!!mail?.transport,invitations:!!invitations,passwordRecovery:!!mail?.transport,resourceUploads:!!storage,videoUploadBytes:storage?videoBytes:0,coverUploads:!!storage,uploadScanning:!!storage&&!!scanner,twoStepSignIn:!!authHandler,adminTwoFactor,emailVerification,emailConfirmation:!!authHandler&&!!mail?.transport,emailChange:!!changeEmail&&!!mail?.transport}));
+    app.get('/api/account/capabilities', c=>c.json({emailDigests:!!digests&&!!mail?.transport,invitations:!!invitations,passwordRecovery:!!mail?.transport,resourceUploads:!!storage,videoUploadBytes:storage?videoBytes:0,coverUploads:!!storage,uploadScanning:!!storage&&!!scans,twoStepSignIn:!!authHandler,adminTwoFactor,emailVerification,emailConfirmation:!!authHandler&&!!mail?.transport,emailChange:!!changeEmail&&!!mail?.transport}));
     // Best effort after commit: an orphaned object is private and unreferenced, never served.
     const removeQuietly = async (requestId: string, keys: string[]) => { for (const key of keys) {
         try { await storage?.remove(key); }
         catch { console.error(JSON.stringify({ event: 'storage.remove.failed', requestId })); }
     } };
+    const complete = storage ? uploadCompletion({ repository, storage, scans, remove: removeQuietly }) : undefined;
     const storedKeysOf = (x: { objectKey: string; thumbnailObjectKey?: string | null }) => [x.objectKey, ...(x.thumbnailObjectKey ? [x.thumbnailObjectKey] : [])];
     /** Five-minute signed policies for a cover and, when declared, its small copy: exact keys, types and sizes. */
     const coverPolicies = async (upload: Upload) => {
@@ -306,132 +309,11 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         return c.json({ id, ...policy, method: 'POST', expiresIn: 300 }, 201);
     });
     app.post('/api/organisations/:slug/uploads/:id/complete', async (c) => {
-        if (!storage)
+        if (!storage || !complete)
             throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
-        const slug = c.req.param('slug'), who = c.get('identity').id, id = c.req.param('id');
-        const intent = await repository.uploadIntent(slug, who, id);
-        const key = String(intent.object_key);
-        /**
-         * Size, type and generation as stored, plus the first bytes pinned to that generation. With a scanner, the whole
-         * of that generation is read once and scanned; it is the generation the upload records, so what was scanned is
-         * exactly what is later served.
-         */
-        const inspect = async (bytes: number) => {
-            const meta = await storage.metadata(key);
-            if (!meta)
-                throw new DomainError('UPLOAD_MISSING', 'The file has not reached private storage. Try uploading it again.', 409);
-            const matches = meta.size === Number(intent.size_bytes) && meta.contentType === intent.content_type && !!meta.generation;
-            let head: Uint8Array = new Uint8Array(), flagged = false;
-            if (matches) {
-                let read: Uint8Array;
-                try { read = await storage.head(key, scanner ? meta.size : Math.min(bytes, meta.size), meta.generation!); }
-                catch (error) {
-                    if (isMissingObject(error))
-                        throw new DomainError('UPLOAD_CHANGED', 'The file changed while it was being checked. Upload it again.', 409);
-                    throw error;
-                }
-                head = read.subarray(0, bytes);
-                flagged = !!scanner && !(await scan(read));
-            }
-            return { meta, matches, head, flagged };
-        };
-        /** True when clean. Without a verdict the upload stays pending, so the person can try again once scanning is back. */
-        const scan = async (bytes: Uint8Array) => {
-            let verdict;
-            try { verdict = await scanner!.scan(bytes); }
-            catch (error) {
-                if (!(error instanceof ScannerUnavailable)) throw error;
-                console.error(JSON.stringify({ event: 'upload.scan.unavailable', requestId: c.get('requestId'), reason: error.message }));
-                throw new DomainError('SCAN_UNAVAILABLE', 'Files cannot be checked for viruses just now. Nothing was lost; try again in a few minutes.', 503);
-            }
-            if (!verdict.clean)
-                console.error(JSON.stringify({ event: 'upload.scan.flagged', requestId: c.get('requestId'), signature: verdict.signature }));
-            return verdict.clean;
-        };
-        const FLAGGED = 'This file was flagged by the virus scanner and has been deleted. Nothing was changed.';
-        if (intent.purpose === 'cover_image' || intent.purpose === 'cover_library') {
-            let observed: CoverObservation = { sizeBytes: 0, contentType: '', generation: null, bytesAcceptable: false }, infected = false;
-            if (intent.status === 'pending') {
-                const { meta, matches, head, flagged } = await inspect(COVER_HEAD_BYTES);
-                observed = { sizeBytes: meta.size, contentType: meta.contentType, generation: meta.generation ?? null, bytesAcceptable: matches && !flagged && coverBytesAcceptable(String(intent.content_type), head) };
-                infected = flagged;
-                // The small copy is checked the same way, pinned to its own generation, scanned when a scanner is set, and must be the same picture's shape.
-                const thumbKey = intent.thumbnail_object_key ? String(intent.thumbnail_object_key) : null;
-                if (thumbKey && observed.bytesAcceptable) {
-                    const thumb = await storage.metadata(thumbKey);
-                    if (!thumb) observed.thumbnail = null;
-                    else {
-                        const fits = thumb.size === Number(intent.thumbnail_size_bytes) && thumb.contentType === intent.thumbnail_content_type && !!thumb.generation;
-                        let thumbHead: Uint8Array = new Uint8Array(), thumbClean = true;
-                        if (fits) {
-                            try {
-                                const read = await storage.head(thumbKey, scanner ? thumb.size : Math.min(COVER_HEAD_BYTES, thumb.size), thumb.generation!);
-                                thumbHead = read.subarray(0, COVER_HEAD_BYTES);
-                                if (scanner) thumbClean = await scan(read);
-                            }
-                            catch (error) { if (!isMissingObject(error)) throw error; }
-                        }
-                        const full = imageDimensions(String(intent.content_type), head);
-                        observed.thumbnail = { sizeBytes: thumb.size, contentType: thumb.contentType, generation: thumb.generation ?? null, bytesAcceptable: fits && thumbClean && coverThumbnailAcceptable(String(intent.thumbnail_content_type), thumbHead, full) };
-                    }
-                }
-            }
-            const result = await repository.completeCoverUpload(slug, who, id, observed, c.get('requestId'));
-            // A refused picture goes with its small copy; a small copy that failed alone, or was flagged, goes and the picture stays.
-            await removeQuietly(c.get('requestId'), result.discarded);
-            if (result.outcome === 'rejected') {
-                if (infected)
-                    throw new DomainError('FILE_FLAGGED', FLAGGED, 422);
-                throw new DomainError('FILE_MISMATCH', 'This image is not a JPEG, PNG or WebP of a usable size. Nothing was changed.');
-            }
-            return c.json({ id, status: 'ready', upload: clientUpload(result.upload) });
-        }
-        // Task files share the lesson-file verification and virus scan below, so any later check on this path covers both.
-        if (intent.purpose === 'lesson_resource' || intent.purpose === 'task_file') {
-            let observed: StoredObservation = { sizeBytes: 0, contentType: '', generation: null, signatureMatches: false }, infected = false;
-            if (intent.status === 'pending') {
-                // Read only the first bytes, pinned to the generation that was just measured.
-                const { meta, matches, head, flagged } = await inspect(SIGNATURE_BYTES);
-                observed = { sizeBytes: meta.size, contentType: meta.contentType, generation: meta.generation ?? null, signatureMatches: matches && !flagged && fileSignatureMatches(String(intent.content_type), head) };
-                infected = flagged;
-            }
-            const result = intent.purpose === 'task_file' ? await repository.completeTaskFileUpload(slug, who, id, observed, c.get('requestId')) : await repository.completeResourceUpload(slug, who, id, observed, c.get('requestId'));
-            if (result.outcome === 'rejected') {
-                await removeQuietly(c.get('requestId'), [key]);
-                if (infected)
-                    throw new DomainError('FILE_FLAGGED', FLAGGED, 422);
-                throw new DomainError('FILE_MISMATCH', 'This file does not match its declared type and size. Nothing was attached.');
-            }
-            return c.json({ id, status: 'ready', upload: clientUpload(result.upload) });
-        }
-        // A rejected file stays rejected, so a second upload under the same policy cannot slip past the scanner.
-        if (intent.status === 'rejected')
-            throw new DomainError('FILE_REJECTED', 'This file did not pass verification. Choose it again.', 409);
-        const meta = await storage.metadata(key);
-        if (!meta)
-            throw new DomainError('UPLOAD_MISSING', 'The file has not reached private storage. Try uploading it again.', 409);
-        if (meta.size !== Number(intent.size_bytes) || meta.contentType !== intent.content_type) {
-            await repository.markUpload(slug, who, id, 'rejected');
-            throw new DomainError('FILE_MISMATCH', 'The uploaded file does not match the permitted type and size.');
-        }
-        if (scanner) {
-            if (!meta.generation)
-                throw new DomainError('UPLOAD_CHANGED', 'The file changed while it was being checked. Upload it again.', 409);
-            let bytes: Uint8Array;
-            try { bytes = await storage.head(key, meta.size, meta.generation); }
-            catch (error) {
-                if (isMissingObject(error))
-                    throw new DomainError('UPLOAD_CHANGED', 'The file changed while it was being checked. Upload it again.', 409);
-                throw error;
-            }
-            if (!(await scan(bytes))) {
-                await repository.markUpload(slug, who, id, 'rejected');
-                await removeQuietly(c.get('requestId'), [key]);
-                throw new DomainError('FILE_FLAGGED', FLAGGED, 422);
-            }
-        }
-        await repository.markUpload(slug, who, id, 'ready');
-        return c.json({ id, status: 'ready' });
+        const done = await complete(c.req.param('slug'), c.get('identity').id, c.req.param('id'), c.get('requestId'));
+        // 202 while the file waits for the scan worker; the browser asks again, and the worker completes it either way.
+        return c.json(done, done.status === 'scanning' ? 202 : 200);
     });
     app.post('/api/organisations/:slug/uploads/:id/discard', async (c) => {
         const result = await repository.discardResourceUpload(c.req.param('slug'), c.get('identity').id, id.parse(c.req.param('id')), c.get('requestId'));
@@ -447,7 +329,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
             throw new DomainError('NOT_FOUND', 'File not found.', 404);
         if (intent.status !== 'ready')
             throw new DomainError('FILE_NOT_READY', 'This file is not ready to download.', 409);
-        return c.json({ url: await storage.download(String(intent.object_key)), expiresIn: 120 });
+        return c.json({ url: await storage.download(String(intent.object_key), { generation: intent.generation ? String(intent.generation) : null }), expiresIn: 120 });
     });
     const resourceDownload = async (slug: string, userId: string, context: ResourceContext, recordId: string, resourceId: string) => {
         if (!storage)
