@@ -1,16 +1,15 @@
-# Current continuation: every planned feature is on main; the owner chooses what follows
+# Current continuation: Alpha 42 virus scanning in the background
 
-Read AGENTS.md, platform/docs/BUILD_STATUS.md, CHANGELOG.md, decisions/041-pre-pilot-hardening.md, LAUNCH_RUNBOOK.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, decisions/042-background-scanning.md, decisions/023-upload-scanning.md, SETUP.md section 6 and LAUNCH_RUNBOOK.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
 ## Where the source is
 
-- Base: main `d726e8f`, the merge of PR #31 (Alpha 37 uploaded lesson video). Every item on the original build list is merged. Version 0.39.0-alpha.1.
-- This slice: Alpha 41, a pre-pilot review on `claude/platform-review-b99gh7`. The owner approved, on 3 October 2026, merging each change into main with a normal merge commit once its checks pass. Never force-push.
-- Numbering: Alpha 41 and decision 041 are used. The next free numbers are Alpha 42, decision 042 and migration 0039 (0024 to 0027 and 0037 were never used and stay unused).
+- Base: main `2edf0b0` (PR #34, Alpha 46 staging launch, after PR #33, Alpha 41), merged into `claude/background-scanning-pxfq5c`. Version 0.39.0-alpha.1. The owner approved, on 3 October 2026, merging each change into main with a normal merge commit once its checks pass. Never force-push.
+- Numbering: this thread holds Alpha 42 to 43, decisions 042 to 043 and migrations 0040 to 0041. Alpha 42, decision 042 and migration 0040 are used; Alpha 43, decision 043 and migration 0041 are free. Paged loading and other threads hold their own blocks.
 
 ## What is done
 
-Every suite passed on main. The review found no cross-community or private-data gap. Alpha 41 bounds the unused member upload route, closes Better Auth's own update-user route, splits invitation rate limits by route, adds HSTS and Permissions-Policy to `vercel.json`, and brings the records up to date. No migration.
+Uploads are no longer scanned inside the completion request. Completion does the quick checks, records the stored generation in `upload_scans` (migration 0040) and answers 202 `scanning`. `npm run scan:worker`, run beside clamd, streams that generation to clamd, records the verdict and completes the upload as its uploader. The browser keeps asking while it waits. The API never connects to clamd, so Vercel no longer needs a private network for uploads.
 
 ## Run it
 
@@ -20,9 +19,42 @@ npm ci
 VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
 ```
 
-Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+The demo has no scanner and is unchanged. Against a server with a bucket and `CLAMAV_HOST`, run `npm run db:migrate` (applies 0040), `npm run db:grant-runtime`, then `npm run scan:worker` beside clamd.
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci`. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
 ## Next
+
+1. Nothing scanned against a real clamd, bucket or worker host yet. When uploads are switched on for staging, choose a small always-on container host for clamd and the worker (LAUNCH_RUNBOOK.md section 6), then confirm a clean upload, the EICAR file and a scanner outage end to end.
+2. Not decided: rescanning stored files when signatures update, quarantine instead of deletion, files larger than clamd's `StreamMaxLength`, more than one worker.
+3. Deployment remains deferred by the owner: prepare everything needed to switch on, but provision nothing.
+
+---
+## Historical Alpha 41 and 46 handover: every planned feature is on main; the owner chooses what follows
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, CHANGELOG.md, decisions/041-pre-pilot-hardening.md, LAUNCH_RUNBOOK.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+### Where the source is
+
+- Base: main `d726e8f`, the merge of PR #31 (Alpha 37 uploaded lesson video). Every item on the original build list is merged. Version 0.39.0-alpha.1.
+- This slice: Alpha 41, a pre-pilot review on `claude/platform-review-b99gh7`. The owner approved, on 3 October 2026, merging each change into main with a normal merge commit once its checks pass. Never force-push.
+- Numbering: Alpha 41 and decision 041 are used. The next free numbers are Alpha 42, decision 042 and migration 0039 (0024 to 0027 and 0037 were never used and stay unused).
+
+### What is done
+
+Every suite passed on main. The review found no cross-community or private-data gap. Alpha 41 bounds the unused member upload route, closes Better Auth's own update-user route, splits invitation rate limits by route, adds HSTS and Permissions-Policy to `vercel.json`, and brings the records up to date. No migration.
+
+### Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+### Next
 
 Staging launch is prepared (Alpha 46, decision 046) and waits for the owner's go-ahead: platform/docs/STAGING_LAUNCH.md lists the shape, costs and owner-only steps, then `npm run launch:smoke` checks the site. Deployment stays deferred until the owner says go: prepare, never provision. Recommended order after staging: scanning outside the upload request, since Vercel stops a request at 30 seconds; a Content-Security-Policy tried on staging; server-side pages for posts and tasks; privacy-respecting analytics; appeals against suspensions and message reports; removing someone from a project team; credits on outcomes; question banks, timers and partial marks once pilots ask. The business stage and the long-term vision stay parked.
 
