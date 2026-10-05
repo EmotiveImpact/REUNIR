@@ -20,6 +20,8 @@ import { tables, type TableSpec, type CollectionKey } from './tables';
 import type { Database, SQL } from './connection';
 const slugPattern = /^[a-z0-9][a-z0-9-]{0,99}$/;
 const limitPerTable = 5000;
+/** Member files (uploads without a feature purpose): unfinished at once, and kept per person in each community. */
+export const MAX_PENDING_MEMBER_UPLOADS = 5, MAX_MEMBER_UPLOADS = 50;
 /** What deciding access to project work and drawing its board needs. */
 const WORK_COLLECTIONS: readonly CollectionKey[] = ['members', 'spaces', 'spaceMembers', 'projects', 'projectMembers', 'projectTasks', 'taskNotes', 'contributions', 'uploads'];
 function context(organizationId: string, userId: string, requestId: string = randomUUID()): TenantContext { return { organizationId, userId, requestId }; }
@@ -208,7 +210,13 @@ export class WorkspaceRepository {
         sizeBytes: number;
         originalName: string;
     }) {
-        return this.within(slug, userId, true, async (sql, org) => { await sql.query('INSERT INTO upload_intents(organization_id,id,user_id,object_key,content_type,size_bytes,original_name,created_at,status) VALUES($1,$2,$3,$4,$5,$6,$7,now(),$8)', [org.id, intent.id, userId, intent.objectKey, intent.contentType, intent.sizeBytes, intent.originalName, 'pending']); return String(org.id); });
+        return this.within(slug, userId, true, async (sql, org) => {
+            // Member files have no screen to list or remove them, so each person's share is bounded: a few unfinished at a
+            // time (abandoned ones stop counting after an hour) and a fixed number kept per community.
+            const held = (await sql.query<{ pending: number; kept: number }>("SELECT count(*) FILTER (WHERE status='pending' AND created_at > now() - interval '1 hour')::int AS pending, count(*) FILTER (WHERE status IN ('pending','ready'))::int AS kept FROM upload_intents WHERE organization_id=$1 AND user_id=$2 AND purpose='member'", [org.id, userId])).rows[0];
+            if (held.pending >= MAX_PENDING_MEMBER_UPLOADS) throw new DomainError('UPLOADS_IN_PROGRESS', 'Let your current uploads finish before adding more.', 429);
+            if (held.kept >= MAX_MEMBER_UPLOADS) throw new DomainError('UPLOAD_LIMIT', 'You have reached the number of files you can keep in this community.', 409);
+            await sql.query('INSERT INTO upload_intents(organization_id,id,user_id,object_key,content_type,size_bytes,original_name,created_at,status) VALUES($1,$2,$3,$4,$5,$6,$7,now(),$8)', [org.id, intent.id, userId, intent.objectKey, intent.contentType, intent.sizeBytes, intent.originalName, 'pending']); return String(org.id); });
     }
     async uploadIntent(slug: string, userId: string, id: string) { return this.within(slug, userId, false, async (sql, org) => { const rows = await sql.query('SELECT * FROM upload_intents WHERE organization_id=$1 AND user_id=$2 AND id=$3', [org.id, userId, id]); if (!rows.rows[0])
         throw new DomainError('NOT_FOUND', 'File not found.', 404); return rows.rows[0]; }); }

@@ -6,11 +6,35 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 Nothing in this list has been deployed. Deployment remains deferred by the owner.
 
-## Not yet released
+## Alpha 46: staging launch prepared, nothing provisioned (no version change), 5 October 2026
 
-### Alpha 37: uploaded lesson video (no version change), 3 October 2026
+On a pull request from `claude/staging-launch-l1c2la`, merged once its checks pass. Decision 046; no migration. The version stays 0.39.0-alpha.1.
 
-On a pull request from `claude/courses-teaching-6hum2q`, to be merged once its checks pass. Decision 037 and migration 0036, from the block allocated to courses and teaching. Alpha 39 is already on main, so the version stays 0.39.0-alpha.1.
+**In plain language:** everything needed to put Ferven on a private staging site is ready, waiting for the owner's go-ahead. A single page lists the accounts to create, what they cost and the steps only the owner can take. New commands generate the app's secrets on the owner's computer and check a deployed site, so no secret ever needs to pass through chat.
+
+Details:
+
+- The first staging round runs without file uploads: Vercel cannot reach a private virus scanner. Per-minute mail needs Vercel Pro or a dedicated Google Cloud Scheduler, because Hobby cron jobs run at most once a day.
+- `.env.staging.example`, `npm run launch:secrets` and `npm run launch:smoke`; the preflight fails unfilled `<fill: ...>` placeholders.
+- docs/STAGING_LAUNCH.md for the owner; LAUNCH_RUNBOOK.md links it.
+
+## Alpha 41: pre-pilot hardening and current records (no version change), 5 October 2026
+
+On a pull request from `claude/platform-review-b99gh7`, merged once its checks pass. Decision 041; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** a review of the whole platform after every planned feature landed. Every test suite passed on main and no privacy or cross-community gap was found. Four small openings were closed so that one person cannot fill storage, set a name that skips the rules, or block other people's invitations, and the status notes now match what is on main.
+
+Details:
+
+- The original member upload route allows five unfinished uploads at once and fifty kept files per person per community (429 `UPLOADS_IN_PROGRESS`, 409 `UPLOAD_LIMIT`).
+- Better Auth's own `/api/auth/update-user` returns 404, like `/api/auth/change-email`.
+- Each invitation route (look up, accept, register) has its own global rate limit.
+- `vercel.json` adds Strict-Transport-Security and Permissions-Policy. LAUNCH_RUNBOOK.md adds checks for a Content-Security-Policy and for the 30 second function limit when scanning large video.
+- Records: Alpha 37 is recorded as merged; README files, ROADMAP.md and the runbook's migration count (33 files, with 0024 to 0027 and 0037 never used) match main.
+
+## Alpha 37: uploaded lesson video (no version change), 3 October 2026
+
+On main through [PR #31](https://github.com/EmotiveImpact/REUNIR/pull/31), merged on 4 October 2026 as `d726e8f`, whose tree is identical to the tested head `f8d0361`. Decision 037 and migration 0036, from the block allocated to courses and teaching. Alpha 39 is already on main, so the version stays 0.39.0-alpha.1.
 
 **In plain language:** creators can now upload their own MP4 or WebM video to a lesson, alongside YouTube and Vimeo embeds. Learners press **Play** and watch it in the page; the video stays private to people who can open the lesson. It is off until whoever runs the server sets a size limit.
 
@@ -22,10 +46,6 @@ Details:
 - Additive migration 0036 lets only lesson files declared as MP4 or WebM exceed 10 MB in upload intents, never 500 MB. No grant change.
 - Video is scanned like every upload when a scanner is configured (Alpha 23). clamd refuses streams over 25 MB by default, so the launch preflight warns to raise `StreamMaxLength` when larger video is switched on; until then such uploads stay pending, never unscanned.
 - The launch preflight, `.env.example` and LAUNCH_RUNBOOK.md cover `LESSON_VIDEO_MAX_MB`.
-
-### Planned
-
-- Nothing further is planned for accounts and trust in this round. Removing someone from a project team, credits on outcomes and appeals against suspension remain undecided.
 
 ## 0.30.0-alpha.1 (Alpha 30): every form on the shared shadcn components, 3 October 2026
 

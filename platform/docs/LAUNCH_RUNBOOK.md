@@ -2,6 +2,8 @@
 
 **Status: nothing in this runbook has been done.** No Neon project, Vercel project, Google Cloud bucket, Resend sender, scheduler, monitor or backup exists for REUNIR (product name Ferven) because of this document. Every step below is for the owner to authorise and carry out, or to delegate explicitly. Record evidence as you go (section 14); a step is done only when its check has been observed, not when its setting has been typed.
 
+The owner's short version, with the chosen shape for the first staging round, costs and the steps only the owner can take, is [STAGING_LAUNCH.md](STAGING_LAUNCH.md) (decision 046).
+
 This runbook orders and consolidates [SETUP.md](SETUP.md), [PILOT_OPERATIONS.md](PILOT_OPERATIONS.md), [RELEASE_GATES.md](RELEASE_GATES.md) and [SECURITY.md](SECURITY.md). Those documents keep the detail and the reasons; where they differ, they win and this file should be corrected.
 
 Ground rules for every step:
@@ -40,7 +42,7 @@ Detail: SETUP.md section 3.
 
 ## 3. Migrations and the restricted runtime role
 
-There are 21 ordered migrations at Alpha 22, `0001_foundation.sql` to `0021_two_factor.sql`, in `packages/db/migrations/`. Later releases add more: the expected count is always the number of `.sql` files in that folder for the commit being deployed. They are additive, checksummed and serialised by an advisory lock. Migrations never run on a cold start.
+There are 33 ordered migrations on main at 0.39.0-alpha.1 (5 October 2026), `0001_foundation.sql` to `0038_cover_library_tags_and_thumbnails.sql`, in `packages/db/migrations/`. Numbers 0024 to 0027 and 0037 were reserved for parallel work and never used, so those gaps are expected and are not missing files. Later releases add more: the expected count is always the number of `.sql` files in that folder for the commit being deployed. They are additive, checksummed and serialised by an advisory lock. Migrations never run on a cold start.
 
 With only `MIGRATION_DATABASE_URL` set in the local shell (leave `DATABASE_URL` unset so nothing falls back to it):
 
@@ -104,13 +106,15 @@ Never on the deployed runtime: `MIGRATION_DATABASE_URL`, `BOOTSTRAP_EMAIL`, `BOO
 
 No secret may carry a `VITE_` prefix: anything `VITE_` is compiled into the public bundle, and startup refuses secret-like `VITE_` names.
 
-- [ ] Write the intended values into a local ignored file, for example `platform/.env.staging` (ignored by `.env.*`), then run the offline check:
+- [ ] Copy the template to a local ignored file, generate the app's own secrets into it, replace every `<fill: ...>` placeholder in an editor, then run the offline check:
 
   ```sh
+  cp .env.staging.example .env.staging
+  npm run launch:secrets -- --env-file .env.staging
   npm run launch:preflight -- --env-file .env.staging
   ```
 
-  It reads names and shapes only, prints no values and makes no network call. Fix every `fail`; read every `warn`. A clean result is not approval.
+  `launch:secrets` fills only the empty `BETTER_AUTH_SECRET`, `EMAIL_ENCRYPTION_KEY` and `CRON_SECRET`, prints no value and refuses a file git would track. The preflight reads names and shapes only, prints no values, makes no network call and fails any placeholder left unfilled. Fix every `fail`; read every `warn`. A clean result is not approval.
 - [ ] Enter the values into Vercel, marking secrets as sensitive. Delete the local file afterwards or keep it only in an encrypted store.
 
 ## 6. Google Cloud Storage (optional for the pilot)
@@ -126,6 +130,7 @@ Detail: SETUP.md section 6. Without a bucket, text and link features still work;
 - [ ] Create a service account used only by REUNIR, granted object create, read and delete on **this bucket only**. With a JSON key it can sign URLs itself; without one it also needs permission to sign as itself.
 - [ ] Do not add a lifecycle rule that deletes `lesson-resources/` objects: revision history refers to them.
 - [ ] Put the bucket name in `GCS_BUCKET` and, on Vercel, the key JSON in `GCS_CREDENTIALS_JSON` as a sensitive server variable. Never commit or share the key file; delete the local copy once stored.
+- [ ] **Vercel needs no private network for this since Alpha 42 (decision 042).** The API only records that a file waits to be scanned; the scan worker, beside clamd, does the scanning. The first staging round may still run without a bucket (decision 046); switch uploads on by completing this section.
 - [ ] Run ClamAV's clamd and the scan worker for virus scanning (decisions 023 and 042; SETUP.md section 6, "Virus scanning"). Vercel functions can neither run clamd nor safely reach a private network, so use a small always-on container host dedicated to this project: clamd (for example the official `clamav/clamav` image, which keeps its signatures current) and `npm run scan:worker` (the same Docker image as the API, run as `node --import tsx scripts/scan-worker.ts`) side by side on a private network, never exposed to the public internet. Give the worker the API's `DATABASE_URL`, `GCS_BUCKET` and `GCS_CREDENTIALS_JSON`, and clamd's address in `CLAMAV_HOST` (and `CLAMAV_PORT` if not 3310). Set the same `CLAMAV_HOST` on Vercel, which only switches scanning on there. Keep clamd's `StreamMaxLength` at least as large as the largest upload allowed (10 MB, or the video limit).
 - [ ] From the worker's host, `npm run scan:check` passes: clamd answers, a harmless sample is clean and the EICAR test file is flagged. The worker's log shows `scan-worker.started`, and after a test upload the pilot checklist shows "Virus scan worker observed" as passed.
 - [ ] After deploy, `/api/health` reports `"storage":"configured"` and `/api/account/capabilities` reports `resourceUploads: true` and `uploadScanning: true`. Then test a real upload, download and cover (section 9).
@@ -148,6 +153,8 @@ Detail: SETUP.md section 4. `vercel.json` already sets framework `vite`, `npm ci
 - [ ] Add the section 5 variables to the environment you will deploy (a dedicated staging project, or Preview scoped to the staging database, never the production database).
 - [ ] Decide on Deployment Protection. Protecting the staging deployment keeps it private, but it also blocks schedulers and monitors unless they use Vercel's protection bypass for automation. Record the decision.
 - [ ] Deploy. If `/api/*` returns `NOT_CONFIGURED` (HTTP 503), read the function log for the configuration error; no demonstration data is served.
+- [ ] With a scanner configured, each upload is read back and scanned inside its completion request, which Vercel stops at the 30 second function limit. A scan is allowed 30 seconds plus one per MiB, so large lesson video can be cut off and stay pending. Until scanning moves out of the request, keep `LESSON_VIDEO_MAX_MB` at 25 or below on Vercel, or raise `maxDuration` in `vercel.json` on a plan that allows it, in a reviewed commit.
+- [ ] Before inviting members, decide on a Content-Security-Policy for the static site: try one in Report-Only mode against the deployed build (Radix and the lesson editor use inline styles; lessons embed YouTube and Vimeo), then enforce it in a reviewed commit. `vercel.json` already sends Strict-Transport-Security and Permissions-Policy (Alpha 41).
 
 ## 9. After deploy: health and hosted privacy checks
 
@@ -156,6 +163,7 @@ Health (no secret needed):
 - [ ] `GET https://<staging-hostname>/api/health/live` returns `{"status":"ok","version":"..."}` with the expected version.
 - [ ] `GET /api/health` returns `"status":"ok"`, `"mode":"live"`, `"database":"postgres"` and the expected `storage` value. This runs `SELECT 1` through the runtime role.
 - [ ] `GET /api/internal/mail` and `GET /api/internal/digests` **without** a header return 403.
+- [ ] `npm run launch:smoke -- --origin https://<staging-hostname>` reports 0 failed. It sends only unauthenticated GET requests and covers the three lines above, the retention route and the security headers. It proves nothing about signed-in behaviour.
 - [ ] Signed in as the owner, `/api/account/capabilities` shows `invitations`, `passwordRecovery` and `emailDigests` true when mail is configured.
 - [ ] The owner turns on two-step sign-in from Your account, stores the backup codes offline, and confirms owner tools work only afterwards when `ADMIN_TWO_FACTOR` is required.
 - [ ] The owner Pilot console shows no blocker you did not expect.
@@ -187,7 +195,7 @@ Nothing schedules these routes today, and `vercel.json` deliberately has **no `c
 All three require `Authorization: Bearer <CRON_SECRET>` in a **header**. Never put the secret in a URL or query string, where it would reach logs.
 
 - [ ] Choose one scheduler dedicated to this project and record it:
-  - **Vercel Cron Jobs.** Vercel sends `Authorization: Bearer $CRON_SECRET` automatically when `CRON_SECRET` is set in the project. A once-a-minute schedule needs a plan that allows it. If chosen, add this to `vercel.json` in a reviewed commit:
+  - **Vercel Cron Jobs.** Hobby plans run cron jobs at most once a day, so the per-minute mail schedule below needs Pro (decision 046). Vercel sends `Authorization: Bearer $CRON_SECRET` automatically when `CRON_SECRET` is set in the project. A once-a-minute schedule needs a plan that allows it. If chosen, add this to `vercel.json` in a reviewed commit:
 
     ```json
     "crons": [

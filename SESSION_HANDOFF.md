@@ -1,18 +1,48 @@
-# Current continuation: Alpha 37 uploaded lesson video, then the rest of the teaching roadmap
+# Current continuation: every planned feature is on main; the owner chooses what follows
+
+Read AGENTS.md, platform/docs/BUILD_STATUS.md, CHANGELOG.md, decisions/041-pre-pilot-hardening.md, LAUNCH_RUNBOOK.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
+
+## Where the source is
+
+- Base: main `d726e8f`, the merge of PR #31 (Alpha 37 uploaded lesson video). Every item on the original build list is merged. Version 0.39.0-alpha.1.
+- This slice: Alpha 41, a pre-pilot review on `claude/platform-review-b99gh7`. The owner approved, on 3 October 2026, merging each change into main with a normal merge commit once its checks pass. Never force-push.
+- Numbering: Alpha 41 and decision 041 are used. The next free numbers are Alpha 42, decision 042 and migration 0039 (0024 to 0027 and 0037 were never used and stay unused).
+
+## What is done
+
+Every suite passed on main. The review found no cross-community or private-data gap. Alpha 41 bounds the unused member upload route, closes Better Auth's own update-user route, splits invitation rate limits by route, adds HSTS and Permissions-Policy to `vercel.json`, and brings the records up to date. No migration.
+
+## Run it
+
+```sh
+cd platform
+npm ci
+VITE_DATA_MODE=demo npm run dev   # fictional demo at http://127.0.0.1:5173
+```
+
+Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
+
+## Next
+
+Staging launch is prepared (Alpha 46, decision 046) and waits for the owner's go-ahead: platform/docs/STAGING_LAUNCH.md lists the shape, costs and owner-only steps, then `npm run launch:smoke` checks the site. Deployment stays deferred until the owner says go: prepare, never provision. Recommended order after staging: scanning outside the upload request, since Vercel stops a request at 30 seconds; a Content-Security-Policy tried on staging; server-side pages for posts and tasks; privacy-respecting analytics; appeals against suspensions and message reports; removing someone from a project team; credits on outcomes; question banks, timers and partial marks once pilots ask. The business stage and the long-term vision stay parked.
+
+---
+## Historical Alpha 37 handover: uploaded lesson video
+- Outcome: [PR #31](https://github.com/EmotiveImpact/REUNIR/pull/31), merged into main on 4 October 2026 as `d726e8f`.
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, LESSON_RESOURCES.md, decisions/037-lesson-video.md, INSTRUCTORS.md, LAUNCH_RUNBOOK.md and ROADMAP.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
-## Where the source is
+### Where the source is
 
 - Base: main `99e919a`, the merge of PR #28 (Alpha 36 instructors start their own tracks). Main `2561a00` (PR #27, Alpha 29 files on project tasks and live project work) and `ec9181d` (PR #32, Alpha 30 every form on the shared shadcn components) are merged in. The application version stays 0.39.0-alpha.1 because Alpha 39 is already on main.
 - This slice: branch `claude/courses-teaching-6hum2q`, restarted from that main. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Numbering: courses and teaching uses Alpha 35 to 38, decisions 035 to 038 and migrations 0034 to 0037, as allocated by the project coordinator on 3 October 2026. Alpha 38 and migration 0037 are unused so far.
 
-## What is done
+### What is done
 
 Contributor roles, lesson grants and instructor-started tracks are on main. This slice adds MP4 and WebM lesson video, off until the operator sets `LESSON_VIDEO_MAX_MB` (up to 500 MB), played inline through a signed two-hour link after the same access check as a download. Additive migration 0036 lets only lesson video exceed 10 MB in upload intents.
 
-## Run it
+### Run it
 
 ```sh
 cd platform
@@ -24,11 +54,11 @@ The demo has video on at the 500 MB maximum. Open a track's Creator studio, atta
 
 Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script, and `npm run test:postgres` against a fresh disposable loopback database named `reunir_ci` with no leftover `reunir_*` roles. From the repository root: `python3 -m unittest discover -s scripts -p "test_*.py"` and `python3 scripts/check_research.py`. Set `CHROMIUM_PATH` when Playwright's own browser is not installed.
 
-## Product invariants for the next slice
+### Product invariants for the next slice
 
 People + Purpose + Progress + Projects + Proof. Keep drafts private and publication explicit, revision history and attempts immutable except through the owner-authorised erasure and a person's own account deletion, tenant isolation and role checks current, private goals, messages, scores and notification settings private. Lesson files, video included, are released only to people who may open the lesson, through short-lived signed links. Authority is granted explicitly and must be current when it takes effect. A community has exactly one owner. The interface stays black, white and neutral grey. Community review is not accreditation.
 
-## Next
+### Next
 
 1. Scan large uploads in chunks so the API need not hold a whole video in memory; until then raise clamd `StreamMaxLength` to the video limit. Question banks, timers and partial marks wait for pilot needs.
 2. Deployment remains deferred by the user: prepare everything needed to switch on, but provision nothing.

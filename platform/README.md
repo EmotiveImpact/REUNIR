@@ -1,6 +1,6 @@
 # REUNIR platform
 
-Current release: 0.15.0-alpha.1, account deletion. Start with the repository root README, SESSION_HANDOFF.md and docs/BUILD_STATUS.md; docs/ACCOUNTS.md describes the newest feature and docs/LEARNER_RECORDS.md the one before it. The Alpha 05 notes below are kept as history.
+Current version: 0.39.0-alpha.1; the newest release is Alpha 37, uploaded lesson video. Start with the repository root README, CHANGELOG.md, SESSION_HANDOFF.md and docs/BUILD_STATUS.md; each feature has its own document in docs/ and a decision record in docs/decisions/. The Alpha 05 notes below are kept as history.
 
 ```sh
 npm ci
