@@ -104,3 +104,29 @@ test('the smoke check accepts only a bare https origin, or a local one when aske
     assert.equal(checkOrigin('http://127.0.0.1:8787', true), 'http://127.0.0.1:8787');
     assert.equal(checkOrigin(undefined, false), undefined);
 });
+
+test('the scan host publishes no port and keeps its values out of git and the image', () => {
+    const dir = resolve(import.meta.dirname, '../deploy/scan-host');
+    const compose = readFileSync(resolve(dir, 'compose.yaml'), 'utf8');
+    assert.doesNotMatch(compose, /^\s*(ports|expose|network_mode):/m);
+    assert.match(compose, /env_file: scan\.env/);
+    assert.match(compose, /CLAMAV_HOST: clamd/);
+    assert.match(compose, /scripts\/scan-worker\.ts/);
+    const example = parseEnv(readFileSync(resolve(dir, 'scan.env.example'), 'utf8'));
+    assert.deepEqual(Object.keys(example).sort(), ['DATABASE_URL', 'GCS_BUCKET', 'GCS_CREDENTIALS_JSON']);
+    assert.ok(Object.values(example).every(v => v?.includes('<fill:')));
+    assert.match(readFileSync(resolve(import.meta.dirname, '../.dockerignore'), 'utf8'), /^deploy\/scan-host\/scan\.env$/m);
+    assert.match(readFileSync(resolve(import.meta.dirname, '../../.gitignore'), 'utf8'), /^\/platform\/deploy\/scan-host\/scan\.env$/m);
+});
+
+test('the resend.dev test sender passes with a warning that only the account owner receives mail', () => {
+    const env = parseEnv(fillSecrets(example).text
+        .replace('<fill: https://staging-hostname>', 'https://ferven-staging.example.test')
+        .replace(/<fill: postgresql:[^>]+>/, 'postgresql://reunir_app:fakeRuntimePass9Q@ep-quiet-sky-123456-pooler.eu-central-1.aws.neon.tech/reunir?sslmode=require')
+        .replace('<fill: re_...>', 're_fakeKey_7HqP2mWx9Ld')
+        .replace('Ferven <fill: pilot@mail.your-domain>', 'Ferven <onboarding@resend.dev>'));
+    const f = inspectLaunch(env);
+    assert.deepEqual(fails(f), []);
+    assert.equal(state(f, 'EMAIL_FROM'), 'warn');
+    assert.match(f.find(x => x.key === 'EMAIL_FROM')!.message, /only the Resend account owner/);
+});

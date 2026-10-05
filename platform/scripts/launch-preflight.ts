@@ -106,6 +106,8 @@ export function inspectLaunch(env: Environment): Finding[] {
     else add('mail-pair', 'pass', 'A mail provider key and sender are configured. Sender verification is not proven here.');
     if (hasKey && !/^re_[A-Za-z0-9_]{8,}$/.test(env.RESEND_API_KEY!.trim())) add('RESEND_API_KEY', 'warn', 'RESEND_API_KEY does not have the usual re_ shape. Confirm it is a sending key.');
     if (hasFrom && !/^(?:[^<>]*<\s*)?[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+(?:\s*>)?$/.test(env.EMAIL_FROM!.trim())) add('EMAIL_FROM', 'fail', 'EMAIL_FROM is not an address or "Name <address>" form.');
+    // Resend's shared test sender needs no domain but delivers only to the Resend account's own address (decision 047).
+    else if (hasFrom && /@resend\.dev\s*>?$/i.test(env.EMAIL_FROM!.trim())) add('EMAIL_FROM', 'warn', 'EMAIL_FROM uses the resend.dev test sender. Mail reaches only the Resend account owner, so invitations to anyone else will not arrive. Verify a domain before inviting others.');
 
     const enc = secretShape('EMAIL_ENCRYPTION_KEY', env.EMAIL_ENCRYPTION_KEY, mail, 'Production mail requires an independent key.');
     out.push(enc.state === 'warn' ? { ...enc, message: 'EMAIL_ENCRYPTION_KEY is not set. Required once mail is configured.' } : enc);

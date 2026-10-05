@@ -204,7 +204,7 @@ All three require `Authorization: Bearer <CRON_SECRET>` in a **header**. Never p
       { "path": "/api/internal/retention", "schedule": "30 3 * * *" }
     ]
     ```
-  - **Another scheduler** (for example Google Cloud Scheduler in the REUNIR project) that can send the header from its own secret store. It must not be shared with another project.
+  - **Another scheduler** (for example Google Cloud Scheduler in the REUNIR project) that can send the header from its own secret store. It must not be shared with another project. The owner chose Vercel Hobby with Google Cloud Scheduler; the exact jobs are in STAGING_LAUNCH.md (decision 047).
 - [ ] Manual check before enabling, from a local shell where `CRON_SECRET` is set (do not paste it into chat):
 
   ```sh

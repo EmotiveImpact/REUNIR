@@ -1,4 +1,50 @@
-# Alpha 42 virus scanning in the background
+# Alpha 47 scan host package and the Hobby scheduler, prepared and not provisioned
+
+5 October 2026. Version stays 0.39.0-alpha.1. The owner chose Vercel Hobby for staging, so mail is scheduled by Google Cloud Scheduler; and with scanning moved into a worker (Alpha 42, decision 042), uploads can join staging once the owner approves a small scan host. See decisions/047-scan-host-and-hobby-scheduler.md, STAGING_LAUNCH.md and deploy/scan-host/README.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/staging-launch-l1c2la`, from main `2edf0b0` |
+| Verified locally | Partly: see below |
+| Merged | Not yet; Alpha 42 (PR #36) is now on main and merged into this branch |
+| Deployed | No. No Google Cloud project, machine, bucket, scheduler job, Vercel project or Neon project exists |
+
+Numbering: Alpha 47 and decision 047 complete the staging block (Alpha 46 to 47). No migration.
+
+## What changed
+
+- **`platform/deploy/scan-host/`**: a Compose project with clamd (`clamav/clamav:1.4`) and the scan worker, no published port, a `scan.env.example` with the worker's three values, and a README with the owner's steps and costs. `scan.env` is ignored by git and by the Docker build context.
+- **STAGING_LAUNCH.md**: records the Hobby choice, the Cloud Scheduler commands (secret read from the ignored file, never typed), the optional scan host at about $22 a month, and Google Cloud among the accounts. LAUNCH_RUNBOOK.md points to both.
+- **Email without a domain**: staging starts on Resend's test sender, which reaches only the owner; the preflight warns when `EMAIL_FROM` uses `resend.dev`.
+- **Tests**: `tests/launch-staging.test.ts` checks the scan host publishes no port and keeps its values out of git and the image, and the test sender warning.
+
+## Local verification, 5 October 2026
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`; `npx tsx --test tests/launch-staging.test.ts tests/launch-preflight.test.ts` | Passed; 24 passed (2 new: scan host package, resend.dev test sender warning) |
+| `docker compose config` with a placeholder `scan.env` | Valid; no ports; worker reaches `clamd` by name |
+| Scheduler loop in STAGING_LAUNCH.md, echoed | Expands to the three expected job names, schedules and paths |
+| App image build (the repository `Dockerfile`, `npm ci` and `npm run build`) | Passed, through this environment's proxy using a scratch copy of the Dockerfile that only adds the proxy's certificate |
+| `freshclam` in `clamav/clamav:1.4`, through the proxy | Downloaded `daily.cld` 28144; `main.cvd` 63 and `bytecode.cvd` 339 current |
+| `docker compose up -d clamd` from this folder | Healthy; about 950 MiB in memory once loaded; EICAR flagged, a clean file passed |
+| `scripts/scan-check.ts` in the app image with PR #36's source, on the compose network (`CLAMAV_HOST=clamd`) | All three lines passed: PING, harmless sample clean, EICAR flagged |
+| `scripts/scan-worker.ts` in the same image with an unreachable fictional database | Starts and stops on the refused database connection; `restart: unless-stopped` brings it back |
+
+## Not verified, and why
+
+- The worker was not run against a real database and bucket: no Neon project or bucket exists. Its queue logic is covered by PR #36's tests.
+- clamd's own scheduled freshclam could not update inside the container here, only because this environment intercepts TLS with its own certificate; the same download passed once that certificate was supplied. A real machine needs nothing extra.
+- No Cloud Scheduler job, machine or bucket exists; prices are from public pages on 5 October 2026.
+
+## Next actions
+
+1. PR #36 (Alpha 42) is on main and merged in here; merge this with the owner's standing approval once CI is green, then read back main.
+2. The owner (Frankfurt confirmed; email on Resend's test sender) follows STAGING_LAUNCH.md; uploads only if the scan host cost is approved.
+
+## Historical Alpha 42 evidence: virus scanning in the background
 
 5 October 2026. Version stays 0.39.0-alpha.1. Uploads are no longer scanned inside the completion request: the request does the quick checks and a separate scan worker beside clamd streams the stored generation to the scanner, records the verdict and completes the upload as its uploader. See decisions/042-background-scanning.md.
 

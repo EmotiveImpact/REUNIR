@@ -25,6 +25,8 @@ Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `
 
 ## Next
 
+Staging launch is prepared (Alpha 46 and 47, decisions 046 and 047). The owner said go on Vercel Hobby on 5 October 2026, confirmed Frankfurt, and email starts on Resend's test sender until a domain is bought; uploads wait for approval of the scan host in platform/deploy/scan-host. platform/docs/STAGING_LAUNCH.md lists the shape, costs and owner-only steps, then `npm run launch:smoke` checks the site. Deployment stays deferred until the owner says go: prepare, never provision. Recommended order after staging: a Content-Security-Policy tried on staging; privacy-respecting analytics; appeals against suspensions and message reports; removing someone from a project team; credits on outcomes; question banks, timers and partial marks once pilots ask. The business stage and the long-term vision stay parked.
+
 1. Nothing scanned against a real clamd, bucket or worker host yet. When uploads are switched on for staging, choose a small always-on container host for clamd and the worker (LAUNCH_RUNBOOK.md section 6), then confirm a clean upload, the EICAR file and a scanner outage end to end.
 2. Not decided: rescanning stored files when signatures update, quarantine instead of deletion, files larger than clamd's `StreamMaxLength`, more than one worker.
 3. Deployment remains deferred by the owner: prepare everything needed to switch on, but provision nothing.
@@ -59,7 +61,7 @@ Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `
 
 Merge Alpha 44 once green. Deployment stays deferred until the owner says otherwise: prepare, never provision. Later, if a community approaches 5,000 posts, read posts in SQL a page at a time as the audit trail is. The business stage and the long-term vision stay parked.
 
-Staging launch is prepared (Alpha 46, decision 046) and waits for the owner's go-ahead: platform/docs/STAGING_LAUNCH.md lists the shape, costs and owner-only steps, then `npm run launch:smoke` checks the site. Deployment stays deferred until the owner says go: prepare, never provision. Recommended order after staging: scanning outside the upload request, since Vercel stops a request at 30 seconds; a Content-Security-Policy tried on staging; server-side pages for posts and tasks; privacy-respecting analytics; appeals against suspensions and message reports; removing someone from a project team; credits on outcomes; question banks, timers and partial marks once pilots ask. The business stage and the long-term vision stay parked.
+Alpha 44 (paged posts and archived tasks) is on main. Later, if a community approaches 5,000 posts, read posts in SQL a page at a time as the audit trail is.
 
 ---
 ## Historical Alpha 41 handover: pre-pilot review
