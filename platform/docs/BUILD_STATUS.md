@@ -1,4 +1,56 @@
-# Alpha 41 pre-pilot review and hardening
+# Alpha 44 posts and archived tasks a page at a time
+
+5 October 2026. Version stays 0.39.0-alpha.1. Feeds load posts a page at a time from the server and archived project tasks leave the snapshot, so a busy community no longer sends every post, reply and old task to every page. See decisions/044-paged-posts-and-tasks.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/paged-loading-bu4poc`, from main `9d7dcff` (the merge of PR #33, Alpha 41) |
+| Verified locally | Yes: every suite (see below) |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each change into main once its checks pass (3 October 2026) |
+| Deployed | No. Nothing was provisioned |
+| Operated with real members | No |
+
+Numbering: Alpha 44 and decision 044 come from the block allocated to this slice (Alpha 44 to 45, decisions 044 to 045, migrations 0042 to 0043). No migration was needed; 0042 and 0043 stay free for this block.
+
+## What changed
+
+- **Feeds page from the server.** The conversation, each space, Saved and Knowledge read `GET /api/organisations/:slug/pages/posts` 20 at a time with the Alpha 18 keyset cursors, filtered by `space`, `kind` or `saved=1`. Each page carries its posts' replies, appreciations and the person's own bookmarks. "Show older posts" adds the next page and moves focus to its first post. Pinned posts always travel in the snapshot and show first.
+- **Feeds keep their place.** After any change the browser reads every page already shown again from the top, so a reply or appreciation on an older post shows without the list collapsing; snapshot posts newer than the last one paged join at once.
+- **The snapshot keeps a window of posts**: the newest 30, pinned posts, the person's own hidden posts, and posts named by visible collections, appeals or open reports, with replies, appreciations and bookmarks only for those. `summary.posts` counts every visible unhidden post (the studio's Conversations figure).
+- **One item alone.** `GET .../pages/posts/items/:id` and `.../pages/archived-tasks/items/:id` return a post or task the snapshot does not carry, with its records; the post page and task links use them. Anything hidden, private or on another team is 404.
+- **Archived tasks** leave the snapshot with their notes and files. The board's Archive view pages them from `GET .../pages/archived-tasks?project=:id` ("Show older archived tasks"); `summary.archivedTasks` counts them per project. Active tasks stay, since a project holds at most 100.
+- New browser suite `npm run test:browser:paging` (added to CI): a fictional busy community in the demo.
+
+## Local verification, 5 October 2026
+
+Node 22.22.0, Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, PostgreSQL 16 in a disposable loopback cluster.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`, `build`, `bundle:preview` | Passed |
+| `npm test` | 876 passed, 0 failed (868 on main plus 8: 4 domain paging, 3 under the restricted runtime role including another community's feed, 1 through the API) |
+| `npm run test:http` | 19 passed |
+| Every `test:browser:*` script in CI (28 demo including the new paging suite with 11 checks, 6 connected) | All passed |
+| `npm run test:postgres` | 29 passed |
+| Python helpers, `scripts/check_research.py` | 40 passed; register validates |
+
+Failed attempts: the first paging browser run expected a fresh first page after returning to the feed by changing only the address's hash, which keeps the loaded pages in memory; the check now asks only that the feed fits a phone. An `npm test` run started before main was merged in was stopped and run again on the merged tree.
+
+## Not verified, and why
+
+- No hosted database or real traffic: page timings on a large community are not measured.
+- The server still reads the whole community for the domain rules; the 5,000-row per-table read bound still applies to posts. Reading posts in SQL a page at a time is the next step if a community approaches it.
+- Global search, recent activity and "add to collection" see the snapshot window of posts, not every post.
+
+## Next actions
+
+1. Drive the pull request green, merge main in again if it moved, and merge with the owner's standing approval; read back main.
+2. Background scanning and the staging launch are being prepared in parallel threads.
+
+## Historical Alpha 41 evidence: pre-pilot review and hardening
 
 5 October 2026. Version stays 0.39.0-alpha.1. A review of main at `d726e8f` after every planned feature was merged: every suite run, the records compared with the code, and the API reviewed for authorisation, abuse limits, headers, input handling and accessibility. No cross-community or private-data gap was found. Four small openings were closed and stale records corrected. See decisions/041-pre-pilot-hardening.md.
 
@@ -9,7 +61,7 @@
 | Implemented | Yes, on `claude/platform-review-b99gh7`, from main `d726e8f` |
 | Verified locally | Yes: every suite on main before the change, and every suite again on this branch |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each change into main once its checks pass (3 October 2026) |
+| Merged | Yes: [PR #33](https://github.com/EmotiveImpact/REUNIR/pull/33), merged into main as `9d7dcff` |
 | Deployed | No. Nothing was provisioned |
 | Operated with real members | No |
 

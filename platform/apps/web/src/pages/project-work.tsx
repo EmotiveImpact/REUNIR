@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Plus, LayoutGrid, List, Search, CheckCircle2, Flag, Clock, ArrowUpRight, Lock, MessageCircle, Play, Archive, RefreshCw, ClipboardCheck, ExternalLink, SearchX, ListTodo, Paperclip, Download, LoaderCircle, FileUp, AlertTriangle } from 'lucide-react';
-import { useWorkspace } from '../lib/context';
+import { WithRecords, useWorkspace } from '../lib/context';
+import { useLiveItem, useLivePages } from '../lib/pages';
+import { InlineError, Loading } from '../components/states';
 import { Avatar, AvatarStack, Back, CheckList, Empty, Modal, PageHeading, Pill, date } from '../components/ui';
 import { isAdmin, canSeeSpace } from '../../../../packages/domain/src/access';
 import { canWorkOnProject, taskStage, taskNeedsChanges, TASK_STAGES } from '../../../../packages/domain/src/project-work';
@@ -35,7 +37,26 @@ function LiveStatus({ state, updatedAt }: { state: LiveState; updatedAt: number 
     return <p className={'work-live' + (updatedAt && state !== 'retrying' ? ' updated' : '')} role="status" aria-live="polite"><span aria-hidden="true"/>{text}</p>;
 }
 
+/**
+ * Archived tasks are not in the snapshot. The Archive view reads them a page at a time, and a link to one reads it alone;
+ * either way they join the board's data with their notes and files, and the board treats them as before.
+ */
 export function ProjectWorkPage() {
+    const { id }=useParams();
+    const {data}=useWorkspace();
+    const [filter,F]=useState('all'),[params]=useSearchParams();
+    const archive=useLivePages('archived-tasks',{project:id},{enabled:filter==='archive'});
+    const linked=params.get('task')||undefined,missing=!!linked&&!data.projectTasks.some(t=>t.id===linked)&&!(filter==='archive'&&archive.items.some(t=>t.id===linked));
+    const one=useLiveItem('archived-tasks',linked,missing);
+    const records=useMemo(()=>{
+        const tasks=[...(filter==='archive'?archive.items:[]),...(one.data?[one.data.item]:[])];
+        const notes=[...(filter==='archive'?archive.records.taskNotes??[]:[]),...(one.data?.records.taskNotes??[])];
+        const uploads=[...(filter==='archive'?archive.records.uploads??[]:[]),...(one.data?.records.uploads??[])];
+        return {projectTasks:tasks,taskNotes:notes,uploads};
+    },[filter,archive.items,archive.records,one.data]);
+    return <WithRecords records={records}><ProjectBoard filter={filter} F={F} archive={archive} linkPending={missing&&one.isPending&&one.fetchStatus!=='idle'}/></WithRecords>;
+}
+function ProjectBoard({filter,F,archive,linkPending}:{filter:string;F:(v:string)=>void;archive:ReturnType<typeof useLivePages<'archived-tasks'>>;linkPending:boolean}) {
     const { id }=useParams();
     const {data,me,reload,busy,mode,slug,userId}=useWorkspace();
     const cache=useQueryClient();
@@ -45,7 +66,7 @@ export function ProjectWorkPage() {
         await cache.refetchQueries({queryKey:key,exact:true});
         return localVersion(cache.getQueryData<Workspace>(key),userId,id!)!==before;
     });
-    const [search,SearchText]=useState(''),[filter,F]=useState('all'),[view,V]=useState<'board'|'list'>('board');
+    const [search,SearchText]=useState(''),[view,V]=useState<'board'|'list'>('board');
     const [editing,E]=useState<ProjectTask|true|null>(null),[params,Params]=useSearchParams();
     const project=data.projects.find(p=>p.id===id);
     if(!project||!canWorkOnProject(data,me,project))return <><Back to={project?`/projects/${project.id}`:'/projects'} label="Back to project"/><Empty icon={Lock} title="A workspace for the project team." body="Join the project to take part. Access to private spaces is still required."/></>;
@@ -58,7 +79,8 @@ export function ProjectWorkPage() {
     const mine=active.filter(t=>t.assigneeId===me.userId&&!['done','review'].includes(taskStage(data,t)));
     const selected=all.find(t=>t.id===params.get('task'));
     // First run: no work planned yet. Only the project lead or an administrator can add it.
-    const firstRun=!all.length?<Empty icon={ListTodo} title="No tasks yet." body={lead?'Break the project into a first piece of work with clear completion criteria.':'The project lead adds the first piece of work. You can claim it here once it exists.'} action={lead?<Button variant="default" className="button primary" onClick={()=>E(true)}>Add the first task</Button>:undefined}/>:null;
+    const archived=data.summary?.archivedTasks?.[project.id]??all.filter(t=>t.archived).length;
+    const firstRun=!all.length&&!archived?<Empty icon={ListTodo} title="No tasks yet." body={lead?'Break the project into a first piece of work with clear completion criteria.':'The project lead adds the first piece of work. You can claim it here once it exists.'} action={lead?<Button variant="default" className="button primary" onClick={()=>E(true)}>Add the first task</Button>:undefined}/>:null;
     const noMatch=<Empty icon={SearchX} title="No tasks in this view." body="Nothing matches this filter or search. Other work is still on the board." action={<Button variant="secondary" className="button secondary" onClick={()=>{F('all');SearchText('');}}>Show all work</Button>}/>;
     const open=(t:ProjectTask)=>Params({task:t.id});
     const card=(t:ProjectTask)=>{
@@ -77,11 +99,15 @@ export function ProjectWorkPage() {
         <div className="work-summary"><div><strong>{active.length}</strong><span>pieces of work</span></div><div><strong>{mine.length}</strong><span>your next steps</span></div><div><strong>{active.filter(t=>taskStage(data,t)==='review').length}</strong><span>awaiting review</span></div><div className="work-summary-proof"><strong>{done}<small> / {active.length}</small></strong><span>recognised contributions</span></div></div>
         <div className="work-toolbar"><div className="filter-tabs">{[['all','All work'],['mine','My work'],['unassigned','Open to claim'],['archive','Archive']].map(([v,l])=><button key={v} aria-pressed={filter===v} className={filter===v?'selected':''} onClick={()=>F(v)}>{l}</button>)}</div><div className="work-tools"><Label className="work-search"><Search size={15}/><Input aria-label="Search project tasks" placeholder="Find a task…" value={search} onChange={e=>SearchText(e.target.value)}/></Label><div className="work-view"><button aria-label="Board view" aria-pressed={view==='board'} onClick={()=>V('board')}><LayoutGrid size={18}/></button><button aria-label="List view" aria-pressed={view==='list'} onClick={()=>V('list')}><List size={18}/></button></div></div></div>
         {view==='board'&&firstRun}{view==='board'?<div className="work-board">{TASK_STAGES.map((stage,i)=>{const rows=tasks.filter(t=>taskStage(data,t)===stage.id);return <section className={'work-column column-'+stage.id} key={stage.id} aria-label={stage.label}><header><span><i/>{stage.label}</span><b>{rows.length}</b></header><div className="work-column-content">{rows.map(card)}{!rows.length&&<div className="work-column-empty"><span>0{i+1}</span><p>{stage.id==='done'?'Reviewed proof belongs here.':stage.id==='review'?'Ready for a second pair of eyes.':stage.id==='doing'?'Make a useful first step.':'Leave space for the next idea.'}</p></div>}</div></section>})}</div>:<div className="work-list">{tasks.map(card)}{!tasks.length&&(firstRun??noMatch)}</div>}
+        {filter==='archive'&&archive.loading&&<Loading label="Loading archived tasks…"/>}
+        {filter==='archive'&&archive.error&&<InlineError error={archive.error} onRetry={archive.retry}/>}
+        {filter==='archive'&&archive.hasMore&&<div className="review-more"><span>Showing {archive.items.length} of {archive.total} archived tasks.</span><Button variant="secondary" type="button" className="button secondary" disabled={archive.loadingMore} aria-busy={archive.loadingMore||undefined} onClick={()=>void archive.more()}>{archive.loadingMore?'Loading…':'Show older archived tasks'}</Button></div>}
         <div className="work-bottom-note"><Lock size={16}/><p>Task plans and notes are for this team and community administrators. Task proof is shared with the team; recognised work follows the project’s existing visibility. <strong>Moving a card is not proof.</strong></p><Link className="text-link" to={`/projects/${project.id}`}>Project evidence <ArrowUpRight size={15}/></Link></div>
         {mode==='demo'&&<p className="sample-note">Fictional demonstration. This work is stored in this browser, not Neon. Switch to the administrator to plan work or review another member’s proof.</p>}
         {editing&&<TaskEditor projectId={project.id} task={editing===true?undefined:editing} onClose={()=>E(null)}/>}
         {selected&&!editing&&<TaskDetail task={selected} onClose={()=>Params({})} onEdit={()=>E(selected)}/>}
-        {params.get('task')&&!selected&&<p role="status">That task is not available to this account. <button className="text-link" onClick={()=>Params({})}>Return to board</button></p>}
+        {params.get('task')&&!selected&&linkPending&&<Loading label="Loading the task…"/>}
+        {params.get('task')&&!selected&&!linkPending&&<p role="status">That task is not available to this account. <button className="text-link" onClick={()=>Params({})}>Return to board</button></p>}
     </div>;
 }
 function TaskEditor({projectId,task,onClose}:{projectId:string;task?:ProjectTask;onClose:()=>void}) {

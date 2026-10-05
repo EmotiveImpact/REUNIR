@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, Bookmark, Check, ChevronRight, Clock, Heart, MessageCircle, MoreHorizontal, Pin, Plus, Send, Sparkles, Flag, Layers, FileText, Users, Play, Target, BookOpen, CheckCircle2, ShieldCheck, SearchX, Lock } from 'lucide-react';
-import { useWorkspace } from '../lib/context';
+import { WithRecords, useWorkspace } from '../lib/context';
+import { useLiveItem, useLivePages } from '../lib/pages';
+import { InlineError, Loading } from '../components/states';
+import { PAGE_SIZE, type PageFilter } from '../../../../packages/contracts/src/pages';
 import { Avatar, AvatarStack, Back, Empty, PageHeading, PersonLink, Pill, RelativeTime, dayParts, date, Modal, present } from '../components/ui';
 import { Cover } from '../components/cover';
 import { CreateModal } from '../components/forms';
@@ -26,7 +29,7 @@ export function PostCard({ post, detail = false }: {
     const count = data.comments.filter(c => c.postId === post.id).length;
     // A project post shows the project it names. Posts store the project's original art name for this link.
     const linked = post.cover ? data.projects.find(p => p.cover === post.cover) : undefined;
-    return <article className={`post-card ${post.pinned ? 'post-pinned' : ''} ${post.hidden && post.authorId !== me.userId ? 'post-hidden' : ''}`}>
+    return <article id={`post-${post.id}`} tabIndex={-1} className={`post-card ${post.pinned ? 'post-pinned' : ''} ${post.hidden && post.authorId !== me.userId ? 'post-hidden' : ''}`}>
  {post.pinned && <div className="pinned-label"><Pin size={12}/> A NOTE FROM THE COMMUNITY</div>}
  <div className="post-meta">{author && author.status !== 'left' ? <Link to={`/members/${author.userId}`}><Avatar member={author}/></Link> : <Avatar member={author}/>}<div className="post-byline"><PersonLink member={author}>{author?.name}{author?.role === 'owner' && <ShieldCheck size={13} className="verified"/>}</PersonLink><span><Link to={`/spaces/${space?.id}`}>{space?.name}</Link><i>·</i><RelativeTime value={post.createdAt}/></span></div><div className="post-menu"><button aria-label="Post options" className="icon-button" onClick={() => M(!menu)} aria-expanded={menu}><MoreHorizontal size={19}/></button>{menu && <div className="dropdown"><button onClick={() => { M(false); R(true); }}><Flag size={14}/>Report privately</button>{isModerator(me) && <button onClick={() => { M(false); command({ type: 'post.moderate', postId: post.id, hidden: !post.hidden }); }}>{post.hidden ? 'Restore post' : 'Hide post'}</button>}</div>}</div></div>
  {post.hidden && isModerator(me) && <Pill tone="rose">Hidden from members</Pill>}
@@ -43,18 +46,68 @@ export function Home() {
     const { data, me } = useWorkspace();
     return <><PageHeading eyebrow="A LITTLE CONNECTION. A LITTLE MOMENTUM." title={`Good to see you, ${me.name.split(' ')[0]}.`} body="There is something good in bringing the right people together."/><div className="home-columns"><section className="main-feed"><div className="welcome-hero"><div className="hero-landscape"/><div className="hero-content"><span className="eyebrow"><span className="live-dot"/> YOUR NEXT CHAPTER STARTS HERE</span><h2>Good people.<br /><span>Remarkable things.</span></h2><p>A conversation. A new skill. That thing you have been meaning to make. Start here.</p><Link to="/missions" className="button hero-button">Find your next move <ArrowUpRight size={17}/></Link><div className="hero-people"><AvatarStack members={present(data.members).slice(1, 5)}/><span>Better, with your people.</span></div></div><span className="hero-coordinate">{data.organisation.name.toUpperCase()} / EST. 2026</span></div><Feed /></section><aside className="right-column"><Momentum /><NextLesson /><NextEvent /><MissionSpotlight /><div className="community-footer">Made for people, not algorithms.<br /><span>REUNIR <i>·</i> Community. Learning. Doing.</span></div></aside></div></>;
 }
+/** Newest first, the ID breaking ties, as the server pages them. */
+const newestFirst = (a: Post, b: Post) => b.createdAt.localeCompare(a.createdAt) || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0);
+/**
+ * Posts a page at a time from the server, pinned posts first. Pinned posts always travel in the snapshot. Posts the
+ * snapshot holds that are newer than the last one paged join at once, so a new post or a moderation decision shows
+ * before the pages are read again.
+ */
+function usePostStream(filter: PageFilter, options: { hideHidden?: boolean } = {}) {
+    const { data, me } = useWorkspace();
+    const pages = useLivePages('posts', filter);
+    const matches = (p: Post) => (!filter.space || p.spaceId === filter.space) && (!filter.kind || p.kind === filter.kind)
+        && (!filter.saved || data.bookmarks.some(b => b.postId === p.id && b.userId === me.userId)) && (!options.hideHidden || !p.hidden);
+    const pinned = data.posts.filter(p => p.pinned && matches(p)).sort(newestFirst);
+    const local = data.posts.filter(p => !p.pinned && matches(p)).sort(newestFirst);
+    const last = pages.items.at(-1);
+    let rest: Post[];
+    if (pages.loading || pages.error) rest = local.slice(0, PAGE_SIZE);
+    else {
+        // The snapshot's copy wins: it is the newer read after a change.
+        const own = new Map(local.filter(p => !last || !pages.hasMore || newestFirst(p, last) <= 0).map(p => [p.id, p]));
+        rest = [...own.values(), ...pages.items.filter(p => !own.has(p.id) && (!options.hideHidden || !p.hidden) && !data.posts.some(x => x.id === p.id && !matches(x)))].sort(newestFirst);
+    }
+    const total = pages.total === null ? null : pages.total + pinned.length;
+    return { ...pages, posts: [...pinned, ...rest], total };
+}
+/** A list of posts with "Show older posts", which moves focus to the first post it adds. */
+function PostStream({ filter, hideHidden = false, empty }: { filter: PageFilter; hideHidden?: boolean; empty: ReactNode }) {
+    const stream = usePostStream(filter, { hideHidden });
+    const firstNew = useRef<string | null>(null);
+    useEffect(() => { if (!firstNew.current || stream.loadingMore) return; document.getElementById(firstNew.current)?.focus(); firstNew.current = null; }, [stream.posts.length, stream.loadingMore]);
+    const older = async () => { const r = await stream.more(); const first = r.data?.pages.at(-1)?.items[0]; if (first) firstNew.current = `post-${first.id}`; };
+    return <div className="post-list" aria-busy={stream.loading || undefined}>{stream.posts.map(p => <PostCard key={p.id} post={p}/>)}
+        {stream.error && <InlineError error={stream.error} onRetry={stream.retry}/>}
+        {!stream.posts.length && (stream.loading ? <Loading label="Loading posts…"/> : !stream.error && empty)}
+        {stream.hasMore && <div className="review-more"><span>Showing {stream.posts.length} of {stream.total} posts.</span><Button variant="secondary" type="button" className="button secondary" disabled={stream.loadingMore} aria-busy={stream.loadingMore || undefined} onClick={() => void older()}>{stream.loadingMore ? 'Loading…' : 'Show older posts'}</Button></div>}
+    </div>;
+}
+/** The records paged posts need on screen, joined to the snapshot for the cards inside. */
+function StreamRecords({ filter, children }: { filter: PageFilter; children: ReactNode }) {
+    const pages = useLivePages('posts', filter);
+    const records = useMemo(() => ({ posts: pages.items, ...pages.records }), [pages.items, pages.records]);
+    return <WithRecords records={records}>{children}</WithRecords>;
+}
 export function Feed({ spaceId, savedOnly = false }: {
     spaceId?: string;
     savedOnly?: boolean;
 }) {
-    const { data, me } = useWorkspace();
     const [kind, K] = useState('all');
     const [create, C] = useState(false);
-    const scoped = data.posts.filter(p => (!spaceId || p.spaceId === spaceId) && (!savedOnly || data.bookmarks.some(b => b.postId === p.id && b.userId === me.userId)));
-    const posts = scoped.filter(p => kind === 'all' || p.kind === kind).sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.createdAt.localeCompare(a.createdAt));
-    return <><button className="composer" onClick={() => C(true)}><div><Avatar member={me}/><span>Share something with your people…</span><Plus size={19}/></div><footer><span><MessageCircle size={14}/>Start a conversation</span><span><Layers size={14}/>Share your work</span><span><FileText size={14}/>Something useful</span></footer></button><div className="feed-heading"><h2>{savedOnly ? 'Worth coming back to' : 'In the conversation'}<span>{posts.length}</span></h2><span className="muted small">Latest first</span></div><div className="filter-tabs" role="group" aria-label="Filter posts">{[['all', 'Everything'], ['question', 'Questions'], ['project', 'Work in progress'], ['resource', 'Resources']].map(([k, l]) => <button key={k} onClick={() => K(k)} className={kind === k ? 'selected' : ''} aria-pressed={kind === k}>{l}</button>)}</div><div className="post-list">{posts.map(p => <PostCard key={p.id} post={p}/>)}{!posts.length && (scoped.length ? <Empty icon={SearchX} title="Nothing of this kind here yet." body="No posts match this filter. The others are still here." action={<Button variant="secondary" className="button secondary" onClick={() => K('all')}>Show everything</Button>}/>
+    const filter: PageFilter = { space: spaceId, kind: kind === 'all' ? undefined : kind as PageFilter['kind'], saved: savedOnly ? '1' : undefined };
+    return <><button className="composer" onClick={() => C(true)}><div><Avatar member={useWorkspace().me}/><span>Share something with your people…</span><Plus size={19}/></div><footer><span><MessageCircle size={14}/>Start a conversation</span><span><Layers size={14}/>Share your work</span><span><FileText size={14}/>Something useful</span></footer></button><StreamRecords filter={filter}><FeedHeading filter={filter} savedOnly={savedOnly}/><div className="filter-tabs" role="group" aria-label="Filter posts">{[['all', 'Everything'], ['question', 'Questions'], ['project', 'Work in progress'], ['resource', 'Resources']].map(([k, l]) => <button key={k} onClick={() => K(k)} className={kind === k ? 'selected' : ''} aria-pressed={kind === k}>{l}</button>)}</div><PostStream filter={filter} empty={kind !== 'all' ? <Empty icon={SearchX} title="Nothing of this kind here yet." body="No posts match this filter. The others are still here." action={<Button variant="secondary" className="button secondary" onClick={() => K('all')}>Show everything</Button>}/>
         : savedOnly ? <Empty icon={Bookmark} title="Save something good." body="Bookmark a post and find it here when you have a moment. Only you can see what you save." action={<Link to="/discussions" className="button secondary">Browse the conversation</Link>}/>
-        : <Empty icon={MessageCircle} title="Room for a first thought." body="Start a conversation. You do not need to have it all figured out." action={<Button variant="default" className="button primary" onClick={() => C(true)}>Write the first post</Button>}/>)}</div>{create && <CreateModal kind="post" spaceId={spaceId} onClose={() => C(false)}/>}</>;
+        : <Empty icon={MessageCircle} title="Room for a first thought." body="Start a conversation. You do not need to have it all figured out." action={<Button variant="default" className="button primary" onClick={() => C(true)}>Write the first post</Button>}/>}/></StreamRecords>{create && <CreateModal kind="post" spaceId={spaceId} onClose={() => C(false)}/>}</>;
+}
+function FeedHeading({ filter, savedOnly }: { filter: PageFilter; savedOnly: boolean }) {
+    const stream = usePostStream(filter);
+    return <div className="feed-heading"><h2>{savedOnly ? 'Worth coming back to' : 'In the conversation'}<span>{stream.total ?? stream.posts.length}</span></h2><span className="muted small">Latest first</span></div>;
+}
+/** Resources shared in the conversation, a page at a time. */
+export function ResourcePosts({ empty }: { empty: ReactNode }) {
+    const filter: PageFilter = { kind: 'resource' };
+    return <StreamRecords filter={filter}><PostStream filter={filter} hideHidden empty={empty}/></StreamRecords>;
 }
 function Momentum() { const { data, me } = useWorkspace(); const points = reputationTotals(data, me.userId); const target = Math.max(100, Math.ceil((points.total + 1) / 100) * 100); return <section className="panel momentum"><div className="panel-title"><h2>Your momentum</h2><Sparkles size={17}/></div><div className="momentum-main"><div className="progress-ring" style={{ '--progress': `${points.total / target * 100}%` } as React.CSSProperties}><span>{points.total}<small>POINTS</small></span></div><div><strong>Small steps.<br />Real progress.</strong><p>{target - points.total} to your next milestone</p><Link to="/profile">View your journey <ArrowRight size={13}/></Link></div></div><div className="points-split"><span><i className="dot blue"/>{points.learning}<small>Learn</small></span><span><i className="dot mint"/>{points.building}<small>Build</small></span><span><i className="dot amber"/>{points.contribution}<small>Contribute</small></span></div></section>; }
 function NextLesson() { const { data, me } = useWorkspace(); const track = data.tracks.find(t => data.enrolments.some(e => e.userId === me.userId && e.trackId === t.id) && progress(data, me.userId, t.id).percent < 100) || data.tracks[0]; if (!track)
@@ -66,6 +119,13 @@ function MissionSpotlight() { const { data } = useWorkspace(); const m = data.mi
 export function SpacePage() { const { id } = useParams(); const { data } = useWorkspace(); const s = data.spaces.find(s => s.id === id); if (!s)
     return <Empty icon={Lock} title="This space is not available." body="It may be private, or it may have been removed. You may need an invitation to see it." action={<Link to="/discussions" className="button secondary">Back to discussions</Link>}/>; return <><Back to="/" label="Your community"/><PageHeading eyebrow={s.visibility === 'private' ? 'PRIVATE SPACE' : 'YOUR SHARED SPACE'} title={s.name} body={s.description}/><div className="reading-width"><Feed spaceId={s.id}/></div></>; }
 export function SavedPage() { return <><PageHeading eyebrow="FOR A QUIETER MOMENT" title="Keep the good stuff." body="Ideas, references and conversations you want to return to."/><div className="reading-width"><Feed savedOnly/></div></>; }
-export function PostPage() { const { id } = useParams(); const { data, me, command, busy } = useWorkspace(); const [body, B] = useState(''); const p = data.posts.find(x => x.id === id); if (!p)
+export function PostPage() { const { id } = useParams(); const { data } = useWorkspace(); const own = data.posts.find(x => x.id === id);
+    // A post outside the snapshot's window is read on its own, with every reply.
+    const remote = useLiveItem('posts', id, !own);
+    const records = useMemo(() => remote.data ? { posts: [remote.data.item], ...remote.data.records } : {}, [remote.data]);
+    if (!own && remote.isPending && remote.fetchStatus !== 'idle')
+        return <Loading label="Loading the conversation…"/>;
+    return <WithRecords records={records}><PostThread id={id}/></WithRecords>; }
+function PostThread({ id }: { id?: string }) { const { data, me, command, busy } = useWorkspace(); const [body, B] = useState(''); const p = data.posts.find(x => x.id === id); if (!p)
     return <Empty icon={MessageCircle} title="That conversation is not available." body="It may be private or have been removed." action={<Link to="/discussions" className="button secondary">Back to discussions</Link>}/>; const comments = data.comments.filter(c => c.postId === p.id); return <div className="reading-width"><Back to={`/spaces/${p.spaceId}`} label="Back to the conversation"/><PostCard post={p} detail/><section className="panel comments-panel"><h2>{comments.length} {comments.length === 1 ? 'perspective' : 'perspectives'}</h2>{comments.map(c => { const author = data.members.find(m => m.userId === c.authorId); return <div className="comment" key={c.id}><Avatar member={author} size="sm"/><div><strong>{author?.name ?? 'Community member'}</strong><RelativeTime value={c.createdAt}/><p>{c.body}</p></div></div>; })}{(!p.hidden || isModerator(me)) && <form className="reply-form" onSubmit={async (e) => { e.preventDefault(); if (await command({ type: 'post.comment', postId: p.id, body }))
     B(''); }}><Avatar member={me} size="sm"/><Label className="sr-only" htmlFor="reply">Add your perspective</Label><Textarea id="reply" placeholder="Add your perspective…" value={body} onChange={e => B(e.target.value)} rows={2} maxLength={4000} required/><Button variant="default" aria-label="Publish reply" className="button primary" disabled={busy || !body.trim()}><Send size={17}/></Button></form>}</section></div>; }

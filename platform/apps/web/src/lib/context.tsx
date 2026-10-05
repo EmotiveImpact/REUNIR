@@ -1,6 +1,6 @@
 import {useLocation,useNavigate} from 'react-router-dom';
 import {api} from './data';
-import { createContext, useContext, useState, useCallback, lazy, Suspense, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, useState, useCallback, lazy, Suspense, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Workspace, Member, CommandInput, MutationResult, Upload } from '../../../../packages/contracts/src/index';
 import type { ResourceRef } from '../../../../packages/contracts/src/lesson-resources';
@@ -46,6 +46,25 @@ interface Ctx {
 const Context = createContext<Ctx | null>(null);
 export function useWorkspace() { const c = useContext(Context); if (!c)
     throw new Error('Workspace context missing'); return c; }
+type Mergeable = 'posts' | 'comments' | 'reactions' | 'bookmarks' | 'projectTasks' | 'taskNotes' | 'uploads';
+/**
+ * Records that came a page at a time, added to the snapshot for the components inside. The snapshot's own copy of a
+ * record wins, because it is the newer read after a change; nothing here is written back.
+ */
+export function WithRecords({ records, children }: { records: Partial<Pick<Workspace, Mergeable>>; children: ReactNode }) {
+    const outer = useWorkspace();
+    const data = useMemo(() => {
+        const merged = { ...outer.data };
+        for (const key of Object.keys(records) as Mergeable[]) {
+            const extra = records[key] as { id: string }[] | undefined, own = (outer.data[key] ?? []) as { id: string }[];
+            if (!extra?.length) continue;
+            const known = new Set(own.map(r => r.id));
+            (merged as Record<Mergeable, unknown>)[key] = [...own, ...extra.filter(r => !known.has(r.id))];
+        }
+        return merged;
+    }, [outer.data, records]);
+    return <Context.Provider value={{ ...outer, data }}>{children}</Context.Provider>;
+}
 export function WorkspaceProvider({ children }: {
     children: ReactNode;
 }) {
