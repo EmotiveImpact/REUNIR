@@ -147,6 +147,9 @@ export function inspectLaunch(env: Environment): Finding[] {
     // Scanning reads each upload whole, in memory, and clamd refuses streams over its StreamMaxLength (25 MB by default).
     else if (video && Number(video) > 25 && clamHost) add('LESSON_VIDEO_MAX_MB', 'warn', `Lesson video up to ${Number(video)} MB is on and uploads are scanned. Set clamd StreamMaxLength to at least ${Number(video)}M and give the API memory for a file of that size, or large videos wait as unscanned.`);
     else if (video && Number(video) > 0) add('LESSON_VIDEO_MAX_MB', 'pass', 'Lesson video uploads are on. Size the bucket and its budget for videos of this size.');
+    // Template placeholders from .env.staging.example that were never replaced. Names only, never values.
+    const unfilled = Object.keys(env).filter(k => env[k]?.includes('<fill:')).sort();
+    if (unfilled.length) add('unfilled', 'fail', `Replace the <fill: ...> placeholders in: ${unfilled.join(', ')}.`);
     return out;
 }
 

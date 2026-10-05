@@ -4,7 +4,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, CHANGELOG.md, decisions/044-paged
 
 ## Where the source is
 
-- Base: main `9d7dcff`, the merge of PR #33 (Alpha 41). Version 0.39.0-alpha.1.
+- Base: main `9d7dcff`, the merge of PR #33 (Alpha 41), with main `2edf0b0` (PR #34, Alpha 46 staging launch prepared) merged in. Version 0.39.0-alpha.1.
 - This slice: Alpha 44 on `claude/paged-loading-bu4poc`. The owner approved, on 3 October 2026, merging each change into main with a normal merge commit once its checks pass. Never force-push.
 - Numbering: this slice holds Alpha 44 to 45, decisions 044 to 045 and migrations 0042 to 0043; it used Alpha 44 and decision 044 and no migration. Background scanning and the staging launch are being built in parallel threads with their own blocks.
 
@@ -25,6 +25,8 @@ Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `
 ## Next
 
 Merge Alpha 44 once green. Deployment stays deferred until the owner says otherwise: prepare, never provision. Later, if a community approaches 5,000 posts, read posts in SQL a page at a time as the audit trail is. The business stage and the long-term vision stay parked.
+
+Staging launch is prepared (Alpha 46, decision 046) and waits for the owner's go-ahead: platform/docs/STAGING_LAUNCH.md lists the shape, costs and owner-only steps, then `npm run launch:smoke` checks the site. Deployment stays deferred until the owner says go: prepare, never provision. Recommended order after staging: scanning outside the upload request, since Vercel stops a request at 30 seconds; a Content-Security-Policy tried on staging; server-side pages for posts and tasks; privacy-respecting analytics; appeals against suspensions and message reports; removing someone from a project team; credits on outcomes; question banks, timers and partial marks once pilots ask. The business stage and the long-term vision stay parked.
 
 ---
 ## Historical Alpha 41 handover: pre-pilot review

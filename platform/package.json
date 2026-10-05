@@ -33,6 +33,8 @@
     "test:browser:connected": "tsx scripts/pilot-connected-check.ts",
     "pilot:check": "tsx scripts/pilot-check.ts",
     "launch:preflight": "tsx scripts/launch-preflight.ts",
+    "launch:secrets": "tsx scripts/launch-secrets.ts",
+    "launch:smoke": "tsx scripts/launch-smoke.ts",
     "test:browser:operations": "tsx scripts/operations-browser-check.ts",
     "test:postgres": "tsx scripts/postgres-check.ts",
     "test:browser:work": "tsx scripts/project-work-browser-check.ts",

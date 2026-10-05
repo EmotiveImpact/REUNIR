@@ -20,6 +20,18 @@ Details:
 - The snapshot keeps the newest 30 posts plus pinned, own hidden and named posts, and only active tasks; `summary.posts` and `summary.archivedTasks` give exact counts.
 - Feeds read their loaded pages again after a change, so they keep their place. New browser suite `test:browser:paging`.
 
+## Alpha 46: staging launch prepared, nothing provisioned (no version change), 5 October 2026
+
+On main through [PR #34](https://github.com/EmotiveImpact/REUNIR/pull/34), merged as `2edf0b0`. Decision 046; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** everything needed to put Ferven on a private staging site is ready, waiting for the owner's go-ahead. A single page lists the accounts to create, what they cost and the steps only the owner can take. New commands generate the app's secrets on the owner's computer and check a deployed site, so no secret ever needs to pass through chat.
+
+Details:
+
+- The first staging round runs without file uploads: Vercel cannot reach a private virus scanner. Per-minute mail needs Vercel Pro or a dedicated Google Cloud Scheduler, because Hobby cron jobs run at most once a day.
+- `.env.staging.example`, `npm run launch:secrets` and `npm run launch:smoke`; the preflight fails unfilled `<fill: ...>` placeholders.
+- docs/STAGING_LAUNCH.md for the owner; LAUNCH_RUNBOOK.md links it.
+
 ## Alpha 41: pre-pilot hardening and current records (no version change), 5 October 2026
 
 On main through [PR #33](https://github.com/EmotiveImpact/REUNIR/pull/33), merged as `9d7dcff`. Decision 041; no migration. The version stays 0.39.0-alpha.1.
