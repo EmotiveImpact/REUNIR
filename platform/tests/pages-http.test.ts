@@ -47,3 +47,29 @@ test('bad lists, cursors and limits are refused; signing in and membership are r
     as('stranger');
     assert.equal((await get('/notifications')).status, 404);
 });
+
+test('feeds take a space, kind or saved filter; archived tasks need a project; one item reads alone', async () => {
+    as(DEMO_USER);
+    const build = await get('/posts?space=space_build');
+    assert.equal(build.status, 200);
+    assert(build.body.items.every((p: { spaceId: string }) => p.spaceId === 'space_build'));
+    assert(Array.isArray(build.body.records.comments));
+    assert.equal((await get('/posts?kind=nonsense')).status, 400);
+    assert.equal((await get('/posts?saved=yes')).status, 400);
+    assert.equal((await get('/posts?space=../x')).status, 400);
+    const offset = await get('/posts?offset=1&limit=1'), first = await get('/posts?limit=1');
+    assert.deepEqual(offset.body.items, first.body.items, 'an offset is ignored, never used as a position');
+    assert.equal((await get('/archived-tasks')).body.error.code, 'PROJECT_REQUIRED');
+    assert.equal((await get('/archived-tasks?project=project_common')).status, 200);
+    const post = await get('/posts/items/post_welcome');
+    assert.equal(post.status, 200);
+    assert.equal(post.body.item.id, 'post_welcome');
+    assert.equal((await get('/posts/items/no_such_post')).status, 404);
+    assert.equal((await get('/notifications/items/anything')).status, 404, 'only posts and archived tasks read alone');
+    as('member_maya');
+    assert.equal((await get('/archived-tasks?project=project_common')).status, 404, 'not on the team');
+    as(null);
+    assert.equal((await get('/posts')).status, 401);
+    as('stranger');
+    assert.equal((await get('/posts/items/post_welcome')).status, 404);
+});

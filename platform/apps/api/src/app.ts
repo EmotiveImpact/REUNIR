@@ -21,7 +21,7 @@ import type { CoverObservation } from '../../../packages/domain/src/covers';
 import { learningRecordFilename } from '../../../packages/domain/src/learning-record';
 import { SIGNATURE_BYTES, VIDEO_PLAYBACK_TTL_SECONDS, fileSignatureMatches, isLessonVideo, resourceSizeProblem, resourceUploadRequest, type ResourceContext } from '../../../packages/contracts/src/lesson-resources';
 import { accountDeletionRequest } from '../../../packages/contracts/src/account';
-import { pagedList, pageQuery } from '../../../packages/contracts/src/pages';
+import { ITEM_LISTS, pagedList, pageQuery } from '../../../packages/contracts/src/pages';
 import { ownershipTransferRequest } from '../../../packages/contracts/src/ownership';
 import { EMAIL_CHANGE_SENT, EMAIL_CONFIRMED_PATH, EMAIL_LINK_REFUSED_PATH, changeNoticeMail, emailChangeRequest, type EmailVerification } from '../../../packages/contracts/src/email';
 import { TWO_FACTOR_REQUIRED, TWO_FACTOR_REQUIRED_MESSAGE, type AdminTwoFactor } from '../../../packages/contracts/src/two-factor';
@@ -237,8 +237,15 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     app.get('/api/organisations/:slug/pages/:list', async (c) => {
         const list = pagedList.safeParse(c.req.param('list'));
         if (!list.success) throw new DomainError('NOT_FOUND', 'That list does not exist.', 404);
-        const query = pageQuery.parse({ cursor: c.req.query('cursor'), limit: c.req.query('limit') ?? undefined });
+        const q = (k: string) => c.req.query(k) ?? undefined;
+        const query = pageQuery.parse({ cursor: q('cursor'), limit: q('limit'), space: q('space'), kind: q('kind'), saved: q('saved'), project: q('project') });
         return c.json(await repository.page(c.req.param('slug'), c.get('identity').id, list.data, query));
+    });
+    // One post or archived task the snapshot does not carry, for a link to it.
+    app.get('/api/organisations/:slug/pages/:list/items/:itemId', async (c) => {
+        const list = z.enum(ITEM_LISTS).safeParse(c.req.param('list'));
+        if (!list.success) throw new DomainError('NOT_FOUND', 'That list does not exist.', 404);
+        return c.json(await repository.item(c.req.param('slug'), c.get('identity').id, list.data, id.parse(c.req.param('itemId'))));
     });
     app.post('/api/organisations/:slug/commands', async (c) => {
         const key = c.req.header('idempotency-key');
