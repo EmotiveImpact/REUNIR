@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { openDatabase, type Database, type SQL } from '../packages/db/src/connection';
 import { migrate } from '../packages/db/src/migrate';
-import { WorkspaceRepository, setContext } from '../packages/db/src/repository';
+import { WorkspaceRepository, setContext, MAX_MEMBER_UPLOADS, MAX_PENDING_MEMBER_UPLOADS } from '../packages/db/src/repository';
 import { grantRuntimeTables } from '../packages/db/src/runtime-role';
 import { createSeed, DEMO_ADMIN, DEMO_USER } from '../packages/domain/src/seed';
 import { lessonContent } from '../packages/domain/src/authoring';
@@ -140,4 +140,16 @@ test('member-private uploads keep their original behaviour and never enter lesso
     assert(!(await repo.snapshot('code-black', DEMO_ADMIN)).uploads.some(u => u.id === 'member_proof'));
     const d = (await repo.snapshot('code-black', DEMO_ADMIN)).lessonDrafts[0];
     await assert.rejects(() => exec({ type: 'lesson.draft.save', draftId: d.id, expectedVersion: d.version, ...lessonContent(d), resources: [{ id: 'proof', fileId: 'member_proof', name: 'Borrowed proof' }] }), { code: 'RESOURCE_UNAVAILABLE' });
+});
+test('member uploads are bounded: five unfinished at once, abandoned ones lapse after an hour, and fifty kept', async () => {
+    const begin = (id: string) => repo.createUploadIntent('code-black', DEMO_ADMIN, { id, objectKey: `organisations/org_code_black/members/${DEMO_ADMIN}/${id}.pdf`, contentType: PDF, sizeBytes: 50, originalName: 'note.pdf' });
+    for (let i = 0; i < MAX_PENDING_MEMBER_UPLOADS; i++) await begin('bounded_' + i);
+    await assert.rejects(() => begin('bounded_extra'), { code: 'UPLOADS_IN_PROGRESS' });
+    await db.query("UPDATE upload_intents SET created_at=now()-interval '2 hours' WHERE id LIKE 'bounded\\_%'");
+    await begin('bounded_after_an_hour');
+    await db.query("INSERT INTO upload_intents(organization_id,id,user_id,object_key,content_type,size_bytes,original_name,created_at,status) SELECT 'org_code_black','kept_'||n,$1,'k-kept-'||n,$2,50,'kept.pdf',now()-interval '2 hours','ready' FROM generate_series(1,$3::int) n", [DEMO_ADMIN, PDF, MAX_MEMBER_UPLOADS - MAX_PENDING_MEMBER_UPLOADS - 1]);
+    await assert.rejects(() => begin('bounded_over'), { code: 'UPLOAD_LIMIT' });
+    await db.query("DELETE FROM upload_intents WHERE id LIKE 'bounded\\_%' OR id LIKE 'kept\\_%'");
+    await begin('bounded_again');
+    await db.query("DELETE FROM upload_intents WHERE id='bounded_again'");
 });

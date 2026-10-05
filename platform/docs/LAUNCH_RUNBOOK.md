@@ -40,7 +40,7 @@ Detail: SETUP.md section 3.
 
 ## 3. Migrations and the restricted runtime role
 
-There are 21 ordered migrations at Alpha 22, `0001_foundation.sql` to `0021_two_factor.sql`, in `packages/db/migrations/`. Later releases add more: the expected count is always the number of `.sql` files in that folder for the commit being deployed. They are additive, checksummed and serialised by an advisory lock. Migrations never run on a cold start.
+There are 33 ordered migrations on main at 0.39.0-alpha.1 (5 October 2026), `0001_foundation.sql` to `0038_cover_library_tags_and_thumbnails.sql`, in `packages/db/migrations/`. Numbers 0024 to 0027 and 0037 were reserved for parallel work and never used, so those gaps are expected and are not missing files. Later releases add more: the expected count is always the number of `.sql` files in that folder for the commit being deployed. They are additive, checksummed and serialised by an advisory lock. Migrations never run on a cold start.
 
 With only `MIGRATION_DATABASE_URL` set in the local shell (leave `DATABASE_URL` unset so nothing falls back to it):
 
@@ -148,6 +148,8 @@ Detail: SETUP.md section 4. `vercel.json` already sets framework `vite`, `npm ci
 - [ ] Add the section 5 variables to the environment you will deploy (a dedicated staging project, or Preview scoped to the staging database, never the production database).
 - [ ] Decide on Deployment Protection. Protecting the staging deployment keeps it private, but it also blocks schedulers and monitors unless they use Vercel's protection bypass for automation. Record the decision.
 - [ ] Deploy. If `/api/*` returns `NOT_CONFIGURED` (HTTP 503), read the function log for the configuration error; no demonstration data is served.
+- [ ] With a scanner configured, each upload is read back and scanned inside its completion request, which Vercel stops at the 30 second function limit. A scan is allowed 30 seconds plus one per MiB, so large lesson video can be cut off and stay pending. Until scanning moves out of the request, keep `LESSON_VIDEO_MAX_MB` at 25 or below on Vercel, or raise `maxDuration` in `vercel.json` on a plan that allows it, in a reviewed commit.
+- [ ] Before inviting members, decide on a Content-Security-Policy for the static site: try one in Report-Only mode against the deployed build (Radix and the lesson editor use inline styles; lessons embed YouTube and Vimeo), then enforce it in a reviewed commit. `vercel.json` already sends Strict-Transport-Security and Permissions-Policy (Alpha 41).
 
 ## 9. After deploy: health and hosted privacy checks
 

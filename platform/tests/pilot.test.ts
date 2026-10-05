@@ -103,3 +103,10 @@ test('encrypted mail payload tampering is rejected',async()=>{const value=mail.s
 test('worker bearer comparisons reject unexpected byte lengths safely',async()=>{const r=await app.request('/api/internal/mail',{headers:{Authorization:'Bearer '+'é'.repeat(secret.length)}});assert.equal(r.status,403);});
 test('new message HTTP endpoints use the authenticated sender, not the request body',async()=>{const r=await post('/api/organisations/code-black/conversations',{userId:DEMO_USER},ownerCookie);assert.equal(r.status,201);const t=(await r.json()).id;assert.equal((await post(`/api/organisations/code-black/conversations/${t}/messages`,{body:'Forged sender.',senderId:DEMO_USER},ownerCookie)).status,400);const ok=await post(`/api/organisations/code-black/conversations/${t}/messages`,{body:'Actual session sender.'},ownerCookie);assert.equal(ok.status,201);const m=(await msg.messages('code-black',ownerId,t)).items[0];assert.equal(m.senderId,ownerId);});
 test('new message endpoints require a retry-safe idempotency key',async()=>{const t=await msg.start('code-black',ownerId,DEMO_USER);const r=await app.request(`/api/organisations/code-black/conversations/${t.id}/messages`,{method:'POST',headers:{Origin:origin,Cookie:ownerCookie,'Content-Type':'application/json'},body:JSON.stringify({body:'No request key.'})});assert.equal(r.status,400);});
+test('a flood of invitation look-ups cannot stop invitees accepting or registering',async()=>{
+ await db.query("INSERT INTO request_limits(key,count,window_start) VALUES('invite-global:inspect',200,now()) ON CONFLICT(key) DO UPDATE SET count=200,window_start=now()");
+ const from=(path:string,body:unknown)=>app.request(path,{method:'POST',headers:{...headers(),'x-real-ip':'198.51.100.7'},body:JSON.stringify(body)});
+ assert.equal((await from('/api/invitations/inspect',{token:'B'.repeat(43)})).status,429);
+ const r=await from('/api/invitations/register',{token:'B'.repeat(43),name:'Late Invitee',password:'A-good-password-123!'});assert.notEqual(r.status,429);
+ await db.query("DELETE FROM request_limits WHERE key='invite-global:inspect'");
+});
