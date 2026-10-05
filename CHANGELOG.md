@@ -21,9 +21,23 @@ Details:
 - The browser asks again while a file is checked, for up to two minutes plus a second per megabyte; lesson and task files still being checked after that appear once ready. The owner's pilot checklist adds "Virus scan worker observed".
 - SETUP.md, LAUNCH_RUNBOOK.md, STAGING_LAUNCH.md, SECURITY.md, `.env.example` and the launch preflight describe the worker; the runbook's 25 MB video caution for Vercel is replaced by the clamd `StreamMaxLength` requirement.
 
+## Alpha 44: posts and archived tasks a page at a time (no version change), 5 October 2026
+
+On a pull request from `claude/paged-loading-bu4poc`, merged once its checks pass. Decision 044; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** busy communities stay quick. The conversation, spaces, Saved and Knowledge now show 20 posts at a time with a **Show older posts** button, instead of sending every post to every page. Archived project tasks load only when you open the Archive view. An old post or archived task still opens from a link.
+
+Details:
+
+- `GET /api/organisations/:slug/pages/posts` pages unpinned posts newest first, with `space`, `kind` and `saved=1` filters and each page's replies, appreciations and own bookmarks. Pinned posts stay in the snapshot.
+- `GET .../pages/archived-tasks?project=:id` pages archived tasks for the project team, with their notes and files (400 `PROJECT_REQUIRED`, 404 off the team).
+- `GET .../pages/posts/items/:id` and `.../pages/archived-tasks/items/:id` read one item the snapshot does not carry.
+- The snapshot keeps the newest 30 posts plus pinned, own hidden and named posts, and only active tasks; `summary.posts` and `summary.archivedTasks` give exact counts.
+- Feeds read their loaded pages again after a change, so they keep their place. New browser suite `test:browser:paging`.
+
 ## Alpha 46: staging launch prepared, nothing provisioned (no version change), 5 October 2026
 
-On a pull request from `claude/staging-launch-l1c2la`, merged once its checks pass. Decision 046; no migration. The version stays 0.39.0-alpha.1.
+On main through [PR #34](https://github.com/EmotiveImpact/REUNIR/pull/34), merged as `2edf0b0`. Decision 046; no migration. The version stays 0.39.0-alpha.1.
 
 **In plain language:** everything needed to put Ferven on a private staging site is ready, waiting for the owner's go-ahead. A single page lists the accounts to create, what they cost and the steps only the owner can take. New commands generate the app's secrets on the owner's computer and check a deployed site, so no secret ever needs to pass through chat.
 
@@ -35,7 +49,7 @@ Details:
 
 ## Alpha 41: pre-pilot hardening and current records (no version change), 5 October 2026
 
-On a pull request from `claude/platform-review-b99gh7`, merged once its checks pass. Decision 041; no migration. The version stays 0.39.0-alpha.1.
+On main through [PR #33](https://github.com/EmotiveImpact/REUNIR/pull/33), merged as `9d7dcff`. Decision 041; no migration. The version stays 0.39.0-alpha.1.
 
 **In plain language:** a review of the whole platform after every planned feature landed. Every test suite passed on main and no privacy or cross-community gap was found. Four small openings were closed so that one person cannot fill storage, set a name that skips the rules, or block other people's invitations, and the status notes now match what is on main.
 

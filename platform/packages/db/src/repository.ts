@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { applyCommand, visibleWorkspace, visibleRecords, actorFor, isAdmin } from '../../domain/src/engine';
-import { pageOf } from '../../domain/src/pages';
-import { cursorFor, pageQuery, readCursor, type Page, type PagedItems, type PagedList, type PageQuery } from '../../contracts/src/pages';
+import { itemOf, pageOf } from '../../domain/src/pages';
+import { cursorFor, pageQuery, readCursor, type ItemList, type Page, type PageItem, type PagedItems, type PagedList, type PageQuery } from '../../contracts/src/pages';
 import { DomainError, commandSchema, type Workspace, type TenantContext, type MutationResult } from '../../contracts/src/index';
 import type { ResourceRef, ResourceUploadRequest } from '../../contracts/src/lesson-resources';
 import { beginResourceUpload, completeResourceUpload, discardResourceUpload, resolveResourceDownload, type StoredObservation } from '../../domain/src/resources';
@@ -510,6 +510,13 @@ export class WorkspaceRepository {
             const total = (await sql.query<{ n: number }>('SELECT count(*)::int AS n FROM audit WHERE organization_id=$1', [ctx.organizationId])).rows[0].n;
             const items = rows.slice(0, query.limit);
             return { items: items as PagedItems[L][], total, nextCursor: rows.length > query.limit ? cursorFor(items[items.length - 1]) : null };
+        });
+    }
+    /** One post or archived task by its ID, with its records, under the same visibility rules as its list. */
+    async item<L extends ItemList>(slug: string, userId: string, list: L, itemId: string): Promise<PageItem<PagedItems[L]>> {
+        return this.within(slug, userId, false, async (sql, org) => {
+            const ctx = context(String(org.id), userId);
+            return itemOf(visibleRecords(await readAll(sql, org, userId), ctx), ctx, list, itemId);
         });
     }
     /** The acting member's own learning record, read inside their own tenant transaction. */
