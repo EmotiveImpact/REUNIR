@@ -60,7 +60,8 @@
     "test:browser:credits": "tsx scripts/credits-browser-check.ts",
     "test:browser:curation": "tsx scripts/collections-browser-check.ts",
     "test:browser:task-files": "tsx scripts/task-files-browser-check.ts",
-    "test:browser:forms": "tsx scripts/forms-browser-check.ts"
+    "test:browser:forms": "tsx scripts/forms-browser-check.ts",
+    "test:browser:paging": "tsx scripts/paging-browser-check.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "4.13.0",

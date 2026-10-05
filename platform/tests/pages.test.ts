@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createSeed, DEMO_ADMIN, DEMO_USER } from '../packages/domain/src/seed';
 import { visibleRecords, visibleWorkspace } from '../packages/domain/src/engine';
-import { pageOf, listItems } from '../packages/domain/src/pages';
-import { AUDIT_WINDOW, NOTIFICATION_WINDOW, cursorFor, pageQuery, readCursor } from '../packages/contracts/src/pages';
+import { itemOf, pageOf, listItems } from '../packages/domain/src/pages';
+import { AUDIT_WINDOW, NOTIFICATION_WINDOW, POST_WINDOW, cursorFor, pageQuery, readCursor } from '../packages/contracts/src/pages';
 import type { Workspace } from '../packages/contracts/src/index';
 
 const ORG = 'org_code_black';
@@ -78,4 +78,85 @@ test('the snapshot carries recent notices and audit entries and only the personâ
     assert.throws(() => pageOf(visibleRecords(s, ctx(DEMO_USER)), ctx(DEMO_USER), 'audit'), { code: 'FORBIDDEN' });
     const audit = pageOf(visibleRecords(s, ctx(DEMO_ADMIN)), ctx(DEMO_ADMIN), 'audit', { limit: 50 });
     assert.equal(audit.items[0].id, amina.audit.at(-1)!.id, 'the snapshot window is the newest end of the trail');
+});
+
+/** A busy conversation: many posts across two spaces, one pinned old post, a private-space post and archived tasks. */
+function chatty(): Workspace {
+    const s = createSeed();
+    for (let i = 0; i < 70; i++) s.posts.push({ id: `p_${String(i).padStart(3, '0')}`, organizationId: ORG, createdAt: at(i), spaceId: i % 2 ? 'space_build' : 'space_general', authorId: 'member_maya', kind: i % 5 ? 'update' : 'resource', title: `Post ${i}`, body: 'Body', pinned: false, hidden: false, cover: '' });
+    s.posts.push({ id: 'p_pinned_old', organizationId: ORG, createdAt: at(-10), spaceId: 'space_general', authorId: DEMO_ADMIN, kind: 'update', title: 'Pinned', body: 'B', pinned: true, hidden: false, cover: '' });
+    s.posts.push({ id: 'p_studio', organizationId: ORG, createdAt: at(200), spaceId: 'space_studio', authorId: DEMO_ADMIN, kind: 'update', title: 'Team only', body: 'B', pinned: false, hidden: false, cover: '' });
+    s.posts.push({ id: 'p_hidden_mine', organizationId: ORG, createdAt: at(-20), spaceId: 'space_general', authorId: DEMO_USER, kind: 'update', title: 'Mine, hidden', body: 'B', pinned: false, hidden: true, cover: '' });
+    s.comments.push({ id: 'c_old', organizationId: ORG, createdAt: at(3), postId: 'p_002', authorId: DEMO_USER, body: 'An old reply' });
+    s.reactions.push({ id: 'r_old', organizationId: ORG, createdAt: at(3), postId: 'p_002', userId: DEMO_USER });
+    s.bookmarks.push({ id: 'b_old', organizationId: ORG, createdAt: at(3), postId: 'p_002', userId: DEMO_USER }, { id: 'b_amina', organizationId: ORG, createdAt: at(3), postId: 'p_004', userId: DEMO_ADMIN });
+    const task = s.projectTasks.find(t => t.id === 'task_empty')!;
+    for (let i = 0; i < 25; i++) s.projectTasks.push({ ...structuredClone(task), id: `t_${String(i).padStart(3, '0')}`, createdAt: at(i), archived: true });
+    s.taskNotes.push({ id: 'note_archived', organizationId: ORG, createdAt: at(1), projectId: 'project_common', taskId: 't_001', authorId: DEMO_USER, body: 'Kept with the task', hidden: false });
+    return s;
+}
+
+test('the snapshot carries a window of posts plus pinned, own hidden and named ones, with replies only for those', () => {
+    const s = chatty(), alex = visibleWorkspace(s, ctx(DEMO_USER)), all = visibleRecords(s, ctx(DEMO_USER));
+    const window = new Set([...all.posts].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, POST_WINDOW).map(p => p.id));
+    assert(alex.posts.length < all.posts.length, 'shortened');
+    for (const id of window) assert(alex.posts.some(p => p.id === id), `window keeps ${id}`);
+    assert(alex.posts.some(p => p.id === 'p_pinned_old'), 'pinned posts always travel');
+    assert(alex.posts.some(p => p.id === 'p_hidden_mine'), 'the author keeps their hidden post, to appeal');
+    assert(!alex.posts.some(p => p.id === 'p_studio'), 'never a post from a space they cannot see');
+    const kept = new Set(alex.posts.map(p => p.id));
+    assert(alex.comments.every(c => kept.has(c.postId)) && alex.reactions.every(r => kept.has(r.postId)) && alex.bookmarks.every(b => kept.has(b.postId)));
+    assert.equal(alex.summary!.posts, all.posts.filter(p => !p.hidden).length, 'the exact count of visible posts');
+});
+
+test('feeds page every unpinned post newest first, by space, kind or saved, with the records each needs', () => {
+    const s = chatty(), view = visibleRecords(s, ctx(DEMO_USER));
+    const seen: string[] = [];
+    let page = pageOf(view, ctx(DEMO_USER), 'posts');
+    const total = page.total;
+    assert.equal(total, view.posts.filter(p => !p.pinned).length);
+    for (;;) { seen.push(...page.items.map(p => p.id)); if (!page.nextCursor) break; page = pageOf(view, ctx(DEMO_USER), 'posts', { cursor: page.nextCursor }); }
+    assert.equal(new Set(seen).size, total, 'every post once');
+    assert(!seen.includes('p_pinned_old') && !seen.includes('p_studio'));
+    assert(seen.includes('p_hidden_mine'), 'their own hidden post, as on its page');
+    const build = pageOf(view, ctx(DEMO_USER), 'posts', { space: 'space_build', limit: 50 });
+    assert(build.items.every(p => p.spaceId === 'space_build'));
+    assert(pageOf(view, ctx(DEMO_USER), 'posts', { kind: 'resource', limit: 50 }).items.every(p => p.kind === 'resource'));
+    const saved = pageOf(view, ctx(DEMO_USER), 'posts', { saved: '1' });
+    assert.deepEqual(saved.items.map(p => p.id), ['p_002'], 'only what they saved, never someone elseâ€™s bookmark');
+    assert.deepEqual(saved.records?.comments?.map(c => c.id), ['c_old']);
+    assert.deepEqual(saved.records?.reactions?.map(r => r.id), ['r_old']);
+    assert.deepEqual(saved.records?.bookmarks?.map(b => b.id), ['b_old']);
+    const amina = pageOf(visibleRecords(s, ctx(DEMO_ADMIN)), ctx(DEMO_ADMIN), 'posts', { limit: 50 });
+    assert(amina.items.some(p => p.id === 'p_studio'), 'the community team sees its private space');
+    assert(!amina.records?.bookmarks?.some(b => b.userId !== DEMO_ADMIN), 'bookmarks are private');
+});
+
+test('a post outside the window is read alone with every reply, and a hidden or private one is not found', () => {
+    const s = chatty(), view = visibleRecords(s, ctx(DEMO_USER));
+    const old = itemOf(view, ctx(DEMO_USER), 'posts', 'p_002');
+    assert.equal(old.item.id, 'p_002');
+    assert.deepEqual(old.records.comments?.map(c => c.id), ['c_old']);
+    assert.throws(() => itemOf(view, ctx(DEMO_USER), 'posts', 'p_studio'), { code: 'NOT_FOUND' });
+    s.posts.find(p => p.id === 'p_003')!.hidden = true;
+    assert.throws(() => itemOf(visibleRecords(s, ctx(DEMO_USER)), ctx(DEMO_USER), 'posts', 'p_003'), { code: 'NOT_FOUND' });
+});
+
+test('archived tasks leave the snapshot and page per project for the team only, with their notes', () => {
+    const s = chatty(), alex = visibleWorkspace(s, ctx(DEMO_USER));
+    assert(alex.projectTasks.length > 0 && alex.projectTasks.every(t => !t.archived), 'active tasks stay on the board');
+    assert(!alex.taskNotes.some(n => n.id === 'note_archived'), 'notes go with the archived task');
+    assert.equal(alex.summary!.archivedTasks.project_common, 25);
+    const view = visibleRecords(s, ctx(DEMO_USER));
+    const first = pageOf(view, ctx(DEMO_USER), 'archived-tasks', { project: 'project_common' });
+    assert.equal(first.total, 25);
+    assert.equal(first.items[0].id, 't_024', 'newest first');
+    const second = pageOf(view, ctx(DEMO_USER), 'archived-tasks', { project: 'project_common', cursor: first.nextCursor! });
+    assert.deepEqual(second.items.map(t => t.id), ['t_004', 't_003', 't_002', 't_001', 't_000']);
+    assert.deepEqual(second.records?.taskNotes?.map(n => n.id), ['note_archived']);
+    assert.equal(itemOf(view, ctx(DEMO_USER), 'archived-tasks', 't_001').records.taskNotes?.length, 1);
+    assert.throws(() => pageOf(view, ctx(DEMO_USER), 'archived-tasks'), { code: 'PROJECT_REQUIRED' });
+    const maya = visibleRecords(s, ctx('member_maya'));
+    assert.throws(() => pageOf(maya, ctx('member_maya'), 'archived-tasks', { project: 'project_common' }), { code: 'NOT_FOUND' }, 'not on the team');
+    assert.throws(() => itemOf(maya, ctx('member_maya'), 'archived-tasks', 't_001'), { code: 'NOT_FOUND' });
 });
