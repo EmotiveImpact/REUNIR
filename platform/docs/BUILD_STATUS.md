@@ -37,7 +37,7 @@ Node 22.22.0, Chromium at `/opt/pw-browsers/chromium` through `CHROMIUM_PATH`, P
 | `npm run test:postgres` | 29 passed |
 | Python helpers, `scripts/check_research.py` | 40 passed; register validates (41 after the Alpha 46 merge) |
 
-Failed attempts: the first paging browser run expected a fresh first page after returning to the feed by changing only the address's hash, which keeps the loaded pages in memory; the check now asks only that the feed fits a phone. An `npm test` run started before main was merged in was stopped and run again on the merged tree.
+Failed attempts: the first paging browser run expected a fresh first page after returning to the feed by changing only the address's hash, which keeps the loaded pages in memory; the check now asks only that the feed fits a phone. An `npm test` run started before main was merged in was stopped and run again on the merged tree. CI on `cd7026d` failed `test:browser:work`: after a task was archived with its dialogue open, the board read it alone, and opening the Archive view then showed it twice (once from the page, once read alone). `WithRecords` now keeps one copy of a record that arrives more than once; the work suite then passed three times in a row locally.
 
 ## Not verified, and why
 

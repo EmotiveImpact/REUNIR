@@ -49,7 +49,8 @@ export function useWorkspace() { const c = useContext(Context); if (!c)
 type Mergeable = 'posts' | 'comments' | 'reactions' | 'bookmarks' | 'projectTasks' | 'taskNotes' | 'uploads';
 /**
  * Records that came a page at a time, added to the snapshot for the components inside. The snapshot's own copy of a
- * record wins, because it is the newer read after a change; nothing here is written back.
+ * record wins, because it is the newer read after a change; a record that arrives more than once appears once. Nothing
+ * here is written back.
  */
 export function WithRecords({ records, children }: { records: Partial<Pick<Workspace, Mergeable>>; children: ReactNode }) {
     const outer = useWorkspace();
@@ -58,8 +59,9 @@ export function WithRecords({ records, children }: { records: Partial<Pick<Works
         for (const key of Object.keys(records) as Mergeable[]) {
             const extra = records[key] as { id: string }[] | undefined, own = (outer.data[key] ?? []) as { id: string }[];
             if (!extra?.length) continue;
-            const known = new Set(own.map(r => r.id));
-            (merged as Record<Mergeable, unknown>)[key] = [...own, ...extra.filter(r => !known.has(r.id))];
+            // A record can arrive twice (on a page and read alone); each appears once.
+            const known = new Set(own.map(r => r.id)), added = extra.filter(r => !known.has(r.id) && (known.add(r.id), true));
+            (merged as Record<Mergeable, unknown>)[key] = [...own, ...added];
         }
         return merged;
     }, [outer.data, records]);
