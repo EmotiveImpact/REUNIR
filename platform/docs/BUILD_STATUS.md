@@ -27,11 +27,16 @@ Numbering: Alpha 47 and decision 047 complete the staging block (Alpha 46 to 47)
 | `npm run typecheck`; `npx tsx --test tests/launch-staging.test.ts tests/launch-preflight.test.ts` | Passed; 24 passed (2 new: scan host package, resend.dev test sender warning) |
 | `docker compose config` with a placeholder `scan.env` | Valid; no ports; worker reaches `clamd` by name |
 | Scheduler loop in STAGING_LAUNCH.md, echoed | Expands to the three expected job names, schedules and paths |
+| App image build (the repository `Dockerfile`, `npm ci` and `npm run build`) | Passed, through this environment's proxy using a scratch copy of the Dockerfile that only adds the proxy's certificate |
+| `freshclam` in `clamav/clamav:1.4`, through the proxy | Downloaded `daily.cld` 28144; `main.cvd` 63 and `bytecode.cvd` 339 current |
+| `docker compose up -d clamd` from this folder | Healthy; about 950 MiB in memory once loaded; EICAR flagged, a clean file passed |
+| `scripts/scan-check.ts` in the app image with PR #36's source, on the compose network (`CLAMAV_HOST=clamd`) | All three lines passed: PING, harmless sample clean, EICAR flagged |
+| `scripts/scan-worker.ts` in the same image with an unreachable fictional database | Starts and stops on the refused database connection; `restart: unless-stopped` brings it back |
 
 ## Not verified, and why
 
-- The worker image build stopped in `npm ci` inside Docker: the build could not reach the npm registry through this environment's proxy. The Dockerfile is unchanged and is the one the API uses.
-- clamd could not download signatures here (the ClamAV mirror answered 403), so neither container ran end to end.
+- The worker was not run against a real database and bucket: no Neon project or bucket exists. Its queue logic is covered by PR #36's tests.
+- clamd's own scheduled freshclam could not update inside the container here, only because this environment intercepts TLS with its own certificate; the same download passed once that certificate was supplied. A real machine needs nothing extra.
 - No Cloud Scheduler job, machine or bucket exists; prices are from public pages on 5 October 2026.
 
 ## Next actions
