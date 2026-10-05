@@ -6,6 +6,18 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 Nothing in this list has been deployed. Deployment remains deferred by the owner.
 
+## Alpha 48: lessons lead with their video (no version change), 5 October 2026
+
+On a pull request from `claude/staging-launch-l1c2la`. Decision 048; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** a lesson with a video now opens with it, full width, above the reading. Uploaded videos play in place, and YouTube or Vimeo videos still ask before loading. The reading column is wider, practice prompts stand out, tracks without a cover no longer show an empty panel, and on a phone the lesson comes before the list of lessons.
+
+Details:
+
+- `featuredVideo` and `LessonStage` in `apps/web/src/components/lesson-content.tsx`; the featured video is left out of the body and the file list. Paragraphs opening with "Try this" or "Your task" render as a labelled panel.
+- The demo's first storytelling lesson embeds the Blender Foundation's open film (CC BY 3.0) behind the consent step.
+- Guarded by `tests/lesson-stage.test.ts`.
+
 ## Alpha 47: scan host package and the staging scheduler (no version change), 5 October 2026
 
 On a pull request from `claude/staging-launch-l1c2la`, merged after Alpha 42 once its checks pass. Decision 047; no migration. The version stays 0.39.0-alpha.1.
