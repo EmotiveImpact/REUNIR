@@ -1,4 +1,54 @@
-# Alpha 41 pre-pilot review and hardening
+# Alpha 46 staging launch, prepared and not provisioned
+
+5 October 2026. Version stays 0.39.0-alpha.1. The owner chose a staging launch; the standing decision is to prepare everything and provision nothing until the owner says go. This slice closes the gaps between the launch kit and a site the owner can switch on: a staging value template, a local secret generator, a hosted smoke check, and a plain owner's page with the chosen shape and costs. See decisions/046-staging-launch-shape.md and STAGING_LAUNCH.md.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/staging-launch-l1c2la`, from main `d726e8f` with the Alpha 41 branch (`b0a7f23`, PR #33) merged in |
+| Verified locally | Yes: see below |
+| Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
+| Merged | Not yet. The owner approved merging each change into main once its checks pass (3 October 2026) |
+| Deployed | No. No account, Neon project, Vercel project, domain record, sender, scheduler or bucket was created |
+| Operated with real members | No |
+
+Numbering: Alpha 46 and decision 046 come from the block allocated to the staging launch (Alpha 46 to 47, decisions 046 to 047, migrations 0044 to 0045). No migration.
+
+## What changed
+
+- **Two launch blockers found and recorded**: Vercel functions cannot reach a private clamd, so the first staging round runs without a bucket (uploads off) until background scanning lands; Vercel Hobby cron jobs run at most once a day, so the per-minute mail schedule needs Pro or a dedicated Google Cloud Scheduler.
+- **`.env.staging.example`**, committed through an ignore exception: the deployed variable set with `<fill: ...>` placeholders and empty secrets. The preflight now fails any value still holding `<fill:`, naming only the variable.
+- **`npm run launch:secrets`** fills the empty `BETTER_AUTH_SECRET`, `EMAIL_ENCRYPTION_KEY` and `CRON_SECRET` with independent random values, prints none, never overwrites, and refuses a file git would track.
+- **`npm run launch:smoke`** checks a deployed origin with unauthenticated GET requests only: health, live mode on PostgreSQL, the three internal routes refusing strangers, the security headers, and whether a Content-Security-Policy exists.
+- **docs/STAGING_LAUNCH.md**, the owner's page; LAUNCH_RUNBOOK.md links it and uses the new commands.
+
+## Local verification, 5 October 2026
+
+Node 22, from `platform/` unless noted.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck`, `npm run build` | Passed |
+| `npm test` | 875 passed, 0 failed (7 new in `tests/launch-staging.test.ts`) |
+| `npx tsx --test tests/launch-staging.test.ts tests/launch-preflight.test.ts` | 22 passed |
+| `launch:secrets` on a copy of the template, then `launch:preflight` | Three secrets generated, file mode 600, no value printed; only the four placeholders failed. The template itself was refused as a tracked file |
+| `launch:smoke --allow-local` against a stub server | Ran end to end; correctly failed the missing headers; a plain http origin without the flag was refused |
+| Python helpers (repository root) | 41 passed (1 new: both environment templates may be published, other `.env` files still may not) |
+
+Browser suites were not rerun: no screen changed.
+
+## Not verified, and why
+
+- No staging site exists, so `launch:smoke` has never seen a real Vercel deployment, and the new headers are unproven there.
+- Prices and plan limits in STAGING_LAUNCH.md were read from public pages on 5 October 2026, not from an account.
+
+## Next actions
+
+1. Merge with the owner's standing approval once CI is green; read back main.
+2. The owner says go, picks Pro or Hobby, the region and the sending domain, and follows STAGING_LAUNCH.md. Then: `launch:smoke` against the site, a reviewed `crons` commit, the section 9 browser checks, and a report-only Content-Security-Policy.
+
+## Historical Alpha 41 evidence: pre-pilot review and hardening
 
 5 October 2026. Version stays 0.39.0-alpha.1. A review of main at `d726e8f` after every planned feature was merged: every suite run, the records compared with the code, and the API reviewed for authorisation, abuse limits, headers, input handling and accessibility. No cross-community or private-data gap was found. Four small openings were closed and stale records corrected. See decisions/041-pre-pilot-hardening.md.
 

@@ -27,7 +27,7 @@ def records(root: Path) -> list[dict[str, str]]:
             raise ValueError("Invalid or duplicate manifest path")
         if any(x in {".git", "node_modules", ".local", ".vercel"} for x in pure.parts):
             raise ValueError("Generated/private path in source manifest")
-        if any(x.startswith(".env") and x != ".env.example" for x in pure.parts):
+        if any(x.startswith(".env") and x not in {".env.example", ".env.staging.example"} for x in pure.parts):
             raise ValueError("Private environment file in source manifest")
         target = root.joinpath(*pure.parts)
         if not target.resolve().is_relative_to(root.resolve()) or target.is_symlink():

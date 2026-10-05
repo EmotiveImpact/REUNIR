@@ -19,6 +19,11 @@ class PublicationSafety(unittest.TestCase):
     def test_env_files_forbidden(self):
         self.rows[0]["path"]="platform/.env.production";self.manifest()
         with self.assertRaises(ValueError):records(self.root)
+    def test_env_templates_allowed(self):
+        for name in (".env.example",".env.staging.example"):
+            (self.root/"platform").mkdir(exist_ok=True);(self.root/"platform"/name).write_text("NODE_ENV=production\n")
+            self.rows=[{"path":"platform/"+name,"sha256":hashlib.sha256((self.root/"platform"/name).read_bytes()).hexdigest()}];self.manifest()
+            self.assertEqual(records(self.root),self.rows)
     def test_node_modules_forbidden(self):
         self.rows[0]["path"]="platform/node_modules/x";self.manifest()
         with self.assertRaises(ValueError):records(self.root)

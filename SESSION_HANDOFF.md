@@ -24,7 +24,7 @@ Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `
 
 ## Next
 
-Nothing is in progress. Deployment stays deferred until the owner says otherwise: prepare, never provision. Recommended order when the owner chooses: the staging launch (LAUNCH_RUNBOOK.md); scanning outside the upload request, since Vercel stops a request at 30 seconds; a Content-Security-Policy tried on staging; server-side pages for posts and tasks; privacy-respecting analytics; appeals against suspensions and message reports; removing someone from a project team; credits on outcomes; question banks, timers and partial marks once pilots ask. The business stage and the long-term vision stay parked.
+Staging launch is prepared (Alpha 46, decision 046) and waits for the owner's go-ahead: platform/docs/STAGING_LAUNCH.md lists the shape, costs and owner-only steps, then `npm run launch:smoke` checks the site. Deployment stays deferred until the owner says go: prepare, never provision. Recommended order after staging: scanning outside the upload request, since Vercel stops a request at 30 seconds; a Content-Security-Policy tried on staging; server-side pages for posts and tasks; privacy-respecting analytics; appeals against suspensions and message reports; removing someone from a project team; credits on outcomes; question banks, timers and partial marks once pilots ask. The business stage and the long-term vision stay parked.
 
 ---
 ## Historical Alpha 37 handover: uploaded lesson video

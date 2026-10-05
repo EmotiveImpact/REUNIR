@@ -6,6 +6,18 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 Nothing in this list has been deployed. Deployment remains deferred by the owner.
 
+## Alpha 46: staging launch prepared, nothing provisioned (no version change), 5 October 2026
+
+On a pull request from `claude/staging-launch-l1c2la`, merged once its checks pass. Decision 046; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** everything needed to put Ferven on a private staging site is ready, waiting for the owner's go-ahead. A single page lists the accounts to create, what they cost and the steps only the owner can take. New commands generate the app's secrets on the owner's computer and check a deployed site, so no secret ever needs to pass through chat.
+
+Details:
+
+- The first staging round runs without file uploads: Vercel cannot reach a private virus scanner. Per-minute mail needs Vercel Pro or a dedicated Google Cloud Scheduler, because Hobby cron jobs run at most once a day.
+- `.env.staging.example`, `npm run launch:secrets` and `npm run launch:smoke`; the preflight fails unfilled `<fill: ...>` placeholders.
+- docs/STAGING_LAUNCH.md for the owner; LAUNCH_RUNBOOK.md links it.
+
 ## Alpha 41: pre-pilot hardening and current records (no version change), 5 October 2026
 
 On a pull request from `claude/platform-review-b99gh7`, merged once its checks pass. Decision 041; no migration. The version stays 0.39.0-alpha.1.

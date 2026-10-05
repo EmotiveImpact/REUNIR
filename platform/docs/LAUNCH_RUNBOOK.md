@@ -2,6 +2,8 @@
 
 **Status: nothing in this runbook has been done.** No Neon project, Vercel project, Google Cloud bucket, Resend sender, scheduler, monitor or backup exists for REUNIR (product name Ferven) because of this document. Every step below is for the owner to authorise and carry out, or to delegate explicitly. Record evidence as you go (section 14); a step is done only when its check has been observed, not when its setting has been typed.
 
+The owner's short version, with the chosen shape for the first staging round, costs and the steps only the owner can take, is [STAGING_LAUNCH.md](STAGING_LAUNCH.md) (decision 046).
+
 This runbook orders and consolidates [SETUP.md](SETUP.md), [PILOT_OPERATIONS.md](PILOT_OPERATIONS.md), [RELEASE_GATES.md](RELEASE_GATES.md) and [SECURITY.md](SECURITY.md). Those documents keep the detail and the reasons; where they differ, they win and this file should be corrected.
 
 Ground rules for every step:
@@ -104,13 +106,15 @@ Never on the deployed runtime: `MIGRATION_DATABASE_URL`, `BOOTSTRAP_EMAIL`, `BOO
 
 No secret may carry a `VITE_` prefix: anything `VITE_` is compiled into the public bundle, and startup refuses secret-like `VITE_` names.
 
-- [ ] Write the intended values into a local ignored file, for example `platform/.env.staging` (ignored by `.env.*`), then run the offline check:
+- [ ] Copy the template to a local ignored file, generate the app's own secrets into it, replace every `<fill: ...>` placeholder in an editor, then run the offline check:
 
   ```sh
+  cp .env.staging.example .env.staging
+  npm run launch:secrets -- --env-file .env.staging
   npm run launch:preflight -- --env-file .env.staging
   ```
 
-  It reads names and shapes only, prints no values and makes no network call. Fix every `fail`; read every `warn`. A clean result is not approval.
+  `launch:secrets` fills only the empty `BETTER_AUTH_SECRET`, `EMAIL_ENCRYPTION_KEY` and `CRON_SECRET`, prints no value and refuses a file git would track. The preflight reads names and shapes only, prints no values, makes no network call and fails any placeholder left unfilled. Fix every `fail`; read every `warn`. A clean result is not approval.
 - [ ] Enter the values into Vercel, marking secrets as sensitive. Delete the local file afterwards or keep it only in an encrypted store.
 
 ## 6. Google Cloud Storage (optional for the pilot)
@@ -126,7 +130,8 @@ Detail: SETUP.md section 6. Without a bucket, text and link features still work;
 - [ ] Create a service account used only by REUNIR, granted object create, read and delete on **this bucket only**. With a JSON key it can sign URLs itself; without one it also needs permission to sign as itself.
 - [ ] Do not add a lifecycle rule that deletes `lesson-resources/` objects: revision history refers to them.
 - [ ] Put the bucket name in `GCS_BUCKET` and, on Vercel, the key JSON in `GCS_CREDENTIALS_JSON` as a sensitive server variable. Never commit or share the key file; delete the local copy once stored.
-- [ ] Run ClamAV's clamd for virus scanning (decision 023; SETUP.md section 6, "Virus scanning"). Vercel functions cannot run it, so use a small always-on container (for example the official `clamav/clamav` image, which keeps its signatures current) on a private network the API can reach, never exposed to the public internet. Keep its `StreamMaxLength` at 10 MB or more. Put its address in `CLAMAV_HOST` (and `CLAMAV_PORT` if not 3310).
+- [ ] **On Vercel, stop here for now (decision 046).** Vercel functions have no private network on ordinary plans, so they cannot reach clamd without exposing it to the internet, which is never allowed. The first staging round runs without a bucket; storage returns when scanning no longer needs the API to call clamd directly.
+- [ ] Elsewhere, run ClamAV's clamd for virus scanning (decision 023; SETUP.md section 6, "Virus scanning"). Vercel functions cannot run it, so use a small always-on container (for example the official `clamav/clamav` image, which keeps its signatures current) on a private network the API can reach, never exposed to the public internet. Keep its `StreamMaxLength` at 10 MB or more. Put its address in `CLAMAV_HOST` (and `CLAMAV_PORT` if not 3310).
 - [ ] From a machine on that network, `npm run scan:check` passes: clamd answers, a harmless sample is clean and the EICAR test file is flagged.
 - [ ] After deploy, `/api/health` reports `"storage":"configured"` and `/api/account/capabilities` reports `resourceUploads: true` and `uploadScanning: true`. Then test a real upload, download and cover (section 9).
 
@@ -158,6 +163,7 @@ Health (no secret needed):
 - [ ] `GET https://<staging-hostname>/api/health/live` returns `{"status":"ok","version":"..."}` with the expected version.
 - [ ] `GET /api/health` returns `"status":"ok"`, `"mode":"live"`, `"database":"postgres"` and the expected `storage` value. This runs `SELECT 1` through the runtime role.
 - [ ] `GET /api/internal/mail` and `GET /api/internal/digests` **without** a header return 403.
+- [ ] `npm run launch:smoke -- --origin https://<staging-hostname>` reports 0 failed. It sends only unauthenticated GET requests and covers the three lines above, the retention route and the security headers. It proves nothing about signed-in behaviour.
 - [ ] Signed in as the owner, `/api/account/capabilities` shows `invitations`, `passwordRecovery` and `emailDigests` true when mail is configured.
 - [ ] The owner turns on two-step sign-in from Your account, stores the backup codes offline, and confirms owner tools work only afterwards when `ADMIN_TWO_FACTOR` is required.
 - [ ] The owner Pilot console shows no blocker you did not expect.
@@ -189,7 +195,7 @@ Nothing schedules these routes today, and `vercel.json` deliberately has **no `c
 All three require `Authorization: Bearer <CRON_SECRET>` in a **header**. Never put the secret in a URL or query string, where it would reach logs.
 
 - [ ] Choose one scheduler dedicated to this project and record it:
-  - **Vercel Cron Jobs.** Vercel sends `Authorization: Bearer $CRON_SECRET` automatically when `CRON_SECRET` is set in the project. A once-a-minute schedule needs a plan that allows it. If chosen, add this to `vercel.json` in a reviewed commit:
+  - **Vercel Cron Jobs.** Hobby plans run cron jobs at most once a day, so the per-minute mail schedule below needs Pro (decision 046). Vercel sends `Authorization: Bearer $CRON_SECRET` automatically when `CRON_SECRET` is set in the project. A once-a-minute schedule needs a plan that allows it. If chosen, add this to `vercel.json` in a reviewed commit:
 
     ```json
     "crons": [
