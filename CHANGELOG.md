@@ -6,6 +6,17 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 Nothing in this list has been deployed. Deployment remains deferred by the owner.
 
+## Alpha 47: scan host package and the staging scheduler (no version change), 5 October 2026
+
+On a pull request from `claude/staging-launch-l1c2la`, merged after Alpha 42 once its checks pass. Decision 047; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** staging now has exact steps for the free Vercel plan the owner chose, with Google's scheduler sending queued email every minute. A ready-made package runs the virus scanner and its worker on one small machine with nothing open to the internet, so uploads can be switched on for about $22 a month whenever the owner approves.
+
+Details:
+
+- `platform/deploy/scan-host/`: Compose project (clamd and the scan worker, no published port), `scan.env.example` and README with costs.
+- STAGING_LAUNCH.md records the Hobby choice and three Cloud Scheduler jobs that read `CRON_SECRET` from the ignored file.
+
 ## Alpha 46: staging launch prepared, nothing provisioned (no version change), 5 October 2026
 
 On a pull request from `claude/staging-launch-l1c2la`, merged once its checks pass. Decision 046; no migration. The version stays 0.39.0-alpha.1.

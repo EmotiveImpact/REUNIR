@@ -32,3 +32,6 @@
 
 # Ignore dependency links used in isolated build environments too.
 /platform/node_modules
+
+# The scan host keeps its real values beside its compose file.
+/platform/deploy/scan-host/scan.env

@@ -7,3 +7,4 @@ node_modules
 .preview
 evidence
 dist
+deploy/scan-host/scan.env

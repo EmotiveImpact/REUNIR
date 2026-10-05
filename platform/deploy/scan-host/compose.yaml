@@ -1,0 +1,45 @@
+# The virus scan host (decisions 023, 042 and 047): clamd and the REUNIR scan worker side by side on one small machine.
+# Nothing here listens on the internet: no port is published, and the machine's firewall should allow no inbound traffic
+# beyond the administrator's own SSH. clamd needs outbound HTTPS for signature updates; the worker needs outbound access
+# to Neon and Google Cloud Storage. Run from this folder:  docker compose up -d --build
+name: reunir-scan
+
+services:
+  clamd:
+    # The official image runs clamd and freshclam, which keeps signatures current. Pinned to a feature release.
+    image: clamav/clamav:1.4
+    restart: unless-stopped
+    environment:
+      # At least the largest upload allowed: 10 MB for files, or LESSON_VIDEO_MAX_MB when video is on.
+      CLAMD_CONF_StreamMaxLength: ${CLAMD_STREAM_MAX:-25M}
+      # Reloading signatures without pausing scans briefly doubles memory (about 2.4 GB). On a 2 GB machine, pause instead.
+      CLAMD_CONF_ConcurrentDatabaseReload: ${CLAMD_CONCURRENT_RELOAD:-no}
+    volumes:
+      - signatures:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 300s
+    # No "ports:" entry, ever. Only the worker reaches clamd, over this project's private network.
+
+  worker:
+    build:
+      context: ../..
+      args:
+        VITE_DATA_MODE: live
+    command: ["node", "--import", "tsx", "scripts/scan-worker.ts"]
+    restart: unless-stopped
+    # DATABASE_URL (the restricted reunir_app role), GCS_BUCKET and GCS_CREDENTIALS_JSON, never anything else.
+    env_file: scan.env
+    environment:
+      NODE_ENV: production
+      CLAMAV_HOST: clamd
+      CLAMAV_PORT: "3310"
+    depends_on:
+      clamd:
+        condition: service_healthy
+
+volumes:
+  signatures:
