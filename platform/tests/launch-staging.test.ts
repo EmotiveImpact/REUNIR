@@ -114,7 +114,7 @@ test('the scan host publishes no port and keeps its values out of git and the im
     assert.match(compose, /scripts\/scan-worker\.ts/);
     const example = parseEnv(readFileSync(resolve(dir, 'scan.env.example'), 'utf8'));
     assert.deepEqual(Object.keys(example).sort(), ['DATABASE_URL', 'GCS_BUCKET', 'GCS_CREDENTIALS_JSON']);
-    assert.ok(Object.values(example).every(v => v.includes('<fill:')));
+    assert.ok(Object.values(example).every(v => v?.includes('<fill:')));
     assert.match(readFileSync(resolve(import.meta.dirname, '../.dockerignore'), 'utf8'), /^deploy\/scan-host\/scan\.env$/m);
     assert.match(readFileSync(resolve(import.meta.dirname, '../../.gitignore'), 'utf8'), /^\/platform\/deploy\/scan-host\/scan\.env$/m);
 });
