@@ -94,13 +94,14 @@ HTTP flow:
 
 ### Virus scanning
 
-Every upload is scanned with ClamAV before it can be used, once `CLAMAV_HOST` names a clamd service (decision 023). Run clamd on a private network next to the API, never on the public internet; the official `clamav/clamav` container listens on TCP 3310 and keeps its signatures current with freshclam. Keep clamd's `StreamMaxLength` at 10 MB or more (its default is 25 MB).
+Every upload is scanned with ClamAV before it can be used, once `CLAMAV_HOST` names a clamd service (decision 023). Since Alpha 42 the scan runs in a separate worker, not in the upload request (decision 042). Run clamd and the worker together on a private network, never on the public internet; the official `clamav/clamav` container listens on TCP 3310 and keeps its signatures current with freshclam. Keep clamd's `StreamMaxLength` at least as large as the largest upload allowed: 10 MB, or `LESSON_VIDEO_MAX_MB` when video is on (clamd's default is 25 MB).
 
-- `CLAMAV_HOST` and `CLAMAV_PORT` (default 3310) point the API at clamd.
+- `CLAMAV_HOST` and `CLAMAV_PORT` (default 3310) point the worker at clamd. On the API, `CLAMAV_HOST` only switches scanning on: uploads wait for the worker, and the API never connects to clamd.
+- `npm run scan:worker` runs the worker with the same `DATABASE_URL` (the restricted runtime role), `GCS_BUCKET`, `GCS_CREDENTIALS_JSON` and `CLAMAV_HOST` as the API. It needs no sign-in secret and serves nothing. It polls every three seconds when idle (`SCAN_WORKER_IDLE_MS`); `npm run scan:worker -- --once` runs a single pass. From the Docker image: `node --import tsx scripts/scan-worker.ts`.
 - `UPLOAD_SCANNING` is `required` or `optional`. Unset means required when `NODE_ENV=production`. When required and `GCS_BUCKET` is set, the server refuses to start without `CLAMAV_HOST`. Set `optional` only deliberately, for example on a staging bucket before clamd exists.
 - `npm run scan:check` confirms clamd answers, a harmless sample is clean and the EICAR test file is flagged. It stores nothing.
 
-Completion returns 422 `FILE_FLAGGED` for a flagged file, which is deleted, and 503 `SCAN_UNAVAILABLE` when clamd gives no verdict; the upload then stays pending and completing again succeeds once clamd is back.
+Completion answers 202 `{ "status": "scanning" }` while a file waits for the worker; the browser asks again, and the worker completes the upload itself once it has a verdict. A flagged file is deleted and completion answers 422 `FILE_FLAGGED`. When clamd gives no verdict the file keeps waiting, unserved, and the worker tries again after one minute, doubling to at most fifteen; a scan with no verdict after 24 hours is given up and asked for again on the next completion. The owner's pilot checklist shows whether a worker pass has been seen and whether any scan has waited more than 15 minutes.
 
 Cookie-authenticated POSTs require the exact application `Origin` and JSON content type. Never proxy file bytes through the 64 KiB JSON API. Member uploads through this flow are private to their uploader.
 

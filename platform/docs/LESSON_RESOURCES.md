@@ -58,7 +58,7 @@ Use a private bucket with uniform bucket-level access and no public principals. 
 
 ## Limits and not yet done
 
-- Since Alpha 23, every file is scanned with ClamAV before it becomes ready when the server has a scanner (decision 023); a flagged file is deleted. Without `CLAMAV_HOST`, only the signature check applies, which confirms the container format, not that a file is harmless. Files are delivered as downloads, except lesson videos, which play inline in a `<video>` element.
+- Since Alpha 23, every file is scanned with ClamAV before it becomes ready when the server has a scanner (decision 023); a flagged file is deleted. Since Alpha 42 the scan runs in a separate worker beside clamd, so large videos are streamed to the scanner rather than held in memory or cut off by the host's request limit (decision 042). While a file is checked the editor says so; a file still being checked after a couple of minutes appears under uploaded files once it is ready. Without `CLAMAV_HOST`, only the signature check applies, which confirms the container format, not that a file is harmless. Files are delivered as downloads, except lesson videos, which play inline in a `<video>` element.
 - No deep inspection of Office files, no previews or thumbnails, no audio or SCORM packages. Lesson video plays as uploaded: there is no transcoding, streaming at several qualities, captions or poster frame.
 - Real Google Cloud Storage signing, IAM, CORS and downloads have not been exercised against a real bucket. The adapter is tested with the real SDK's offline signing and with in-memory stand-ins.
 - Objects whose best-effort deletion fails, or whose intents expired, can remain in the bucket. They are private and unreferenced. An operator sweep is a follow-up.

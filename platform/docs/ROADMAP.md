@@ -46,6 +46,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 39 | Administrators rename and tag cover library pictures (up to 60); the picker filters by name or tag; cards and lists load a 480-pixel copy checked by the server | No stock search or backfilled copies for existing covers; real bucket signing for the second policy unverified |
 | Alpha 33 | Authors ask to correct reviewed evidence and a reviewer decides; authors or administrators withdraw it with a reason; each item keeps its history | Withdrawal cannot be undone; mission proof has no correction history; no community-wide change log |
 | Alpha 34 | Authors credit teammates on a contribution; each person accepts or declines; accepted credits show on the contribution and the person's profile and never count as evidence | Project team members only; contributions only; no moderation of credit descriptions; no public or cross-community display |
+| Alpha 42 | Virus scanning runs in a separate worker beside clamd, not in the upload request: files wait as being checked, large videos are streamed to the scanner, and the upload completes even if the person leaves the page | One worker, polling; no rescanning when signatures update; files over clamd's stream limit wait unscanned; real clamd, bucket and worker host unverified |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 
