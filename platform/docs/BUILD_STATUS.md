@@ -1,4 +1,34 @@
-# Alpha 47 scan host package and the Hobby scheduler, prepared and not provisioned
+# Alpha 48 lessons lead with their video
+
+5 October 2026. Version stays 0.39.0-alpha.1. Decision 048; no migration, no API change. The owner said lessons had no space for video and asked what else in learning needed lifting.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/staging-launch-l1c2la`, from main `d4393cd` (PR #38 page colour) |
+| Verified locally | Yes: see below |
+| Merged | Not yet; PR #39 |
+| Deployed | No |
+
+## What changed
+
+- `featuredVideo` and `LessonStage` (`apps/web/src/components/lesson-content.tsx`): the first uploaded video, otherwise the first embed, shows full width at 16:9 above the lesson title. Uploads fetch their signed address only on Play; embeds keep the consent step. The featured video is left out of the body and the file list.
+- Path panel 240px on wide screens; below 1081px the lesson comes first. Coverless tracks hide the empty cover panel. "Try this" and "Your task" paragraphs render as labelled panels.
+- Demo lesson 1 embeds the Blender Foundation's open film (CC BY 3.0) behind consent.
+
+## Checks run
+
+- `npx tsc -p . --noEmit` clean. `npm test`: 896 passed, 0 failed (includes the new `tests/lesson-stage.test.ts`). Python helpers: 41 OK.
+- Browser, against a fresh `bundle:preview`, with `CHROMIUM_PATH=/opt/pw-browsers/chromium`: monochrome 16, v4 20, states 12, covers 20, rich-lessons 11, assessments 16, authoring 27, resources 20, all passed.
+- Failed attempts: the first browser run failed before any test because Playwright looked for its own headless shell; setting `CHROMIUM_PATH` fixed it. CI then failed `test:browser:resources`, which still expected the uploaded video in the file list; the check now asserts it plays on the stage above the title and is absent from the list, and passes locally.
+- Screenshots of desktop and 390px lessons were inspected; the first 390px build was squashed into two columns because the new grid rule overrode the 1080px rule, fixed by limiting it to `min-width:1081px`.
+
+## Not verified
+
+Uploaded video on a real bucket (staging keeps `LESSON_VIDEO_MAX_MB` unset). The embed was not loaded in the browser checks, by design.
+
+## Historical Alpha 47 evidence: Alpha 47 scan host package and the Hobby scheduler, prepared and not provisioned
 
 5 October 2026. Version stays 0.39.0-alpha.1. The owner chose Vercel Hobby for staging, so mail is scheduled by Google Cloud Scheduler; and with scanning moved into a worker (Alpha 42, decision 042), uploads can join staging once the owner approves a small scan host. See decisions/047-scan-host-and-hobby-scheduler.md, STAGING_LAUNCH.md and deploy/scan-host/README.md.
 

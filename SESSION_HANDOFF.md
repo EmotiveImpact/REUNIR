@@ -1,3 +1,7 @@
+# Latest: Alpha 48 lessons lead with their video
+
+5 October 2026, on `claude/staging-launch-l1c2la` (PR #39), after PR #38 (page colour, main `d4393cd`). Read decisions/048-lesson-video-stage.md and the top of BUILD_STATUS.md. No migration. Numbering: Alpha 48 to 49, decisions 048 to 049, migrations 0046 to 0047 belong to this thread; Alpha 49, decision 049 and both migrations are unused. Next: merge PR #39 once CI is green, then republish the shared demo. Not built: chapters, captions upload, playback position.
+
 # Current continuation: Alpha 42 virus scanning in the background
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, decisions/042-background-scanning.md, decisions/023-upload-scanning.md, SETUP.md section 6 and LAUNCH_RUNBOOK.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.

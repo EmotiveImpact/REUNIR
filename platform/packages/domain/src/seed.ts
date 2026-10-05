@@ -60,6 +60,11 @@ export function createSeed(slug = 'code-black'): Workspace {
     const worksheetBytes = demoWorksheetPdf().length;
     const uploads: Upload[] = isCode ? [{ ...base(DEMO_WORKSHEET_FILE), userId: DEMO_ADMIN, purpose: 'lesson_resource', trackId: 'track_product', originalName: 'problem-interview-worksheet.pdf', contentType: 'application/pdf', sizeBytes: worksheetBytes, status: 'ready', objectKey: `fixtures/${org}/problem-interview-worksheet.pdf`, completedAt: '2026-09-24T08:00:00.000Z', generation: '1' },
         { ...base(DEMO_COVER_LIBRARY_FILE), userId: DEMO_ADMIN, purpose: 'cover_library', trackId: null, coverTrackId: null, coverProjectId: null, originalName: 'cover library picture', contentType: 'image/jpeg', sizeBytes: 14450, status: 'ready', objectKey: `fixtures/${org}/covers/library/mountain.jpg`, completedAt: '2026-09-24T08:00:00.000Z', generation: '1' }] : [];
+    // The first storytelling lesson leads with a short film: the Blender Foundation's open movie, licensed CC BY 3.0. It loads only when a learner asks.
+    if (isCode) { const first = lessons.find(l => l.id === 'lesson_1')!; first.richBody = { type: 'doc', content: [
+        { type: 'video', attrs: { src: 'https://www.youtube-nocookie.com/embed/aqz-KE-bpKQ', title: 'Big Buck Bunny, an open movie by the Blender Foundation (CC BY 3.0)' } },
+        ...first.body.split(/\n\s*\n/).map(text => ({ type: 'paragraph', content: [{ type: 'text', text }] })),
+    ] }; }
     if (isCode) lessons.find(l => l.id === 'lesson_4')!.resources = [{ id: 'resource_problem_worksheet', fileId: DEMO_WORKSHEET_FILE, name: 'Problem interview worksheet', description: 'Five questions that keep what you heard separate from what you assume.', contentType: 'application/pdf', sizeBytes: worksheetBytes }];
     // Two fictional knowledge checks: one scored automatically, one with a written answer that a reviewer marks.
     if (isCode) {
