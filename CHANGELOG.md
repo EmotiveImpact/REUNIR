@@ -16,6 +16,7 @@ Details:
 
 - `platform/deploy/scan-host/`: Compose project (clamd and the scan worker, no published port), `scan.env.example` and README with costs.
 - STAGING_LAUNCH.md records the Hobby choice and three Cloud Scheduler jobs that read `CRON_SECRET` from the ignored file.
+- Follow-up, 5 October 2026: the interface now declares `color-scheme: dark` and paints its own page background and text colour, so a host page with a light background (as the shared demo's viewer has) no longer shows through as white panels and unreadable dark text. Guarded by `tests/page-colour.test.ts`.
 
 ## Alpha 42: virus scanning in the background (no version change), 5 October 2026
 
