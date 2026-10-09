@@ -26,6 +26,7 @@ import { ownershipTransferRequest } from '../../../packages/contracts/src/owners
 import { EMAIL_CHANGE_SENT, EMAIL_CONFIRMED_PATH, EMAIL_LINK_REFUSED_PATH, changeNoticeMail, emailChangeRequest, type EmailVerification } from '../../../packages/contracts/src/email';
 import { TWO_FACTOR_REQUIRED, TWO_FACTOR_REQUIRED_MESSAGE, type AdminTwoFactor } from '../../../packages/contracts/src/two-factor';
 import { coverLibraryDetails, coverLibraryUploadRequest, coverSubject, coverUploadRequest, type CoverVariant } from '../../../packages/contracts/src/covers';
+import { USAGE_PER_MINUTE, usageVisit } from '../../../packages/contracts/src/usage';
 export interface SessionIdentity {
     id: string;
     name: string;
@@ -225,7 +226,9 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         if (!identity)
             return c.json({ error: { code: 'UNAUTHENTICATED', message: 'Please sign in.' } }, 401);
         c.set('identity', identity);
-        if (!await repository.consumeRateLimit('member:' + identity.id, c.req.method === 'GET' ? 240 : 100))
+        // A usage count has its own allowance (decision 060), so moving around never uses up what a member's actions need.
+        const counting = c.req.method === 'POST' && /^\/api\/organisations\/[^/]+\/usage$/.test(c.req.path);
+        if (!counting && !await repository.consumeRateLimit('member:' + identity.id, c.req.method === 'GET' ? 240 : 100))
             return c.json({ error: { code: 'RATE_LIMITED', message: 'Take a moment before trying again.' } }, 429, { 'Retry-After': '60' });
         await next();
     });
@@ -458,6 +461,18 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         const record = await repository.learningRecord(c.req.param('slug'), c.get('identity').id);
         c.header('Content-Disposition', `attachment; filename="${learningRecordFilename(record.community.slug, record.generatedAt)}"`);
         return c.json(record);
+    });
+    // Usage counts (decision 060). A visit carries only the part of the community, and a count beyond the allowance is
+    // dropped quietly rather than refused. Only active owners and administrators read the weekly totals.
+    app.post('/api/organisations/:slug/usage', async (c) => {
+        const visit = usageVisit.parse(await c.req.json());
+        if (!await repository.consumeRateLimit('usage:' + c.get('identity').id, USAGE_PER_MINUTE)) return c.json({ counted: false });
+        await repository.recordUsage(c.req.param('slug'), c.get('identity').id, visit.area);
+        return c.json({ counted: true });
+    });
+    app.get('/api/organisations/:slug/usage', async (c) => {
+        await requireTwoStepForAdministration(c);
+        return c.json(await repository.usage(c.req.param('slug'), c.get('identity').id));
     });
     // A task file, for someone who can work on the task now: a two-minute signed link pinned to the verified generation.
     app.get('/api/organisations/:slug/tasks/:taskId/files/:fileId/download', async (c) => {

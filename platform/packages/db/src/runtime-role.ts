@@ -12,7 +12,7 @@ export async function grantRuntimeTables(sql: SQL): Promise<void> {
     if(owned.rows.length)throw new Error('Runtime role must not own database objects.');
     const memberships=await sql.query('SELECT 1 FROM pg_auth_members a JOIN pg_roles r ON r.oid=a.member WHERE r.rolname=$1 LIMIT 1',[role]);
     if(memberships.rows.length)throw new Error('Runtime role must not inherit or assume other database roles.');
-    const names=['service_observations','invitations','email_outbox','conversations','conversation_joins','messages','message_receipts','message_reports','member_blocks','organisations', ...tables.map(t=>t.table),'command_receipts','request_limits','upload_intents','upload_scans','auth_user','auth_session','auth_account','auth_verification','auth_rate_limit','auth_two_factor'];
+    const names=['service_observations','invitations','email_outbox','conversations','conversation_joins','messages','message_receipts','message_reports','member_blocks','organisations', ...tables.map(t=>t.table),'command_receipts','request_limits','upload_intents','upload_scans','auth_user','auth_session','auth_account','auth_verification','auth_rate_limit','auth_two_factor','usage_counts'];
     await sql.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
     await sql.query(`GRANT USAGE,SELECT ON SEQUENCE messages_sequence_seq TO ${role}`);
     await sql.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON TABLE ${names.join(',')} TO ${role}`);
@@ -49,4 +49,7 @@ export async function grantRuntimeTables(sql: SQL): Promise<void> {
     // A project team membership only ends or resumes; who and which project never change (migration 0048).
     await sql.query(`REVOKE UPDATE ON project_members FROM ${role}`);
     await sql.query(`GRANT UPDATE (left_at,removed_by) ON project_members TO ${role}`);
+    // A usage count only goes up; its community, day and part never change (migration 0051).
+    await sql.query(`REVOKE UPDATE ON usage_counts FROM ${role}`);
+    await sql.query(`GRANT UPDATE (count) ON usage_counts TO ${role}`);
 }

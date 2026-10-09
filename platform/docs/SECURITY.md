@@ -39,6 +39,10 @@ A review of main after every planned feature landed (decisions/041-pre-pilot-har
 
 `contribution_credits` uses forced row security: accepted credits are readable within the community; invitations, refusals and withdrawals only by the author and the person named. Only the contribution's author inserts, in their own name; only the answer and withdrawal columns can be updated, by those two people while active; rows are deleted only during the credited person's own account deletion. Credits grant nothing and count towards nothing (see CREDITS.md).
 
+## Usage counts
+
+`usage_counts` (decision 060) holds a count per community, UTC day and part of the community, and no column for a person, session, device, address, time of day or page. Forced row security admits a new count of one, or one more, only from the API's counting step, which marks its own transaction, for an active member and for today; active owners and administrators read their own community's counts; only the retention job, by its worker mark, sees and deletes days past 183. The runtime role may update only `count`. The browser sends just the part's name, a burst past 30 a minute is dropped, and a browser sending Global Privacy Control or Do Not Track sends nothing.
+
 ## Before a public or paid launch
 
 - Invitation expiry/revocation and password recovery/session revocation are implemented and locally tested. Still verify actual provider delivery, trusted proxy/IP handling and hosted cookies. Email confirmation and password-checked address change are implemented (Alpha 26); set `EMAIL_VERIFICATION=required` with a verified sender on the hosted deployment. Privileged-account two-step sign-in is implemented (Alpha 21); verify it on the hosted deployment and set `ADMIN_TWO_FACTOR=required` there.

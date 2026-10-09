@@ -567,3 +567,18 @@ Creators attach their own MP4 or WebM video to a lesson, and learners play it in
 | V05 | A learner plays a published lesson video in the lesson, and can still download it | Demo browser check |
 
 Transcoding, captions, poster frames and scanning of large video are outside this release.
+
+## Alpha 60: usage counts that name no one
+
+Owners and administrators see how often each part of their community is opened, week by week, without anything that could say what one person did. See `decisions/060-usage-stats.md`.
+
+| ID | Requirement | Verification |
+| --- | --- | --- |
+| U01 | Moving into a part of the community adds one to that part's count for the UTC day; the stored record is the community, the day, the part and the count, with no person, session, device, address, time of day or page | Contract, database and HTTP tests |
+| U02 | Account, appeals, teaching, a course's authoring studio and community management pages are not counted | Contract test |
+| U03 | Only an active member's count is accepted, through the API's own counting step; nobody can set a count, change another day or rename a part | Database (forced RLS) tests |
+| U04 | Only active owners and administrators read the weekly totals, and any week under five shows as "<5" | Database, HTTP and demo browser checks |
+| U05 | A person can leave a device out from Your account, and a browser sending Global Privacy Control or Do Not Track is never counted | Demo browser check |
+| U06 | Counts are kept 183 days, and only the retention job can clear them | Retention and database tests |
+
+Distinct visitors, per-person figures, time-of-day breakdowns and exports are outside this release.

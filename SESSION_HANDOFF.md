@@ -6,9 +6,9 @@
 - Alpha 51, app, accessibility and speed (decision 051): PR #41, merged as `7ffb982`.
 - Alpha 52, records, PR #42 merged as `fa3013a` (this note, BUILD_STATUS, CHANGELOG, READMEs, ROADMAP, LAUNCH_RUNBOOK, RECOVERY_STATUS marked historical, SOURCE_MANIFEST regenerated with `python3 scripts/publish_source.py --write-manifest "<release>"`, CI timeout 30 minutes). No decision record; no code change.
 - Alpha 53, feeds paged in SQL (decision 053): a window of posts per read, feed pages and post counts in SQL; other collections keep the 5,000-row limit. PR #43, merged as `cae20e1`.
-- Alpha 54, project teams, captions and video resume (decision 054, migration 0048). Alpha 58 later used migration 0049, and Alpha 59 migration 0050. PR #44, merged as `0d14bcc`.
+- Alpha 54, project teams, captions and video resume (decision 054, migration 0048). Alpha 58 later used migration 0049, Alpha 59 migration 0050 and Alpha 60 migration 0051. PR #44, merged as `0d14bcc`.
 
-Edem asked on 9 October 2026 for the six unbuilt items, one pull request each, each merged before the next: the shared confirmation box (Alpha 55), partial marks (56), video chapters (57), appeals against suspensions and message reports (58) and credits on outcomes (59) are built; privacy-respecting usage stats (60) is next. Deployment remains Edem's call.
+Edem asked on 9 October 2026 for the six unbuilt items, one pull request each, each merged before the next: the shared confirmation box (Alpha 55), partial marks (56), video chapters (57), appeals against suspensions and message reports (58), credits on outcomes (59) and privacy-respecting usage stats (60) are all built. Deployment remains Edem's call.
 
 Checks are unchanged: from `platform/`, `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script with `CHROMIUM_PATH=/opt/pw-browsers/chromium`, and `npm run test:postgres` against a disposable `reunir_ci`; from the root, the Python helpers and `check_research.py`.
 

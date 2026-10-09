@@ -18,6 +18,7 @@ import { appealSuspension, suspensionStanding, withdrawSuspensionAppeal } from '
 import { suspensionAppealInput, type SuspensionStanding } from '../../contracts/src/appeals';
 import { reliesOnAdministration } from '../../domain/src/administration';
 import { TWO_FACTOR_REQUIRED, TWO_FACTOR_REQUIRED_MESSAGE } from '../../contracts/src/two-factor';
+import { usageReport, type UsageArea, type UsageReport } from '../../contracts/src/usage';
 import { tables, type TableSpec, type CollectionKey } from './tables';
 import type { Database, SQL } from './connection';
 const slugPattern = /^[a-z0-9][a-z0-9-]{0,99}$/;
@@ -336,6 +337,33 @@ export class WorkspaceRepository {
             count: number;
         }>(`INSERT INTO request_limits(key,count,window_start) VALUES ($1,1,now()) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN request_limits.window_start<now()-($2*interval '1 second') THEN 1 ELSE request_limits.count+1 END,window_start=CASE WHEN request_limits.window_start<now()-($2*interval '1 second') THEN now() ELSE request_limits.window_start END RETURNING count`, [key, seconds]);
         return r.rows[0].count <= max;
+    }
+    /**
+     * Adds one to today's count for a part of the community (decision 060). Nothing about the person is stored: their id
+     * only lets row security confirm an active member is counting. The community is not locked, so a count never waits on
+     * a change, and the transaction is marked so that row security admits this step and no other.
+     */
+    async recordUsage(slug: string, userId: string, area: UsageArea): Promise<void> {
+        if (!slugPattern.test(slug)) throw new DomainError('NOT_FOUND', 'Community not found.', 404);
+        await this.db.transaction(async (sql) => {
+            await setContext(sql, '', userId);
+            const found = await sql.query<{ id: string }>("SELECT o.id FROM organisations o WHERE o.slug=$1 AND EXISTS(SELECT 1 FROM members m WHERE m.organization_id=o.id AND m.user_id=$2 AND m.status='active')", [slug, userId]);
+            if (!found.rows[0]) throw new DomainError('NOT_FOUND', 'Community not found.', 404);
+            const orgId = String(found.rows[0].id);
+            await setContext(sql, orgId, userId);
+            await sql.query("SELECT set_config('app.usage_count',$1,true)", [orgId]);
+            await sql.query("INSERT INTO usage_counts(organization_id,day,area,count) VALUES($1,(now() AT TIME ZONE 'UTC')::date,$2,1) ON CONFLICT(organization_id,day,area) DO UPDATE SET count=usage_counts.count+1", [orgId, area]);
+        });
+    }
+    /** Weekly totals per part of the community, small counts hidden, for active owners and administrators (decision 060). */
+    async usage(slug: string, userId: string, now = new Date()): Promise<UsageReport> {
+        return this.within(slug, userId, false, async (sql, org) => {
+            const admin = await sql.query("SELECT 1 FROM members WHERE organization_id=$1 AND user_id=$2 AND status='active' AND role IN ('owner','admin')", [org.id, userId]);
+            if (!admin.rows[0]) throw new DomainError('FORBIDDEN', 'Only owners and administrators see usage.', 403);
+            const since = usageReport([], now).weeks[0];
+            const rows = await sql.query<{ day: string; area: string; count: number }>("SELECT to_char(day,'YYYY-MM-DD') AS day,area,count FROM usage_counts WHERE organization_id=$1 AND day>=$2::date", [org.id, since]);
+            return usageReport(rows.rows, now);
+        });
     }
     async seed(state: Workspace) {
         if (process.env.NODE_ENV === 'production')

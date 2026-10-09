@@ -7,9 +7,9 @@ class DryRun extends Error { constructor(readonly counts: Partial<RetentionCount
 
 /**
  * The housekeeping in RETENTION_DAYS, cleared on schedule. Records that are not tied to a community (sessions, links, rate
- * counters, mail) are cleared directly; each community's own records (receipts, change events, read notices) inside that
- * community's tenant context, so row security applies as for any request. The job lists communities and nothing else across
- * tenants (migration 0030). A dry run does the same work and rolls it back, so its counts are exact.
+ * counters, mail) are cleared directly; each community's own records (receipts, change events, read notices, usage counts)
+ * inside that community's tenant context, so row security applies as for any request. The job lists communities and
+ * nothing else across tenants (migration 0030). A dry run does the same work and rolls it back, so its counts are exact.
  */
 export class RetentionJob {
     constructor(private readonly db: Database) {}
@@ -41,10 +41,13 @@ export class RetentionJob {
             for (const organizationId of communities)
                 await step(async sql => {
                     await setContext(sql, organizationId, '');
+                    // Usage counts past keeping are visible only to this job (migration 0051).
+                    await sql.query("SELECT set_config('app.worker','retention',true)");
                     return {
                         requestReceipts: await n(sql, 'DELETE FROM command_receipts WHERE organization_id=$1 AND created_at<$2 RETURNING request_key', [organizationId, cut('requestReceipts')]),
                         changeEvents: await n(sql, 'DELETE FROM outbox WHERE organization_id=$1 AND created_at<$2 RETURNING id', [organizationId, cut('changeEvents')]),
                         readNotices: await n(sql, 'DELETE FROM notifications WHERE organization_id=$1 AND read_at IS NOT NULL AND read_at<$2 RETURNING id', [organizationId, cut('readNotices')]),
+                        usageCounts: await n(sql, 'DELETE FROM usage_counts WHERE organization_id=$1 AND day<$2::date RETURNING area', [organizationId, cut('usageCounts').slice(0, 10)]),
                     };
                 });
             if (apply) await this.observe('ok');

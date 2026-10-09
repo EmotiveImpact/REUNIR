@@ -23,6 +23,7 @@ How long REUNIR keeps things. The rules live in `packages/contracts/src/retentio
 | Sent and cancelled mail records | 90 days (contents are cleared when sent or cancelled) |
 | Contents of mail that could not be delivered | 30 days after it finally failed; the record itself at 90 |
 | Notices you have read | 180 days after you read them. Unread notices stay. |
+| Usage counts (how often each part of a community was opened, per day, with nothing about who) | 183 days |
 
 Queued mail is never touched.
 
@@ -30,7 +31,7 @@ Queued mail is never touched.
 
 `npm run retention:run` is a dry run: it prints counts per rule and changes nothing. `RETENTION=apply npm run retention:run` clears them. On a server, an authenticated `GET /api/internal/retention` with `Authorization: Bearer <CRON_SECRET>` applies the rules, and `?dry=1` only counts. Schedule it once a day, which needs `CRON_SECRET` even on a server without mail; see [PILOT_OPERATIONS.md](PILOT_OPERATIONS.md). Nothing is scheduled by this release.
 
-The job uses the normal runtime role. It lists communities through one read-only policy that applies only when its own transaction says it is the retention worker (migration 0030), then clears each community's records inside that community's tenant context.
+The job uses the normal runtime role. It lists communities through one read-only policy that applies only when its own transaction says it is the retention worker (migration 0030), then clears each community's records inside that community's tenant context. Usage counts past keeping are visible to that worker alone, and only it can delete them (migration 0051).
 
 ## Known limits
 

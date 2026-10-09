@@ -8,6 +8,7 @@ import { Modal, PageHeading, Pill } from '../components/ui';
 import { TwoStepPanel } from '../components/two-step';
 import { EmailAddressPanel } from '../components/email-address';
 import { RetentionPanel } from '../components/retention';
+import { UsageChoicePanel } from '../components/usage-stats';
 import { SuspendedAccess } from '../components/suspended-access';
 import { ACCOUNT_DELETION_PHRASE, FORMER_MEMBER, listNames, ownerRefusal } from '../../../../packages/contracts/src/account';
 import { Button } from '../components/ui/button';
@@ -37,6 +38,7 @@ export function AccountPage() {
             <SuspendedAccess userId={userId}/>
             <EmailAddressPanel/>
             <TwoStepPanel roles={communities.map(c => c.role)}/>
+            <UsageChoicePanel/>
             <RetentionPanel/>
             <section className="panel account-delete" aria-labelledby={heading}>
                 <h2 id={heading}>Delete your account</h2>

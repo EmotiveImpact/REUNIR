@@ -322,6 +322,20 @@ try{
         assert.deepEqual((await repo.snapshot('code-black',SOFIA)).outcomeCredits.filter(k=>k.outcomeId===outcome).map(k=>[k.userId,k.status]),[[IDRIS,'accepted']]);
         assert.equal((await rows('org_code_black',DEMO_ADMIN,'DELETE FROM outcome_credits RETURNING id')).length,0,'no credit is deleted outside a person’s own account deletion');
     });
+    await check('usage counts add up per community and day, are read only by owners and administrators, and clear only through the retention job (migration 0051)',async()=>{
+        const repo=new WorkspaceRepository(runtime!),SOFIA='member_sofia';
+        const rows=(org:string,user:string,sql:string)=>runtime!.transaction(async tx=>{await setContext(tx,org,user);return (await tx.query<Record<string,unknown>>(sql)).rows;});
+        await Promise.all(Array.from({length:6},(_,i)=>repo.recordUsage('code-black',i%2?DEMO_USER:SOFIA,'events')));
+        assert.deepEqual((await admin.query("SELECT count FROM usage_counts WHERE organization_id='org_code_black' AND area='events'")).rows,[{count:6}],'concurrent counts add up in one row');
+        assert.deepEqual(await rows('org_code_black',DEMO_USER,'SELECT area FROM usage_counts'),[],'a member reads nothing');
+        assert.equal((await repo.usage('code-black',DEMO_ADMIN)).areas.find(a=>a.area==='events')!.counts.at(-1),6);
+        await assert.rejects(()=>repo.usage('code-black',DEMO_USER),{code:'FORBIDDEN'});
+        await assert.rejects(()=>rows('org_code_black',DEMO_USER,"INSERT INTO usage_counts(organization_id,day,area,count) VALUES('org_code_black',(now() AT TIME ZONE 'UTC')::date,'home',1)"),/row-level security/,'not without the counting step');
+        await admin.query("INSERT INTO usage_counts(organization_id,day,area,count) VALUES('org_code_black',(now() AT TIME ZONE 'UTC')::date-200,'saved',8)");
+        assert.equal((await rows('org_code_black',DEMO_ADMIN,'DELETE FROM usage_counts RETURNING area')).length,0,'an owner cannot clear counts');
+        await new RetentionJob(runtime!).run(new Date(),true);
+        assert.deepEqual((await admin.query("SELECT area FROM usage_counts WHERE organization_id='org_code_black' ORDER BY area")).rows.map(r=>r.area),['events'],'only the days past keeping went');
+    });
     await check('library pictures are renamed and tagged, and covers keep verified small copies, through a restricted PostgreSQL connection',async()=>{
         const repo=new WorkspaceRepository(runtime!);
         const rows=(user:string,org:string,sql:string)=>runtime!.transaction(async tx=>{await setContext(tx,org,user);return (await tx.query<Record<string,unknown>>(sql)).rows;});
