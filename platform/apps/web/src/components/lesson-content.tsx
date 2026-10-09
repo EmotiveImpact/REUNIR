@@ -24,19 +24,19 @@ export function featuredVideo(lesson:{resources?:LessonResource[]|null;richBody?
 
 /** Full-width video at the top of a lesson. An uploaded file plays in place; an embed still asks before loading. */
 export function LessonStage({video,onPlay,onDownload}:{video:FeaturedVideo;onPlay:(r:LessonResource)=>Promise<string|undefined>;onDownload:(r:LessonResource)=>Promise<boolean>}) {
-    const [url,setUrl]=useState<string|null>(null), [pending,setPending]=useState(false);
+    const [url,setUrl]=useState<string|null>(null), [pending,setPending]=useState(false), [failed,setFailed]=useState(false);
     const owned=useRef<string|null>(null);
     const release=()=>{ if(owned.current) URL.revokeObjectURL(owned.current); owned.current=null; };
     const id=video.kind==='file'?video.resource.id:JSON.stringify(video.node.attrs);
     // A new lesson starts from its own poster, and a browser-local preview address is freed once it is no longer shown.
-    useEffect(()=>{ setUrl(null); return release; },[id]);
+    useEffect(()=>{ setUrl(null); setFailed(false); return release; },[id]);
     if(video.kind==='embed') return <ExternalMedia key={id} node={video.node} stage/>;
     const r=video.resource;
-    const play=async()=>{ setPending(true); try { const u=await onPlay(r); if(!u) return; release(); if(u.startsWith('blob:')) owned.current=u; setUrl(u); } finally { setPending(false); } };
+    const play=async()=>{ setPending(true); setFailed(false); try { const u=await onPlay(r); if(!u) return; release(); if(u.startsWith('blob:')) owned.current=u; setUrl(u); } finally { setPending(false); } };
     return <figure className="lesson-media lesson-stage">
-        {url?<video src={url} controls autoPlay playsInline aria-label={r.name}/>:<div className="lesson-stage-poster">
+        {url?<video src={url} controls autoPlay playsInline aria-label={r.name} onError={()=>{ release(); setUrl(null); setFailed(true); }}/>:<div className="lesson-stage-poster">
             <Button variant="default" className="lesson-stage-play" aria-label={`Play ${r.name}`} disabled={pending} onClick={play}>{pending?<LoaderCircle size={22} className="spin" aria-hidden="true"/>:<Play size={22} aria-hidden="true"/>}</Button>
-            <strong>{r.name}</strong><span>{describeResource(r)}</span>
+            <strong>{r.name}</strong><span>{describeResource(r)}</span>{failed&&<span role="alert">The video stopped loading. Its link may have expired; press play to try again.</span>}
         </div>}
         <figcaption>{r.description||r.name}<button type="button" className="text-link" aria-label={`Download ${r.name}`} disabled={pending} onClick={async()=>{ setPending(true); try { await onDownload(r); } finally { setPending(false); } }}><Download size={13} aria-hidden="true"/>Download</button></figcaption>
     </figure>;

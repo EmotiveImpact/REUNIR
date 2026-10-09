@@ -1,6 +1,7 @@
 import {useLocation,useNavigate} from 'react-router-dom';
 import {api} from './data';
-import { createContext, useContext, useMemo, useState, useCallback, lazy, Suspense, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, useState, useCallback, useRef, useEffect, useLayoutEffect, lazy, Suspense, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Workspace, Member, CommandInput, MutationResult, Upload } from '../../../../packages/contracts/src/index';
 import type { ResourceRef } from '../../../../packages/contracts/src/lesson-resources';
@@ -77,17 +78,22 @@ export function WorkspaceProvider({ children }: {
     const [, setDeletions] = useState(0);
     const deletedPersona = mode === 'demo' && demoAccountDeleted(demoUser);
     const [busy, setBusy] = useState(false);
-    const [notice, setNotice] = useState<{ text: string; tone?: 'error' }>({ text: '' });
+    // The in-flight guard is a ref, so two quick clicks in one render cannot both send.
+    const inFlight = useRef(false);
+    // The message lives in its own component, so showing one does not re-render every page.
+    const show = useRef<(s: string, tone?: 'error') => void>(() => undefined);
     const cache = useQueryClient();
     const ident = useQuery({ queryKey: ['identity'], queryFn: identity, retry: false });
     const userId = mode === 'demo' ? demoUser : ident.data?.id || '';
     const activeSlug = ident.data?.memberships.some(m => m.slug === slug) ? slug : ident.data?.memberships[0]?.slug || slug;
     const key = ['workspace', activeSlug, userId];
     const query = useQuery({ queryKey: key, queryFn: () => loadWorkspace(activeSlug, userId), enabled: !!ident.data && !!userId && !deletedPersona, retry: false, refetchInterval: mode==='live'?30000:false, refetchOnWindowFocus: mode === 'live' });
-    // A failure stays a little longer: it usually asks the person to do something.
-    const toast = useCallback((s: string, tone?: 'error') => { const next = { text: s, tone }; setNotice(next); window.setTimeout(() => setNotice(n => n === next ? { text: '' } : n), tone === 'error' ? 8000 : 4800); }, []);
-    const command = async (c: CommandInput, options: { onError?: (message: string, code?: string) => void } = {}) => { if (busy)
-        return; setBusy(true); try {
+    const toast = useCallback((s: string, tone?: 'error') => show.current(s, tone), []);
+    const command = async (c: CommandInput, options: { onError?: (message: string, code?: string) => void } = {}) => { if (inFlight.current) {
+        const wait = 'Another change is still saving. Try again in a moment.';
+        if (options.onError) options.onError(wait, 'BUSY'); else toast(wait, 'error');
+        return undefined;
+    } inFlight.current = true; setBusy(true); try {
         const r = await sendCommand(activeSlug, userId, c);
         cache.removeQueries({ queryKey: ['workspace', activeSlug], predicate: q => q.queryKey[2] !== userId });
         cache.setQueryData(key, r.workspace);
@@ -100,6 +106,7 @@ export function WorkspaceProvider({ children }: {
         return undefined;
     }
     finally {
+        inFlight.current = false;
         setBusy(false);
     } };
     const refresh = async (workspace?: Workspace) => { if (workspace) cache.setQueryData(key, workspace); else await query.refetch(); };
@@ -160,8 +167,31 @@ export function WorkspaceProvider({ children }: {
         return <main className="loading-page"><ErrorState error={query.error} level={1} home={false} saved={mode === 'demo'} onRetry={() => query.refetch()}/>
             {ident.data.memberships.length > 1 && <div className="empty-actions">{ident.data.memberships.filter(m => m.slug !== activeSlug).map(m => <Button variant="secondary" key={m.slug} type="button" className="button secondary" onClick={() => setSlug(m.slug)}>Open {m.name}</Button>)}</div>}
             {mode === 'live' && <small>No demo data has been substituted.</small>}</main>;
-    const me = query.data.members.find(m => m.userId === userId)!;
-    return <Context.Provider value={{ data: query.data, me, slug: activeSlug, setSlug, userId, setUserId: (id) => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); setDemoUser(id); }, busy, command, uploadResource, discardUpload, downloadResource, playResource, toast, reload: () => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); query.refetch(); }, mode, identity: ident.data, accountDeleted, refreshError: query.error }}>{children}<div className={`toast ${notice.text ? 'visible' : ''} ${notice.tone === 'error' ? 'error' : ''}`} role="status" aria-live="polite" data-tone={notice.tone}>{notice.tone === 'error' && <CircleAlert size={16} aria-hidden="true"/>}<span>{notice.text}</span></div></Context.Provider>;
+    const me = query.data.members.find(m => m.userId === userId && m.status === 'active');
+    // The membership ended while this page was open (removed, suspended or left): say so instead of failing on every page.
+    if (!me)
+        return <div className="loading-page"><h1>Your access to this community has changed.</h1><p>Your membership is no longer active, so nothing from this community is shown. Ask the community owner if you think this is a mistake.</p><Button variant="secondary" type="button" className="button secondary" onClick={() => { cache.removeQueries({ queryKey: ['workspace'] }); ident.refetch(); }}>Check again</Button></div>;
+    return <Context.Provider value={{ data: query.data, me, slug: activeSlug, setSlug, userId, setUserId: (id) => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); setDemoUser(id); }, busy, command, uploadResource, discardUpload, downloadResource, playResource, toast, reload: () => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); query.refetch(); }, mode, identity: ident.data, accountDeleted, refreshError: query.error }}>{children}<Toast register={f => { show.current = f; }}/></Context.Provider>;
+}
+/**
+ * A failure's visible message sits inside an open dialogue when there is one: a modal dialogue keeps everything outside it behind
+ * its backdrop and out of reach of assistive technology.
+ */
+function Toast({ register }: { register: (show: (s: string, tone?: 'error') => void) => void }) {
+    const [notice, setNotice] = useState<{ text: string; tone?: 'error'; at: number }>({ text: '', at: 0 });
+    // A failure stays a little longer: it usually asks the person to do something.
+    useLayoutEffect(() => register((text, tone) => { const next = { text, tone, at: Date.now() }; setNotice(next); window.setTimeout(() => setNotice(n => n === next ? { text: '', at: 0 } : n), tone === 'error' ? 8000 : 4800); }), [register]);
+    const [host, setHost] = useState<Element>(document.body);
+    // Only failures move into the dialogue: a success usually closes it, and would vanish with it.
+    useEffect(() => { setHost(notice.text && notice.tone === 'error' ? document.querySelector('dialog[open]') ?? document.body : document.body); }, [notice]);
+    const inDialogue = notice.tone === 'error' && !!notice.text && host !== document.body;
+    const body = (text: string) => <>{notice.tone === 'error' && text && <CircleAlert size={16} aria-hidden="true"/>}<span key={notice.at}>{text}</span></>;
+    // One element carries each message, so it is read once and found once. The page's own region stays in place, empty
+    // when idle, so polite messages are announced; a failure inside a dialogue is an alert inserted there.
+    return <>
+        <div className={inDialogue ? 'sr-only' : `toast ${notice.text ? 'visible' : ''} ${notice.tone === 'error' ? 'error' : ''}`} role={notice.tone === 'error' ? 'alert' : 'status'} aria-live={notice.tone === 'error' ? 'assertive' : 'polite'} data-tone={notice.tone}>{body(inDialogue ? '' : notice.text)}</div>
+        {inDialogue && createPortal(<div className="toast visible error" role="alert" data-tone="error">{body(notice.text)}</div>, host)}
+    </>;
 }
 function Login({ onDone }: {
     onDone: () => void;

@@ -51,7 +51,8 @@ export function CreateModal({ kind, onClose, spaceId, trackId }: {
                     c = { type: 'event.create', title: get('title'), summary: get('body'), startsAt: new Date(get('date')).toISOString(), duration: Number(get('minutes')), format: get('format') as 'workshop', location: get('location'), meetingUrl: get('url'), spaceId: get('spaceId') || null };
                     break;
             }
-            const r = await command(c);
+            let refused = '';
+            const r = await command(c, { onError: message => { refused = message; } });
             if (r) {
                 onClose();
                 if (kind === 'project')
@@ -64,7 +65,7 @@ export function CreateModal({ kind, onClose, spaceId, trackId }: {
                     navigate(`/events/${r.objectId}`);
             }
             else
-                E('Please check the details above. Your changes have not been published.');
+                E(`${refused || 'Please check the details above.'} Your changes have not been published.`);
         }
         catch (e) {
             E(e instanceof Error ? e.message : 'Please check the form.');
