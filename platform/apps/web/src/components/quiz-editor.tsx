@@ -30,12 +30,14 @@ export function blankQuestion(kind: QuestionKind = 'single'): Question {
 /** Change a question's type and keep whatever still applies, so switching back and forth loses little. */
 export function convertQuestion(q: Question, kind: QuestionKind): Question {
     if (kind === q.kind) return q;
+    // Partial marks belong to multiple choice only.
+    const { partialCredit, ...rest } = q;
     if (isChoice(kind)) {
         const options = isChoice(q.kind) ? q.options : blankQuestion(kind).options;
         const first = Math.max(0, options.findIndex(o => o.correct));
-        return { ...q, kind, acceptedAnswers: [], options: kind === 'single' ? options.map((o, i) => ({ ...o, correct: i === first })) : options };
+        return { ...rest, kind, acceptedAnswers: [], options: kind === 'single' ? options.map((o, i) => ({ ...o, correct: i === first })) : options, ...(kind === 'multiple' && partialCredit ? { partialCredit } : {}) };
     }
-    return { ...q, kind, options: [], acceptedAnswers: kind === 'short' ? (q.acceptedAnswers.length ? q.acceptedAnswers : ['']) : [] };
+    return { ...rest, kind, options: [], acceptedAnswers: kind === 'short' ? (q.acceptedAnswers.length ? q.acceptedAnswers : ['']) : [] };
 }
 /** The same rules the server applies, phrased for authors. Empty when the check can be saved. */
 export function quizProblems(quiz: AuthoredQuiz | null): string[] {
@@ -116,6 +118,8 @@ function QuestionEditor({ question: q, index, count, disabled, onChange, onMove,
             </div>)}
             <Button type="button" variant="ghost" size="sm" disabled={q.options.length >= MAX_QUIZ_OPTIONS} onClick={() => onChange(x => ({ ...x, options: [...x.options, { id: nextOptionId(x.options), text: '', correct: false }] }))}><Plus size={14} aria-hidden="true"/>Add option</Button>
         </fieldset></OptionalRadioGroup>}
+        {q.kind === 'multiple' && <Label className="quiz-toggle"><Switch checked={!!q.partialCredit} disabled={disabled} aria-label={`Partial marks for ${label}`} onCheckedChange={on => onChange(x => { const { partialCredit: _, ...rest } = x; return on ? { ...rest, partialCredit: true } : rest; })}/>
+            <span>Partial marks: each right option chosen earns a share of the points and each wrong one takes a share away, rounded down. Off, only the exact set of right options scores.</span></Label>}
         {q.kind === 'short' && <fieldset className="quiz-option-list" disabled={disabled}>
             <legend>Accepted answers · matched ignoring capital letters and extra spaces</legend>
             {q.acceptedAnswers.map((answer, j) => <div key={j} className="quiz-option-editor">

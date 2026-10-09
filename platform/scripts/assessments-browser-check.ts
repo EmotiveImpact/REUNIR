@@ -159,6 +159,10 @@ try {
         await added.getByRole('textbox', { name: 'Question', exact: true }).fill('Name the one thing your first version must do.');
         await added.getByRole('textbox', { name: 'Accepted answer 1 for question 4' }).fill('solve one problem');
         await expect(quiz().locator('.quiz-problems')).toHaveCount(0);
+        // Partial marks are offered on multiple choice only (decision 056).
+        await expect(quiz().getByRole('switch', { name: /^Partial marks for/ })).toHaveCount(1);
+        const partial = quiz().getByRole('switch', { name: 'Partial marks for question 2', exact: true });
+        await partial.click(); await expect(partial).toBeChecked();
         await neutral('.quiz-editor'); await save();
         await editor().getByRole('button', { name: 'Preview', exact: true }).click();
         await expect(editor().locator('.knowledge-check.preview .quiz-question')).toHaveCount(4);
@@ -174,6 +178,8 @@ try {
         await expect(kc().locator('.quiz-attempt').first().locator('.quiz-attempt-answers > li')).toHaveCount(3);
         await kc().getByRole('button', { name: 'Try again' }).click();
         await expect(kc().locator('.quiz-question')).toHaveCount(4);
+        await expect(kc().locator('.quiz-question').nth(1)).toContainText('Question 2 · 2 points · partial marks');
+        await expect(kc().locator('.quiz-question').nth(0)).not.toContainText('partial marks');
         await expect(kc()).not.toContainText('solve one problem');
         await kc().getByRole('button', { name: 'Cancel' }).click();
     });

@@ -10,7 +10,7 @@ export const MAX_ATTEMPT_RECORDS = 50;
 export function normaliseQuiz(quiz: LessonQuiz | null | undefined): AuthoredQuiz | null {
     if (!quiz) return null;
     return {
-        questions: quiz.questions.map(q => ({ id: q.id, kind: q.kind, prompt: q.prompt, points: q.points, options: q.options.map(o => ({ id: o.id, text: o.text, correct: !!o.correct })), acceptedAnswers: [...(q.acceptedAnswers ?? [])], explanation: q.explanation ?? '' })),
+        questions: quiz.questions.map(q => ({ id: q.id, kind: q.kind, prompt: q.prompt, points: q.points, options: q.options.map(o => ({ id: o.id, text: o.text, correct: !!o.correct })), ...(q.partialCredit ? { partialCredit: true } : {}), acceptedAnswers: [...(q.acceptedAnswers ?? [])], explanation: q.explanation ?? '' })),
         passPercentage: quiz.passPercentage, maxAttempts: quiz.maxAttempts, revealAnswers: quiz.revealAnswers,
     };
 }

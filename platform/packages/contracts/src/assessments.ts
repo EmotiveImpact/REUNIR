@@ -14,7 +14,8 @@ export type QuestionKind = 'single' | 'multiple' | 'short' | 'written';
 export const questionKinds: Record<QuestionKind, string> = { single: 'Single choice', multiple: 'Multiple choice', short: 'Short answer', written: 'Written response' };
 /** `correct`, `acceptedAnswers` and `explanation` are removed before a quiz reaches anyone but its authors. */
 export interface QuizOption { id: string; text: string; correct?: boolean }
-export interface QuizQuestion { id: string; kind: QuestionKind; prompt: string; points: number; options: QuizOption[]; acceptedAnswers?: string[]; explanation?: string }
+/** `partialCredit` (multiple choice only, decision 056): each right option chosen earns a share of the points and each wrong one takes a share away. */
+export interface QuizQuestion { id: string; kind: QuestionKind; prompt: string; points: number; options: QuizOption[]; partialCredit?: boolean; acceptedAnswers?: string[]; explanation?: string }
 export interface LessonQuiz { questions: QuizQuestion[]; passPercentage: number | null; maxAttempts: number | null; revealAnswers: boolean }
 export interface QuizAnswer { questionId: string; optionIds: string[]; text: string }
 /** `correct` and `points` stay null for written answers until a reviewer marks them. */
@@ -29,6 +30,7 @@ const question = z.object({
     prompt: plain(300, 'questions').pipe(z.string().min(1, 'Write each question before saving.')),
     points: z.number().int().min(1, 'Give each question 1 to 10 points.').max(10, 'Give each question 1 to 10 points.'),
     options: z.array(option).max(MAX_QUIZ_OPTIONS, `Use up to ${MAX_QUIZ_OPTIONS} options.`),
+    partialCredit: z.boolean().optional(),
     acceptedAnswers: z.array(plain(MAX_SHORT_ANSWER, 'accepted answers').pipe(z.string().min(1, 'Fill in or remove each empty accepted answer.'))).max(10, 'Use up to 10 accepted answers.'),
     explanation: plain(300, 'explanations').default(''),
 }).strict().superRefine((q, ctx) => {
@@ -42,11 +44,13 @@ const question = z.object({
         const texts = q.options.map(o => normaliseAnswer(o.text)).filter(Boolean);
         if (new Set(texts).size !== texts.length) issue('Each option needs different text.');
         if (q.acceptedAnswers.length) issue('Choice questions do not take typed answers.');
+        if (q.partialCredit && q.kind !== 'multiple') issue('Only multiple-choice questions give partial marks.');
     }
     else {
         if (q.options.length) issue('Only choice questions have options.');
         if (q.kind === 'short' && !q.acceptedAnswers.length) issue('Add at least one accepted answer for a short-answer question.');
         if (q.kind === 'written' && q.acceptedAnswers.length) issue('Written responses are marked by a reviewer, not matched.');
+        if (q.partialCredit) issue('Only multiple-choice questions give partial marks.');
     }
 });
 export const lessonQuizSchema = z.object({
@@ -74,20 +78,30 @@ export function normaliseAnswer(value: string): string {
 }
 /** Learner view of a quiz: the same questions and options without anything that reveals the answers. */
 export function learnerQuiz(quiz: LessonQuiz): LessonQuiz {
-    return { ...quiz, questions: quiz.questions.map(q => ({ id: q.id, kind: q.kind, prompt: q.prompt, points: q.points, options: q.options.map(o => ({ id: o.id, text: o.text })) })) };
+    return { ...quiz, questions: quiz.questions.map(q => ({ id: q.id, kind: q.kind, prompt: q.prompt, points: q.points, options: q.options.map(o => ({ id: o.id, text: o.text })), ...(q.partialCredit ? { partialCredit: true } : {}) })) };
 }
 export const quizMaxScore = (quiz: LessonQuiz) => quiz.questions.reduce((total, q) => total + q.points, 0);
-/** Deterministic server-side scoring. Choice questions need the exact set; written answers wait for a reviewer. */
+/**
+ * Partial marks for a multiple-choice question: right options chosen minus wrong ones, as a share of the right options,
+ * in whole points rounded down and never below zero. Choosing every option therefore earns nothing unless every option is right.
+ */
+export function partialPoints(q: QuizQuestion, chosen: ReadonlySet<string>): number {
+    const right = q.options.filter(o => o.correct && chosen.has(o.id)).length, wrong = q.options.filter(o => !o.correct && chosen.has(o.id)).length;
+    const total = q.options.filter(o => o.correct).length;
+    return total ? Math.floor(q.points * Math.max(0, right - wrong) / total) : 0;
+}
+/** Deterministic server-side scoring. Choice questions need the exact set unless partial marks are on; written answers wait for a reviewer. */
 export function scoreQuiz(quiz: LessonQuiz, answers: QuizAnswer[]): { results: QuizResult[]; autoScore: number; maxScore: number; needsReview: boolean } {
     const results = quiz.questions.map(q => {
         const given = answers.find(a => a.questionId === q.id) ?? { questionId: q.id, optionIds: [], text: '' };
-        let correct: boolean | null = null;
+        let correct: boolean | null = null, partial = 0;
         if (q.kind === 'single' || q.kind === 'multiple') {
             const expected = new Set(q.options.filter(o => o.correct).map(o => o.id)), chosen = new Set(given.optionIds);
             correct = expected.size === chosen.size && [...expected].every(id => chosen.has(id));
+            if (!correct && q.kind === 'multiple' && q.partialCredit) partial = partialPoints(q, chosen);
         }
         else if (q.kind === 'short') correct = !!given.text.trim() && (q.acceptedAnswers ?? []).some(a => normaliseAnswer(a) === normaliseAnswer(given.text));
-        return { questionId: q.id, correct, points: correct === null ? null : correct ? q.points : 0, maxPoints: q.points };
+        return { questionId: q.id, correct, points: correct === null ? null : correct ? q.points : partial, maxPoints: q.points };
     });
     return { results, autoScore: results.reduce((t, r) => t + (r.points ?? 0), 0), maxScore: quizMaxScore(quiz), needsReview: results.some(r => r.correct === null) };
 }
@@ -96,7 +110,8 @@ export function scoreQuiz(quiz: LessonQuiz, answers: QuizAnswer[]): { results: Q
  * A submission carries the fingerprint it answered, so edits published meanwhile are detected rather than scored.
  */
 export function quizFingerprint(quiz: LessonQuiz): string {
-    const visible = [quiz.passPercentage, quiz.maxAttempts, quiz.revealAnswers, quiz.questions.map(q => [q.id, q.kind, q.prompt, q.points, q.options.map(o => [o.id, o.text])])];
+    // Partial marks join the fingerprint only when on, so checks published before Alpha 56 keep their fingerprints.
+    const visible = [quiz.passPercentage, quiz.maxAttempts, quiz.revealAnswers, quiz.questions.map(q => [q.id, q.kind, q.prompt, q.points, q.options.map(o => [o.id, o.text]), ...(q.partialCredit ? [1] : [])])];
     let hash = 0x811c9dc5;
     for (const byte of new TextEncoder().encode(JSON.stringify(visible))) hash = Math.imul(hash ^ byte, 0x01000193) >>> 0;
     return hash.toString(16).padStart(8, '0');

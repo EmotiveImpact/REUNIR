@@ -36,7 +36,7 @@ export function attemptStatus(attempt: QuizAttempt): string {
 function resultLabel(result: QuizResult | undefined): string {
     if (!result) return '';
     if (result.correct === true) return `Correct · ${result.points} of ${pointsLabel(result.maxPoints)}`;
-    if (result.correct === false) return `Not correct · 0 of ${pointsLabel(result.maxPoints)}`;
+    if (result.correct === false) return result.points ? `Partly right · ${result.points} of ${pointsLabel(result.maxPoints)}` : `Not correct · 0 of ${pointsLabel(result.maxPoints)}`;
     return result.points === null ? `Waiting for review · ${pointsLabel(result.maxPoints)}` : `Marked · ${result.points} of ${pointsLabel(result.maxPoints)}`;
 }
 
@@ -49,7 +49,7 @@ export function QuizQuestions({ quiz, name, answers, onAnswer, disabled = false 
         const set = (patch: Partial<QuizAnswer>) => onAnswer?.({ ...given, ...patch });
         const prompt = `${name}-${q.id}-prompt`;
         return <li key={q.id}><fieldset className="quiz-question" disabled={disabled || !onAnswer}>
-            <legend><span className="quiz-question-number">Question {i + 1} · {pointsLabel(q.points)}</span><span id={prompt} className="quiz-question-prompt">{q.prompt}</span></legend>
+            <legend><span className="quiz-question-number">Question {i + 1} · {pointsLabel(q.points)}{q.partialCredit ? ' · partial marks' : ''}</span><span id={prompt} className="quiz-question-prompt">{q.prompt}</span></legend>
             {q.kind === 'multiple' && <p className="quiz-hint">Choose every answer that applies.</p>}
             {(q.kind === 'single' || q.kind === 'multiple') && <OptionalRadioGroup when={q.kind === 'single'} name={`${name}-${q.id}`} aria-labelledby={prompt} value={given.optionIds[0] ?? ''} onValueChange={id => set({ optionIds: [id] })}><div className="quiz-choices">{q.options.map(o => <Label key={o.id} className="quiz-choice">
                 {q.kind === 'single' ? <RadioGroupItem value={o.id}/> : <Checkbox checked={given.optionIds.includes(o.id)}
