@@ -80,7 +80,7 @@ textarea.quiz-text {min-height:96px}
 .quiz-settings {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
 .quiz-settings label {display:grid;gap:7px;font-size:12px}
 .quiz-settings input[type=number],.quiz-settings select {width:100%;min-width:0;box-sizing:border-box}
-.quiz-settings .quiz-toggle {grid-column:1/-1;display:flex;flex-direction:row;align-items:flex-start;gap:10px;line-height:1.55}
+.quiz-settings .quiz-toggle,.quiz-question-editor .quiz-toggle {grid-column:1/-1;display:flex;flex-direction:row;align-items:flex-start;gap:10px;line-height:1.55}
 .quiz-question-list {list-style:none;margin:14px 0 0;padding:0;display:grid;gap:12px}
 .quiz-question-editor {display:grid;gap:12px;padding:16px;border:1px solid #333;border-radius:10px;background:#131313;min-width:0}
 .quiz-question-editor>label {display:grid;gap:7px;font-size:12px}

@@ -1,4 +1,31 @@
-# Alpha 55 one confirmation box across the app
+# Alpha 56 partial marks on multiple-choice questions
+
+9 October 2026. Version stays 0.39.0-alpha.1. Decision 056; no migration, no API shape change beyond the optional `partialCredit` field on a quiz question.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/full-audit-yhvssj` |
+| Verified locally | Yes: see below |
+| Merged | Not yet |
+| Deployed | No |
+
+## What changed
+
+See decision 056. `partialCredit` on multiple-choice questions, `partialPoints` scoring, a studio switch per question, and the learner's "partial marks" and "Partly right" labels.
+
+## Checks run
+
+- Typecheck clean. `npm test`: 920 passed, 0 failed, including `tests/partial-marks.test.ts` (the marking rule and its edge cases, the schema refusing partial marks off multiple choice, unchanged fingerprints for older checks, and a published check marked partly right end to end).
+- `npm run test:browser:assessments`: 16 checks passed, including the switch appearing on multiple choice only and the learner's label.
+- `python3 -m unittest discover -s scripts -p "test_*.py"`: OK.
+
+## Not verified
+
+- Nothing deployed.
+
+# Historical: Alpha 55 one confirmation box across the app
 
 9 October 2026. Version stays 0.39.0-alpha.1. Decision 055; no migration, no API change.
 
@@ -8,7 +35,7 @@
 | --- | --- |
 | Implemented | Yes, on `claude/full-audit-yhvssj` |
 | Verified locally | Yes: see below |
-| Merged | Not yet |
+| Merged | Yes: PR #45, merged as `ea77b43` |
 | Deployed | No |
 
 ## What changed

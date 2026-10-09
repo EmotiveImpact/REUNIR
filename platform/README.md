@@ -1,6 +1,6 @@
 # REUNIR platform
 
-Current version: 0.39.0-alpha.1; the newest release is Alpha 55, which puts every "are you sure?" question in one shared confirmation box (CHANGELOG.md lists every release). Start with the repository root README, CHANGELOG.md, SESSION_HANDOFF.md and docs/BUILD_STATUS.md; each feature has its own document in docs/ and a decision record in docs/decisions/. The Alpha 05 notes below are kept as history.
+Current version: 0.39.0-alpha.1; the newest release is Alpha 56, which adds partial marks on multiple-choice questions (CHANGELOG.md lists every release). Start with the repository root README, CHANGELOG.md, SESSION_HANDOFF.md and docs/BUILD_STATUS.md; each feature has its own document in docs/ and a decision record in docs/decisions/. The Alpha 05 notes below are kept as history.
 
 ```sh
 npm ci

@@ -57,6 +57,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 53 | Feeds paged in SQL: a window of posts per request, feed pages and post counts from the database, so posts, replies and appreciations have no 5,000-row ceiling | Other collections keep the 5,000-row limit |
 | Alpha 54 | Leaving and removal from project teams (migration 0048), WebVTT captions on lesson videos, and lesson videos that pick up where this browser stopped | Positions do not follow a learner between devices; embedded videos keep their own players |
 | Alpha 55 | One confirmation box across the app in place of the browser's own, with named actions and Cancel first | None |
+| Alpha 56 | Partial marks on multiple-choice questions, chosen per question by the author | Question banks and timers stay parked |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 
