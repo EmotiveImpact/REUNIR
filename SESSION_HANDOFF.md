@@ -3,7 +3,7 @@
 9 October 2026, on `claude/full-audit-yhvssj`. Edem asked for a full audit and for everything found to be fixed. The findings, in order of importance, are in the project file `ferven/audit-2026-10-09.md`. This thread holds Alpha 50 to 54, decisions 050 to 054 and migrations 0048 to 0052.
 
 - Alpha 50, security (decision 050): merged as PR #40, `57fd2e6`.
-- Alpha 51, app, accessibility and speed (decision 051): PR #41.
+- Alpha 51, app, accessibility and speed (decision 051): PR #41, merged as `7ffb982`.
 - Alpha 52, records (this note, BUILD_STATUS, CHANGELOG, READMEs, ROADMAP, LAUNCH_RUNBOOK, RECOVERY_STATUS marked historical, SOURCE_MANIFEST regenerated with `python3 scripts/publish_source.py --write-manifest "<release>"`, CI timeout 30 minutes). No decision record; no code change.
 - Next: Alpha 53 reads posts, comments and reactions in SQL a page at a time, so a community no longer stops at 5,000 rows in a table; Alpha 54 adds lesson video captions and resume position and removing someone from a project team.
 

@@ -21,7 +21,7 @@ Details:
 
 ## Alpha 51: app, accessibility and speed fixes from the October audit (no version change), 9 October 2026
 
-On a pull request from `claude/full-audit-yhvssj`. Decision 051; no migration. The version stays 0.39.0-alpha.1.
+PR #41, merged as `7ffb982`. Decision 051; no migration. The version stays 0.39.0-alpha.1.
 
 **In plain language:** when something goes wrong inside a dialogue, the reason now shows inside it. Someone whose membership ends while the app is open sees a clear message instead of a broken page. A lesson video whose link expired says so. The tab title and keyboard focus follow you between pages, filters say which one is on, and no text is smaller than 9px. Events stop counting people who left and say when they have ended. The app is lighter to load and its icon is black and white.
 

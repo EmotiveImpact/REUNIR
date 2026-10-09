@@ -37,7 +37,7 @@
 | --- | --- |
 | Implemented | Yes, on `claude/full-audit-yhvssj`, from main `57fd2e6` (PR #40) |
 | Verified locally | Yes: see below |
-| Merged | Not yet |
+| Merged | Yes: PR #41, merged as `7ffb982` |
 | Deployed | No |
 
 ## What changed
