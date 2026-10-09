@@ -66,6 +66,41 @@ export interface LessonResource {
     id: string; fileId: string; name: string; description: string;
     /** Copied from the verified upload record by the server, never from the client. */
     contentType: LessonResourceType; sizeBytes: number;
+    /** Uploaded videos only (decision 057). */
+    chapters?: VideoChapter[];
+}
+/** Where a part of a lesson video starts, in whole seconds, and what it is called. */
+export interface VideoChapter { start: number; title: string }
+export const MAX_VIDEO_CHAPTERS = 20;
+export const MAX_CHAPTER_TITLE = 80;
+const MAX_CHAPTER_START = 24 * 3600 - 1;
+/** `m:ss`, or `h:mm:ss` from an hour. */
+export function chapterTime(seconds: number): string {
+    const s = Math.max(0, Math.floor(seconds)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), pad = (n: number) => String(n).padStart(2, '0');
+    return h ? `${h}:${pad(m)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`;
+}
+/** The text authors edit: one chapter a line, its start then its title. */
+export const chaptersText = (chapters: readonly VideoChapter[] | undefined) => (chapters ?? []).map(c => `${chapterTime(c.start)} ${c.title}`).join('\n');
+/** Why a list of chapters cannot be saved, or null. The server applies the same rules. */
+export function chaptersProblem(chapters: readonly VideoChapter[]): string | null {
+    if (chapters.length > MAX_VIDEO_CHAPTERS) return `Use up to ${MAX_VIDEO_CHAPTERS} chapters.`;
+    if (chapters.length && chapters[0].start !== 0) return 'Start the first chapter at 0:00.';
+    if (chapters.some((c, i) => i > 0 && c.start <= chapters[i - 1].start)) return 'List chapters in order, each starting after the one before.';
+    if (chapters.some(c => !c.title.trim())) return 'Give every chapter a title.';
+    if (chapters.some(c => c.title.trim().length > MAX_CHAPTER_TITLE)) return `Keep chapter titles under ${MAX_CHAPTER_TITLE} characters.`;
+    return null;
+}
+/** Reads the authors' text. Each line is `m:ss Title` or `h:mm:ss Title`; blank lines are ignored. */
+export function parseChapters(text: string): { chapters: VideoChapter[]; problem: string | null } {
+    const chapters: VideoChapter[] = [];
+    for (const [i, raw] of text.split('\n').entries()) {
+        const line = raw.trim();
+        if (!line) continue;
+        const m = /^(?:(\d{1,2}):)?(\d{1,2}):(\d{2})\s+(.+)$/.exec(line);
+        if (!m || Number(m[3]) > 59 || (m[1] !== undefined && Number(m[2]) > 59)) return { chapters: [], problem: `Line ${i + 1}: write a start time then a title, like 1:30 Setting up.` };
+        chapters.push({ start: Number(m[1] ?? 0) * 3600 + Number(m[2]) * 60 + Number(m[3]), title: m[4].trim() });
+    }
+    return { chapters, problem: chaptersProblem(chapters) };
 }
 export type ResourceContext = 'lesson' | 'draft' | 'revision';
 export interface ResourceRef { context: ResourceContext; recordId: string; resourceId: string }
@@ -79,10 +114,14 @@ export const resourceDescription = z.string().trim().max(280, 'Keep file descrip
 export const lessonResourceInput = z.object({
     id: key, fileId: key, name: resourceName, description: resourceDescription.default(''),
     contentType: lessonResourceType.optional(), sizeBytes: z.number().int().positive().max(MAX_VIDEO_BYTES).optional(),
+    chapters: z.array(z.object({ start: z.number().int().min(0).max(MAX_CHAPTER_START), title: z.string().trim().refine(v => !controls.test(v), 'Use plain text for chapter titles.') }).strict())
+        .superRefine((list, ctx) => { const problem = chaptersProblem(list); if (problem) ctx.addIssue({ code: 'custom', message: problem }); }).optional(),
 }).strict();
 export const lessonResourcesInput = z.array(lessonResourceInput).max(MAX_LESSON_RESOURCES, `Attach up to ${MAX_LESSON_RESOURCES} files to a lesson.`).superRefine((items, ctx) => {
     if (new Set(items.map(i => i.id)).size !== items.length) ctx.addIssue({ code: 'custom', message: 'Each lesson file needs its own entry.' });
     if (new Set(items.map(i => i.fileId)).size !== items.length) ctx.addIssue({ code: 'custom', message: 'This file is already attached to the lesson.' });
+    // Lesson files are stored together in one bounded column (migration 0009 allows 16,000 bytes).
+    if (new TextEncoder().encode(JSON.stringify(items)).length > 15000) ctx.addIssue({ code: 'custom', message: 'These files and chapters are too long together. Shorten some descriptions or chapter titles.' });
 });
 export type LessonResourceInput = z.input<typeof lessonResourceInput>;
 

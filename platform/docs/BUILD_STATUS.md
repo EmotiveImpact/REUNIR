@@ -1,4 +1,31 @@
-# Alpha 56 partial marks on multiple-choice questions
+# Alpha 57 chapters in lesson videos
+
+9 October 2026. Version stays 0.39.0-alpha.1. Decision 057; no migration. Lesson files gain an optional `chapters` list.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/full-audit-yhvssj` |
+| Verified locally | Yes: see below |
+| Merged | Not yet |
+| Deployed | No |
+
+## What changed
+
+See decision 057. Chapters are typed in the studio under an uploaded video, stored on its lesson file entry, and listed under the video for learners, who can jump to each one.
+
+## Checks run
+
+- Typecheck clean. `npm test`: 923 passed, 0 failed, including `tests/video-chapters.test.ts` (times, parsing and every validation message; chapters refused on a PDF, trimmed, published to learners, and stored as nothing when cleared).
+- `npm run test:browser:resources`: 22 checks passed, including the new chapters check (errors while typing block saving, the learner's list, jumping before and after the video loads, the current chapter, axe and no sideways scrolling).
+- `python3 -m unittest discover -s scripts -p "test_*.py"`: OK.
+
+## Not verified
+
+- Chapters past the end of a video are not checked against its length, because the server never decodes video; jumping there plays from the end. Nothing deployed.
+
+# Historical: Alpha 56 partial marks on multiple-choice questions
 
 9 October 2026. Version stays 0.39.0-alpha.1. Decision 056; no migration, no API shape change beyond the optional `partialCredit` field on a quiz question.
 

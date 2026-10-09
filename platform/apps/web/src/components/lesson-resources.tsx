@@ -1,10 +1,10 @@
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, FileUp, LoaderCircle, Paperclip, Plus, Trash2, Upload, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { ResourceIcon, describeResource as describe } from './resource-list';
 import { useWorkspace } from '../lib/context';
 import { newId } from '../../../../packages/contracts/src/index';
-import { MAX_LESSON_RESOURCES, MAX_VIDEO_BYTES, RESOURCE_FILE_ACCEPT, formatFileSize, isLessonVideo, type LessonResource } from '../../../../packages/contracts/src/lesson-resources';
+import { MAX_LESSON_RESOURCES, MAX_VIDEO_BYTES, MAX_VIDEO_CHAPTERS, RESOURCE_FILE_ACCEPT, chaptersText, formatFileSize, isLessonVideo, parseChapters, type LessonResource, type VideoChapter } from '../../../../packages/contracts/src/lesson-resources';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
@@ -13,17 +13,21 @@ import { useConfirm } from './confirm';
 const displayName = (filename: string) => filename.replace(/\.[a-z0-9]{2,5}$/i, '').replace(/[\u0000-\u001f\u007f-\u009f]+/g, ' ').trim().slice(0, 120) || 'Lesson file';
 
 /** Studio editor for the draft's ordered files. Changes stay in the draft buffer until it is saved. */
-export function ResourceEditor({ trackId, resources, saved, disabled, uploadsAvailable, videoBytes = 0, onChange }: {
+export function ResourceEditor({ trackId, resources, saved, disabled, uploadsAvailable, videoBytes = 0, onChange, onInvalid }: {
     trackId: string; resources: LessonResource[]; saved: LessonResource[]; disabled: boolean; uploadsAvailable: boolean;
     /** The community's video limit; 0 when video uploads are off. */
     videoBytes?: number;
     /** Updater form, so an upload that finishes later never applies a stale list. */
     onChange: (update: (current: LessonResource[]) => LessonResource[]) => void;
+    /** Told whenever chapters someone is typing cannot be read, so saving waits until they can. */
+    onInvalid?: (invalid: boolean) => void;
 }) {
     const { data, uploadResource, discardUpload } = useWorkspace();
     const confirm = useConfirm();
     const picker = useRef<HTMLInputElement>(null), replacing = useRef<string | null>(null);
-    const [uploading, setUploading] = useState(false), [status, setStatus] = useState('');
+    const [uploading, setUploading] = useState(false), [status, setStatus] = useState(''), [problems, setProblems] = useState<Record<string, string | null>>({});
+    const invalid = resources.some(r => problems[r.id]);
+    useEffect(() => { onInvalid?.(invalid); }, [invalid]);
     const heading = useId();
     const full = resources.length >= MAX_LESSON_RESOURCES, locked = disabled || uploading;
     const referenced = new Set([...data.lessons, ...data.lessonDrafts, ...data.lessonRevisions].flatMap(x => (x.resources ?? []).map(r => r.fileId)));
@@ -41,7 +45,8 @@ export function ResourceEditor({ trackId, resources, saved, disabled, uploadsAva
         if (!u) { setStatus('The file was not attached. Nothing in the draft changed.'); return; }
         const fields = { fileId: u.id, contentType: u.contentType as LessonResource['contentType'], sizeBytes: u.sizeBytes };
         if (target) {
-            onChange(current => current.map(r => r.id === target ? { ...r, ...fields } : r));
+            // Chapters belong to a video; replacing it with another kind of file drops them.
+            onChange(current => current.map(r => { if (r.id !== target) return r; const { chapters, ...rest } = r; return { ...rest, ...fields, ...(isLessonVideo(fields.contentType) && chapters ? { chapters } : {}) }; }));
             setStatus('Replacement ready. Save the draft to keep it. Learners keep the current file until you publish.');
         }
         else {
@@ -49,7 +54,7 @@ export function ResourceEditor({ trackId, resources, saved, disabled, uploadsAva
             setStatus(`${file.name} is ready. Save the draft to attach it.`);
         }
     };
-    const badge = (r: LessonResource) => { const old = saved.find(s => s.id === r.id); return !old ? 'New' : old.fileId !== r.fileId ? 'Replaced' : old.name !== r.name || old.description !== r.description ? 'Edited' : ''; };
+    const badge = (r: LessonResource) => { const old = saved.find(s => s.id === r.id); return !old ? 'New' : old.fileId !== r.fileId ? 'Replaced' : old.name !== r.name || old.description !== r.description || chaptersText(old.chapters) !== chaptersText(r.chapters) ? 'Edited' : ''; };
     return <section className="resource-editor" aria-labelledby={heading}>
         <div className="resource-editor-head">
             <div><h3 id={heading}><Paperclip size={16} aria-hidden="true"/>Lesson files <small>{resources.length} of {MAX_LESSON_RESOURCES}</small></h3>
@@ -64,6 +69,7 @@ export function ResourceEditor({ trackId, resources, saved, disabled, uploadsAva
                 <div className="resource-row-order"><button type="button" className="icon-button" aria-label={`Move ${r.name || 'file'} up`} disabled={locked || i === 0} onClick={() => move(i, -1)}><ArrowUp size={14}/></button><button type="button" className="icon-button" aria-label={`Move ${r.name || 'file'} down`} disabled={locked || i === resources.length - 1} onClick={() => move(i, 1)}><ArrowDown size={14}/></button></div></div>
             <Label>File name shown to learners<Input value={r.name} maxLength={120} disabled={locked} onChange={e => change(r.id, { name: e.target.value })}/></Label>
             <Label>Description for learners (optional)<Textarea rows={2} maxLength={280} value={r.description} disabled={locked} onChange={e => change(r.id, { description: e.target.value })}/></Label>
+            {isLessonVideo(r.contentType) && <ChaptersField resource={r} disabled={locked} onChapters={chapters => change(r.id, { chapters })} onProblem={problem => setProblems(current => ({ ...current, [r.id]: problem }))}/>}
             {!r.name.trim() && <p className="resource-invalid" role="alert">Give this file a name before saving.</p>}
             <div className="resource-row-actions">
                 <Button type="button" variant="ghost" size="sm" disabled={locked || !uploadsAvailable} aria-label={`Replace file for ${r.name || 'this entry'}`} onClick={() => choose(r.id)}><Upload size={14} aria-hidden="true"/>Replace file</Button>
@@ -78,4 +84,25 @@ export function ResourceEditor({ trackId, resources, saved, disabled, uploadsAva
             </li>)}</ul>
         </details>}
     </section>;
+}
+
+/**
+ * Chapters for an uploaded video (decision 057), typed one a line as `1:30 Setting up`. The text stays as typed while it
+ * cannot be read, and the draft keeps its last readable chapters until it can.
+ */
+function ChaptersField({ resource, disabled, onChapters, onProblem }: { resource: LessonResource; disabled: boolean; onChapters: (chapters: VideoChapter[]) => void; onProblem: (problem: string | null) => void }) {
+    const saved = chaptersText(resource.chapters);
+    const [text, setText] = useState(saved), [problem, setProblem] = useState<string | null>(null);
+    const hint = useId(), error = useId();
+    // A restored revision or a replaced file brings its own chapters.
+    useEffect(() => { if (chaptersText(parseChapters(text).chapters) !== saved) { setText(saved); setProblem(null); onProblem(null); } }, [saved]);
+    const edit = (value: string) => {
+        setText(value);
+        const read = parseChapters(value);
+        setProblem(read.problem); onProblem(read.problem);
+        if (!read.problem) onChapters(read.chapters);
+    };
+    return <Label>Chapters (optional)<Textarea rows={3} value={text} disabled={disabled} spellCheck={false} placeholder={'0:00 Introduction\n1:30 Setting up'} aria-describedby={problem ? `${hint} ${error}` : hint} aria-invalid={!!problem} onChange={e => edit(e.target.value)}/>
+        <small id={hint}>One a line: where it starts, then its title. Start at 0:00, up to {MAX_VIDEO_CHAPTERS} chapters. Learners can jump to each one.</small>
+        {problem && <span id={error} className="resource-invalid" role="alert">{problem}</span>}</Label>;
 }
