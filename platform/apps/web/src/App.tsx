@@ -17,6 +17,8 @@ import { ConnectionNotice, NotFound, PageBoundary, PageLoading, useOnline } from
 import { SimulatedFault } from './components/simulated-fault';
 import { Input } from './components/ui/input';
 import { useConfirm } from './components/confirm';
+import { countVisit } from './lib/usage';
+import { usageArea } from '../../../packages/contracts/src/usage';
 const AuthoringPage=lazy(()=>import('./pages/authoring').then(m=>({default:m.AuthoringPage})));
 const MessagesPage=lazy(()=>import('./pages/messages').then(m=>({default:m.MessagesPage})));
 const AccountPage=lazy(()=>import('./pages/account').then(m=>({default:m.AccountPage})));
@@ -84,6 +86,10 @@ export default function App() {
         S(s => !s);
     } }; window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key); }, []);
     useEffect(() => { document.documentElement.dataset.accent = data.organisation.accent; }, [data.organisation.accent]);
+    // Usage counts (decision 060): moving into a part of the community adds one to its count for today, with nothing
+    // about who moved. Moving between pages of the same part adds nothing.
+    const usage = usageArea(loc.pathname), counted = useRef('');
+    useEffect(() => { const key = usage ? `${slug}|${usage}` : ''; if (key && key !== counted.current) countVisit(slug, usage!); counted.current = key; }, [slug, usage]);
     // Coming back online: say so, and fetch anything that changed meanwhile.
     useEffect(() => { if (online && !wasOnline.current) { toast('You are back online.'); reload(); } wasOnline.current = online; }, [online]);
     const unread = data.summary?.unreadNotifications ?? data.notifications.filter(n => !n.readAt).length;

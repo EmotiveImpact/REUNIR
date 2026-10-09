@@ -6,9 +6,9 @@
 - Alpha 51, app, accessibility and speed (decision 051): PR #41, merged as `7ffb982`.
 - Alpha 52, records, PR #42 merged as `fa3013a` (this note, BUILD_STATUS, CHANGELOG, READMEs, ROADMAP, LAUNCH_RUNBOOK, RECOVERY_STATUS marked historical, SOURCE_MANIFEST regenerated with `python3 scripts/publish_source.py --write-manifest "<release>"`, CI timeout 30 minutes). No decision record; no code change.
 - Alpha 53, feeds paged in SQL (decision 053): a window of posts per read, feed pages and post counts in SQL; other collections keep the 5,000-row limit. PR #43, merged as `cae20e1`.
-- Alpha 54, project teams, captions and video resume (decision 054, migration 0048). Alpha 58 later used migration 0049, and Alpha 59 migration 0050. PR #44, merged as `0d14bcc`.
+- Alpha 54, project teams, captions and video resume (decision 054, migration 0048). Alpha 58 later used migration 0049, Alpha 59 migration 0050 and Alpha 60 migration 0051. PR #44, merged as `0d14bcc`.
 
-Edem asked on 9 October 2026 for the six unbuilt items, one pull request each, each merged before the next: the shared confirmation box (Alpha 55), partial marks (56), video chapters (57), appeals against suspensions and message reports (58) and credits on outcomes (59) are built; privacy-respecting usage stats (60) is next. Deployment remains Edem's call.
+Edem asked on 9 October 2026 for the six unbuilt items, one pull request each, each merged before the next: the shared confirmation box (Alpha 55), partial marks (56), video chapters (57), appeals against suspensions and message reports (58), credits on outcomes (59) and privacy-respecting usage stats (60) are all built. Deployment remains Edem's call.
 
 Checks are unchanged: from `platform/`, `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script with `CHROMIUM_PATH=/opt/pw-browsers/chromium`, and `npm run test:postgres` against a disposable `reunir_ci`; from the root, the Python helpers and `check_research.py`.
 
@@ -546,7 +546,8 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, STATES.md, decisions/027-loading-
 - Alpha 56, partial marks (decision 056): `partialCredit` on multiple-choice questions, scored by `partialPoints`; no migration. PR #46, merged as `4a019f8`.
 - Alpha 57, video chapters (decision 057): `chapters` on an uploaded video's lesson file; no migration. PR #47, merged as `ee1f17b`.
 - Alpha 58, appeals for suspensions and message reports (decision 058, migration 0049): `suspension_appeals`, account routes for suspended people, and one second look at a closed message report. PR #48, merged as `22e0171`.
-- Alpha 59, credits on outcomes (decision 059, migration 0050): `outcome_credits`, shown on outcomes, archived outputs and profiles.
+- Alpha 59, credits on outcomes (decision 059, migration 0050): `outcome_credits`, shown on outcomes, archived outputs and profiles. PR #49, merged as `a9fa260`.
+- Alpha 60, usage counts that name no one (decision 060, migration 0051): `usage_counts`, the Community studio Usage tab and the Your account switch.
 
 ### What is done
 

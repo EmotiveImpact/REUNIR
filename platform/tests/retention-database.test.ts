@@ -37,6 +37,7 @@ async function plant() {
         await db.query("INSERT INTO outbox(id,organization_id,created_at,actor_id,type,object_id,payload) VALUES('o_old',$1,$3,$2,'t','x','{}'),('o_new',$1,$4,$2,'t','x','{}')", [org, member, ago(91), ago(89)]);
         await db.query(`INSERT INTO notifications(id,organization_id,created_at,user_id,title,body,href,read_at) VALUES
             ('n_read_old',$1,$3,$2,'t','b','/',$3),('n_read_new',$1,$4,$2,'t','b','/',$4),('n_unread_old',$1,$3,$2,'t','b','/',NULL)`, [org, member, ago(200), ago(100)]);
+        await db.query("INSERT INTO usage_counts(organization_id,day,area,count) VALUES($1,$2::date,'home',7),($1,$3::date,'home',9)", [org, ago(200).slice(0, 10), ago(100).slice(0, 10)]);
     }
 }
 
@@ -78,7 +79,7 @@ test('a dry run counts exactly and changes nothing; applying clears only what th
     await plant();
     const job = new RetentionJob(runtime);
     const before = await count('SELECT (SELECT count(*) FROM auth_session)+(SELECT count(*) FROM email_outbox)+(SELECT count(*) FROM notifications)+(SELECT count(*) FROM outbox)+(SELECT count(*) FROM command_receipts) AS n');
-    const expected = { expiredSessions: 1, expiredLinks: 1, rateCounters: 2, requestReceipts: 2, changeEvents: 2, finishedMail: 3, failedMailContents: 2, readNotices: 2 };
+    const expected = { expiredSessions: 1, expiredLinks: 1, rateCounters: 2, requestReceipts: 2, changeEvents: 2, finishedMail: 3, failedMailContents: 2, readNotices: 2, usageCounts: 2 };
     const dry = await job.run(NOW, false);
     assert.equal(dry.applied, false);
     assert.equal(dry.communities, 2);
@@ -102,6 +103,7 @@ test('a dry run counts exactly and changes nothing; applying clears only what th
         assert.deepEqual((await db.query<{ request_key: string }>('SELECT request_key FROM command_receipts WHERE organization_id=$1 AND request_key IN ($2,$3)', [org, 'r_old', 'r_new'])).rows.map(r => r.request_key), ['r_new']);
         assert.deepEqual((await db.query<{ id: string }>("SELECT id FROM outbox WHERE organization_id=$1 AND id IN ('o_old','o_new') ORDER BY id", [org])).rows.map(r => r.id), ['o_new']);
         assert.deepEqual((await db.query<{ id: string }>("SELECT id FROM notifications WHERE organization_id=$1 AND id IN ('n_read_old','n_read_new','n_unread_old') ORDER BY id", [org])).rows.map(r => r.id), ['n_read_new', 'n_unread_old'], 'unread notices stay however old');
+        assert.deepEqual((await db.query<{ count: number }>("SELECT count FROM usage_counts WHERE organization_id=$1", [org])).rows, [{ count: 9 }], 'usage counts go after their keeping');
     }
     assert.equal(await count('SELECT count(*)::int AS n FROM audit'), auditBefore, 'the audit trail is never cleared');
     const observed = (await db.query<{ state: string; last_success_at: unknown }>("SELECT state,last_success_at FROM service_observations WHERE name='retention-job'")).rows[0];

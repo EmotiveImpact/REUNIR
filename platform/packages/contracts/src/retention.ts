@@ -24,6 +24,8 @@ export const RETENTION_DAYS = {
     failedMailContents: 30,
     /** Notices after they were read. Unread notices stay. */
     readNotices: 180,
+    /** Daily usage counts per part of a community (decision 060). They name no one. */
+    usageCounts: 183,
 } as const;
 export type RetentionRule = keyof typeof RETENTION_DAYS;
 export const RETENTION_RULES = Object.keys(RETENTION_DAYS) as RetentionRule[];
@@ -37,6 +39,7 @@ export const RETENTION_POLICY: { what: string; kept: string; why: string }[] = [
     { what: 'Posts, comments, project work, lessons and messages you sent', kept: 'As long as the community keeps them', why: 'Other people rely on them. If you delete your account they stay, shown as Former member.' },
     { what: 'Your learning record, private goals and saved posts', kept: 'Until you delete your account', why: 'An owner can also authorise erasing your knowledge-check answers on request.' },
     { what: 'Reviewed evidence and the audit trail', kept: 'As long as the community exists', why: 'Reviews and decisions stay accountable. Nothing reviewed is rewritten.' },
+    { what: 'Usage counts', kept: `${RETENTION_DAYS.usageCounts} days`, why: 'How often each part of a community was opened each day, and nothing about who opened it.' },
     { what: 'Notices you have read', kept: `${RETENTION_DAYS.readNotices} days after you read them`, why: 'Unread notices stay until you read them.' },
     { what: 'Sign-in sessions, confirmation and reset links', kept: 'Until they expire, then a day', why: 'Sessions last seven days while you use them; links last 30 minutes to 24 hours.' },
     { what: 'Email we sent you', kept: `Contents until sent; the record ${RETENTION_DAYS.finishedMail} days`, why: `Undelivered mail keeps its contents ${RETENTION_DAYS.failedMailContents} days so it can be looked into.` },

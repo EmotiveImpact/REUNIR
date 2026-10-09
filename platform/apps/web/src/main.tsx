@@ -32,6 +32,7 @@ import './instructors.css';
 import './appeals.css';
 import './groups.css';
 import './credits.css';
+import './usage.css';
 import './learning-record.css';
 import './account.css';
 import './states.css';

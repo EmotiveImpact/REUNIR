@@ -1,4 +1,33 @@
-# Alpha 59 credits on outcomes
+# Alpha 60 usage counts that name no one
+
+9 October 2026. Version stays 0.39.0-alpha.1. Decision 060; migration 0051.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/full-audit-yhvssj` |
+| Verified locally | Yes: see below |
+| Merged | Not yet |
+| Deployed | No |
+
+## What changed
+
+See decision 060. Opening a part of a community adds one to that part's count for the day, with nothing about the person. Owners and administrators read weekly totals with small counts hidden, people can leave a device out, and the retention job clears counts after 183 days.
+
+## Checks run
+
+- Typecheck clean. `npm test`: 962 passed, 0 failed, including `tests/usage-stats.test.ts` (5), `tests/usage-stats-database.test.ts` (5: the 0051 upgrade, counting only active members, row security for reading, counting and clearing, the weekly report and grants), `tests/usage-stats-http.test.ts` (3) and the extended `tests/retention-database.test.ts`.
+- `npm run test:postgres` against a fresh local PostgreSQL 16: 35 checks passed, including the new migration 0051 check with six concurrent counts.
+- `npm run test:browser:usage`: 5 checks passed: counting one per move, leaving a device out from Your account, the administrator's weekly table with "<5" and no names, the phone layout, and a browser sending Global Privacy Control never counted.
+- Browser suites: `test:browser` (24, 34 purpose and 27 pilot checks), `test:browser:accounts` (13), `test:browser:forms` (11), `test:browser:v4` (20), `test:browser:monochrome` (16), `test:browser:credits` (12), `test:browser:states` (12) and `test:http` (19), all passed.
+- `python3 -m unittest discover -s scripts -p "test_*.py"`: 43 tests OK.
+
+## Not verified
+
+- Counting in the connected application was tested through the API and database, not in a browser against a live server. Nothing deployed.
+
+# Historical: Alpha 59 credits on outcomes
 
 9 October 2026. Version stays 0.39.0-alpha.1. Decision 059; migration 0050.
 
@@ -8,7 +37,7 @@
 | --- | --- |
 | Implemented | Yes, on `claude/full-audit-yhvssj` |
 | Verified locally | Yes: see below |
-| Merged | Not yet |
+| Merged | Yes: PR #49, merged as `a9fa260` |
 | Deployed | No |
 
 ## What changed

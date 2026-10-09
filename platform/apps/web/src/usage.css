@@ -1,0 +1,11 @@
+/* Usage counts (decision 060). Neutral surfaces only. */
+.usage-stats{min-width:0;max-width:100%}
+/* The frame is positioned so the hidden "fewer than 5" words stay inside it rather than widening the page. */
+.usage-table-wrap{position:relative;max-width:100%;overflow-x:auto;margin-top:16px;border:1px solid var(--border);border-radius:8px}
+.usage-table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.usage-table th,.usage-table td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap}
+.usage-table tr:last-child th,.usage-table tr:last-child td{border-bottom:0}
+.usage-table thead th{font-size:11px;font-weight:550;color:var(--muted)}
+.usage-table th[scope=row],.usage-table thead th:first-child{text-align:left;font-weight:500;position:sticky;left:0;background:var(--surface)}
+.usage-table td{color:var(--text)}
+.usage-toggle{flex-direction:row;align-items:center;gap:10px;margin-top:14px}
