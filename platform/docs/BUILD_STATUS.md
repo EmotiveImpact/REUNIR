@@ -1,4 +1,33 @@
-# Alpha 50 security fixes from the October audit
+# Alpha 51 app, accessibility and speed fixes from the October audit
+
+9 October 2026. Version stays 0.39.0-alpha.1. Decision 051; no migration, no API change.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/full-audit-yhvssj`, from main `57fd2e6` (PR #40) |
+| Verified locally | Yes: see below |
+| Merged | Not yet |
+| Deployed | No |
+
+## What changed
+
+See decision 051: messages inside dialogues, the access-changed screen, the video error, focus and titles on page change, filter and current-item states, a 9px type floor, Messages, Events and Search fixes, smaller hosted bundle, neutral favicon.
+
+## Checks run
+
+- Typecheck clean. `npm test` 903 passed. Python helpers 41 OK.
+- `npm run build` and `bundle:preview`, then all 28 browser suites with `CHROMIUM_PATH=/opt/pw-browsers/chromium`: all passed.
+- Failed attempts: the first message design kept a hidden copy of each message for screen readers beside the visible one, and five suites (notifications, appeals, groups, curation and one more) found the text twice. Each message now has one element.
+
+## Not verified
+
+Screen reader announcements were not tried with a real screen reader.
+
+---
+
+# Historical: Alpha 50 security fixes from the October audit
 
 9 October 2026. Version stays 0.39.0-alpha.1. Decision 050; no migration. Edem asked for a full audit and fixes; the findings are in the project file `ferven/audit-2026-10-09.md`. This thread holds Alpha 50 to 54, decisions 050 to 054 and migrations 0048 to 0052.
 
@@ -8,7 +37,7 @@
 | --- | --- |
 | Implemented | Yes, on `claude/full-audit-yhvssj`, from main `4d82e9e` (PR #39) |
 | Verified locally | Yes: see below |
-| Merged | Not yet |
+| Merged | Yes, PR #40 as `57fd2e6` |
 | Deployed | No |
 
 ## What changed

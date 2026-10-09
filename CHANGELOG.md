@@ -6,9 +6,24 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 Nothing in this list has been deployed. Deployment remains deferred by the owner.
 
+## Alpha 51: app, accessibility and speed fixes from the October audit (no version change), 9 October 2026
+
+On a pull request from `claude/full-audit-yhvssj`. Decision 051; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** when something goes wrong inside a dialogue, the reason now shows inside it. Someone whose membership ends while the app is open sees a clear message instead of a broken page. A lesson video whose link expired says so. The tab title and keyboard focus follow you between pages, filters say which one is on, and no text is smaller than 9px. Events stop counting people who left and say when they have ended. The app is lighter to load and its icon is black and white.
+
+Details:
+
+- Messages render from their own component: one polite region in the page, or an alert inside an open dialogue for a failure. `CreateModal` shows the server's reason.
+- `WorkspaceProvider` shows an access-changed screen when the person is no longer an active member; the command guard is a ref.
+- `LessonStage` handles `onError`. Route changes set `document.title` and focus the page heading.
+- `aria-pressed` on filter tabs, `aria-current` on the current lesson and conversation, spoken unread counts, a 9px type floor.
+- Messages: separate search for the inbox and the member picker; the report reason clears. Search says "Showing 12 of 40". Help, footer and sample-content copy corrected.
+- Hosted builds inline only images under 4 KB. Favicon and theme colour are neutral.
+
 ## Alpha 50: security fixes from the October audit (no version change), 9 October 2026
 
-On a pull request from `claude/full-audit-yhvssj`. Decision 050; no migration. The version stays 0.39.0-alpha.1.
+PR #40, merged as `57fd2e6`. Decision 050; no migration. The version stays 0.39.0-alpha.1.
 
 **In plain language:** an invitation now stops working if the administrator who sent it loses that role. Nobody can block invitations for everyone by flooding them. Administrators who have not turned on two-step sign-in, where it is required, can no longer upload lesson files or covers on their administrator powers alone. The site now tells browsers which scripts and video players it expects, in a watch-only mode for now.
 
