@@ -1,4 +1,33 @@
-# Alpha 51 app, accessibility and speed fixes from the October audit
+# Alpha 52 records brought up to date after the October audit
+
+9 October 2026. Version stays 0.39.0-alpha.1. No decision record of its own (part of the audit, decision 050 and 051 cover the code); no migration, no code change in the app.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/full-audit-yhvssj` |
+| Verified locally | Yes: Python helpers, manifest regenerated and verified |
+| Merged | Not yet |
+| Deployed | No |
+
+## What changed
+
+- Merged rows filled in for Alpha 42, 44, 47 and 48, and for the Alpha 12 and 13 cover work that arrived with PR #5. CHANGELOG headings carry their PR numbers.
+- ROADMAP, LAUNCH_RUNBOOK (34 migrations ending 0040, gaps listed), both READMEs and SESSION_HANDOFF describe the current main. RECOVERY_STATUS.md is marked historical.
+- `scripts/publish_source.py --write-manifest RELEASE` regenerates SOURCE_MANIFEST.json from tracked files; SOURCE_MANIFEST.json regenerated with it. Test added in `scripts/test_publish_source.py`.
+- CI application job timeout raised from 20 to 30 minutes; it was running close to the limit.
+
+## Checks run
+
+- `python3 -m unittest discover -s scripts -p "test_*.py"`: all OK, including the new manifest test.
+- `python3 scripts/publish_source.py` verifies every file in the regenerated manifest.
+
+## Not verified
+
+- Nothing deployed. CI on the pull request is the remaining check.
+
+# Historical: Alpha 51 app, accessibility and speed fixes from the October audit
 
 9 October 2026. Version stays 0.39.0-alpha.1. Decision 051; no migration, no API change.
 
@@ -19,7 +48,7 @@ See decision 051: messages inside dialogues, the access-changed screen, the vide
 
 - Typecheck clean. `npm test` 903 passed. Python helpers 41 OK.
 - `npm run build` and `bundle:preview`, then all 28 browser suites with `CHROMIUM_PATH=/opt/pw-browsers/chromium`: all passed.
-- Failed attempts: the first message design kept a hidden copy of each message for screen readers beside the visible one, and five suites (notifications, appeals, groups, curation and one more) found the text twice. Each message now has one element.
+- Failed attempts: the first message design kept a hidden copy of each message for screen readers beside the visible one, and four suites (notifications, appeals, groups and curation) found the text twice. Each message now has one element.
 
 ## Not verified
 
@@ -70,7 +99,7 @@ The report-only policy against a deployed build; Vercel's `x-real-ip` on a live 
 | --- | --- |
 | Implemented | Yes, on `claude/staging-launch-l1c2la`, from main `d4393cd` (PR #38 page colour) |
 | Verified locally | Yes: see below |
-| Merged | Not yet; PR #39 |
+| Merged | Yes: PR #39, merged into main as `4d82e9e` |
 | Deployed | No |
 
 ## What changed
@@ -100,7 +129,7 @@ Uploaded video on a real bucket (staging keeps `LESSON_VIDEO_MAX_MB` unset). The
 | --- | --- |
 | Implemented | Yes, on `claude/staging-launch-l1c2la`, from main `2edf0b0` |
 | Verified locally | Partly: see below |
-| Merged | Not yet; Alpha 42 (PR #36) is now on main and merged into this branch |
+| Merged | Yes: PR #37, merged into main as `91ac987` |
 | Deployed | No. No Google Cloud project, machine, bucket, scheduler job, Vercel project or Neon project exists |
 
 Numbering: Alpha 47 and decision 047 complete the staging block (Alpha 46 to 47). No migration.
@@ -151,7 +180,7 @@ The shared demo showed white panels and dark, hard-to-read text because its view
 | Implemented | Yes, on `claude/background-scanning-pxfq5c`, from main `d726e8f` with main `2edf0b0` (PR #33 Alpha 41, PR #34 Alpha 46) and `fd3e587` (PR #35 Alpha 44) merged in |
 | Verified locally | Yes: see below |
 | Verified remotely (GitHub Actions) | [PR #36](https://github.com/EmotiveImpact/REUNIR/pull/36). The first run failed one unit test (below); recorded on the pull request once the fixed run finishes |
-| Merged | Not yet. The owner approved merging each change into main once its checks pass (3 October 2026) |
+| Merged | Yes: PR #36, merged into main as `33e21b1` |
 | Deployed | No. No clamd, worker host, bucket or database was provisioned |
 
 Numbering: Alpha 42, decision 042 and migration 0040 from the block allocated to background scanning (Alpha 42 to 43, migrations 0040 to 0041). Alpha 43 and migration 0041 are unused.
@@ -183,7 +212,7 @@ Not exercised: a real clamd, a real bucket's streamed reads, the worker on a con
 
 ---
 
-# Alpha 44 posts and archived tasks a page at a time
+## Historical Alpha 44: posts and archived tasks a page at a time
 
 5 October 2026. Version stays 0.39.0-alpha.1. Feeds load posts a page at a time from the server and archived project tasks leave the snapshot, so a busy community no longer sends every post, reply and old task to every page. See decisions/044-paged-posts-and-tasks.md.
 
@@ -194,7 +223,7 @@ Not exercised: a real clamd, a real bucket's streamed reads, the worker on a con
 | Implemented | Yes, on `claude/paged-loading-bu4poc`, from main `9d7dcff` (the merge of PR #33, Alpha 41), with main `2edf0b0` (PR #34, Alpha 46) merged in |
 | Verified locally | Yes: every suite (see below) |
 | Verified remotely (GitHub Actions) | Recorded on the pull request once its runs finish |
-| Merged | Not yet. The owner approved merging each change into main once its checks pass (3 October 2026) |
+| Merged | Yes: PR #35, merged into main as `fd3e587` |
 | Deployed | No. Nothing was provisioned |
 | Operated with real members | No |
 
@@ -1803,7 +1832,7 @@ This receipt commit changes only documentation and source hashes. The owner appr
 | Implemented | Yes, on `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)), after Alpha 11 and Alpha 12 on the same branch |
 | Verified locally | Yes: every suite, from a clean worktree of tested commit `208e9be` after `npm ci` (see below) |
 | Verified remotely (GitHub Actions) | Yes: both jobs passed on `be9c6c8` in the push and pull request runs (publication receipt below) |
-| Merged | No. Merging into main needs the owner's approval |
+| Merged | Yes: with PR #5, merged into main as `661fac9` (recorded later, in Alpha 52) |
 | Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
 | Operated with real members | No |
 
@@ -1879,7 +1908,7 @@ This receipt commit changes only documentation and source hashes. Merging into m
 | Implemented | Yes, on `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)), after Alpha 11 cover images on the same branch |
 | Verified locally | Yes: every suite, from a clean worktree of tested commit `75e89f6` after `npm ci` (see below) |
 | Verified remotely (GitHub Actions) | Yes: both jobs passed on `a941245` in the push and pull request runs (publication receipt below) |
-| Merged | No. Merging into main needs the owner's approval |
+| Merged | Yes: with PR #5, merged into main as `661fac9` (recorded later, in Alpha 52) |
 | Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
 | Operated with real members | No |
 
@@ -1948,7 +1977,7 @@ This receipt commit changes only documentation and source hashes. Merging into m
 | Implemented | Yes, on `claude/laughing-goodall-2p7z0v` ([PR EmotiveImpact/REUNIR#5](https://github.com/EmotiveImpact/REUNIR/pull/5)), built from main `788e5d7` and merged with main `365e1c9` |
 | Verified locally | Yes, every suite below, in this cloud workspace, from a clean worktree of the tested commit |
 | Verified remotely (GitHub Actions) | See the publication receipt below |
-| Merged | No. Merging into main needs the owner's approval |
+| Merged | Yes: with PR #5, merged into main as `661fac9` (recorded later, in Alpha 52) |
 | Deployed | No. No Neon database, Vercel project, bucket, sender or scheduler was created |
 | Operated with real members | No |
 

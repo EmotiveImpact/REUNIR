@@ -1,6 +1,6 @@
 import unittest, tempfile, json, hashlib, subprocess
 from pathlib import Path
-from publish_source import records, collisions, stage_copy, check_staged_code
+from publish_source import records, collisions, stage_copy, check_staged_code, write_manifest
 class PublicationSafety(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name)/"source";self.dest=Path(self.tmp.name)/"destination";self.root.mkdir();self.dest.mkdir()
@@ -68,3 +68,16 @@ class PublicationSafety(unittest.TestCase):
         subprocess.run(["git","-C",str(self.dest),"add","--all"],check=True)
         with self.assertRaises(subprocess.CalledProcessError):check_staged_code(self.dest)
 if __name__=="__main__":unittest.main()
+
+class ManifestRegeneration(unittest.TestCase):
+    def test_written_manifest_lists_tracked_files_and_verifies(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);(root/"platform").mkdir();(root/"platform"/"package.json").write_text('{"version":"0.0.1"}')
+            (root/"README.md").write_text("# REUNIR");(root/"untracked.txt").write_text("not in git")
+            for args in (["init","-q"],["add","README.md","platform/package.json"]):subprocess.run(["git",*args],cwd=root,check=True)
+            subprocess.run(["git","-c","user.name=t","-c","user.email=t@example.test","commit","-qm","x"],cwd=root,check=True)
+            self.assertEqual(write_manifest(root,"Test release"),2)
+            manifest=json.loads((root/"SOURCE_MANIFEST.json").read_text())
+            self.assertEqual([r["path"] for r in manifest["files"]],["README.md","platform/package.json"])
+            self.assertEqual(manifest["version"],"0.0.1")
+            self.assertEqual(len(records(root)),2)

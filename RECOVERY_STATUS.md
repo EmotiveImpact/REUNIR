@@ -1,4 +1,6 @@
-# REUNIR recovery checkpoint
+# REUNIR recovery checkpoint (historical)
+
+> Historical record of the 24 September 2026 Alpha 05 recovery. It is kept as evidence and describes nothing current. For the present state read SESSION_HANDOFF.md, CHANGELOG.md and platform/docs/BUILD_STATUS.md.
 
 24 September 2026. Preserve before continuing development.
 
