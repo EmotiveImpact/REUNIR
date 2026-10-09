@@ -8,11 +8,12 @@ import { EMAIL_LINK_SECONDS, verificationMail, type EmailVerification } from '..
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import * as schema from '../../../packages/db/src/auth-schema';
 import type { Database } from '../../../packages/db/src/connection';
+import { DEFAULT_IP_HEADER } from './config';
 /**
  * `emailVerification` decides whether an unconfirmed address may sign in. It applies only where mail can be queued: without
  * a mail queue nobody could confirm, so nothing is required and changing the address is unavailable.
  */
-export function createAuth(db: Database, baseURL: string, secret: string, bootstrap = false, mail?: MailQueue, emailVerification: EmailVerification = 'optional') {
+export function createAuth(db: Database, baseURL: string, secret: string, bootstrap = false, mail?: MailQueue, emailVerification: EmailVerification = 'optional', ipHeader = DEFAULT_IP_HEADER) {
     if (secret.length < 32)
         throw new Error('BETTER_AUTH_SECRET must contain at least 32 characters.');
     const base = new URL(baseURL);
@@ -40,7 +41,8 @@ export function createAuth(db: Database, baseURL: string, secret: string, bootst
         // Two-step sign-in: an authenticator app's six-digit codes and ten one-time backup codes. The plugin encrypts the
         // secret and the backup codes with the session secret. No SMS or email codes, and no "trust this device" in this slice.
         plugins: [twoFactor({ issuer: TWO_FACTOR_ISSUER, backupCodeOptions: { amount: 10, length: 10, storeBackupCodes: 'encrypted' } })],
-        advanced: { cookiePrefix: 'reunir', useSecureCookies: base.protocol === 'https:', defaultCookieAttributes: { httpOnly: true, sameSite: 'lax', secure: base.protocol === 'https:' } },
+        // Sign-in limits key on the one header the host's proxy overwrites (TRUSTED_IP_HEADER), never a header a visitor can set.
+        advanced: { ipAddress: { ipAddressHeaders: [ipHeader] }, cookiePrefix: 'reunir', useSecureCookies: base.protocol === 'https:', defaultCookieAttributes: { httpOnly: true, sameSite: 'lax', secure: base.protocol === 'https:' } },
     });
 }
 /**

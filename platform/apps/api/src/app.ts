@@ -7,6 +7,7 @@ import { id } from '../../../packages/contracts/src/index';
 import type { MailQueue } from './mail';
 import type { DigestService } from './digests';
 import { Hono, type Context } from 'hono';
+import { CONTENT_SECURITY_POLICY } from './content-security';
 import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
 import { ZodError, z } from 'zod';
@@ -65,8 +66,10 @@ interface Dependencies {
     emailChangeLinkValid?: (token: string) => Promise<boolean>;
     /** Largest lesson video this server accepts. 0, the default, leaves video uploads off. */
     videoBytes?: number;
+    /** The header the host's proxy overwrites with the visitor's address (TRUSTED_IP_HEADER). Default x-real-ip. */
+    clientIpHeader?: string;
 }
-export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, scans, invitations, mail, cronSecret, registerInvited, verifyPassword, digests, retention, adminTwoFactor = 'optional', emailVerification = 'optional', changeEmail, emailChangeLinkValid, videoBytes = 0 }: Dependencies) {
+export function createApp({ repository, operations, origin, resolveSession, authHandler, storage, scans, invitations, mail, cronSecret, registerInvited, verifyPassword, digests, retention, adminTwoFactor = 'optional', emailVerification = 'optional', changeEmail, emailChangeLinkValid, videoBytes = 0, clientIpHeader = 'x-real-ip' }: Dependencies) {
     const messaging=new MessagingRepository(repository);
     const canonical = new URL(origin).origin;
     const app = new Hono<{
@@ -76,7 +79,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         };
     }>();
     app.use('*', secureHeaders({ crossOriginResourcePolicy: 'same-origin', referrerPolicy: 'no-referrer', xFrameOptions: 'DENY' }));
-    app.use('*', async (c, next) => { c.set('requestId', randomUUID()); c.header('Cache-Control', 'no-store'); c.header('X-Request-ID', c.get('requestId')); await next(); });
+    app.use('*', async (c, next) => { c.set('requestId', randomUUID()); c.header('Cache-Control', 'no-store'); c.header('X-Request-ID', c.get('requestId')); c.header('Content-Security-Policy-Report-Only', CONTENT_SECURITY_POLICY); await next(); });
     app.use('*', bodyLimit({ maxSize: 64 * 1024, onError: c => c.json({ error: { code: 'BODY_TOO_LARGE', message: 'Request exceeds 64 KB.' } }, 413) }));
     app.use('/api/*', async (c, next) => {
         if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(c.req.method)) {
@@ -128,9 +131,13 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         if(!invitations)return c.json({error:{code:'INVITATIONS_UNAVAILABLE',message:'Invitations are not configured.'}},503);
         // Global bounded gate plus per-peer gate. Deploy behind a trusted reverse proxy. Each route has its own global gate,
         // so a flood of anonymous look-ups cannot stop real invitees accepting or registering.
-        const peer=createHash('sha256').update(c.req.header('x-real-ip')||'local').digest('hex');
+        // The per-peer gate comes first, so one visitor who is over their own limit never uses up the shared allowance.
+        const peer=createHash('sha256').update(c.req.header(clientIpHeader)||'local').digest('hex');
         const route=c.req.path.split('/').pop()||'';
-        if(!await repository.consumeRateLimit('invite-global:'+(['inspect','accept','register'].includes(route)?route:'other'),200)||!await repository.consumeRateLimit('invite-peer:'+peer,30))return c.json({error:{code:'RATE_LIMITED',message:'Try again shortly.'}},429);
+        if(!await repository.consumeRateLimit('invite-peer:'+peer,30))return c.json({error:{code:'RATE_LIMITED',message:'Try again shortly.'}},429);
+        // Accepting needs a session, so anonymous requests are turned away before they reach the shared allowance.
+        if(route==='accept'&&!await resolveSession(c.req.raw.headers))throw new DomainError('UNAUTHENTICATED','Sign in to accept this invitation.',401);
+        if(!await repository.consumeRateLimit('invite-global:'+(['inspect','accept','register'].includes(route)?route:'other'),200))return c.json({error:{code:'RATE_LIMITED',message:'Try again shortly.'}},429);
         await next();
     });
     const inviteToken=z.object({token:z.string().regex(/^[A-Za-z0-9_-]{43}$/)}).strict();
@@ -282,7 +289,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
                 if (problem) throw new DomainError(videoBytes ? 'FILE_TOO_LARGE' : 'VIDEO_UPLOADS_OFF', problem, videoBytes ? 413 : 403);
             }
             // The domain checks authoring rights and records the intent before any storage capability exists.
-            const { upload, expired } = await repository.beginResourceUpload(slug, who.id, input, (organizationId, id) => resourceObjectKey(organizationId, input.trackId, input.contentType, id), c.get('requestId'));
+            const { upload, expired } = await repository.beginResourceUpload(slug, who.id, input, (organizationId, id) => resourceObjectKey(organizationId, input.trackId, input.contentType, id), c.get('requestId'), { administration: administration(c) });
             await removeQuietly(c.get('requestId'), expired.map(x => x.objectKey));
             const policy = await storage.upload(upload.objectKey, upload.contentType, upload.sizeBytes);
             return c.json({ id: upload.id, ...policy, method: 'POST', expiresIn: 300 }, 201);
@@ -298,7 +305,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         if (body && typeof body === 'object' && (body as { purpose?: unknown }).purpose === 'cover_image') {
             const input = coverUploadRequest.parse(body);
             const key = (organizationId: string, id: string) => coverObjectKey(organizationId, input.subject, input.subjectId, input.contentType, id);
-            const { upload, expired } = await repository.beginCoverUpload(slug, who.id, input, key, c.get('requestId'), input.thumbnail ? (organizationId, id) => coverThumbnailObjectKey(key(organizationId, id), input.thumbnail!.contentType) : undefined);
+            const { upload, expired } = await repository.beginCoverUpload(slug, who.id, input, key, c.get('requestId'), input.thumbnail ? (organizationId, id) => coverThumbnailObjectKey(key(organizationId, id), input.thumbnail!.contentType) : undefined, { administration: administration(c) });
             await removeQuietly(c.get('requestId'), expired.flatMap(storedKeysOf));
             return c.json(await coverPolicies(upload), 201);
         }
@@ -327,7 +334,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         return c.json(done, done.status === 'scanning' ? 202 : 200);
     });
     app.post('/api/organisations/:slug/uploads/:id/discard', async (c) => {
-        const result = await repository.discardResourceUpload(c.req.param('slug'), c.get('identity').id, id.parse(c.req.param('id')), c.get('requestId'));
+        const result = await repository.discardResourceUpload(c.req.param('slug'), c.get('identity').id, id.parse(c.req.param('id')), c.get('requestId'), { administration: administration(c) });
         await removeQuietly(c.get('requestId'), [result.objectKey]);
         return c.json({ id: result.id, status: 'discarded' });
     });

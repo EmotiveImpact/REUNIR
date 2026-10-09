@@ -33,7 +33,7 @@ const jar = (r: Response, previous = '') => {
 };
 // Better Auth limits each address per path (three two-step attempts in ten seconds); each request here comes from its own.
 let address = 0;
-const headers = (cookie = '') => ({ 'Content-Type': 'application/json', Origin: origin, Cookie: cookie, 'Idempotency-Key': randomUUID(), 'X-Forwarded-For': `198.51.100.${++address % 250 + 1}` });
+const headers = (cookie = '') => ({ 'Content-Type': 'application/json', Origin: origin, Cookie: cookie, 'Idempotency-Key': randomUUID(), 'X-Real-IP': `198.51.100.${++address % 250 + 1}` });
 const post = (path: string, body: unknown, cookie = '', app = required) => app.request(path, { method: 'POST', headers: headers(cookie), body: JSON.stringify(body) });
 const get = (path: string, cookie = '', app = required) => app.request(path, { headers: headers(cookie) });
 const command = (who: string, body: unknown, app = required) => post('/api/organisations/code-black/commands', body, cookies[who], app);

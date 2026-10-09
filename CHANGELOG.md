@@ -6,6 +6,21 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 Nothing in this list has been deployed. Deployment remains deferred by the owner.
 
+## Alpha 50: security fixes from the October audit (no version change), 9 October 2026
+
+On a pull request from `claude/full-audit-yhvssj`. Decision 050; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** an invitation now stops working if the administrator who sent it loses that role. Nobody can block invitations for everyone by flooding them. Administrators who have not turned on two-step sign-in, where it is required, can no longer upload lesson files or covers on their administrator powers alone. The site now tells browsers which scripts and video players it expects, in a watch-only mode for now.
+
+Details:
+
+- `InvitationService` checks the sender is still an active owner or administrator when an invitation is looked up, registered or accepted.
+- Invitation limits check the visitor before the shared allowance; an unsigned accept is refused before it counts.
+- `TRUSTED_IP_HEADER` (default `x-real-ip`) feeds both Better Auth's sign-in limits and the invitation limits.
+- Lesson file and cover uploads and lesson file discards honour `ADMIN_TWO_FACTOR=required`.
+- `Content-Security-Policy-Report-Only` on every response and in `vercel.json`.
+- Open message reports and pending invitations list first.
+
 ## Alpha 48: lessons lead with their video (no version change), 5 October 2026
 
 On a pull request from `claude/staging-launch-l1c2la`. Decision 048; no migration. The version stays 0.39.0-alpha.1.

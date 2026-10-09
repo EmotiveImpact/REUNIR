@@ -25,6 +25,20 @@ export const MAX_PENDING_MEMBER_UPLOADS = 5, MAX_MEMBER_UPLOADS = 50;
 /** What deciding access to project work and drawing its board needs. */
 const WORK_COLLECTIONS: readonly CollectionKey[] = ['members', 'spaces', 'spaceMembers', 'projects', 'projectMembers', 'projectTasks', 'taskNotes', 'contributions', 'uploads'];
 function context(organizationId: string, userId: string, requestId: string = randomUUID()): TenantContext { return { organizationId, userId, requestId }; }
+/**
+ * With `administration: 'withheld'`, an owner or administrator without two-step sign-in may still do what a moderator could:
+ * the step is tried on a copy with them as a moderator, and refused with TWO_FACTOR_REQUIRED only if that copy fails.
+ */
+function requireUnlessModeratorCould(state: Workspace, ctx: TenantContext, administration: 'allowed' | 'withheld' | undefined, step: (s: Workspace) => unknown) {
+    if (administration !== 'withheld') return;
+    const actor = actorFor(state, ctx);
+    if (!isAdmin(actor)) return;
+    try { step({ ...state, members: state.members.map(m => m.id === actor.id ? { ...m, role: 'moderator' } : m) }); }
+    catch (error) {
+        if (error instanceof DomainError) throw new DomainError(TWO_FACTOR_REQUIRED, TWO_FACTOR_REQUIRED_MESSAGE, 403);
+        throw error;
+    }
+}
 export async function setContext(sql: SQL, organizationId: string, userId: string) { await sql.query("SELECT set_config('app.organization_id',$1,true),set_config('app.user_id',$2,true)", [organizationId, userId]); }
 function decode(row: Record<string, unknown>, spec: TableSpec) { return Object.fromEntries(spec.fields.map(f => [f.property, row[f.column] instanceof Date ? (row[f.column] as Date).toISOString() : row[f.column]])); }
 async function putRow(sql: SQL, spec: TableSpec, row: Record<string, unknown>, existing = false) {
@@ -224,9 +238,10 @@ export class WorkspaceRepository {
     async markUpload(slug: string, userId: string, id: string, status: 'ready' | 'rejected', generation: string | null = null) { return this.within(slug, userId, true, async (sql, org) => { const rows = await sql.query("UPDATE upload_intents SET status=$4,generation=$5 WHERE organization_id=$1 AND user_id=$2 AND id=$3 AND purpose='member' RETURNING id", [org.id, userId, id, status, status === 'ready' ? generation : null]); if (!rows.rows[0])
         throw new DomainError('NOT_FOUND', 'File not found.', 404); }); }
     /** Lesson files. Domain rules run inside the tenant transaction; storage calls happen outside it. */
-    async beginResourceUpload(slug: string, userId: string, request: ResourceUploadRequest, key: (organizationId: string, id: string) => string, requestId: string) {
+    async beginResourceUpload(slug: string, userId: string, request: ResourceUploadRequest, key: (organizationId: string, id: string) => string, requestId: string, options: { administration?: 'allowed' | 'withheld' } = {}) {
         return this.within(slug, userId, true, async (sql, org) => {
             const before = await readAll(sql, org, userId), orgId = String(org.id), id = randomUUID();
+            requireUnlessModeratorCould(before, context(orgId, userId, requestId), options.administration, s => beginResourceUpload(s, context(orgId, userId, requestId), request, { id, objectKey: key(orgId, id) }, new Date().toISOString()));
             const result = beginResourceUpload(before, context(orgId, userId, requestId), request, { id, objectKey: key(orgId, id) }, new Date().toISOString());
             await saveChanges(sql, before, result.workspace);
             return { upload: result.upload, expired: result.expired };
@@ -240,9 +255,10 @@ export class WorkspaceRepository {
             return { upload: result.upload, outcome: result.outcome };
         });
     }
-    async discardResourceUpload(slug: string, userId: string, id: string, requestId: string) {
+    async discardResourceUpload(slug: string, userId: string, id: string, requestId: string, options: { administration?: 'allowed' | 'withheld' } = {}) {
         return this.within(slug, userId, true, async (sql, org) => {
             const before = await readAll(sql, org, userId);
+            requireUnlessModeratorCould(before, context(String(org.id), userId, requestId), options.administration, s => discardResourceUpload(s, context(String(org.id), userId, requestId), id, new Date().toISOString()));
             const result = discardResourceUpload(before, context(String(org.id), userId, requestId), id, new Date().toISOString());
             await saveChanges(sql, before, result.workspace);
             return { id: result.id, objectKey: result.objectKey };
@@ -282,9 +298,10 @@ export class WorkspaceRepository {
      * Cover images follow the same split: domain rules inside the tenant transaction, storage calls outside it.
      * `thumbnailKey` names the stored small copy when the request declares one.
      */
-    async beginCoverUpload(slug: string, userId: string, request: CoverUploadRequest, key: (organizationId: string, id: string) => string, requestId: string, thumbnailKey?: (organizationId: string, id: string) => string) {
+    async beginCoverUpload(slug: string, userId: string, request: CoverUploadRequest, key: (organizationId: string, id: string) => string, requestId: string, thumbnailKey?: (organizationId: string, id: string) => string, options: { administration?: 'allowed' | 'withheld' } = {}) {
         return this.within(slug, userId, true, async (sql, org) => {
             const before = await readAll(sql, org, userId), orgId = String(org.id), id = randomUUID();
+            requireUnlessModeratorCould(before, context(orgId, userId, requestId), options.administration, s => beginCoverUpload(s, context(orgId, userId, requestId), request, { id, objectKey: key(orgId, id) }, new Date().toISOString()));
             const result = beginCoverUpload(before, context(orgId, userId, requestId), request, { id, objectKey: key(orgId, id), ...(request.thumbnail && thumbnailKey ? { thumbnailObjectKey: thumbnailKey(orgId, id) } : {}) }, new Date().toISOString());
             await saveChanges(sql, before, result.workspace);
             return { upload: result.upload, expired: result.expired };

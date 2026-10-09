@@ -72,15 +72,15 @@ test('unknown tracks, other communities’ tracks and existing members are refus
     await assert.rejects(() => invites.create('code-black', DEMO_USER, 'student@example.test', 'track_story'), { code: 'FORBIDDEN' }, 'members cannot invite');
 });
 
-test('if the sender no longer administers the community, the person joins without the teaching grant', async () => {
+// Before Alpha 50 the person joined without the grant; since decision 050 the invitation itself lapses with its sender.
+test('if the sender no longer administers the community, the invitation no longer admits anyone', async () => {
     await db.query("UPDATE members SET role='admin' WHERE organization_id=$1 AND user_id='member_maya'", [ORG]);
     const created = await invites.create('code-black', 'member_maya', 'late@example.test', 'track_story');
     await db.query("UPDATE members SET role='member' WHERE organization_id=$1 AND user_id='member_maya'", [ORG]);
     const person = await account('late@example.test');
-    const accepted = await invites.accept(token(created.url), person);
-    assert.equal(accepted.teaching, null);
+    await assert.rejects(() => invites.accept(token(created.url), person), { code: 'INVITE_UNAVAILABLE' });
     assert.deepEqual(await grants(person), []);
-    assert.equal((await db.query('SELECT 1 FROM members WHERE organization_id=$1 AND user_id=$2', [ORG, person])).rows.length, 1);
+    assert.equal((await db.query('SELECT 1 FROM members WHERE organization_id=$1 AND user_id=$2', [ORG, person])).rows.length, 0);
 });
 
 test('row security admits an invited grant only for the invited person, track and sender, while the invitation is pending', async () => {
