@@ -6,9 +6,9 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 Nothing in this list has been deployed. Deployment remains deferred by the owner.
 
-## Alpha 60: usage counts that name no one (no version change), 9 October 2026
+## Alpha 60: usage counts that name no one (no version change), 9 October 2026 (PR #50)
 
-On a pull request from `claude/full-audit-yhvssj`. Decision 060; migration 0051. The version stays 0.39.0-alpha.1.
+Merged as `4d3a75c`. Decision 060; migration 0051. The version stays 0.39.0-alpha.1.
 
 **In plain language:** owners and administrators can now see how often each part of their community is opened, week by week, on a new **Usage** tab in Community studio. Nothing records who opened what: the only thing kept is a count per part per day. A week under five shows as "<5", so a small community never shows what one person did. Anyone can leave their device out from Your account, and a browser that asks sites not to track it is never counted.
 
