@@ -35,7 +35,7 @@ See decision 057. Chapters are typed in the studio under an uploaded video, stor
 | --- | --- |
 | Implemented | Yes, on `claude/full-audit-yhvssj` |
 | Verified locally | Yes: see below |
-| Merged | Not yet |
+| Merged | Yes: PR #46, merged as `4a019f8` |
 | Deployed | No |
 
 ## What changed

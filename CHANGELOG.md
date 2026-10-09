@@ -19,9 +19,9 @@ Details:
 - The studio blocks saving while a chapter line cannot be read; the lesson stage lists chapters, seeks to them, and marks the one playing.
 - New tests: `video-chapters`; the resources browser check covers authoring errors, publishing, jumping before and after loading, and axe.
 
-## Alpha 56: partial marks on multiple-choice questions (no version change), 9 October 2026
+## Alpha 56: partial marks on multiple-choice questions (no version change), 9 October 2026 (PR #46)
 
-On a pull request from `claude/full-audit-yhvssj`. Decision 056; no migration. The version stays 0.39.0-alpha.1.
+Merged as `4a019f8`. Decision 056; no migration. The version stays 0.39.0-alpha.1.
 
 **In plain language:** a course author can let a multiple-choice question give partial marks. A learner who picks some of the right options earns part of the points, and each wrong option they pick takes a share away. Learners see "partial marks" beside the question before they answer.
 
