@@ -1,4 +1,33 @@
-# Alpha 57 chapters in lesson videos
+# Alpha 58 appeals for suspensions and message reports
+
+9 October 2026. Version stays 0.39.0-alpha.1. Decision 058; migration 0049.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/full-audit-yhvssj` |
+| Verified locally | Yes: see below |
+| Merged | Not yet |
+| Deployed | No |
+
+## What changed
+
+See decision 058. A suspended member appeals from their account; an independent owner or administrator decides on the Appeals page, and reversing restores access. Reporters of private messages are told when a report is closed, see their own reports, and can ask once for a second look by another moderator.
+
+## Checks run
+
+- Typecheck clean. `npm test`: 935 passed, 0 failed, including `tests/suspension-appeals.test.ts` (6), `tests/suspension-appeals-database.test.ts` (4: privileges, the full flow under the runtime role, row security, close and withdraw, a report's second look) and `tests/suspension-appeals-http.test.ts` (2).
+- `npm run test:postgres` against a fresh local PostgreSQL 16: 33 checks passed, including the new migration 0049 check.
+- `npm run test:browser:appeals`: 10 checks passed, including a suspended member appealing from the access-changed screen, the owner restoring access, and a reporter's second look.
+- `npm run test:browser` (34 purpose and 27 pilot checks), `test:browser:accounts` (13), `test:browser:forms` (11), `test:browser:v4` (20), `test:browser:monochrome` (16) and `test:http` (19): all passed.
+- `python3 -m unittest discover -s scripts -p "test_*.py"`: 43 tests OK.
+
+## Not verified
+
+- Suspensions made before migration 0049 have no record of who suspended them, so any owner or administrator may decide an appeal about them. Nothing deployed.
+
+# Historical: Alpha 57 chapters in lesson videos
 
 9 October 2026. Version stays 0.39.0-alpha.1. Decision 057; no migration. Lesson files gain an optional `chapters` list.
 
@@ -8,7 +37,7 @@
 | --- | --- |
 | Implemented | Yes, on `claude/full-audit-yhvssj` |
 | Verified locally | Yes: see below |
-| Merged | Not yet |
+| Merged | Yes: PR #47, merged as `ee1f17b` |
 | Deployed | No |
 
 ## What changed

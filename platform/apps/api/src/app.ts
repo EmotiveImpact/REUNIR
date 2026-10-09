@@ -2,7 +2,7 @@ import type { PilotOperations } from './operations';
 import { RELEASE_VERSION } from '../../../packages/contracts/src/operations';
 import { InvitationService, invitationEmail } from './invitations';
 import { MessagingRepository } from '../../../packages/db/src/messaging';
-import { startConversation, sendMessage, reportMessage } from '../../../packages/contracts/src/messaging';
+import { startConversation, sendMessage, reportMessage, askSecondLook } from '../../../packages/contracts/src/messaging';
 import { id } from '../../../packages/contracts/src/index';
 import type { MailQueue } from './mail';
 import type { DigestService } from './digests';
@@ -187,6 +187,17 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         await mail.enqueue({ to: who.email, ...changeNoticeMail(body.newEmail) });
         return c.json({ requested: true, message: EMAIL_CHANGE_SENT });
     });
+    // A suspended member sees, from their account, where their access is suspended and their own appeals there, and can
+    // appeal or withdraw (decision 058). Nothing else in that community is reachable this way.
+    const suspendedPerson = async (c: Context) => {
+        const who = await resolveSession(c.req.raw.headers);
+        if (!who) throw new DomainError('UNAUTHENTICATED', 'Please sign in.', 401);
+        if (!await repository.consumeRateLimit('member:' + who.id, c.req.method === 'GET' ? 240 : 100)) throw new DomainError('RATE_LIMITED', 'Take a moment before trying again.', 429);
+        return who;
+    };
+    app.get('/api/account/suspensions', async c => c.json(await repository.suspensions((await suspendedPerson(c)).id)));
+    app.post('/api/account/suspensions/:slug/appeal', async c => { const who = await suspendedPerson(c); return c.json(await repository.appealSuspension(c.req.param('slug'), who.id, await c.req.json(), c.get('requestId')), 201); });
+    app.post('/api/account/suspensions/:slug/appeals/:appealId/withdraw', async c => { const who = await suspendedPerson(c); return c.json(await repository.withdrawSuspensionAppeal(c.req.param('slug'), who.id, id.parse(c.req.param('appealId')), c.get('requestId'))); });
     // Only the route above may change an address, so the password is always asked for.
     app.post('/api/auth/change-email', c => c.json({ error: { code: 'NOT_FOUND', message: 'Endpoint not found.' } }, 404));
     // Names are set by registration and the profile, under their own rules; Better Auth's own route would skip those rules.
@@ -241,6 +252,8 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     app.post('/api/organisations/:slug/conversations/:threadId/messages/:messageId/report',async c=>{const b=reportMessage.parse(await c.req.json());return c.json(await messaging.report(c.req.param('slug'),c.get('identity').id,c.req.param('threadId'),c.req.param('messageId'),b.reason));});
     app.post('/api/organisations/:slug/member-blocks',async c=>{const b=z.object({userId:id,blocked:z.boolean()}).strict().parse(await c.req.json());return c.json(await messaging.block(c.req.param('slug'),c.get('identity').id,b.userId,b.blocked));});
     app.get('/api/organisations/:slug/message-reports',async c=>c.json(await messaging.reports(c.req.param('slug'),c.get('identity').id)));
+    app.get('/api/organisations/:slug/message-reports/mine',async c=>c.json(await messaging.mine(c.req.param('slug'),c.get('identity').id)));
+    app.post('/api/organisations/:slug/message-reports/:reportId/second-look',async c=>{const b=askSecondLook.parse(await c.req.json());return c.json(await messaging.secondLook(c.req.param('slug'),c.get('identity').id,id.parse(c.req.param('reportId')),b.reason));});
     app.post('/api/organisations/:slug/message-reports/:reportId/resolve',async c=>c.json(await messaging.resolve(c.req.param('slug'),c.get('identity').id,id.parse(c.req.param('reportId')))));
     app.get('/api/organisations/:slug/workspace', async (c) => c.json(await repository.snapshot(c.req.param('slug'), c.get('identity').id)));
     // Long lists a page at a time: older notices, review queues and the audit trail. The cursor is opaque and keyset-based.

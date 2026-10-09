@@ -1801,3 +1801,11 @@ tables.push({key:'collectionItems',table:'collection_items',mutable:['position',
     {property:'postId',column:'post_id',type:'text'},{property:'trackId',column:'track_id',type:'text'},{property:'lessonId',column:'lesson_id',type:'text'},
     {property:'projectId',column:'project_id',type:'text'},{property:'eventId',column:'event_id',type:'text'},{property:'pathId',column:'path_id',type:'text'},
     {property:'missionId',column:'mission_id',type:'text'},{property:'outputId',column:'output_id',type:'text'}]});
+// Alpha 58: a membership records who suspended it and when, and a suspended member can appeal (decision 058). Only an
+// appeal's decision fields change after it is made.
+tables.find(t => t.key === 'members')!.fields.push({property:'suspendedBy',column:'suspended_by',type:'text'},{property:'suspendedAt',column:'suspended_at',type:'timestamptz'});
+tables.push({key:'suspensionAppeals',table:'suspension_appeals',mutable:['status','decidedBy','decidedAt','response'],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'appellantId',column:'appellant_id',type:'text'},{property:'suspendedBy',column:'suspended_by',type:'text'},{property:'suspendedAt',column:'suspended_at',type:'timestamptz'},
+    {property:'reason',column:'reason',type:'text'},{property:'status',column:'status',type:'text'},{property:'decidedBy',column:'decided_by',type:'text'},
+    {property:'decidedAt',column:'decided_at',type:'timestamptz'},{property:'response',column:'response',type:'text'}]});

@@ -41,7 +41,9 @@ test('0012 upgrade keeps every track, draft and attempt as it was and grants nob
         const read = async (table: string) => (await old.query(`SELECT * FROM ${table} ORDER BY organization_id,id`)).rows;
         const before = { tracks: await read('tracks'), lessons: await read('lessons'), members: await read('members') };
         await migrate(old); await migrate(old);
-        for (const table of ['tracks', 'lessons', 'members'] as const) assert.deepEqual(await read(table), before[table], table);
+        // Migration 0049 adds an empty suspender and suspension time to every membership; every earlier column is unchanged.
+        const unsuspended = (rows: Record<string, unknown>[]) => rows.map(({ suspended_by, suspended_at, ...r }) => { assert.equal(suspended_by, null); assert.equal(suspended_at, null); return r; });
+        for (const table of ['tracks', 'lessons', 'members'] as const) assert.deepEqual(table === 'members' ? unsuspended(await read(table)) : await read(table), before[table], table);
         assert.deepEqual(await read('track_instructors'), []);
         assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, MIGRATION_COUNT);
     } finally { await old.close(); }

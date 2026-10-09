@@ -5,7 +5,7 @@ import { coverChange, coverLibraryLabel, coverLibraryTags, type CoverImage, type
 import { z } from 'zod';
 import type { WorkspaceSummary } from './pages';
 import { notificationPreferencesInput, type DigestFrequency, type MutableTopic } from './notifications';
-import { appealCommands, type AppealStatus, type AppealSubject } from './appeals';
+import { appealCommands, type AppealStatus, type AppealSubject, type SuspensionAppealStatus } from './appeals';
 import { creditRole, type CreditStatus } from './credits';
 import { collectionFields, collectionItemFields, collectionNote, type CollectionItemKind } from './collections';
 export type Id = string;
@@ -52,6 +52,9 @@ export interface Member extends TenantRecord {
     avatar: string;
     role: Role;
     status: MembershipStatus;
+    /** Who suspended this membership, and when, while it is suspended. NULL otherwise, and on suspensions made before Alpha 58. */
+    suspendedBy?: Id | null;
+    suspendedAt?: string | null;
 }
 export interface Space extends TenantRecord {
     name: string;
@@ -380,6 +383,21 @@ export interface ModerationAppeal extends TenantRecord {
     decidedAt: string | null;
     response: string;
 }
+/**
+ * A suspended member's request for an owner or administrator who did not suspend them to look at the suspension again
+ * (decision 058). Private to the appellant and the community's owners and administrators. Only the decision fields change.
+ */
+export interface SuspensionAppeal extends TenantRecord {
+    appellantId: Id;
+    /** The suspension this appeal challenges, as recorded on the membership when the appeal was made. */
+    suspendedBy: Id | null;
+    suspendedAt: string | null;
+    reason: string;
+    status: SuspensionAppealStatus;
+    decidedBy: Id | null;
+    decidedAt: string | null;
+    response: string;
+}
 /** One member's notice settings in one community. Absent means every topic on and no digest. */
 export interface NotificationPreference extends TenantRecord {
     userId: Id;
@@ -405,6 +423,7 @@ export interface CollectionItem extends TenantRecord {
 }
 export interface Workspace {
     moderationAppeals: ModerationAppeal[];
+    suspensionAppeals: SuspensionAppeal[];
     evidenceChanges: EvidenceChange[];
     collections: Collection[];
     collectionItems: CollectionItem[];

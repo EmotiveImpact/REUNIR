@@ -16,7 +16,7 @@ export interface CommunityErasure {
     workspace: Workspace;
     memberId: string;
     /** Rows removed, by collection. Appeals are the person's own too, and are named by their appellant. */
-    removed: Record<PersonalCollection | 'moderationAppeals', number>;
+    removed: Record<PersonalCollection | 'moderationAppeals' | 'suspensionAppeals', number>;
     releasedTasks: number;
     rewordedNotices: number;
     /** Task uploads the person started that never became files (pending or refused), with their storage keys. */
@@ -37,7 +37,7 @@ export function eraseFromCommunity(input: Workspace, userId: string, now: string
     if (member.role === 'owner') throw new DomainError('OWNER_CANNOT_DELETE', ownerRefusal([s.organisation.name]), 409);
     const formerName = member.status === 'left' ? '' : member.name;
     Object.assign(member, formerMember(member));
-    const removed = {} as Record<PersonalCollection | 'moderationAppeals', number>;
+    const removed = {} as Record<PersonalCollection | 'moderationAppeals' | 'suspensionAppeals', number>;
     for (const key of PERSONAL_COLLECTIONS) {
         const rows = s[key] as { userId: string; organizationId: string }[];
         const kept = rows.filter(r => !(r.userId === userId && r.organizationId === org));
@@ -49,6 +49,9 @@ export function eraseFromCommunity(input: Workspace, userId: string, now: string
     const appeals = (s.moderationAppeals ?? []).filter(a => !(a.appellantId === userId && a.organizationId === org));
     removed.moderationAppeals = (s.moderationAppeals ?? []).length - appeals.length;
     s.moderationAppeals = appeals;
+    const access = (s.suspensionAppeals ?? []).filter(a => !(a.appellantId === userId && a.organizationId === org));
+    removed.suspensionAppeals = (s.suspensionAppeals ?? []).length - access.length;
+    s.suspensionAppeals = access;
     // Claimed tasks without submitted proof go back to the team. Tasks with proof keep it, and its contributor.
     let releasedTasks = 0;
     for (const t of s.projectTasks)

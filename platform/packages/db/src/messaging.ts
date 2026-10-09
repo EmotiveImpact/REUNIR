@@ -1,7 +1,8 @@
 import {createHash,randomUUID} from 'node:crypto';
 import {z} from 'zod';
 import {DomainError,id} from '../../contracts/src/index';
-import {sendMessage,reportMessage,startGroup,renameGroup,addToGroup,GROUP_LIMIT,type Conversation,type DirectMessage,type ConversationPage,type MessagePage,type MessageReport} from '../../contracts/src/messaging';
+import {sendMessage,reportMessage,askSecondLook,startGroup,renameGroup,addToGroup,GROUP_LIMIT,type Conversation,type DirectMessage,type ConversationPage,type MessagePage,type MessageReport,type OwnMessageReport} from '../../contracts/src/messaging';
+import {APPEALS_HREF} from '../../contracts/src/appeals';
 import {WorkspaceRepository} from './repository';
 import type {SQL} from './connection';
 const stamp=(x:unknown)=>x instanceof Date?x.toISOString():String(x);
@@ -132,6 +133,26 @@ export class MessagingRepository {
  });}
  private async moderator(sql:SQL,orgId:string,userId:string){const m=await sql.query<{role:string}>("SELECT role FROM members WHERE organization_id=$1 AND user_id=$2 AND status='active'",[orgId,userId]);if(!['owner','admin','moderator'].includes(m.rows[0]?.role))throw new DomainError('FORBIDDEN','A moderator is required.',403);}
  // Open reports first, so a run of resolved ones never pushes a report still waiting out of the list.
- async reports(slug:string,userId:string):Promise<MessageReport[]>{return this.repo.within(slug,userId,false,async(sql,org)=>{await this.moderator(sql,String(org.id),userId);return (await sql.query<Record<string,any>>("SELECT * FROM message_reports WHERE organization_id=$1 ORDER BY (status='open') DESC,created_at DESC LIMIT 100",[org.id])).rows.map(x=>({id:x.id,messageId:x.message_id,senderId:x.sender_id,reporterId:x.reporter_id,reason:x.reason,reportedBody:x.reported_body,status:x.status,createdAt:stamp(x.created_at)}));});}
- async resolve(slug:string,userId:string,reportId:string){return this.repo.within(slug,userId,false,async(sql,org)=>{await this.moderator(sql,String(org.id),userId);const r=await sql.query("UPDATE message_reports SET status='resolved',reviewed_by=$3,reviewed_at=now() WHERE organization_id=$1 AND id=$2 AND sender_id<>$3 AND reporter_id<>$3 RETURNING id",[org.id,reportId,userId]);if(!r.rows.length)throw new DomainError('INDEPENDENT_REVIEW','An independent moderator must review this report.',403);return {ok:true};});}
+ async reports(slug:string,userId:string):Promise<MessageReport[]>{return this.repo.within(slug,userId,false,async(sql,org)=>{await this.moderator(sql,String(org.id),userId);return (await sql.query<Record<string,any>>("SELECT * FROM message_reports WHERE organization_id=$1 ORDER BY (status='open') DESC,created_at DESC LIMIT 100",[org.id])).rows.map(x=>({id:x.id,messageId:x.message_id,senderId:x.sender_id,reporterId:x.reporter_id,reason:x.reason,reportedBody:x.reported_body,status:x.status,createdAt:stamp(x.created_at),reviewedAt:x.reviewed_at?stamp(x.reviewed_at):null,secondLook:x.second_look??null,secondLookAt:x.second_look_at?stamp(x.second_look_at):null,firstReviewedBy:x.first_reviewed_by??null}));});}
+ /** Closing a report tells the person who made it, without naming the moderator. A second look goes to someone else (decision 058). */
+ async resolve(slug:string,userId:string,reportId:string){return this.repo.within(slug,userId,false,async(sql,org)=>{await this.moderator(sql,String(org.id),userId);
+  const x=(await sql.query<{reporter_id:string;sender_id:string;status:string;first_reviewed_by:string|null;second_look:string|null}>('SELECT reporter_id,sender_id,status,first_reviewed_by,second_look FROM message_reports WHERE organization_id=$1 AND id=$2 FOR UPDATE',[org.id,reportId])).rows[0];
+  if(!x||x.sender_id===userId||x.reporter_id===userId)throw new DomainError('INDEPENDENT_REVIEW','An independent moderator must review this report.',403);
+  if(x.first_reviewed_by===userId)throw new DomainError('SECOND_LOOK_INDEPENDENT','You closed this report the first time, so another moderator takes the second look.',403);
+  if(x.status==='resolved')return {ok:true};
+  await sql.query("UPDATE message_reports SET status='resolved',reviewed_by=$3,reviewed_at=now() WHERE organization_id=$1 AND id=$2",[org.id,reportId,userId]);
+  const again=!!x.second_look,reporter=await sql.query("SELECT 1 FROM members WHERE organization_id=$1 AND user_id=$2 AND status<>'left'",[org.id,x.reporter_id]);
+  if(reporter.rows.length)await sql.query('INSERT INTO notifications(id,organization_id,created_at,user_id,title,body,href,read_at) VALUES($1,$2,now(),$3,$4,$5,$6,NULL)',[randomUUID(),org.id,x.reporter_id,again?'Your report was looked at again':'Your report was reviewed',again?'Another moderator looked again at the private message you reported and closed the report.':'A moderator reviewed the private message you reported and closed the report. If you think it needs another look, you can ask once.',APPEALS_HREF]);
+  return {ok:true};});}
+ /** The reports this person made, newest first, without who reviewed them. */
+ async mine(slug:string,userId:string):Promise<OwnMessageReport[]>{return this.repo.within(slug,userId,false,async(sql,org)=>(await sql.query<Record<string,any>>('SELECT * FROM message_reports WHERE organization_id=$1 AND reporter_id=$2 ORDER BY created_at DESC,id DESC LIMIT 100',[org.id,userId])).rows.map(x=>({id:x.id,messageId:x.message_id,senderId:x.sender_id,reason:x.reason,reportedBody:x.reported_body,status:x.status,createdAt:stamp(x.created_at),reviewedAt:x.reviewed_at?stamp(x.reviewed_at):null,secondLook:x.second_look??null,secondLookAt:x.second_look_at?stamp(x.second_look_at):null})));}
+ /** The reporter reopens a closed report once, with a reason. The moderator who closed it cannot close it again. */
+ async secondLook(slug:string,userId:string,reportId:string,reason:string){reason=askSecondLook.parse({reason}).reason;return this.repo.within(slug,userId,false,async(sql,org)=>{
+  const r=await sql.query("UPDATE message_reports SET status='open',second_look=$4,second_look_at=now(),first_reviewed_by=reviewed_by,reviewed_by=NULL,reviewed_at=NULL WHERE organization_id=$1 AND id=$2 AND reporter_id=$3 AND status='resolved' AND second_look IS NULL AND reviewed_by IS NOT NULL RETURNING id",[org.id,reportId,userId,reason]);
+  if(r.rows.length)return {ok:true};
+  const x=(await sql.query<{status:string;second_look:string|null}>('SELECT status,second_look FROM message_reports WHERE organization_id=$1 AND id=$2 AND reporter_id=$3',[org.id,reportId,userId])).rows[0];
+  if(!x)throw new DomainError('NOT_FOUND','That report is not available.',404);
+  if(x.second_look)throw new DomainError('SECOND_LOOK_USED','You have already asked for a second look at this report.',409);
+  throw new DomainError('REPORT_OPEN','This report is still waiting for a moderator.',409);
+ });}
 }

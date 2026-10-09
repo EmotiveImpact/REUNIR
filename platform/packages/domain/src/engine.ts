@@ -14,6 +14,7 @@ import { windowWorkspace } from './pages';
 import { applyNotificationSettings, dropMutedNotices } from './notifications';
 import { applyEvidenceHistory, filterEvidenceHistory } from './evidence-history';
 import { applyAppeals, filterAppeals } from './appeals';
+import { applySuspensionAppeals, closeOnRestore, filterSuspensionAppeals } from './suspension-appeals';
 import { APPEALS_HREF } from '../../contracts/src/appeals';
 import { applyCredits, filterCredits } from './credits';
 import { applyCollections, filterCollections } from './collections';
@@ -69,7 +70,7 @@ export function visibleRecords(state: Workspace, ctx: TenantContext): Workspace 
     s.members = s.members.filter(x => x.status !== 'suspended' || isAdmin(actor)).map(x => x.status === 'left' ? formerMember(x) : x);
     s.uploads = [...visibleUploads(s, actor), ...visibleTaskFiles(s, actor)];
     // Collections last: an item is kept only when its content survived every filter above.
-    return filterCollections(filterEvidenceHistory(filterAppeals(filterCredits(filterAssessments(filterAuthoring(filterCoverLibrary(filterInstructors(filterProjectWork(filterPurposeWorkspace(s, ctx, actor), actor), actor), actor), actor), actor), actor), actor), ctx, actor), actor);
+    return filterCollections(filterEvidenceHistory(filterSuspensionAppeals(filterAppeals(filterCredits(filterAssessments(filterAuthoring(filterCoverLibrary(filterInstructors(filterProjectWork(filterPurposeWorkspace(s, ctx, actor), actor), actor), actor), actor), actor), actor), actor), actor), ctx, actor), actor);
 }
 export function progress(state: Workspace, userId: string, trackId: string) {
     const lessons = state.lessons.filter(l => l.trackId === trackId && l.published);
@@ -115,7 +116,7 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
     let objectId: string | undefined;
     let changed = true;
     const noticesBefore = new Set(s.notifications.map(n => n.id));
-    const purposeResult = applyNotificationSettings(s, ctx, cmd, now, makeId) ?? applyAuthoring(s, ctx, cmd, now, makeId) ?? applyAssessment(s, ctx, cmd, now, makeId) ?? applyProjectWork(s, ctx, cmd, now, makeId) ?? applyCovers(s, ctx, cmd, now, makeId) ?? applyInstructors(s, ctx, cmd, now, makeId) ?? applyAppeals(s, ctx, cmd, now, makeId) ?? applyCollections(s, ctx, cmd, now, makeId) ?? applyPurposeCommand(s, ctx, cmd, now, makeId) ?? applyEvidenceHistory(s, ctx, cmd, now, makeId) ?? applyCredits(s, ctx, cmd, now, makeId) ?? applyProjectTeam(s, ctx, cmd, now, makeId);
+    const purposeResult = applyNotificationSettings(s, ctx, cmd, now, makeId) ?? applyAuthoring(s, ctx, cmd, now, makeId) ?? applyAssessment(s, ctx, cmd, now, makeId) ?? applyProjectWork(s, ctx, cmd, now, makeId) ?? applyCovers(s, ctx, cmd, now, makeId) ?? applyInstructors(s, ctx, cmd, now, makeId) ?? applyAppeals(s, ctx, cmd, now, makeId) ?? applySuspensionAppeals(s, ctx, cmd, now, makeId) ?? applyCollections(s, ctx, cmd, now, makeId) ?? applyPurposeCommand(s, ctx, cmd, now, makeId) ?? applyEvidenceHistory(s, ctx, cmd, now, makeId) ?? applyCredits(s, ctx, cmd, now, makeId) ?? applyProjectTeam(s, ctx, cmd, now, makeId);
     if (purposeResult) {
         message = purposeResult.message;
         objectId = purposeResult.objectId;
@@ -129,6 +130,10 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
             if (target.status === 'left') throw new DomainError('REJOIN_REQUIRED', 'A former member must accept a new invitation.', 409);
             changed = target.status !== cmd.status; target.status = cmd.status; objectId = target.id;
             if (changed) { audit('member.' + cmd.status, target.id); s.audit[s.audit.length-1].metadata.reason=cmd.reason; }
+            // Who suspended a member, and when, is what an appeal challenges (decision 058). Restoring clears it and closes
+            // any appeal still open, since there is nothing left to decide.
+            if (changed && cmd.status === 'suspended') Object.assign(target, { suspendedBy: ctx.userId, suspendedAt: now });
+            if (changed && cmd.status === 'active') { Object.assign(target, { suspendedBy: null, suspendedAt: null }); closeOnRestore(s, target, now, audit); }
             message = cmd.status === 'suspended' ? 'Community access suspended. Existing work is preserved.' : 'Community access restored.'; break;
         }
         case 'member.role': {
@@ -469,4 +474,4 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
     }
     return { workspace: s, message, objectId };
 }
-export const commandsForReference: Command['type'][] = ['task.file.remove','credit.invite','credit.respond','credit.withdraw','collection.save','collection.publish','collection.feature','collection.delete','collection.item.add','collection.item.note','collection.item.remove','collection.items.reorder','notification.preferences.save','cover.library.add','track.instructor.add','track.instructor.remove','track.publish','track.cover.set','project.cover.set','quiz.attempt.submit','quiz.attempt.review','lesson.draft.create','lesson.draft.save','lesson.draft.publish','lesson.draft.archive','lesson.draft.restore','track.lessons.reorder','task.create','task.edit','task.claim','task.release','task.move','task.archive','task.submit','task.note','task.note.hide', 'member.status', 'member.role', 'space.access', 'post.create', 'post.comment', 'post.react', 'post.bookmark', 'post.report', 'post.moderate', 'moderation.appeal', 'moderation.appeal.decide', 'moderation.appeal.withdraw', 'track.enrol', 'lesson.complete', 'mission.submit', 'submission.review', 'project.join', 'project.create', 'project.update', 'event.rsvp', 'profile.update', 'notification.read', 'organisation.update', 'space.create', 'track.create', 'lesson.create', 'mission.create', 'event.create', 'purpose.save', 'path.create', 'path.publish', 'path.enrol', 'milestone.create', 'goal.set', 'goal.status', 'project.purpose', 'contribution.submit', 'contribution.resubmit', 'contribution.review', 'outcome.submit', 'outcome.resubmit', 'outcome.review', 'output.publish', 'evidence.correct', 'evidence.correction.review', 'evidence.withdraw'];
+export const commandsForReference: Command['type'][] = ['task.file.remove','credit.invite','credit.respond','credit.withdraw','collection.save','collection.publish','collection.feature','collection.delete','collection.item.add','collection.item.note','collection.item.remove','collection.items.reorder','notification.preferences.save','cover.library.add','track.instructor.add','track.instructor.remove','track.publish','track.cover.set','project.cover.set','quiz.attempt.submit','quiz.attempt.review','lesson.draft.create','lesson.draft.save','lesson.draft.publish','lesson.draft.archive','lesson.draft.restore','track.lessons.reorder','task.create','task.edit','task.claim','task.release','task.move','task.archive','task.submit','task.note','task.note.hide', 'member.status', 'member.role', 'space.access', 'post.create', 'post.comment', 'post.react', 'post.bookmark', 'post.report', 'post.moderate', 'moderation.appeal', 'moderation.appeal.decide', 'moderation.appeal.withdraw', 'suspension.appeal.decide', 'track.enrol', 'lesson.complete', 'mission.submit', 'submission.review', 'project.join', 'project.create', 'project.update', 'event.rsvp', 'profile.update', 'notification.read', 'organisation.update', 'space.create', 'track.create', 'lesson.create', 'mission.create', 'event.create', 'purpose.save', 'path.create', 'path.publish', 'path.enrol', 'milestone.create', 'goal.set', 'goal.status', 'project.purpose', 'contribution.submit', 'contribution.resubmit', 'contribution.review', 'outcome.submit', 'outcome.resubmit', 'outcome.review', 'output.publish', 'evidence.correct', 'evidence.correction.review', 'evidence.withdraw'];

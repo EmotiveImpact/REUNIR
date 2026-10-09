@@ -41,7 +41,9 @@ test('0033 upgrade keeps every contribution as it was and credits nobody', async
         const read = async (table: string) => (await old.query(`SELECT * FROM ${table} ORDER BY organization_id,id`)).rows;
         const before = { contributions: await read('contributions'), members: await read('members'), reputation: await read('reputation') };
         await migrate(old); await migrate(old);
-        for (const table of ['contributions', 'members', 'reputation'] as const) assert.deepEqual(await read(table), before[table], table);
+        // Migration 0049 adds an empty suspender and suspension time to every membership; every earlier column is unchanged.
+        const unsuspended = (rows: Record<string, unknown>[]) => rows.map(({ suspended_by, suspended_at, ...r }) => { assert.equal(suspended_by, null); assert.equal(suspended_at, null); return r; });
+        for (const table of ['contributions', 'members', 'reputation'] as const) assert.deepEqual(table === 'members' ? unsuspended(await read(table)) : await read(table), before[table], table);
         assert.deepEqual(await read('contribution_credits'), []);
         assert.equal((await old.query('SELECT version FROM schema_migrations')).rows.length, MIGRATION_COUNT);
     } finally { await old.close(); }

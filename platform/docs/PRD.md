@@ -287,7 +287,7 @@ No group chat, attachments, typing indicator, read-status disclosure to senders,
 
 ### Member access
 
-Owners/admins can suspend and restore members with an audit reason and manage private-space access. The owner cannot be suspended/demoted in this interface; administrators cannot suspend peer admins. Only the owner can assign member/moderator/admin roles. Suspension preserves posts, reviewed work and history while denying subsequent authenticated community requests. Membership is rechecked after acquiring the transaction lock, not only before a potentially concurrent suspension.
+Owners/admins can suspend and restore members with an audit reason and manage private-space access. The owner cannot be suspended/demoted in this interface; administrators cannot suspend peer admins. Only the owner can assign member/moderator/admin roles. Suspension preserves posts, reviewed work and history while denying subsequent authenticated community requests. Membership is rechecked after acquiring the transaction lock, not only before a potentially concurrent suspension. A suspended member can appeal from their account; an owner or administrator who did not suspend them decides, and reversing restores access at once (decision 058). The person who reports a private message is told when the report is closed and can ask once for a different moderator to look again.
 
 Role assignment is a deliberate permission decision, never an automatic result of activity points. Ownership transfer, account deletion/export, appeals and full membership removal are not implemented in this wave.
 

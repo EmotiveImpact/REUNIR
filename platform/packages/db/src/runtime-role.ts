@@ -28,6 +28,11 @@ export async function grantRuntimeTables(sql: SQL): Promise<void> {
     // Appeals: only the decision fields change after an appeal is made (migration 0031).
     await sql.query(`REVOKE UPDATE ON moderation_appeals FROM ${role}`);
     await sql.query(`GRANT UPDATE (status,decided_by,decided_at,response) ON moderation_appeals TO ${role}`);
+    // Suspension appeals: only the decision fields change after an appeal is made (migration 0049). A message report's
+    // reporter, sender, reason and reported words never change; its review and second look do.
+    await sql.query(`REVOKE UPDATE ON suspension_appeals,message_reports FROM ${role}`);
+    await sql.query(`GRANT UPDATE (status,decided_by,decided_at,response) ON suspension_appeals TO ${role}`);
+    await sql.query(`GRANT UPDATE (message_id,status,reviewed_by,reviewed_at,second_look,second_look_at,first_reviewed_by) ON message_reports TO ${role}`);
     // Evidence history is kept: a change is never removed, and only its decision is recorded once.
     await sql.query(`REVOKE UPDATE,DELETE ON evidence_changes FROM ${role}`);
     await sql.query(`GRANT UPDATE (status,decided_by,decided_at,response) ON evidence_changes TO ${role}`);
