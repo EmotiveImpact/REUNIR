@@ -6,9 +6,24 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 Nothing in this list has been deployed. Deployment remains deferred by the owner.
 
-## Alpha 59: credits on outcomes (no version change), 9 October 2026
+## Alpha 60: usage counts that name no one (no version change), 9 October 2026
 
-On a pull request from `claude/full-audit-yhvssj`. Decision 059; migration 0050. The version stays 0.39.0-alpha.1.
+On a pull request from `claude/full-audit-yhvssj`. Decision 060; migration 0051. The version stays 0.39.0-alpha.1.
+
+**In plain language:** owners and administrators can now see how often each part of their community is opened, week by week, on a new **Usage** tab in Community studio. Nothing records who opened what: the only thing kept is a count per part per day. A week under five shows as "<5", so a small community never shows what one person did. Anyone can leave their device out from Your account, and a browser that asks sites not to track it is never counted.
+
+Details:
+
+- Moving into a part of the community (home, discussions, paths and learning, missions, projects, events, people, messages, knowledge, outputs, profile, notifications, saved) adds one for the UTC day. Moving within a part adds nothing. Account, appeals, teaching, authoring and management pages are not counted. `packages/contracts/src/usage.ts` holds the parts, the threshold and the weekly report.
+- `POST /api/organisations/:slug/usage` takes only `{ "area": ... }`, counts only an active member, and drops anything past 30 a minute quietly, on its own allowance. `GET` gives owners and administrators eight weeks of totals.
+- `usage_counts` (community, day, part, count) with forced row security: only the API's marked counting step starts or adds to today's count, only owners and administrators read, and only the retention job sees and clears days past 183. The runtime role may update only `count`.
+- The retention job clears usage counts, and Your account and RETENTION.md list them.
+- The demo keeps counts in the page on an illustrative history.
+- New tests: `usage-stats`, `usage-stats-database`, `usage-stats-http`; retention test extended; `test:browser:usage` (5 checks, in CI) and a real PostgreSQL check.
+
+## Alpha 59: credits on outcomes (no version change), 9 October 2026 (PR #49)
+
+Merged as `a9fa260`. Decision 059; migration 0050. The version stays 0.39.0-alpha.1.
 
 **In plain language:** the person who records an outcome can now credit the people who helped bring it about, as they already could on a contribution. Each person is asked first and nothing shows until they accept. Accepted credits read "With Nia James" on the outcome, on the community output published from it, and under "Credited on" on the person's profile. A credit is never the credited person's own evidence, and someone credited on an outcome cannot review it.
 

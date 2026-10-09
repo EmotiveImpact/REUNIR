@@ -546,7 +546,8 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, STATES.md, decisions/027-loading-
 - Alpha 56, partial marks (decision 056): `partialCredit` on multiple-choice questions, scored by `partialPoints`; no migration. PR #46, merged as `4a019f8`.
 - Alpha 57, video chapters (decision 057): `chapters` on an uploaded video's lesson file; no migration. PR #47, merged as `ee1f17b`.
 - Alpha 58, appeals for suspensions and message reports (decision 058, migration 0049): `suspension_appeals`, account routes for suspended people, and one second look at a closed message report. PR #48, merged as `22e0171`.
-- Alpha 59, credits on outcomes (decision 059, migration 0050): `outcome_credits`, shown on outcomes, archived outputs and profiles.
+- Alpha 59, credits on outcomes (decision 059, migration 0050): `outcome_credits`, shown on outcomes, archived outputs and profiles. PR #49, merged as `a9fa260`.
+- Alpha 60, usage counts that name no one (decision 060, migration 0051): `usage_counts`, the Community studio Usage tab and the Your account switch.
 
 ### What is done
 
