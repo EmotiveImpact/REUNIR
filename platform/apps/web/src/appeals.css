@@ -11,3 +11,8 @@
 .appeal-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
 .appeal-quote{margin:0;padding:8px 12px;border-left:2px solid var(--border);font-size:13px;color:var(--muted)}
 .appeal-response{display:grid;gap:4px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px}
+/* Alpha 58: suspended access on the account screens. */
+.suspended-access h2{font-size:16px;margin:0 0 8px}
+.suspension-row{display:grid;gap:8px;padding:14px 0;border-top:1px solid var(--border)}
+.suspension-row p{margin:0}
+.loading-page .suspended-access{width:min(100%,560px);margin-top:24px;text-align:left}

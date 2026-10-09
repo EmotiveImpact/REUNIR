@@ -6,9 +6,25 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 Nothing in this list has been deployed. Deployment remains deferred by the owner.
 
-## Alpha 57: chapters in lesson videos (no version change), 9 October 2026
+## Alpha 58: appeals for suspensions and message reports (no version change), 9 October 2026
 
-On a pull request from `claude/full-audit-yhvssj`. Decision 057; no migration. The version stays 0.39.0-alpha.1.
+On a pull request from `claude/full-audit-yhvssj`. Decision 058; migration 0049. The version stays 0.39.0-alpha.1.
+
+**In plain language:** a member whose access was suspended can now ask, from their account, for the suspension to be looked at again. An owner or administrator who did not suspend them decides, and reversing restores their access straight away. Someone who reports a private message is now told when the report is closed, sees their reports on the Appeals page, and can ask once for another moderator to look again.
+
+Details:
+
+- Memberships record `suspended_by` and `suspended_at`; restoring access clears both and closes any open appeal.
+- `suspension_appeals` with forced row security: the appellant reads, inserts about the suspension in force and withdraws; an independent active owner or administrator decides; any owner or administrator closes an appeal once access is back; the appellant's account deletion removes it.
+- Account routes for suspended people: `GET /api/account/suspensions`, `POST /api/account/suspensions/:slug/appeal`, `POST /api/account/suspensions/:slug/appeals/:id/withdraw`. They read only memberships and the person's own appeals, and show no names.
+- `suspension.appeal.decide` on the Appeals page ("Access appeals"), with a waiting count on Members and access.
+- Message reports gain `second_look`, `second_look_at` and `first_reviewed_by`. Reporters are notified when a report is closed, list their own reports (`GET .../message-reports/mine`) and ask for one second look (`POST .../message-reports/:id/second-look`); the moderator who closed it first cannot close it again.
+- The runtime role may update only an appeal's decision fields and a report's review fields.
+- New tests: `suspension-appeals`, `suspension-appeals-database`, `suspension-appeals-http`; three new appeals browser checks and a real PostgreSQL check.
+
+## Alpha 57: chapters in lesson videos (no version change), 9 October 2026 (PR #47)
+
+Merged as `ee1f17b`. Decision 057; no migration. The version stays 0.39.0-alpha.1.
 
 **In plain language:** a course author can split an uploaded lesson video into chapters, typed one a line like "1:30 Setting up". Learners see the chapters under the video and can jump straight to any of them, even before pressing play.
 

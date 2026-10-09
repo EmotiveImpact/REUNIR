@@ -1,30 +1,44 @@
 import { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Scale } from 'lucide-react';
 import { useWorkspace } from '../lib/context';
 import { Empty, Modal, PageHeading, PersonLink, Pill, date } from '../components/ui';
 import { AppealDialog, currentAppeal } from '../components/appeals';
 import { appealDeciders, appealIsCurrent, appealPost, decisionBlock } from '../../../../packages/domain/src/appeals';
+import { suspensionAppealIsCurrent, suspensionDeciders, suspensionDecisionBlock } from '../../../../packages/domain/src/suspension-appeals';
+import { messageRequest } from '../lib/messaging';
+import { displayError } from '../lib/data';
+import { InlineError, Loading } from '../components/states';
+import type { OwnMessageReport } from '../../../../packages/contracts/src/messaging';
 import { isAdmin } from '../../../../packages/domain/src/access';
 import { APPEAL_TEXT_MAX } from '../../../../packages/contracts/src/appeals';
-import type { ModerationAppeal, Post } from '../../../../packages/contracts/src/index';
+import type { ModerationAppeal, Post, SuspensionAppeal } from '../../../../packages/contracts/src/index';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 
 const STATUS: Record<ModerationAppeal['status'], string> = { pending: 'Waiting for a decision', upheld: 'Kept hidden', reversed: 'Restored', withdrawn: 'Withdrawn' };
-const newest = (a: ModerationAppeal, b: ModerationAppeal) => b.createdAt.localeCompare(a.createdAt);
+const ACCESS_STATUS: Record<SuspensionAppeal['status'], string> = { pending: 'Waiting for a decision', upheld: 'Kept suspended', reversed: 'Restored', withdrawn: 'Withdrawn', closed: 'Closed: access restored' };
+const newest = (a: { createdAt: string }, b: { createdAt: string }) => b.createdAt.localeCompare(a.createdAt);
+const day = (value: string) => date(value, { day: 'numeric', month: 'long', year: 'numeric' });
 
-/** A person's own appeals and hidden posts, and, for owners and administrators, the appeals waiting for a decision. */
+/**
+ * A person's own appeals, hidden posts and message reports, and, for owners and administrators, the appeals waiting for a
+ * decision: about hidden posts, and about suspended access (decision 058).
+ */
 export function AppealsPage() {
     const { data, me } = useWorkspace();
     const mine = data.moderationAppeals.filter(a => a.appellantId === me.userId).sort(newest);
+    const myAccess = data.suspensionAppeals.filter(a => a.appellantId === me.userId).sort(newest);
     const hidden = data.posts.filter(p => p.hidden && p.authorId === me.userId && !currentAppeal(mine, p));
     const others = isAdmin(me) ? data.moderationAppeals.filter(a => a.appellantId !== me.userId).sort(newest) : [];
     const waiting = others.filter(a => a.status === 'pending'), closed = others.filter(a => a.status !== 'pending');
     const current = waiting.filter(a => appealIsCurrent(data, a)).length;
+    const access = isAdmin(me) ? data.suspensionAppeals.filter(a => a.appellantId !== me.userId).sort(newest) : [];
+    const accessWaiting = access.filter(a => a.status === 'pending' && suspensionAppealIsCurrent(data, a)), accessClosed = access.filter(a => !accessWaiting.includes(a));
     return <>
-        <PageHeading eyebrow="A SECOND LOOK" title="Appeals" body="When a moderator hides your post, you can ask for a second look. An owner or administrator who did not hide it decides. Appeals are private to you and the community’s owners and administrators."/>
+        <PageHeading eyebrow="A SECOND LOOK" title="Appeals" body="When a moderator hides your post, or a report you made is closed, you can ask for a second look. Someone who did not make the first decision looks again. Appeals are private to you and the community’s owners and administrators."/>
         <div className="reading-width appeals-page">
             {hidden.length > 0 && <section className="panel" aria-labelledby="appeals-hidden">
                 <h2 id="appeals-hidden">Your hidden posts</h2>
@@ -32,12 +46,19 @@ export function AppealsPage() {
             </section>}
             <section className="panel" aria-labelledby="appeals-mine">
                 <h2 id="appeals-mine">Your appeals</h2>
-                {mine.length ? mine.map(a => <AppealCard key={a.id} appeal={a} own/>) : <p className="muted">You have not appealed anything. Suspension of community access is not appealed here.</p>}
+                {mine.length || myAccess.length ? <>{mine.map(a => <AppealCard key={a.id} appeal={a} own/>)}{myAccess.map(a => <AccessAppealCard key={a.id} appeal={a} own/>)}</> : <p className="muted">You have not appealed anything. If your access to a community is ever suspended, you can appeal from your account.</p>}
             </section>
+            <MyMessageReports/>
             {isAdmin(me) && <section className="panel" aria-labelledby="appeals-queue">
                 <h2 id="appeals-queue">Appeals to decide <span className="muted">{current}</span></h2>
                 {waiting.length ? waiting.map(a => <AppealCard key={a.id} appeal={a}/>) : <Empty title="No appeals are waiting." body="When a member appeals a hidden post, it appears here."/>}
                 {closed.length > 0 && <><h3>Decided appeals</h3>{closed.map(a => <AppealCard key={a.id} appeal={a}/>)}</>}
+            </section>}
+            {isAdmin(me) && <section className="panel" aria-labelledby="appeals-access">
+                <h2 id="appeals-access">Access appeals <span className="muted">{accessWaiting.length}</span></h2>
+                <p className="muted small">A suspended member appeals from their account. An owner or administrator who did not suspend them decides, and restoring access here takes effect at once.</p>
+                {accessWaiting.length ? accessWaiting.map(a => <AccessAppealCard key={a.id} appeal={a}/>) : <Empty title="No access appeals are waiting." body="When a suspended member appeals, it appears here."/>}
+                {accessClosed.length > 0 && <><h3>Closed access appeals</h3>{accessClosed.map(a => <AccessAppealCard key={a.id} appeal={a}/>)}</>}
             </section>}
         </div>
     </>;
@@ -99,5 +120,89 @@ function DecideDialog({ appeal, onClose }: { appeal: ModerationAppeal; onClose: 
                 <Button variant="default" type="button" className="button primary" disabled={busy || !response.trim()} onClick={() => void decide('reversed')}>Restore the post</Button>
             </div>
         </div>
+    </Modal>;
+}
+
+/** An appeal against a suspension, for owners and administrators, or for the member once their access is back. */
+function AccessAppealCard({ appeal, own = false }: { appeal: SuspensionAppeal; own?: boolean }) {
+    const { data, me } = useWorkspace();
+    const [deciding, setDeciding] = useState(false);
+    const person = (userId: string | null | undefined) => data.members.find(m => m.userId === userId);
+    const block = own ? null : suspensionDecisionBlock(data, me, appeal);
+    const outdated = appeal.status === 'pending' && !suspensionAppealIsCurrent(data, appeal);
+    const nobody = appeal.status === 'pending' && !outdated && suspensionDeciders(data, appeal).length === 0;
+    return <article className="appeal-card" aria-label={own ? 'Your appeal about your access' : `Access appeal from ${person(appeal.appellantId)?.name ?? 'a member'}`}>
+        <div className="appeal-head"><strong>{own ? 'Your suspended access' : <><PersonLink member={person(appeal.appellantId)}/>’s access</>}</strong><Pill>{ACCESS_STATUS[appeal.status]}</Pill></div>
+        <p className="muted small">{own ? 'You appealed' : 'Appealed'} on {day(appeal.createdAt)}.{!own && appeal.suspendedBy ? <> Suspended by <PersonLink member={person(appeal.suspendedBy)}/>{appeal.suspendedAt ? ` on ${day(appeal.suspendedAt)}` : ''}.</> : ''}</p>
+        <p className="preline"><span className="sr-only">Reason: </span>{appeal.reason}</p>
+        {appeal.status === 'pending' && !own && <p className="sample-note" role="status">{[block, nobody ? 'Nobody can decide this yet: the only owners or administrators are the person who suspended them. It waits until another owner or administrator can decide.' : null].filter(Boolean).join(' ') || 'You can decide this appeal.'}</p>}
+        {(appeal.status === 'upheld' || appeal.status === 'reversed') && <div className="appeal-response"><strong>{appeal.decidedBy === me.userId ? 'Your response' : <>Response from <PersonLink member={person(appeal.decidedBy)}/></>}{appeal.decidedAt ? `, ${day(appeal.decidedAt)}` : ''}</strong><p className="preline">{appeal.response}</p></div>}
+        {!own && appeal.status === 'pending' && !block && <div className="review-actions"><Button variant="default" type="button" className="button primary" onClick={() => setDeciding(true)}>Decide</Button></div>}
+        {deciding && <DecideAccessDialog appeal={appeal} name={person(appeal.appellantId)?.name ?? 'this member'} onClose={() => setDeciding(false)}/>}
+    </article>;
+}
+
+function DecideAccessDialog({ appeal, name, onClose }: { appeal: SuspensionAppeal; name: string; onClose: () => void }) {
+    const { command, busy } = useWorkspace();
+    const [response, setResponse] = useState(''), [error, setError] = useState('');
+    const field = useId();
+    const decide = async (decision: 'upheld' | 'reversed') => {
+        setError('');
+        if (await command({ type: 'suspension.appeal.decide', appealId: appeal.id, decision, response }, { onError: setError })) onClose();
+    };
+    return <Modal title="Decide this access appeal" onClose={onClose}>
+        <div className="form-stack">
+            <p className="modal-intro">Restoring gives {name} their access back at once. Keeping it suspended leaves them outside the community. Your response goes to them, and the decision is recorded in the audit trail.</p>
+            <Label htmlFor={field}>Response to the member</Label>
+            <Textarea id={field} required rows={4} maxLength={APPEAL_TEXT_MAX} value={response} onChange={e => setResponse(e.target.value)}/>
+            {error && <p className="form-error" role="alert">{error}</p>}
+            <div className="review-actions">
+                <Button variant="secondary" type="button" className="button secondary" disabled={busy || !response.trim()} onClick={() => void decide('upheld')}>Keep suspended</Button>
+                <Button variant="default" type="button" className="button primary" disabled={busy || !response.trim()} onClick={() => void decide('reversed')}>Restore access</Button>
+            </div>
+        </div>
+    </Modal>;
+}
+
+const REPORT_STATUS = (r: OwnMessageReport) => r.status === 'open' ? (r.secondLook ? 'Second look requested' : 'Waiting for a moderator') : (r.secondLook ? 'Looked at again' : 'Reviewed');
+/** Private messages this person reported, and a second look once a report is closed (decision 058). */
+function MyMessageReports() {
+    const { slug, userId } = useWorkspace();
+    const q = useQuery({ queryKey: ['message-reports-mine', slug, userId], queryFn: () => messageRequest<OwnMessageReport[]>(slug, userId, 'message-reports/mine'), staleTime: 0 });
+    const [asking, setAsking] = useState<OwnMessageReport | null>(null);
+    if (q.isPending) return <section className="panel"><Loading label="Loading your reports…" lines={1}/></section>;
+    if (q.error) return <section className="panel"><InlineError error={q.error} onRetry={() => q.refetch()}/></section>;
+    if (!q.data?.length) return null;
+    return <section className="panel" aria-labelledby="appeals-reports">
+        <h2 id="appeals-reports">Your message reports</h2>
+        <p className="muted small">Private messages you reported to the moderators. When a report is closed you can ask once for another moderator to look again.</p>
+        {q.data.map(r => <article key={r.id} className="appeal-card" aria-label={`Your report from ${day(r.createdAt)}`}>
+            <div className="appeal-head"><strong>Reported on {day(r.createdAt)}</strong><Pill>{REPORT_STATUS(r)}</Pill></div>
+            <blockquote className="appeal-quote preline">{r.reportedBody}</blockquote>
+            <p className="preline"><span className="sr-only">Your reason: </span>{r.reason}</p>
+            {r.secondLook && <p className="muted small preline">You asked for a second look: {r.secondLook}</p>}
+            {r.status === 'resolved' && !r.secondLook && <div className="review-actions"><Button variant="secondary" type="button" className="button secondary" onClick={() => setAsking(r)}><Scale size={15} aria-hidden="true"/>Ask for a second look</Button></div>}
+        </article>)}
+        {asking && <SecondLookDialog report={asking} onClose={() => setAsking(null)} onDone={() => { setAsking(null); void q.refetch(); }}/>}
+    </section>;
+}
+
+function SecondLookDialog({ report, onClose, onDone }: { report: OwnMessageReport; onClose: () => void; onDone: () => void }) {
+    const { slug, userId, toast } = useWorkspace();
+    const [reason, setReason] = useState(''), [error, setError] = useState(''), [working, setWorking] = useState(false);
+    const field = useId();
+    return <Modal title="Ask for a second look" onClose={onClose}>
+        <form className="form-stack" onSubmit={async e => {
+            e.preventDefault(); setError(''); setWorking(true);
+            try { await messageRequest(slug, userId, `message-reports/${report.id}/second-look`, { reason }); toast('Report reopened. Another moderator will look again.'); onDone(); }
+            catch (err) { setError(displayError(err)); }
+            finally { setWorking(false); }
+        }}>
+            <p className="modal-intro">The report goes back to the moderators, and the moderator who closed it cannot close it again. You can ask once.</p>
+            <Label htmlFor={field}>What should they look at again?</Label>
+            <Textarea id={field} required minLength={5} rows={4} maxLength={1000} value={reason} onChange={e => setReason(e.target.value)}/>
+            {error && <p className="form-error" role="alert">{error}</p>}
+            <Button variant="default" className="button primary" disabled={working || reason.trim().length < 5}>Ask again</Button>
+        </form>
     </Modal>;
 }

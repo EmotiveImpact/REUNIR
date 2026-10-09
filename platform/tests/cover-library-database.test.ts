@@ -51,7 +51,9 @@ test('0013 upgrade keeps tracks, projects, covers and uploads exactly as they we
         const read = async (table: string) => (await old.query(`SELECT * FROM ${table} ORDER BY organization_id,id`)).rows;
         const before = { tracks: await read('tracks'), projects: await read('projects'), upload_intents: await read('upload_intents'), members: await read('members') };
         await migrate(old); await migrate(old);
-        for (const table of ['tracks', 'projects', 'members'] as const) assert.deepEqual(await read(table), before[table], table);
+        // Migration 0049 adds an empty suspender and suspension time to every membership; every earlier column is unchanged.
+        const unsuspended = (rows: Record<string, unknown>[]) => rows.map(({ suspended_by, suspended_at, ...r }) => { assert.equal(suspended_by, null); assert.equal(suspended_at, null); return r; });
+        for (const table of ['tracks', 'projects', 'members'] as const) assert.deepEqual(table === 'members' ? unsuspended(await read(table)) : await read(table), before[table], table);
         // Task files (migration 0029) add an empty task_id, and migration 0038 empty small-copy columns, to every upload; every earlier column is unchanged.
         const thumbnail = ['thumbnail_object_key', 'thumbnail_content_type', 'thumbnail_size_bytes', 'thumbnail_generation', 'task_id'];
         const uploads = await read('upload_intents');

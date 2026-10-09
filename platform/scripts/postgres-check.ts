@@ -268,6 +268,38 @@ try{
         assert((await repo.snapshot('code-black',DEMO_USER)).posts.some(p=>p.id==='post_win'),'members see the restored post');
         await assert.rejects(()=>rows('org_code_black',DEMO_USER,"INSERT INTO moderation_appeals(id,organization_id,created_at,subject,subject_id,appellant_id,reason) VALUES('forged_pg','org_code_black',now(),'post','post_common','member_alex','Forged')"),/row-level security/);
     });
+    await check('a suspended member appeals from their account and an independent owner restores them, and a closed message report gets one second look (migration 0049)',async()=>{
+        const repo=new WorkspaceRepository(runtime!),IDRIS='member_idris',THEO='member_theo',MAYA='member_maya',JORDAN='member_jordan';
+        const exec=(cmd:unknown,user:string)=>repo.execute('code-black',user,cmd,randomUUID(),'suspension-postgres');
+        const rows=(org:string,user:string,sql:string)=>runtime!.transaction(async tx=>{await setContext(tx,org,user);return (await tx.query<Record<string,unknown>>(sql)).rows;});
+        for(const c of ['reason','appellant_id','suspended_by'])assert.equal((await admin.query<{ok:boolean}>("SELECT has_column_privilege('reunir_app','suspension_appeals',$1,'UPDATE') AS ok",[c])).rows[0].ok,false,c);
+        for(const c of ['reason','reported_body'])assert.equal((await admin.query<{ok:boolean}>("SELECT has_column_privilege('reunir_app','message_reports',$1,'UPDATE') AS ok",[c])).rows[0].ok,false,c);
+        await exec({type:'member.role',memberId:IDRIS,role:'admin'},DEMO_ADMIN);
+        await exec({type:'member.status',memberId:THEO,status:'suspended',reason:'Postgres check.'},IDRIS);
+        await assert.rejects(()=>repo.snapshot('code-black',THEO),{code:'NOT_FOUND'});
+        assert.deepEqual((await repo.suspensions(THEO)).map(s=>[s.slug,s.decidable]),[['code-black',true]]);
+        const id=(await repo.appealSuspension('code-black',THEO,{reason:'Please look again.'},'pg')).objectId;
+        await assert.rejects(()=>repo.appealSuspension('code-black',THEO,{reason:'Twice.'},'pg'),{code:'APPEAL_OPEN'});
+        assert.equal((await rows('org_code_black',THEO,'SELECT id FROM suspension_appeals')).length,1);
+        assert.equal((await rows('org_code_black',DEMO_ADMIN,'SELECT id FROM suspension_appeals')).length,1);
+        assert.deepEqual(await rows('org_code_black',MAYA,'SELECT id FROM suspension_appeals'),[],'moderators do not read access appeals');
+        assert.deepEqual(await rows('org_studio_north',DEMO_ADMIN,'SELECT id FROM suspension_appeals'),[],'another community reads none');
+        await assert.rejects(()=>exec({type:'suspension.appeal.decide',appealId:id,decision:'reversed',response:'Mine?'},IDRIS),{code:'SUSPENDER_CANNOT_DECIDE'});
+        await assert.rejects(()=>rows('org_code_black',DEMO_ADMIN,`UPDATE suspension_appeals SET reason='Rewritten' WHERE id='${id}'`),/permission denied/);
+        await exec({type:'suspension.appeal.decide',appealId:id,decision:'reversed',response:'Welcome back.'},DEMO_ADMIN);
+        assert.deepEqual(await rows('org_code_black',THEO,`SELECT status,decided_by FROM suspension_appeals WHERE id='${id}'`),[{status:'reversed',decided_by:DEMO_ADMIN}]);
+        assert.deepEqual((await admin.query("SELECT status,suspended_by,suspended_at FROM members WHERE organization_id='org_code_black' AND user_id=$1",[THEO])).rows,[{status:'active',suspended_by:null,suspended_at:null}]);
+        await exec({type:'member.role',memberId:IDRIS,role:'member'},DEMO_ADMIN);
+        const m=new MessagingRepository(repo);
+        const thread=(await m.start('code-black',THEO,JORDAN)).id,message=(await m.send('code-black',THEO,thread,'A message to report.','pg-second-look')).id;
+        const report=(await m.report('code-black',JORDAN,thread,message,'Please review this message.')).id;
+        await m.resolve('code-black',MAYA,report);
+        await m.secondLook('code-black',JORDAN,report,'It needs another look.');
+        await assert.rejects(()=>m.resolve('code-black',MAYA,report),{code:'SECOND_LOOK_INDEPENDENT'});
+        await m.resolve('code-black',DEMO_ADMIN,report);
+        await assert.rejects(()=>m.secondLook('code-black',JORDAN,report,'Once more, please.'),{code:'SECOND_LOOK_USED'});
+        assert.deepEqual((await m.mine('code-black',JORDAN)).map(r=>[r.status,r.secondLook]),[['resolved','It needs another look.']]);
+    });
     await check('library pictures are renamed and tagged, and covers keep verified small copies, through a restricted PostgreSQL connection',async()=>{
         const repo=new WorkspaceRepository(runtime!);
         const rows=(user:string,org:string,sql:string)=>runtime!.transaction(async tx=>{await setContext(tx,org,user);return (await tx.query<Record<string,unknown>>(sql)).rows;});

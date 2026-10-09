@@ -81,7 +81,9 @@ before(async () => {
     await mail.enqueue({ to: 'Alex@Example.test', subject: 'Reset your REUNIR password', text: 'A reset link.' });
     await mail.enqueue({ to: 'sofia@example.test', subject: 'Reset your REUNIR password', text: 'A reset link.' });
     await db.query("INSERT INTO request_limits(key,count,window_start) VALUES($1,3,now())", [`member:${DEMO_USER}`]);
-    await db.query("UPDATE members SET status='suspended' WHERE organization_id=$1 AND user_id=$2", [NORTH, DEMO_USER]);
+    await db.query("UPDATE members SET status='suspended',suspended_by=$3,suspended_at=now() WHERE organization_id=$1 AND user_id=$2", [NORTH, DEMO_USER, DEMO_ADMIN]);
+    // Alex appeals the suspension there (0049); the appeal is theirs, and goes with the account.
+    await runtime.appealSuspension('studio-north', DEMO_USER, { reason: 'Please look again.' }, 'account-deletion-test');
 });
 after(async () => db?.close());
 
@@ -97,9 +99,9 @@ test('row security admits only the person’s own rows, and only while their own
     // With the mark, the person's own answers are admitted (rolled back here; the deletion below does it for real).
     await assert.rejects(() => asRuntime(ORG, DEMO_USER, async sql => { assert.equal((await sql.query('DELETE FROM quiz_attempts WHERE user_id=$1 RETURNING id', [DEMO_USER])).rows.length, 1); throw new Error('roll back'); }, DEMO_USER), /roll back/);
     assert.equal(await mine('quiz_attempts'), 1);
-    // A suspended membership is visible to its person only with the mark, and never someone else's.
+    // A suspended membership is visible to its own person (0049, so they can appeal it), and never someone else's.
     const memberships = (mark?: string) => asRuntime('', DEMO_USER, sql => sql.query<{ organization_id: string }>('SELECT organization_id FROM members WHERE user_id IN ($1,$2) ORDER BY organization_id', [DEMO_USER, SOFIA]).then(r => r.rows.map(x => x.organization_id)), mark);
-    assert.deepEqual(await memberships(), [ORG]);
+    assert.deepEqual(await memberships(), [ORG, NORTH]);
     assert.deepEqual(await memberships(DEMO_USER), [ORG, NORTH]);
     // Where the person is suspended, their own claimed tasks are visible and releasable only with the mark (0018), and
     // never anyone else's tasks or an unassigned one that the transaction has not named.
@@ -139,6 +141,9 @@ test('deleting an account scrubs every membership, keeps shared work as Former m
     assert.equal(summary.releasedTasks, 3, 'one where Alex is active, and both where Alex was suspended');
     assert.equal(summary.rewordedNotices, 4, 'the reply notice, the contribution notices to the owner and the project lead, and the accepted credit');
     assert.equal(summary.removed.contributionCredits, 1, 'the credit naming Alex goes with the account');
+    assert.equal(summary.removed.suspensionAppeals, 1, 'the appeal against the suspension goes with the account');
+    assert.equal(await mine('suspension_appeals', 'appellant_id'), 0);
+    assert.equal(await count('SELECT count(*)::int AS n FROM members WHERE user_id=$1 AND (suspended_by IS NOT NULL OR suspended_at IS NOT NULL)', [DEMO_USER]), 0, 'who suspended them is not kept on the scrubbed membership');
     assert.equal(await count("SELECT count(*)::int AS n FROM contributions WHERE user_id=$1 AND title='Built the profile flow'", [IDRIS]), 1, 'Idris’s contribution stays');
     assert.deepEqual([summary.removed.quizAttempts, summary.removed.trackInstructors, summary.removed.privateFiles, summary.removed.invitations, summary.removed.queuedMail, summary.removed.sessions, summary.removed.signInTokens], [1, 1, 1, 2, 1, 2, 1]);
     // Every membership, the suspended one included, is the same scrubbed record.

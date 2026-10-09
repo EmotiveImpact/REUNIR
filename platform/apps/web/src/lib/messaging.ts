@@ -1,9 +1,12 @@
-import {api,mode,demoState} from './data';
+import {api,mode,demoState,commitDemo} from './data';
 import {newId} from '../../../../packages/contracts/src/index';
-import {sendMessage,reportMessage,startGroup,renameGroup,addToGroup,GROUP_LIMIT,type Conversation,type DirectMessage,type MessageReport,type ConversationPage,type MessagePage} from '../../../../packages/contracts/src/messaging';
+import {sendMessage,reportMessage,askSecondLook,startGroup,renameGroup,addToGroup,GROUP_LIMIT,type Conversation,type DirectMessage,type MessageReport,type ConversationPage,type MessagePage} from '../../../../packages/contracts/src/messaging';
 import {actorFor,isModerator} from '../../../../packages/domain/src/access';
+import {APPEALS_HREF} from '../../../../packages/contracts/src/appeals';
+/** In the demo a report also remembers who closed it, which the moderators' list and the reporter's own list never show. */
+type DemoReport=MessageReport&{reviewedBy?:string|null};
 /** `joined` counts the messages a thread already had when someone was added to a group; they read only what follows. */
-interface DemoChat {threads:Conversation[];messages:DirectMessage[];read:Record<string,string>;blocks:[string,string][];reports:MessageReport[];keys:Record<string,{id:string;body:string;thread:string}>;joined?:Record<string,number>}
+interface DemoChat {threads:Conversation[];messages:DirectMessage[];read:Record<string,string>;blocks:[string,string][];reports:DemoReport[];keys:Record<string,{id:string;body:string;thread:string}>;joined?:Record<string,number>}
 const memory:Record<string,DemoChat>={};
 window.addEventListener('reunir:reset-demo',()=>{for(const key of Object.keys(memory))delete memory[key];});
 /** Demo inboxes saved before Alpha 24 hold only direct threads. */
@@ -62,10 +65,24 @@ export async function messageRequest<T>(slug:string,userId:string,path:string,bo
   }
  }else if(parts[0]==='member-blocks'){
   const b=body as {userId:string;blocked:boolean};if(b.userId===userId)throw new Error('You cannot block yourself.');s.blocks=s.blocks.filter(([a,p])=>!(a===userId&&p===b.userId));if(b.blocked)s.blocks.push([userId,b.userId]);result={ok:true};
+ }else if(parts[0]==='message-reports'&&parts[1]==='mine'){
+  result=s.reports.filter(r=>r.reporterId===userId).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).map(({reporterId:_,reviewedBy:__,firstReviewedBy:___,...own})=>own);
+ }else if(parts[0]==='message-reports'&&parts[2]==='second-look'){
+  const reason=askSecondLook.parse(body).reason,r=s.reports.find(r=>r.id===parts[1]&&r.reporterId===userId);
+  if(!r)throw new Error('That report is not available.');
+  if(r.secondLook)throw new Error('You have already asked for a second look at this report.');
+  if(r.status!=='resolved')throw new Error('This report is still waiting for a moderator.');
+  Object.assign(r,{status:'open',secondLook:reason,secondLookAt:new Date().toISOString(),firstReviewedBy:r.reviewedBy??null,reviewedBy:null,reviewedAt:null});result={ok:true};
  }else if(parts[0]==='message-reports'){
   if(!isModerator(actor))throw new Error('A moderator is required.');
-  if(parts.length===1)result=s.reports;
-  else{const r=s.reports.find(r=>r.id===parts[1]);if(!r||r.reporterId===userId||r.senderId===userId)throw new Error('An independent moderator must review this report.');r.status='resolved';result={ok:true};}
+  if(parts.length===1)result=[...s.reports].sort((a,b)=>Number(b.status==='open')-Number(a.status==='open')||b.createdAt.localeCompare(a.createdAt)).map(({reviewedBy:_,...r})=>r);
+  else{const r=s.reports.find(r=>r.id===parts[1]);if(!r||r.reporterId===userId||r.senderId===userId)throw new Error('An independent moderator must review this report.');
+   if(r.firstReviewedBy===userId)throw new Error('You closed this report the first time, so another moderator takes the second look.');
+   if(r.status==='open'){Object.assign(r,{status:'resolved',reviewedBy:userId,reviewedAt:new Date().toISOString()});
+    // The person who reported it is told, without naming the moderator.
+    const again=!!r.secondLook,next=structuredClone(w);
+    if(next.members.some(m=>m.userId===r.reporterId&&m.status!=='left')){next.notifications.push({id:newId(),organizationId:w.organisation.id,createdAt:new Date().toISOString(),userId:r.reporterId,title:again?'Your report was looked at again':'Your report was reviewed',body:again?'Another moderator looked again at the private message you reported and closed the report.':'A moderator reviewed the private message you reported and closed the report. If you think it needs another look, you can ask once.',href:APPEALS_HREF,readAt:null});next.revision++;commitDemo(slug,next);}}
+   result={ok:true};}
  }
  if(result===undefined)throw new Error('Messaging action not found.');
  if(body)try{localStorage.setItem('reunir.chat.v1.'+slug,JSON.stringify(s));}catch{}

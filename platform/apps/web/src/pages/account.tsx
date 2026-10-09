@@ -8,6 +8,7 @@ import { Modal, PageHeading, Pill } from '../components/ui';
 import { TwoStepPanel } from '../components/two-step';
 import { EmailAddressPanel } from '../components/email-address';
 import { RetentionPanel } from '../components/retention';
+import { SuspendedAccess } from '../components/suspended-access';
 import { ACCOUNT_DELETION_PHRASE, FORMER_MEMBER, listNames, ownerRefusal } from '../../../../packages/contracts/src/account';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -33,6 +34,7 @@ export function AccountPage() {
                 <h2>Your communities</h2>
                 <ul className="account-communities">{communities.map(c => <li key={c.slug}><span>{c.name}</span>{c.role && <Pill>{c.role}</Pill>}</li>)}</ul>
             </section>
+            <SuspendedAccess userId={userId}/>
             <EmailAddressPanel/>
             <TwoStepPanel roles={communities.map(c => c.role)}/>
             <RetentionPanel/>

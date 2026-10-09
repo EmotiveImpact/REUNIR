@@ -14,6 +14,8 @@ import { eraseFromCommunity, PERSONAL_COLLECTIONS } from '../../domain/src/accou
 import { ownerRefusal, type AccountDeletionSummary } from '../../contracts/src/account';
 import type { OwnershipTransferResult } from '../../contracts/src/ownership';
 import { transferOwnership } from '../../domain/src/ownership';
+import { appealSuspension, suspensionStanding, withdrawSuspensionAppeal } from '../../domain/src/suspension-appeals';
+import { suspensionAppealInput, type SuspensionStanding } from '../../contracts/src/appeals';
 import { reliesOnAdministration } from '../../domain/src/administration';
 import { TWO_FACTOR_REQUIRED, TWO_FACTOR_REQUIRED_MESSAGE } from '../../contracts/src/two-factor';
 import { tables, type TableSpec, type CollectionKey } from './tables';
@@ -124,6 +126,23 @@ async function readAll(sql: SQL, organisation: Record<string, unknown>, forUser?
     }
     return state;
 }
+/**
+ * What a suspended person's appeal needs from one community, and nothing more (decision 058): the community's memberships,
+ * to find who can decide, and the person's own suspension appeals. Every other collection is empty, so `saveChanges` writes
+ * only the appeal, its notices and its audit entry.
+ */
+async function suspendedView(sql: SQL, organisation: Record<string, unknown>, userId: string): Promise<Workspace> {
+    const state = Object.fromEntries(tables.map(t => [t.key, []])) as unknown as Workspace;
+    state.organisation = { id: String(organisation.id), slug: String(organisation.slug), name: String(organisation.name), tagline: String(organisation.tagline), accent: String(organisation.accent), createdAt: organisation.created_at instanceof Date ? organisation.created_at.toISOString() : String(organisation.created_at) };
+    state.revision = Number(organisation.revision);
+    const read = async (key: CollectionKey, filter: string, params: unknown[]) => {
+        const spec = tables.find(t => t.key === key)!;
+        return (await sql.query(`SELECT ${spec.fields.map(f => f.column).join(',')} FROM ${spec.table} WHERE organization_id=$1 AND ${filter} ORDER BY created_at,id LIMIT ${limitPerTable}`, [organisation.id, ...params])).rows.map(r => decode(r, spec));
+    };
+    state.members = await read('members', 'true', []) as unknown as Workspace['members'];
+    state.suspensionAppeals = await read('suspensionAppeals', 'appellant_id=$2', [userId]) as unknown as Workspace['suspensionAppeals'];
+    return state;
+}
 /** Visible spaces and whether the person moderates: what decides which posts they may see. */
 function postAccess(state: Workspace, ctx: TenantContext) {
     const actor = actorFor(state, ctx);
@@ -205,6 +224,54 @@ export class WorkspaceRepository {
         name: string;
         role: string;
     }>('SELECT o.slug,o.name,m.role FROM organisations o JOIN members m ON m.organization_id=o.id WHERE m.user_id=$1 AND m.status=$2 ORDER BY o.name', [userId, 'active'])).rows; }); }
+    /** Communities where this person's access is suspended, with their own appeals there (decision 058). */
+    async suspensions(userId: string): Promise<SuspensionStanding[]> {
+        return this.db.transaction(async (sql) => {
+            await setContext(sql, '', userId);
+            const orgs = (await sql.query("SELECT o.* FROM organisations o JOIN members m ON m.organization_id=o.id WHERE m.user_id=$1 AND m.status='suspended' ORDER BY o.name,o.id", [userId])).rows;
+            const found: SuspensionStanding[] = [];
+            for (const org of orgs) {
+                await setContext(sql, String(org.id), userId);
+                const standing = suspensionStanding(await suspendedView(sql, org, userId), userId);
+                if (standing) found.push(standing);
+            }
+            return found;
+        });
+    }
+    /**
+     * As `within`, for someone whose access to the community is suspended: under the same community lock, with only what an
+     * appeal needs (`suspendedView`). The domain refuses anyone who is not suspended there.
+     */
+    private async withinSuspended<T>(slug: string, userId: string, fn: (sql: SQL, state: Workspace) => Promise<T>) {
+        if (!slugPattern.test(slug)) throw new DomainError('NOT_FOUND', 'Community not found.', 404);
+        return this.db.transaction(async (sql) => {
+            await setContext(sql, '', userId);
+            const found = await sql.query("SELECT o.id FROM organisations o WHERE o.slug=$1 AND EXISTS(SELECT 1 FROM members m WHERE m.organization_id=o.id AND m.user_id=$2 AND m.status='suspended')", [slug, userId]);
+            if (!found.rows[0]) throw new DomainError('NOT_FOUND', 'Community not found.', 404);
+            const orgId = String(found.rows[0].id);
+            await setContext(sql, orgId, userId);
+            const locked = (await sql.query('SELECT * FROM organisations WHERE id=$1 FOR UPDATE', [orgId])).rows[0];
+            if (!locked) throw new DomainError('NOT_FOUND', 'Community not found.', 404);
+            return fn(sql, await suspendedView(sql, locked, userId));
+        });
+    }
+    /** A suspended member appeals their suspension. Returns their standing in that community afterwards. */
+    async appealSuspension(slug: string, userId: string, raw: unknown, requestId: string): Promise<{ message: string; objectId: string; standing: SuspensionStanding | null }> {
+        const { reason } = suspensionAppealInput.parse(raw);
+        return this.withinSuspended(slug, userId, async (sql, before) => {
+            const result = appealSuspension(before, context(before.organisation.id, userId, requestId), reason, new Date().toISOString(), randomUUID);
+            await saveChanges(sql, before, result.workspace);
+            return { message: result.message, objectId: result.objectId, standing: suspensionStanding(result.workspace, userId) };
+        });
+    }
+    /** A suspended member withdraws their own open appeal. */
+    async withdrawSuspensionAppeal(slug: string, userId: string, appealId: string, requestId: string): Promise<{ message: string; objectId: string; standing: SuspensionStanding | null }> {
+        return this.withinSuspended(slug, userId, async (sql, before) => {
+            const result = withdrawSuspensionAppeal(before, context(before.organisation.id, userId, requestId), appealId, new Date().toISOString(), randomUUID);
+            await saveChanges(sql, before, result.workspace);
+            return { message: result.message, objectId: result.objectId, standing: suspensionStanding(result.workspace, userId) };
+        });
+    }
     async within<T>(slug: string, userId: string, write: boolean, fn: (sql: SQL, org: Record<string, unknown>) => Promise<T>) {
         if (!slugPattern.test(slug))
             throw new DomainError('NOT_FOUND', 'Community not found.', 404);
@@ -545,6 +612,9 @@ export class WorkspaceRepository {
                 const appeals = (await sql.query('DELETE FROM moderation_appeals WHERE organization_id=$1 AND appellant_id=$2 RETURNING id', [orgId, userId])).rows.length;
                 if (appeals !== erasure.removed.moderationAppeals) throw new Error('Row security admitted only part of the deletion (moderation_appeals), so nothing was changed.');
                 add('moderationAppeals', appeals);
+                const access = (await sql.query('DELETE FROM suspension_appeals WHERE organization_id=$1 AND appellant_id=$2 RETURNING id', [orgId, userId])).rows.length;
+                if (access !== erasure.removed.suspensionAppeals) throw new Error('Row security admitted only part of the deletion (suspension_appeals), so nothing was changed.');
+                add('suspensionAppeals', access);
                 await drop('messageReceipts', 'DELETE FROM message_receipts WHERE organization_id=$1 AND user_id=$2 RETURNING conversation_id', [orgId, userId]);
                 await drop('memberBlocks', 'DELETE FROM member_blocks WHERE organization_id=$1 AND user_id=$2 RETURNING blocked_user_id', [orgId, userId]);
                 await drop('commandReceipts', 'DELETE FROM command_receipts WHERE organization_id=$1 AND user_id=$2 RETURNING request_key', [orgId, userId]);
@@ -556,7 +626,7 @@ export class WorkspaceRepository {
                 // 3. The audit entry, then the scrub as the last write: later policies would no longer see an active member.
                 const entry = after.audit.at(-1)!, member = after.members.find(m => m.userId === userId)!;
                 await sql.query('INSERT INTO audit(id,organization_id,created_at,actor_id,action,object_id,metadata) VALUES($1,$2,$3,$4,$5,$6,$7)', [entry.id, orgId, entry.createdAt, entry.actorId, entry.action, entry.objectId, JSON.stringify(entry.metadata)]);
-                await sql.query('UPDATE members SET name=$3,headline=$4,bio=$5,skills=$6,colour=$7,avatar=$8,role=$9,status=$10 WHERE organization_id=$1 AND user_id=$2', [orgId, userId, member.name, member.headline, member.bio, JSON.stringify(member.skills), member.colour, member.avatar, member.role, member.status]);
+                await sql.query('UPDATE members SET name=$3,headline=$4,bio=$5,skills=$6,colour=$7,avatar=$8,role=$9,status=$10,suspended_by=NULL,suspended_at=NULL WHERE organization_id=$1 AND user_id=$2', [orgId, userId, member.name, member.headline, member.bio, JSON.stringify(member.skills), member.colour, member.avatar, member.role, member.status]);
                 await sql.query('UPDATE organisations SET revision=$2 WHERE id=$1', [orgId, after.revision]);
                 releasedTasks += erasure.releasedTasks; rewordedNotices += erasure.rewordedNotices;
             }

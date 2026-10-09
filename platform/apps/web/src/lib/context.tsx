@@ -12,6 +12,7 @@ import { demoAccountDeleted, takeDeletionNotice } from './account';
 import { signInWithPassword } from './two-factor';
 import { SecondStepForm } from '../components/second-step';
 import { ErrorState, ShellLoading } from '../components/states';
+import { SuspendedAccess } from '../components/suspended-access';
 import { CircleAlert } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -150,6 +151,9 @@ export function WorkspaceProvider({ children }: {
         cache.removeQueries({ queryKey: ['workspace'] }); setDeletions(n => n + 1);
     };
     if(mode==='live'&&['/invite','/reset-password'].includes(location.pathname))return <Suspense fallback={<ShellLoading label="Opening account access…"/>}><AccountAccessPage identity={ident.data} onDone={()=>{cache.removeQueries({queryKey:['workspace']});ident.refetch();}}/></Suspense>;
+    // The demo persona may lose access to a fictional community (suspended there, say). The account menu is not on these
+    // screens, so they offer the way back to the owner's view.
+    const ownerPreview = mode === 'demo' && userId !== DEMO_ADMIN && <div className="empty-actions"><Button variant="secondary" type="button" className="button secondary" onClick={() => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); setDemoUser(DEMO_ADMIN); navigate('/'); }}>Preview as the owner</Button></div>;
     if (ident.isPending)
         return <ShellLoading label="Finding your people…"/>;
     if (ident.error)
@@ -157,20 +161,26 @@ export function WorkspaceProvider({ children }: {
     if (!ident.data)
         return <Login onDone={() => ident.refetch()}/>;
     if (!ident.data.memberships.length)
-        return <div className="loading-page"><h1>Your account is ready.</h1><p>Open the personal invitation from your community owner to join. No community content is visible until your membership is active.</p></div>;
+        return <div className="loading-page"><h1>Your account is ready.</h1><p>Open the personal invitation from your community owner to join. No community content is visible until your membership is active.</p><SuspendedAccess userId={ident.data.id}/></div>;
     if (deletedPersona)
         return <DemoFarewell owner={demoState('code-black').members.find(m => m.userId === DEMO_ADMIN)?.name ?? 'the owner'} onSee={() => { setDemoUser(DEMO_ADMIN); navigate('/'); }} onRestart={() => { resetDemo(); cache.removeQueries({ queryKey: ['workspace'] }); setDemoUser(DEMO_USER); setDeletions(n => n + 1); navigate('/'); }}/>;
+    const elsewhere = ident.data.memberships.length > 1 && <div className="empty-actions">{ident.data.memberships.filter(m => m.slug !== activeSlug).map(m => <Button variant="secondary" key={m.slug} type="button" className="button secondary" onClick={() => setSlug(m.slug)}>Open {m.name}</Button>)}</div>;
+    // The membership ended while this page was open (removed, suspended or left), or the demo persona is suspended here.
+    const accessChanged = <div className="loading-page"><h1>Your access to this community has changed.</h1><p>Your membership is no longer active, so nothing from this community is shown. If your access was suspended, you can appeal below.</p><SuspendedAccess userId={userId}/><Button variant="secondary" type="button" className="button secondary" onClick={() => { cache.removeQueries({ queryKey: ['workspace'] }); ident.refetch(); }}>Check again</Button>{elsewhere}{ownerPreview}</div>;
+    const suspendedHere = mode === 'demo' && demoState(activeSlug).members.some(m => m.userId === userId && m.status === 'suspended');
     if (query.isPending)
         return <ShellLoading label="Opening your community…"/>;
     // Nothing loaded yet. Once a workspace has loaded, a failed refresh keeps it on screen and says so instead.
+    if (!query.data && suspendedHere)
+        return accessChanged;
     if (!query.data)
         return <main className="loading-page"><ErrorState error={query.error} level={1} home={false} saved={mode === 'demo'} onRetry={() => query.refetch()}/>
-            {ident.data.memberships.length > 1 && <div className="empty-actions">{ident.data.memberships.filter(m => m.slug !== activeSlug).map(m => <Button variant="secondary" key={m.slug} type="button" className="button secondary" onClick={() => setSlug(m.slug)}>Open {m.name}</Button>)}</div>}
-            {mode === 'live' && <small>No demo data has been substituted.</small>}</main>;
+            {elsewhere}
+            {mode === 'live' && <small>No demo data has been substituted.</small>}<SuspendedAccess userId={userId}/>{ownerPreview}</main>;
     const me = query.data.members.find(m => m.userId === userId && m.status === 'active');
-    // The membership ended while this page was open (removed, suspended or left): say so instead of failing on every page.
+    // Say so instead of failing on every page.
     if (!me)
-        return <div className="loading-page"><h1>Your access to this community has changed.</h1><p>Your membership is no longer active, so nothing from this community is shown. Ask the community owner if you think this is a mistake.</p><Button variant="secondary" type="button" className="button secondary" onClick={() => { cache.removeQueries({ queryKey: ['workspace'] }); ident.refetch(); }}>Check again</Button></div>;
+        return accessChanged;
     return <Context.Provider value={{ data: query.data, me, slug: activeSlug, setSlug, userId, setUserId: (id) => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); setDemoUser(id); }, busy, command, uploadResource, discardUpload, downloadResource, playResource, toast, reload: () => { cache.removeQueries({ queryKey: ['workspace'], type: 'inactive' }); query.refetch(); }, mode, identity: ident.data, accountDeleted, refreshError: query.error }}>{children}<Toast register={f => { show.current = f; }}/></Context.Provider>;
 }
 /**
