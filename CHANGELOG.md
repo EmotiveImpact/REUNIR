@@ -21,7 +21,7 @@ Details:
 
 ## Alpha 52: records brought up to date (no version change), 9 October 2026
 
-On a pull request from `claude/full-audit-yhvssj`. No decision record or migration. The version stays 0.39.0-alpha.1.
+PR #42, merged as `fa3013a`. No decision record or migration. The version stays 0.39.0-alpha.1.
 
 **In plain language:** nothing changes in the app. The project's own records now match what is really on main: which pull request carried each release, how many database changes there are, and what comes next.
 

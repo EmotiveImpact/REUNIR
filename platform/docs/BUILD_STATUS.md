@@ -35,7 +35,7 @@ See decision 053. `readAll` reads a window of posts (newest 300, pinned, own hid
 | --- | --- |
 | Implemented | Yes, on `claude/full-audit-yhvssj` |
 | Verified locally | Yes: Python helpers, manifest regenerated and verified |
-| Merged | Not yet |
+| Merged | Yes: PR #42, merged as `fa3013a` |
 | Deployed | No |
 
 ## What changed

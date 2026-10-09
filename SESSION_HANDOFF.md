@@ -4,7 +4,7 @@
 
 - Alpha 50, security (decision 050): merged as PR #40, `57fd2e6`.
 - Alpha 51, app, accessibility and speed (decision 051): PR #41, merged as `7ffb982`.
-- Alpha 52, records (this note, BUILD_STATUS, CHANGELOG, READMEs, ROADMAP, LAUNCH_RUNBOOK, RECOVERY_STATUS marked historical, SOURCE_MANIFEST regenerated with `python3 scripts/publish_source.py --write-manifest "<release>"`, CI timeout 30 minutes). No decision record; no code change.
+- Alpha 52, records, PR #42 merged as `fa3013a` (this note, BUILD_STATUS, CHANGELOG, READMEs, ROADMAP, LAUNCH_RUNBOOK, RECOVERY_STATUS marked historical, SOURCE_MANIFEST regenerated with `python3 scripts/publish_source.py --write-manifest "<release>"`, CI timeout 30 minutes). No decision record; no code change.
 - Alpha 53, feeds paged in SQL (decision 053): a window of posts per read, feed pages and post counts in SQL; other collections keep the 5,000-row limit.
 - Next: Alpha 54 adds lesson video captions and resume position and removing someone from a project team.
 
