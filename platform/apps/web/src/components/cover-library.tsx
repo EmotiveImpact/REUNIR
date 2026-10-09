@@ -12,6 +12,7 @@ import type { CoverLibraryItem } from '../../../../packages/contracts/src/index'
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { useConfirm } from './confirm';
 
 /**
  * Community settings: owners and administrators keep a small set of pictures that anyone who changes a track or
@@ -19,6 +20,7 @@ import { Label } from './ui/label';
  */
 export function CoverLibrarySettings() {
     const { data, slug, userId, toast, reload } = useWorkspace();
+    const confirm = useConfirm();
     const library = data.coverLibrary ?? [];
     const uploads = useQuery({ queryKey: ['cover-uploads'], queryFn: coverUploadsAvailable, staleTime: 300000, retry: false });
     const [adding, setAdding] = useState(false), [removing, setRemoving] = useState(''), [editing, setEditing] = useState<CoverLibraryItem | null>(null);
@@ -26,7 +28,7 @@ export function CoverLibrarySettings() {
     const uses = (item: CoverLibraryItem) => [...data.tracks, ...data.projects].filter(r => r.coverImage?.fileId === item.fileId).length;
     const full = library.length >= MAX_COVER_LIBRARY_ITEMS;
     const remove = async (item: CoverLibraryItem) => {
-        if (!window.confirm(`Remove ${item.label} from the cover library? The stored picture is deleted.`)) return;
+        if (!await confirm({ title: `Remove ${item.label} from the cover library?`, body: 'The stored picture is deleted.', confirmText: 'Remove picture' })) return;
         setRemoving(item.id);
         try { toast(await removeLibraryPicture(slug, userId, item)); reload(); }
         catch (e) { toast(displayError(e),'error'); }

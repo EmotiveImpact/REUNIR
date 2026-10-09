@@ -1,4 +1,32 @@
-# Alpha 54 leaving project teams, lesson captions and video resume
+# Alpha 55 one confirmation box across the app
+
+9 October 2026. Version stays 0.39.0-alpha.1. Decision 055; no migration, no API change.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/full-audit-yhvssj` |
+| Verified locally | Yes: see below |
+| Merged | Not yet |
+| Deployed | No |
+
+## What changed
+
+See decision 055. `components/confirm.tsx` adds `ConfirmProvider` and `useConfirm()`; the fourteen `window.confirm` calls and the project team panel use it. Browser checks answer it with `answerConfirmations` (Playwright locator handler) in `scripts/ui-test-helpers.ts`.
+
+## Checks run
+
+- Typecheck clean. `npm test`: 917 passed, 0 failed. The first run failed one static-rendering test because the quiz editor rendered outside the provider; outside it, every confirmation is now refused instead of throwing.
+- Browser suites passed after the change: `test:browser` (main, purpose and pilot), `forms` (11, including the new confirmation check: Cancel focused first, Escape cancels, focus returns, axe clean), `work`, `authoring` (discard cancelled and confirmed), `covers`, `credits`, `groups`, `instructors`, `resources`, `rich-lessons`, `assessments`, `accounts`, the five connected suites, `monochrome` and `v4`.
+- `python3 -m unittest discover -s scripts -p "test_*.py"`: OK, including the new contract that forbids `window.confirm`.
+- Failed attempts: the first confirmation check expected focus back on the role select, but Playwright's `selectOption` does not focus it; the check now focuses the select first, as a person would.
+
+## Not verified
+
+- Screen reader announcements beyond the axe checks. Nothing deployed.
+
+# Historical: Alpha 54 leaving project teams, lesson captions and video resume
 
 9 October 2026. Version stays 0.39.0-alpha.1. Decision 054; migration 0048 (additive). Migrations 0049 to 0052 and Alpha numbers above 54 in this block are unused.
 
@@ -8,7 +36,7 @@
 | --- | --- |
 | Implemented | Yes, on `claude/full-audit-yhvssj` |
 | Verified locally | Yes: see below |
-| Merged | Not yet |
+| Merged | Yes: PR #44, merged as `0d14bcc` |
 | Deployed | No |
 
 ## What changed

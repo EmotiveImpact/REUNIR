@@ -279,8 +279,8 @@ try {
         await open(learnerPage, `/projects/${projectId}`); await learnerPage.getByRole('button', { name: 'Change cover', exact: true }).click();
         await dialog(learnerPage).getByRole('button', { name: 'Remove cover', exact: true }).click(); await expect(dialog(learnerPage)).toHaveCount(0);
         await open(ownerPage, '/settings');
-        ownerPage.once('dialog', d => d.accept());
         await ownerPage.getByRole('button', { name: 'Remove Still harbour', exact: true }).click();
+        await ownerPage.getByRole('alertdialog').getByRole('button', { name: 'Remove picture', exact: true }).click();
         await expect(ownerPage.locator('.toast')).toContainText('Still harbour was removed from the cover library.');
         await expect(ownerPage.locator('.cover-library-empty')).toBeVisible();
         expect(objects.has(libraryKey)).toBe(false); expect(objects.has(libraryThumbKey)).toBe(false);

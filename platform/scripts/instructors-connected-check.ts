@@ -18,6 +18,7 @@ import { grantRuntimeTables } from '../packages/db/src/runtime-role';
 import { createAuth } from '../apps/api/src/auth';
 import { createApp } from '../apps/api/src/app';
 import { quizFingerprint, type AuthoredQuiz } from '../packages/contracts/src/assessments';
+import { answerConfirmations } from './ui-test-helpers';
 const root = resolve(import.meta.dirname, '..'), dir = root + '/evidence/instructors/connected'; await mkdir(dir, { recursive: true });
 process.env.VITE_DATA_MODE = 'live';
 await build({ configFile: root + '/apps/web/vite.config.ts', build: { outDir: root + '/.connected-dist', emptyOutDir: true }, logLevel: 'error' });
@@ -62,7 +63,7 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PAT
 const contexts = await Promise.all([0, 1, 2].map(() => browser.newContext({ viewport: { width: 1440, height: 960 } })));
 const [ownerPage, instructorPage, learnerPage] = await Promise.all(contexts.map(c => c.newPage()));
 const results: { name: string; passed: boolean }[] = [], errors: string[] = [];
-for (const p of [ownerPage, instructorPage, learnerPage]) { p.setDefaultTimeout(10000); p.on('pageerror', e => errors.push(e.message)); p.on('dialog', d => d.accept()); }
+for (const p of [ownerPage, instructorPage, learnerPage]) { p.setDefaultTimeout(10000); p.on('pageerror', e => errors.push(e.message)); await answerConfirmations(p); }
 const check = async (name: string, fn: () => Promise<void>) => { await fn(); results.push({ name, passed: true }); console.log('PASS', name); };
 const signIn = async (p: Page, email: string) => { await p.goto(origin); await p.getByLabel('Email', { exact: true }).fill(email); await p.getByLabel('Password', { exact: true }).fill(PASSWORD); await p.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(p.locator('.topbar')).toBeVisible(); };
 const open = async (p: Page, path: string) => { await p.goto(`${origin}/#${path}`); await p.reload(); };

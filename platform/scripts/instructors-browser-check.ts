@@ -3,12 +3,12 @@ import { chromium, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { switchPreviewRole } from './ui-test-helpers';
+import { switchPreviewRole, answerConfirmations } from './ui-test-helpers';
 const root = resolve(import.meta.dirname, '..'), dir = root + '/evidence/instructors'; await mkdir(dir, { recursive: true });
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, headless: true, args: ['--no-sandbox'] });
 const page = await (await browser.newContext({ viewport: { width: 1512, height: 1100 } })).newPage(); page.setDefaultTimeout(10000);
 const results: { name: string; passed: boolean }[] = [], errors: string[] = [];
-page.on('pageerror', e => errors.push(e.message)); page.on('dialog', d => d.accept());
+page.on('pageerror', e => errors.push(e.message)); await answerConfirmations(page);
 const check = async (name: string, fn: () => Promise<void>) => { await fn(); results.push({ name, passed: true }); console.log('PASS', name); };
 const overflow = async () => expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 async function a11y(name: string) { const a = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze(); await writeFile(`${dir}/a11y-${name}.json`, JSON.stringify({ violations: a.violations, incomplete: a.incomplete }, null, 2)); expect(a.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) }))).toEqual([]); }

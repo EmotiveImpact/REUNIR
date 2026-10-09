@@ -8,6 +8,7 @@ import { MAX_LESSON_RESOURCES, MAX_VIDEO_BYTES, RESOURCE_FILE_ACCEPT, formatFile
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+import { useConfirm } from './confirm';
 
 const displayName = (filename: string) => filename.replace(/\.[a-z0-9]{2,5}$/i, '').replace(/[\u0000-\u001f\u007f-\u009f]+/g, ' ').trim().slice(0, 120) || 'Lesson file';
 
@@ -20,6 +21,7 @@ export function ResourceEditor({ trackId, resources, saved, disabled, uploadsAva
     onChange: (update: (current: LessonResource[]) => LessonResource[]) => void;
 }) {
     const { data, uploadResource, discardUpload } = useWorkspace();
+    const confirm = useConfirm();
     const picker = useRef<HTMLInputElement>(null), replacing = useRef<string | null>(null);
     const [uploading, setUploading] = useState(false), [status, setStatus] = useState('');
     const heading = useId();
@@ -72,7 +74,7 @@ export function ResourceEditor({ trackId, resources, saved, disabled, uploadsAva
             <p>These private uploads are not part of any lesson, draft or history. Add one back, or discard it to delete the stored file.</p>
             <ul>{unattached.map(u => <li key={u.id}><span className="resource-icon"><ResourceIcon type={u.contentType} size={16}/></span><div><strong>{u.originalName}</strong><small>{describe(u)}</small></div>
                 <Button type="button" variant="outline" size="sm" disabled={locked || full} aria-label={`Add ${u.originalName} to this draft`} onClick={() => { onChange(current => current.some(x => x.fileId === u.id) ? current : [...current, { id: newId(), fileId: u.id, name: displayName(u.originalName), description: '', contentType: u.contentType as LessonResource['contentType'], sizeBytes: u.sizeBytes }]); setStatus(`${u.originalName} added back. Save the draft to keep it.`); }}><Plus size={14} aria-hidden="true"/>Add</Button>
-                <Button type="button" variant="ghost" size="sm" disabled={locked} aria-label={`Discard ${u.originalName}`} onClick={async () => { if (window.confirm(`Discard ${u.originalName}? The stored file will be deleted.`) && await discardUpload(u.id)) setStatus(`${u.originalName} discarded.`); }}><Trash2 size={14} aria-hidden="true"/>Discard</Button>
+                <Button type="button" variant="ghost" size="sm" disabled={locked} aria-label={`Discard ${u.originalName}`} onClick={async () => { if (await confirm({ title: `Discard ${u.originalName}?`, body: 'The stored file will be deleted.', confirmText: 'Discard file' }) && await discardUpload(u.id)) setStatus(`${u.originalName} discarded.`); }}><Trash2 size={14} aria-hidden="true"/>Discard</Button>
             </li>)}</ul>
         </details>}
     </section>;

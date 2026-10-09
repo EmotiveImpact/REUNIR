@@ -257,8 +257,8 @@ try {
         await track('track_brand'); await page.getByRole('button', { name: 'Change cover', exact: true }).click();
         await dialog().getByLabel('Mountain ridge', { exact: true }).check(); await save();
         await go('/settings');
-        page.once('dialog', d => d.accept());
         await settings().getByRole('button', { name: 'Remove Still harbour', exact: true }).click();
+        await page.getByRole('alertdialog').getByRole('button', { name: 'Remove picture', exact: true }).click();
         await expect(page.locator('.toast')).toContainText('Still harbour was removed from the cover library.');
         await expect(settings().locator('.cover-library-list > li')).toHaveCount(1);
         await expect(settings().getByRole('button', { name: 'Remove Mountain ridge', exact: true })).toBeDisabled();

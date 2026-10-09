@@ -16,6 +16,7 @@ import { TwoStepNotice } from './components/two-step';
 import { ConnectionNotice, NotFound, PageBoundary, PageLoading, useOnline } from './components/states';
 import { SimulatedFault } from './components/simulated-fault';
 import { Input } from './components/ui/input';
+import { useConfirm } from './components/confirm';
 const AuthoringPage=lazy(()=>import('./pages/authoring').then(m=>({default:m.AuthoringPage})));
 const MessagesPage=lazy(()=>import('./pages/messages').then(m=>({default:m.MessagesPage})));
 const AccountPage=lazy(()=>import('./pages/account').then(m=>({default:m.AccountPage})));
@@ -51,6 +52,7 @@ const AppealsPage=lazy(()=>import('./pages/appeals').then(m=>({default:m.Appeals
 const nav = [['/', 'Your home', Home], ['/paths', 'Paths & learning', BookOpen], ['/projects', 'Projects', Layers], ['/events', 'Events', Calendar], ['/members', 'Your people', Users], ['/discussions', 'Discussions', MessageCircle], ['/messages', 'Messages', Mail], ['/knowledge', 'Knowledge', Folder], ['/collections', 'Collections', LibraryBig]] as const;
 export default function App() {
     const { data, me, slug, setSlug, userId, setUserId, mode, reload, toast, identity, busy, refreshError } = useWorkspace();
+    const confirm = useConfirm();
     const online = useOnline();
     const wasOnline = useRef(online);
     const [search, S] = useState(false);
@@ -129,7 +131,7 @@ export default function App() {
         string,
         typeof Home
     ][]).map(([k, t, b, I]) => <button key={k} onClick={() => { Q(false); C(k); }}><span className="option-icon"><I size={21}/></span><span><strong>{t}</strong><small>{b}</small></span><ArrowUpRight size={17}/></button>)}</div></Modal>}
- {help && <Modal title="Welcome to REUNIR, creator preview." onClose={() => H(false)}><div className="help-content"><Pill tone="amber">{mode === 'demo' ? 'FICTIONAL DATA · REAL INTERACTIONS' : 'CONNECTED API MODE'}</Pill><h3>People. Purpose. Progress. Projects. Proof.</h3><p>Community stays at the heart of the experience. Paths connect learning, missions and recognised work to what people are here to become, build or achieve.</p><p>{mode === 'demo' ? 'You are exploring a fictional Code Black community. Changes are saved in this browser, not to Neon. Use “Preview as admin” to create content, review proof and try the community tools, or “Preview as instructor” to teach one track.' : 'Your data is coming from the configured server. Only your verified community permissions determine what you can access.'}</p><p>Private messages and member access are available. In this preview, messaging is browser-local and invitations never send email. Connected email and password recovery need a configured provider and mail worker. Payments and AI remain outside this release.</p>{mode === 'demo' && <><p>The second workspace in the left rail demonstrates independent communities. It is also fictional.</p><Button variant="secondary" className="button secondary" onClick={() => { if (window.confirm('Reset all fictional demo activity in this browser?')) {
+ {help && <Modal title="Welcome to REUNIR, creator preview." onClose={() => H(false)}><div className="help-content"><Pill tone="amber">{mode === 'demo' ? 'FICTIONAL DATA · REAL INTERACTIONS' : 'CONNECTED API MODE'}</Pill><h3>People. Purpose. Progress. Projects. Proof.</h3><p>Community stays at the heart of the experience. Paths connect learning, missions and recognised work to what people are here to become, build or achieve.</p><p>{mode === 'demo' ? 'You are exploring a fictional Code Black community. Changes are saved in this browser, not to Neon. Use “Preview as admin” to create content, review proof and try the community tools, or “Preview as instructor” to teach one track.' : 'Your data is coming from the configured server. Only your verified community permissions determine what you can access.'}</p><p>Private messages and member access are available. In this preview, messaging is browser-local and invitations never send email. Connected email and password recovery need a configured provider and mail worker. Payments and AI remain outside this release.</p>{mode === 'demo' && <><p>The second workspace in the left rail demonstrates independent communities. It is also fictional.</p><Button variant="secondary" className="button secondary" onClick={async () => { if (await confirm({ title: 'Reset the fictional demo?', body: 'All demo activity in this browser is cleared and the sample community starts again.', confirmText: 'Reset the demo' })) {
         resetDemo();
         reload();
         H(false);

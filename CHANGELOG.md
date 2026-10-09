@@ -6,9 +6,21 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 Nothing in this list has been deployed. Deployment remains deferred by the owner.
 
-## Alpha 54: leaving a project team, captions and picking up a video (no version change), 9 October 2026
+## Alpha 55: one confirmation box across the app (no version change), 9 October 2026
 
-On a pull request from `claude/full-audit-yhvssj`. Decision 054; migration 0048. The version stays 0.39.0-alpha.1.
+On a pull request from `claude/full-audit-yhvssj`. Decision 055; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** whenever the app asks "are you sure?", it now asks in its own box, in the app's style, with a button that names what will happen and Cancel ready first. Before, fourteen places used the browser's grey pop-up.
+
+Details:
+
+- `ConfirmProvider` and `useConfirm()` in `components/confirm.tsx`: a native modal dialogue with the `alertdialog` role and shadcn slots.
+- All fourteen `window.confirm` calls and the project team panel moved to it; the unsaved-lesson guard replays the held click after "Discard edits".
+- Browser checks answer the box through `answerConfirmations` in `scripts/ui-test-helpers.ts`; a new forms check covers focus, Escape, Cancel and accessibility. A source contract forbids `window.confirm`.
+
+## Alpha 54: leaving a project team, captions and picking up a video (no version change), 9 October 2026 (PR #44)
+
+Merged as `0d14bcc`. Decision 054; migration 0048. The version stays 0.39.0-alpha.1.
 
 **In plain language:** you can now leave a project team, and a project's lead or an administrator can remove someone and later let them back. Tasks the person had claimed without proof go back to the team; their recognised work stays credited to them. Lessons can carry captions for their video, and a lesson video picks up where you stopped on the same device.
 

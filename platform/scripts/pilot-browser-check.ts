@@ -1,4 +1,4 @@
-import { switchPreviewRole } from './ui-test-helpers';
+import { switchPreviewRole, answerConfirmations } from './ui-test-helpers';
 import {chromium,expect} from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
@@ -6,7 +6,7 @@ import {resolve} from 'node:path';
 const root=resolve(import.meta.dirname,'..'),dir=root+'/evidence/alpha03';await mkdir(dir,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||undefined,headless:true,args:['--no-sandbox']});
 const context=await browser.newContext({viewport:{width:1512,height:1050}}),page=await context.newPage();page.setDefaultTimeout(6500);
-const results:{name:string;passed:boolean}[]=[],errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
+const results:{name:string;passed:boolean}[]=[],errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await answerConfirmations(page);
 const check=async(name:string,fn:()=>Promise<void>)=>{await fn();results.push({name,passed:true});console.log('PASS',name);};
 const nav=async(to:string)=>{if((page.viewportSize()?.width||1512)<1000&&!await page.locator('.sidebar').evaluate(el=>el.classList.contains('open')))await page.getByRole('button',{name:'Open navigation',exact:true}).click();await page.locator(`.sidebar a[href="${to}"]`).first().click();};
 const shot=async(name:string)=>page.screenshot({path:dir+'/'+name+'.png',fullPage:true,animations:'disabled'});

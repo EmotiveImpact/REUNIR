@@ -1,4 +1,4 @@
-import { switchPreviewRole } from './ui-test-helpers';
+import { switchPreviewRole, answerConfirmations } from './ui-test-helpers';
 /** Actual React creator journey. Local fictional state, not a hosted acceptance test. */
 import {chromium,expect} from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
@@ -8,7 +8,7 @@ const root=resolve(import.meta.dirname,'..'),dir=root+'/evidence/authoring-recov
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||undefined,headless:true,args:['--no-sandbox']});
 const context=await browser.newContext({viewport:{width:1512,height:1100}});const page=await context.newPage();page.setDefaultTimeout(10000);
 const results:{name:string;passed:boolean}[]=[],errors:string[]=[];let acceptDialog=true;
-page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>acceptDialog?d.accept():d.dismiss());
+page.on('pageerror',e=>errors.push(e.message));await answerConfirmations(page,()=>acceptDialog);
 const check=async(name:string,fn:()=>Promise<void>)=>{await fn();results.push({name,passed:true});console.log('PASS',name);};
 const editor=()=>page.locator('.creator-editor');
 const overflow=async()=>expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);

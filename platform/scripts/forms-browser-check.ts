@@ -1,4 +1,4 @@
-import { switchPreviewRole } from './ui-test-helpers';
+import { switchPreviewRole, answerConfirmations } from './ui-test-helpers';
 /** Actual bundled React in Chromium with fictional browser-local data. Every form uses the shared shadcn components. */
 import { chromium, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
@@ -9,7 +9,7 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PAT
 const page = await (await browser.newContext({ viewport: { width: 1512, height: 1100 } })).newPage(); page.setDefaultTimeout(10000);
 await page.clock.setFixedTime(new Date('2026-09-24T12:00:00Z'));
 const results: { name: string; passed: boolean }[] = [], errors: string[] = [], swept: string[] = [];
-page.on('pageerror', e => errors.push(e.message)); page.on('dialog', d => d.dismiss());
+page.on('pageerror', e => errors.push(e.message)); const stopAnswering = await answerConfirmations(page, () => false);
 const check = async (name: string, fn: () => Promise<void>) => { await fn(); results.push({ name, passed: true }); console.log('PASS', name); };
 const overflow = async () => expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 async function a11y(name: string) { const a = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze(); await writeFile(`${dir}/a11y-${name}.json`, JSON.stringify({ violations: a.violations, incomplete: a.incomplete }, null, 2)); expect(a.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) }))).toEqual([]); }
@@ -120,6 +120,23 @@ try {
         expect(await unshared('member access')).toEqual([]);
         await a11y('member-access');
         await dialog().getByRole('button', { name: 'Close dialogue', exact: true }).click();
+    });
+    await check('the app asks with its own confirmation box: Cancel first, Escape cancels, focus comes back', async () => {
+        await stopAnswering();
+        await page.getByRole('button', { name: 'Manage Alex Morgan', exact: true }).click();
+        const role = page.getByRole('dialog').getByRole('combobox', { name: 'Community role' }), before = await role.inputValue();
+        const box = page.getByRole('alertdialog'), changeTo = before === 'moderator' ? 'member' : 'moderator';
+        await role.focus(); await role.selectOption(changeTo);
+        await expect(box).toHaveAccessibleName(`Change Alex Morgan's role to ${changeTo}?`);
+        await expect(box.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused();
+        await expect(box.getByRole('button', { name: 'Change role', exact: true })).toHaveAttribute('data-slot', 'button');
+        await a11y('confirmation');
+        await page.keyboard.press('Escape'); await expect(box).toHaveCount(0);
+        await expect(role).toHaveValue(before); await expect(role).toBeFocused();
+        await role.selectOption(changeTo); await box.getByRole('button', { name: 'Cancel', exact: true }).click();
+        await expect(box).toHaveCount(0); await expect(role).toHaveValue(before);
+        await page.getByRole('dialog').getByRole('button', { name: 'Close dialogue', exact: true }).click();
+        await answerConfirmations(page, () => false);
     });
     await check('collections, group conversations, task files and teaching roles use the shared components', async () => {
         const closeWithEscape = async () => { await page.keyboard.press('Escape'); await expect(dialog()).toHaveCount(0); };

@@ -15,6 +15,7 @@ import {createAuth} from '../apps/api/src/auth';
 import {createApp} from '../apps/api/src/app';
 import {MailQueue,type Mail} from '../apps/api/src/mail';
 import {InvitationService} from '../apps/api/src/invitations';
+import { answerConfirmations } from './ui-test-helpers';
 const root=resolve(import.meta.dirname,'..'),dir=root+'/evidence/alpha04/connected';await mkdir(dir,{recursive:true});
 process.env.VITE_DATA_MODE='live';
 await build({configFile:root+'/apps/web/vite.config.ts',build:{outDir:root+'/.connected-dist',emptyOutDir:true},logLevel:'error'});
@@ -38,7 +39,7 @@ app.get('/assets/*',serveStatic({root:'.connected-dist'}));app.get('/',serveStat
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||undefined,headless:true,args:['--no-sandbox']});
 const ownerContext=await browser.newContext({viewport:{width:1440,height:960}}),guestContext=await browser.newContext({viewport:{width:1440,height:960}});
 const page=await ownerContext.newPage(),guest=await guestContext.newPage();page.setDefaultTimeout(10000);guest.setDefaultTimeout(10000);
-const results:{name:string;passed:boolean}[]=[],errors:string[]=[];for(const p of [page,guest]){p.on('pageerror',e=>errors.push(e.message));p.on('dialog',d=>d.accept());}
+const results:{name:string;passed:boolean}[]=[],errors:string[]=[];for(const p of [page,guest]){p.on('pageerror',e=>errors.push(e.message));await answerConfirmations(p);}
 const check=async(name:string,fn:()=>Promise<void>)=>{await fn();results.push({name,passed:true});console.log('PASS',name);};
 const a11y=async(name:string,p=guest)=>{const a=await new AxeBuilder({page:p}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();await writeFile(dir+'/a11y-'+name+'.json',JSON.stringify({violations:a.violations,incomplete:a.incomplete},null,2));expect(a.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}))).toEqual([]);};
 const signIn=async(p:typeof page,email:string,password:string)=>{await p.getByLabel('Email',{exact:true}).fill(email);await p.getByLabel('Password',{exact:true}).fill(password);await p.getByRole('button',{name:'Sign in',exact:true}).click();await expect(p.locator('.topbar')).toBeVisible();};
