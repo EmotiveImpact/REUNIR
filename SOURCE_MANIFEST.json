@@ -1,8 +1,8 @@
 {
-  "release": "REUNIR Alpha 54 project teams, captions and video resume",
+  "release": "REUNIR Alpha 55 one confirmation box",
   "version": "0.39.0-alpha.1",
-  "sourceBaseline": "0cf06f6f47353b594e78c3b986bb5e916a009496",
-  "generatedAt": "2026-10-09T07:03:53.654935+00:00",
+  "sourceBaseline": "dac82a229eb46ba7e9a066acca9587ae8c133fdf",
+  "generatedAt": "2026-10-09T17:17:49.280697+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "feb8466e948482e9dee36528a27cd5d923562a58adc1e903b0d5450a83ef6fc3",
-      "bytes": 65483
+      "sha256": "805dca91e2632f60e8494e5cbd25f1ad4d0cc45ae30b4d602a5f063bdba1e604",
+      "bytes": 66398
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "d08eb4bea1d73e7cc84f8f8ea906f9685ed09785cb1e4f4a600c58d9c9ae9a9a",
-      "bytes": 122019
+      "sha256": "1b074e9613aae022d71cd4c24c11fbdb5d996a1259a41397846ba18c29dc1e79",
+      "bytes": 122198
     },
     {
       "path": "platform/.dockerignore",
@@ -66,8 +66,8 @@
     },
     {
       "path": "platform/README.md",
-      "sha256": "a80a68e4ec2ac063e67068d0afcb203275b0fa44f1fec7697147cf91b701fb1f",
-      "bytes": 4937
+      "sha256": "4cdd72ed0897fc50e603114ed50a69ec749dce00259ac20a1ce9373ec712edc8",
+      "bytes": 4943
     },
     {
       "path": "platform/THIRD_PARTY_NOTICES.md",
@@ -176,13 +176,13 @@
     },
     {
       "path": "platform/apps/web/src/App.tsx",
-      "sha256": "1da98f7225eaae2077f6a7382b9bd4bec3145ad0850fc96c8642d1b99952f770",
-      "bytes": 24200
+      "sha256": "2fb853e89d6ed8af4789c9786caefbcaf4861cb63cc2e00c3112947e636df6ee",
+      "bytes": 24400
     },
     {
       "path": "platform/apps/web/src/account.css",
-      "sha256": "c7006ab857971d03513f38fe1b5a7a9d5dce89a3b9136b6825f27197cbed1b44",
-      "bytes": 6069
+      "sha256": "9e8986740b6f01e1d21b3738274fccd6dca0221fb6b8964c68eb8104828e7f2b",
+      "bytes": 5939
     },
     {
       "path": "platform/apps/web/src/appeals.css",
@@ -245,9 +245,14 @@
       "bytes": 3224
     },
     {
+      "path": "platform/apps/web/src/components/confirm.tsx",
+      "sha256": "e6e64627961eae900281f7f8b7227365f9853bf22bff0d49fd5e6aed5c270761",
+      "bytes": 2952
+    },
+    {
       "path": "platform/apps/web/src/components/cover-library.tsx",
-      "sha256": "561b289b4bfd7e1c5887846332c7e6d32defccd42c85d6dc47d51cb3aa56b563",
-      "bytes": 13241
+      "sha256": "01dc34fa63642285bfd7b1e04b28ce330dd8914e05d494baf48526ed5802f121",
+      "bytes": 13365
     },
     {
       "path": "platform/apps/web/src/components/cover.tsx",
@@ -256,8 +261,8 @@
     },
     {
       "path": "platform/apps/web/src/components/credits.tsx",
-      "sha256": "9c69bb89921a9af88a2a47f884940293f7beaa31addf20853393465a686778bf",
-      "bytes": 9008
+      "sha256": "fd2271403bb11ca2af040e7d7fb0373f669a79995c9a56e6f0e39ea379a60c1a",
+      "bytes": 9188
     },
     {
       "path": "platform/apps/web/src/components/email-address.tsx",
@@ -306,8 +311,8 @@
     },
     {
       "path": "platform/apps/web/src/components/lesson-resources.tsx",
-      "sha256": "c373dc798a98ef9e64bba2d265f4306cc52c148a6b34d39007e736e0cf3aa31c",
-      "bytes": 9148
+      "sha256": "54e1e8833751c08eff1733abdaa02d81286c18a14f096e433ea96215674f1733",
+      "bytes": 9270
     },
     {
       "path": "platform/apps/web/src/components/notification-settings.tsx",
@@ -321,13 +326,13 @@
     },
     {
       "path": "platform/apps/web/src/components/project-team.tsx",
-      "sha256": "63298c0c28dd2fdfd1c47f768833a110276971d37dd6c1faa716d05ea4ce17a8",
-      "bytes": 4758
+      "sha256": "08c9f422547ea35bccb1c09c1c63e89af63c952e99f27c59d6913ddcc36dd099",
+      "bytes": 4220
     },
     {
       "path": "platform/apps/web/src/components/quiz-editor.tsx",
-      "sha256": "dc154ed08de5b4a98325c1dfa774757ce844e6e9e0cb852fdefb9970d9f4cb85",
-      "bytes": 12802
+      "sha256": "030f8f66850442ef3871b8494ab515af1b9b039e0f0caf2b11fa1fc7d4a6e103",
+      "bytes": 12930
     },
     {
       "path": "platform/apps/web/src/components/quiz-review.tsx",
@@ -586,13 +591,13 @@
     },
     {
       "path": "platform/apps/web/src/main.tsx",
-      "sha256": "df7dca8c3904fd38d0bad51e58269c7f0046bb2e1ce27ddb4ce9f4e5ffc73085",
-      "bytes": 2128
+      "sha256": "7d5c46e27e62ebf0d6c0fb5adb7fc8e329b44f78990e3eff8e6dd7fd66dbffd4",
+      "bytes": 2219
     },
     {
       "path": "platform/apps/web/src/pages/access.tsx",
-      "sha256": "d8044d0e78215b3595a8ad2bd3753b86f9f7ad4f60bb4dabb01611f5cffd8523",
-      "bytes": 14725
+      "sha256": "942874360eb73b9ffb11606aecd74953e4f63c498d41dd0512b0637d8a0b9ba4",
+      "bytes": 14915
     },
     {
       "path": "platform/apps/web/src/pages/account.tsx",
@@ -606,8 +611,8 @@
     },
     {
       "path": "platform/apps/web/src/pages/authoring.tsx",
-      "sha256": "a1617eea562edb838ef2bcab2a0f37b1634ac3c8be6b3d62db069b109a11544c",
-      "bytes": 15371
+      "sha256": "c2844cc3ff4e64e0c9904f9648cd779d7d438548665113dde17277a17a421c22",
+      "bytes": 15936
     },
     {
       "path": "platform/apps/web/src/pages/collections.tsx",
@@ -631,18 +636,18 @@
     },
     {
       "path": "platform/apps/web/src/pages/learning.tsx",
-      "sha256": "8398b094686b626b528fc05351e5786ce6534d24bb0df7321496042dcd86bdf9",
-      "bytes": 12174
+      "sha256": "95550a252fab2bef658b6296b136dec02d85f6ddc867d4e16a1330e71205142b",
+      "bytes": 12315
     },
     {
       "path": "platform/apps/web/src/pages/message-groups.tsx",
-      "sha256": "2578f4f29388f243a50e63568968345aefa77d7f1b8de0321a482565eb79b6bd",
-      "bytes": 6720
+      "sha256": "a24b4c2baaf59366b81110d6d29b95572da80935927e328355f62280cf1a2f9b",
+      "bytes": 6878
     },
     {
       "path": "platform/apps/web/src/pages/messages.tsx",
-      "sha256": "579fb52b6cd80650a650c2c608c536bec858080c0b779328f8084e3bbf45e43e",
-      "bytes": 15441
+      "sha256": "9a6f9ea5fedb4e04cefcddd06e4036f144cd8b3b3e738786beaa4240fb11cd6f",
+      "bytes": 15553
     },
     {
       "path": "platform/apps/web/src/pages/operations.tsx",
@@ -681,8 +686,8 @@
     },
     {
       "path": "platform/apps/web/src/styles.css",
-      "sha256": "9f17f965fd997e7047f45a21300dd8e827459ba21bb0efa18f3d3bd77e260e9d",
-      "bytes": 107728
+      "sha256": "2c873f8b07e68c4ba0dd4f98928339791ca754beb4be2a8caca388aa3d4d2146",
+      "bytes": 107988
     },
     {
       "path": "platform/apps/web/src/v4.css",
@@ -746,8 +751,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "21976bdcfd3ac2ab1b1b844745cf5f68626c1dded7be1782f82d9ebd1c968c74",
-      "bytes": 228296
+      "sha256": "b5e1a4f810f63087fdee38c5925365debaadd97af05d1bb69ecd5991c82f283b",
+      "bytes": 229999
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -856,8 +861,8 @@
     },
     {
       "path": "platform/docs/ROADMAP.md",
-      "sha256": "29b778d7bbd238f2d7e2c7b59588e889b37e1132542532caac0236c023402dfa",
-      "bytes": 18293
+      "sha256": "3d2f0d506f2da149f523f936029963afffea5f903f4238bd4b65b322b72909c5",
+      "bytes": 18418
     },
     {
       "path": "platform/docs/SECURITY.md",
@@ -1108,6 +1113,11 @@
       "path": "platform/docs/decisions/054-teams-captions-resume.md",
       "sha256": "cf98480009da30f59bf0306e0d1e53ec44807a070c2f3d5c8011c4843db81245",
       "bytes": 3345
+    },
+    {
+      "path": "platform/docs/decisions/055-shared-confirmation.md",
+      "sha256": "9b51b225935ded2b369f0b195f310cffd82a3749da27124dcdd9268eea6bbd0e",
+      "bytes": 1785
     },
     {
       "path": "platform/docs/history/ALPHA_05_BUILD_STATUS.md",
@@ -1906,8 +1916,8 @@
     },
     {
       "path": "platform/scripts/accounts-browser-check.ts",
-      "sha256": "90782d4f04093db810ec5b8aec0925ab6b9391b952391b61b31082875bec5810",
-      "bytes": 17462
+      "sha256": "d1f07bf1c08aee3fc21a019d1c2560e39d73fcff03f7bdb0ed61f2f0a7bc2911",
+      "bytes": 17480
     },
     {
       "path": "platform/scripts/accounts-connected-check.ts",
@@ -1926,18 +1936,18 @@
     },
     {
       "path": "platform/scripts/assessments-browser-check.ts",
-      "sha256": "9973e2aa78cd76db36bec5ae2a7a5ef1a3d67facb39bab21d686eb64db52bd04",
-      "bytes": 22415
+      "sha256": "5adca63a3f0814bc2ec01394f39df68711f71268f077992026e949273d301611",
+      "bytes": 22433
     },
     {
       "path": "platform/scripts/assessments-connected-check.ts",
-      "sha256": "e5c906d44864a59b73d0cd24e01880224fd6feb97b357e300abbe8914fe01a5d",
-      "bytes": 14930
+      "sha256": "065ea75605f0a99d0138a5cbfca6898e7338d5923148424de04e7a9640f8964d",
+      "bytes": 14984
     },
     {
       "path": "platform/scripts/authoring-browser-check.ts",
-      "sha256": "01478c83cbe49944bf5c77fe3d5172a0cc6cfa3ac3f651c49cfa856775360639",
-      "bytes": 12410
+      "sha256": "f5acc144c1ad236db257e3be48a68fca3e61cd8e2e4f81ac1870c62705449706",
+      "bytes": 12423
     },
     {
       "path": "platform/scripts/browser-check.ts",
@@ -1961,18 +1971,18 @@
     },
     {
       "path": "platform/scripts/covers-browser-check.ts",
-      "sha256": "c04e601d9d64a6af1f5cc73c5478807bdd3ed91446bce0ed959deed3b426d5b2",
-      "bytes": 27599
+      "sha256": "197c1cf964da779e1de606705e5d9bcf51922f78cd2cf6bf15a1245573f7878e",
+      "bytes": 27667
     },
     {
       "path": "platform/scripts/covers-connected-check.ts",
-      "sha256": "654d197a7b5e3801d7c8c3ebee6ad3a3163890ce03df6696cedac3139dcc5ca1",
-      "bytes": 30931
+      "sha256": "6de8906cb46c257b667b36b131f11d90f6cce781b26ff6aaf2f112d2fc5923df",
+      "bytes": 30999
     },
     {
       "path": "platform/scripts/credits-browser-check.ts",
-      "sha256": "890a3f4cd92d748c9f2247bf5eb899c7ccbceca8115d5e3830524ce84089f07b",
-      "bytes": 8675
+      "sha256": "a809adb48392001009564dc8d1b3a0298ba54ed43f10609e87090c36c1c8cf87",
+      "bytes": 8693
     },
     {
       "path": "platform/scripts/database.ts",
@@ -2011,23 +2021,23 @@
     },
     {
       "path": "platform/scripts/forms-browser-check.ts",
-      "sha256": "b9a26abce791475bcc2ba58498fe900a9fe8476473201a4b0876e3024a04349c",
-      "bytes": 14592
+      "sha256": "263a30015cdf5a79cb9b2f5e25f7b37f24fa8c646ce0fc1d24132dc0e671412d",
+      "bytes": 16073
     },
     {
       "path": "platform/scripts/groups-browser-check.ts",
-      "sha256": "a7691d3cae40e16be4c03e9b566a885badf7f6264c1ee3c32fc20a0a11e56b66",
-      "bytes": 11024
+      "sha256": "263909b656ef61fa79203e7f1666910e35a1fbbebcd0b13052f7744b1a511822",
+      "bytes": 11042
     },
     {
       "path": "platform/scripts/instructors-browser-check.ts",
-      "sha256": "135902a171fa1917b27c4d7d0c8db7a2bb7cb7a07a7b45fe28300386bf91a7d7",
-      "bytes": 15803
+      "sha256": "1a311aa89c856e7898fe3f4f2f2ce07e76bb94799001ba08e7fb2c3c6585603b",
+      "bytes": 15821
     },
     {
       "path": "platform/scripts/instructors-connected-check.ts",
-      "sha256": "5aefad8ee00109442ed4995b504a033b45b910135bf9165ef208494dc5bdadde",
-      "bytes": 12773
+      "sha256": "6557df933b1563ba0014d71808b7f2a9400dae253c4264b6024f67569a8be811",
+      "bytes": 12827
     },
     {
       "path": "platform/scripts/launch-preflight.ts",
@@ -2066,8 +2076,8 @@
     },
     {
       "path": "platform/scripts/pilot-browser-check.ts",
-      "sha256": "81b298e8f47c711000b0cd5ef373b5ea2c85e06b9b4a5191da9238dd4c48e478",
-      "bytes": 12291
+      "sha256": "d70eaed80e405e1de2b59f156fcebc8e442a8162185ae52f18a35ec7f99317b0",
+      "bytes": 12312
     },
     {
       "path": "platform/scripts/pilot-check.ts",
@@ -2076,8 +2086,8 @@
     },
     {
       "path": "platform/scripts/pilot-connected-check.ts",
-      "sha256": "dbe15a768514f86c8cbddf5f7e34aa05cc550f400359e5103256625f0fd48426",
-      "bytes": 10614
+      "sha256": "e7fb81bf249f55cd49f60c402013e3a54e8bf752b06f04d3abd059e0f949dfa9",
+      "bytes": 10671
     },
     {
       "path": "platform/scripts/pilot-http-check.ts",
@@ -2091,8 +2101,8 @@
     },
     {
       "path": "platform/scripts/project-work-browser-check.ts",
-      "sha256": "973a0f03d5b548b5156fd8625bfdaf40bae8a2e02e29d041687a3eb8b7ebf9d1",
-      "bytes": 16428
+      "sha256": "8c56072d7156fd717e482a25b53c83760b9801115c4460ac1c243bcb386ac19c",
+      "bytes": 16516
     },
     {
       "path": "platform/scripts/purpose-browser-check.ts",
@@ -2106,18 +2116,18 @@
     },
     {
       "path": "platform/scripts/resources-browser-check.ts",
-      "sha256": "b97118d1eabf9720cb4fa006f62b1c530e71d3e789a73aa651a74b487d12803f",
-      "bytes": 18048
+      "sha256": "20de7f113c2f352c3707a03f40d9d227ef4fe293d109691700eafcae068ec1a4",
+      "bytes": 18066
     },
     {
       "path": "platform/scripts/resources-connected-check.ts",
-      "sha256": "778219f612c8d9e5e8d1f90d1941c93ebd452f40157910b99eccd34b414b1d9a",
-      "bytes": 18237
+      "sha256": "f61aeea3c76f6dea92a82814959ec2ece5d7e83a17ee07d05401edd76b34fca1",
+      "bytes": 18291
     },
     {
       "path": "platform/scripts/rich-lessons-browser-check.ts",
-      "sha256": "ad5455573180c0ecd7c15e79da6c51a0bed0709d6b5e6882097e8206470bd1b7",
-      "bytes": 7902
+      "sha256": "524b6b81f42cdd9cf8438e61c755b92cb9d4558dc1027e83166554b5b94fbe3b",
+      "bytes": 7923
     },
     {
       "path": "platform/scripts/scan-check.ts",
@@ -2141,8 +2151,8 @@
     },
     {
       "path": "platform/scripts/ui-test-helpers.ts",
-      "sha256": "3ad2e346c92e4106ab90c782dd4fe97579fb58d8f0b765352aa388e25d55bfbc",
-      "bytes": 750
+      "sha256": "abaf7d11091c1d6aa6b9b9feda4f7bb640e217908c150a742ebdd072a569e0e1",
+      "bytes": 1321
     },
     {
       "path": "platform/scripts/v4-integration-browser-check.ts",
@@ -2801,8 +2811,8 @@
     },
     {
       "path": "scripts/test_forms_contract.py",
-      "sha256": "c3911ef2a2bc8157157827a5b421ddf6a4a469bb2217219b54623caecd6b44c9",
-      "bytes": 3899
+      "sha256": "04f3938c157b67877a642ae4c71b3163fc6c596a9bd9c78b53332d864294c780",
+      "bytes": 4463
     },
     {
       "path": "scripts/test_publish_source.py",
