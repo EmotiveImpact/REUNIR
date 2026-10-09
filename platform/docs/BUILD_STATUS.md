@@ -35,7 +35,7 @@ See decision 056. `partialCredit` on multiple-choice questions, `partialPoints` 
 | --- | --- |
 | Implemented | Yes, on `claude/full-audit-yhvssj` |
 | Verified locally | Yes: see below |
-| Merged | Not yet |
+| Merged | Yes: PR #45, merged as `ea77b43` |
 | Deployed | No |
 
 ## What changed

@@ -18,9 +18,9 @@ Details:
 - A partial score shows as "Partly right"; the exact set still scores full marks. The rule joins the check's fingerprint only when on, so older checks keep theirs.
 - Studio switch per multiple-choice question. New tests: `partial-marks`; assessments browser check covers the switch and the learner's label.
 
-## Alpha 55: one confirmation box across the app (no version change), 9 October 2026
+## Alpha 55: one confirmation box across the app (no version change), 9 October 2026 (PR #45)
 
-On a pull request from `claude/full-audit-yhvssj`. Decision 055; no migration. The version stays 0.39.0-alpha.1.
+Merged as `ea77b43`. Decision 055; no migration. The version stays 0.39.0-alpha.1.
 
 **In plain language:** whenever the app asks "are you sure?", it now asks in its own box, in the app's style, with a button that names what will happen and Cancel ready first. Before, fourteen places used the browser's grey pop-up.
 
