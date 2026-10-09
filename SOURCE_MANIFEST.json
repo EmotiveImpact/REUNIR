@@ -1,8 +1,8 @@
 {
-  "release": "REUNIR Alpha 60 usage counts",
+  "release": "REUNIR Alpha 60 merged",
   "version": "0.39.0-alpha.1",
-  "sourceBaseline": "0a19ef469468bcf569e46a32f20dbecd33f87783",
-  "generatedAt": "2026-10-09T19:48:06.226005+00:00",
+  "sourceBaseline": "73b31f0fe7dd5527921e3dcd9be5be9d2e3b2f9f",
+  "generatedAt": "2026-10-09T20:03:49.025821+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "ac207b945ef87d84e9919e32bdf4ebe29efcec6555ff61192f2e3ff4499c4edf",
-      "bytes": 74085
+      "sha256": "b0585bf701b46b2ed85b4de59964fddcc15e20413480162251b76b231e15289e",
+      "bytes": 74064
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "a279016a7f7b458ffe71a7104fa1272e8c64cfc0b06c6520b85e897bbee0e8f1",
-      "bytes": 123210
+      "sha256": "bf26d6aebb32b55324c0451c81ee530a45e0b2382cea73c087ccd36871c09e08",
+      "bytes": 123239
     },
     {
       "path": "platform/.dockerignore",
@@ -776,8 +776,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "d808b4ec8f0247f71f9be68e1ab05c05b21eaeed5248bf5790d93d7ad75a09b2",
-      "bytes": 237992
+      "sha256": "c80b8c5aad0656224a5b77e23d4f51f423b09d0fc9e0e64856308ab141eb221d",
+      "bytes": 238017
     },
     {
       "path": "platform/docs/COVERS.md",

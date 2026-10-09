@@ -8,7 +8,7 @@
 | --- | --- |
 | Implemented | Yes, on `claude/full-audit-yhvssj` |
 | Verified locally | Yes: see below |
-| Merged | Not yet |
+| Merged | Yes: PR #50, merged as `4d3a75c` |
 | Deployed | No |
 
 ## What changed
