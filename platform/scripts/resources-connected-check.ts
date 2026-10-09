@@ -23,6 +23,7 @@ import { ScanQueue } from '../packages/db/src/scans';
 import { scanWaitingUploads } from '../apps/api/src/scan-worker';
 import { uploadCompletion } from '../apps/api/src/uploads';
 import { attachmentDisposition } from '../packages/contracts/src/lesson-resources';
+import { answerConfirmations } from './ui-test-helpers';
 const root = resolve(import.meta.dirname, '..'), dir = root + '/evidence/lesson-resources/connected'; await mkdir(dir, { recursive: true });
 process.env.VITE_DATA_MODE = 'live';
 await build({ configFile: root + '/apps/web/vite.config.ts', build: { outDir: root + '/.connected-dist', emptyOutDir: true }, logLevel: 'error' });
@@ -77,7 +78,7 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PAT
 const contexts = await Promise.all([0, 1, 2, 3].map(() => browser.newContext({ viewport: { width: 1440, height: 960 }, acceptDownloads: true })));
 const [ownerPage, learnerPage, outsiderPage, anonymousPage] = await Promise.all(contexts.map(c => c.newPage()));
 const results: { name: string; passed: boolean }[] = [], errors: string[] = [];
-for (const p of [ownerPage, learnerPage, outsiderPage, anonymousPage]) { p.setDefaultTimeout(10000); p.on('pageerror', e => errors.push(e.message)); p.on('dialog', d => d.accept()); }
+for (const p of [ownerPage, learnerPage, outsiderPage, anonymousPage]) { p.setDefaultTimeout(10000); p.on('pageerror', e => errors.push(e.message)); await answerConfirmations(p); }
 const check = async (name: string, fn: () => Promise<void>) => { await fn(); results.push({ name, passed: true }); console.log('PASS', name); };
 const signIn = async (p: Page, email: string) => { await p.goto(origin); await p.getByLabel('Email', { exact: true }).fill(email); await p.getByLabel('Password', { exact: true }).fill('Resource-test-password-123!'); await p.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(p.locator('.topbar')).toBeVisible(); };
 const editor = () => ownerPage.locator('.creator-editor');

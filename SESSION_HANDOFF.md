@@ -6,7 +6,7 @@
 - Alpha 51, app, accessibility and speed (decision 051): PR #41, merged as `7ffb982`.
 - Alpha 52, records, PR #42 merged as `fa3013a` (this note, BUILD_STATUS, CHANGELOG, READMEs, ROADMAP, LAUNCH_RUNBOOK, RECOVERY_STATUS marked historical, SOURCE_MANIFEST regenerated with `python3 scripts/publish_source.py --write-manifest "<release>"`, CI timeout 30 minutes). No decision record; no code change.
 - Alpha 53, feeds paged in SQL (decision 053): a window of posts per read, feed pages and post counts in SQL; other collections keep the 5,000-row limit. PR #43, merged as `cae20e1`.
-- Alpha 54, project teams, captions and video resume (decision 054, migration 0048). Migrations 0049 to 0052 are unused.
+- Alpha 54, project teams, captions and video resume (decision 054, migration 0048). Migrations 0049 to 0052 are unused. PR #44, merged as `0d14bcc`.
 
 Not built, for Edem to choose: chapters, appeals against suspensions and message reports, credits on outcomes, privacy-respecting usage stats, partial marks, a shared confirmation dialogue in place of the browser's own. Deployment remains Edem's call.
 
@@ -542,6 +542,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, STATES.md, decisions/027-loading-
 - Base: main `f5ec8d3` (launch kit after Alpha 22), with main `fab9510` (Alpha 24, 25 and 26) merged in.
 - This slice: branch `claude/everyday-use-4z9rmz`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Alpha 23 (upload scanning) is an open pull request from another thread. This thread uses Alpha 27 to 30.
+- Alpha 55, one confirmation box (decision 055): `useConfirm()` replaces every `window.confirm`; browser checks answer it with `answerConfirmations`.
 
 ### What is done
 

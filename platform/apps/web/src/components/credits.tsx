@@ -11,6 +11,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { NativeSelect } from './ui/native-select';
+import { useConfirm } from './confirm';
 
 const STATUS: Record<ContributionCredit['status'], string> = { invited: 'Waiting for an answer', accepted: 'Credited', declined: 'Declined', withdrawn: 'Withdrawn' };
 
@@ -21,6 +22,7 @@ const STATUS: Record<ContributionCredit['status'], string> = { invited: 'Waiting
  */
 export function ContributionCredits({ contribution: c }: { contribution: Contribution }) {
     const { data, me, command, busy } = useWorkspace();
+    const confirm = useConfirm();
     const [open, setOpen] = useState(false), [error, setError] = useState('');
     const credits = (data.contributionCredits ?? []).filter(k => k.contributionId === c.id);
     const name = (userId: string) => data.members.find(m => m.userId === userId)?.name ?? 'A member';
@@ -36,7 +38,7 @@ export function ContributionCredits({ contribution: c }: { contribution: Contrib
             <div><Button type="button" variant="default" size="sm" className="button primary compact" disabled={busy} onClick={() => run({ type: 'credit.respond', creditId: mine.id, decision: 'accepted' })}><Check size={14} aria-hidden="true"/>Accept credit</Button>
             <Button type="button" variant="secondary" size="sm" className="button secondary compact" disabled={busy} onClick={() => run({ type: 'credit.respond', creditId: mine.id, decision: 'declined' })}><X size={14} aria-hidden="true"/>Decline</Button></div>
         </div>}
-        {mine?.status === 'accepted' && !author && <Button type="button" variant="secondary" size="sm" className="button secondary compact" disabled={busy} onClick={() => { if (window.confirm('Remove your credit from this contribution?')) run({ type: 'credit.withdraw', creditId: mine.id }); }}><UserMinus size={14} aria-hidden="true"/>Remove my credit</Button>}
+        {mine?.status === 'accepted' && !author && <Button type="button" variant="secondary" size="sm" className="button secondary compact" disabled={busy} onClick={async () => { if (await confirm({ title: 'Remove your credit from this contribution?', body: 'The contribution stays, and its author is told.', confirmText: 'Remove my credit' })) run({ type: 'credit.withdraw', creditId: mine.id }); }}><UserMinus size={14} aria-hidden="true"/>Remove my credit</Button>}
         {author && <div className="credit-manage">
             {credits.length > 0 && <ul className="credit-list" aria-label="People you have credited">{credits.map(k => <li key={k.id}>
                 <Avatar member={data.members.find(m => m.userId === k.userId)} size="xs"/>

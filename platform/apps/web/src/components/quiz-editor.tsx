@@ -13,6 +13,7 @@ import { NativeSelect } from './ui/native-select';
 import { OptionalRadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Switch } from './ui/switch';
 import { Textarea } from './ui/textarea';
+import { useConfirm } from './confirm';
 
 type Question = AuthoredQuiz['questions'][number];
 type Option = Question['options'][number];
@@ -47,7 +48,7 @@ export function quizProblems(quiz: AuthoredQuiz | null): string[] {
 export function QuizEditor({ quiz, disabled, onChange }: {
     quiz: AuthoredQuiz | null; disabled: boolean; onChange: (update: (current: AuthoredQuiz | null) => AuthoredQuiz | null) => void;
 }) {
-    const heading = useId();
+    const heading = useId(), confirm = useConfirm();
     const problems = quizProblems(quiz);
     const edit = (update: (current: AuthoredQuiz) => AuthoredQuiz) => onChange(current => current ? update(current) : current);
     const editQuestion = (id: string, update: (q: Question) => Question) => edit(current => ({ ...current, questions: current.questions.map(q => q.id === id ? update(q) : q) }));
@@ -73,7 +74,7 @@ export function QuizEditor({ quiz, disabled, onChange }: {
                 onRemove={() => edit(current => ({ ...current, questions: current.questions.filter(x => x.id !== q.id) }))}/>)}</ol>
             <div className="quiz-editor-foot">
                 <Button type="button" variant="outline" size="sm" disabled={disabled || quiz.questions.length >= MAX_QUIZ_QUESTIONS} onClick={() => edit(current => ({ ...current, questions: [...current.questions, blankQuestion()] }))}><Plus size={15} aria-hidden="true"/>Add question</Button>
-                <Button type="button" variant="ghost" size="sm" disabled={disabled} onClick={() => { if (window.confirm('Remove the knowledge check from this draft? Learners keep their earlier attempts, and nothing changes for them until you publish.')) onChange(() => null); }}><Trash2 size={15} aria-hidden="true"/>Remove knowledge check</Button>
+                <Button type="button" variant="ghost" size="sm" disabled={disabled} onClick={async () => { if (await confirm({ title: 'Remove the knowledge check from this draft?', body: 'Learners keep their earlier attempts, and nothing changes for them until you publish.', confirmText: 'Remove knowledge check' })) onChange(() => null); }}><Trash2 size={15} aria-hidden="true"/>Remove knowledge check</Button>
             </div>
             <p className="quiz-editor-note">Learners who already answered keep their attempts and feedback. Changes apply to new attempts once you publish.</p>
             {problems.length > 0 && <div className="quiz-problems" role="status"><strong>Before you save</strong><ul>{problems.map(p => <li key={p}>{p}</li>)}</ul></div>}

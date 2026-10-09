@@ -46,6 +46,15 @@ class FormsContract(unittest.TestCase):
         self.assertIn("d?.showModal(); return () => { d?.close(); prior?.focus?.(); };", src)
         self.assertIn('<Button type="button" variant="ghost" size="icon" className="icon-button" aria-label="Close dialogue"', src)
 
+    def test_confirmations_use_the_shared_box(self):
+        # Decision 055: one confirmation box, never the browser's own.
+        for path in WEB.rglob('*.tsx'):
+            self.assertNotRegex(path.read_text(), r'\bwindow\.confirm\(|\bconfirm\(\s*[`\'"]', path.relative_to(WEB).as_posix())
+        src = (WEB / 'components/confirm.tsx').read_text()
+        self.assertIn('role="alertdialog" data-slot="alert-dialog-content"', src)
+        self.assertIn('cancel.current?.focus()', src)
+        self.assertIn('<ConfirmProvider>', (WEB / 'main.tsx').read_text())
+
     def test_form_check_runs_in_ci_and_the_register(self):
         pkg = json.loads((ROOT / 'platform/package.json').read_text())
         self.assertEqual(pkg['scripts']['test:browser:forms'], 'tsx scripts/forms-browser-check.ts')

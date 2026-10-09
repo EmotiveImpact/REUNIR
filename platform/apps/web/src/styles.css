@@ -181,3 +181,4 @@ input,progress{accent-color:var(--accent)}
 @media(max-width:1080px){.lesson-content{order:-1;}.curriculum{position:static;}}
 @media(max-width:760px){.lesson-body p{font-size:14px;}.lesson-join{width:100%;}}
 .lesson-resume{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 0;font-size:11px;color:var(--muted);}
+.confirm-dialog{max-width:440px;padding:24px;}.confirm-dialog h2{font-size:19px;font-weight:550;}.confirm-dialog p{margin-top:12px;font-size:13px;line-height:1.7;}.confirm-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;margin-top:22px;}

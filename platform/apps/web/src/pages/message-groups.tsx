@@ -10,6 +10,7 @@ import { Button } from '../components/ui/button';
 import { Checkbox } from '../components/ui/checkbox';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { useConfirm } from '../components/confirm';
 
 export function GroupAvatar(){return <span className="avatar avatar-md group-avatar" role="img" aria-label="Group"><Users size={18}/></span>;}
 
@@ -36,7 +37,7 @@ export function NewGroupDialog({onClose,onCreated}:{onClose:()=>void;onCreated:(
 }
 
 export function GroupPeopleDialog({thread,onClose,onChanged,onLeft}:{thread:Conversation;onClose:()=>void;onChanged:()=>Promise<unknown>;onLeft:()=>void}){
- const {slug,userId,data,toast}=useWorkspace(),[title,Title]=useState(thread.title||''),[picked,Picked]=useState<string[]>([]),[adding,Adding]=useState(false),[busy,Busy]=useState(false);
+ const {slug,userId,data,toast}=useWorkspace(),confirm=useConfirm(),[title,Title]=useState(thread.title||''),[picked,Picked]=useState<string[]>([]),[adding,Adding]=useState(false),[busy,Busy]=useState(false);
  const starter=thread.createdBy===userId,inside=thread.participantIds.map(id=>({id,member:data.members.find(m=>m.userId===id)}));
  const outside=data.members.filter(m=>m.status==='active'&&!thread.participantIds.includes(m.userId));
  const room=GROUP_LIMIT-thread.participantIds.length;
@@ -48,8 +49,8 @@ export function GroupPeopleDialog({thread,onClose,onChanged,onLeft}:{thread:Conv
    <div className="group-actions"><Button variant="secondary" type="button" className="button secondary" onClick={()=>{Adding(false);Picked([]);}}>Back</Button><Button variant="default" type="button" className="button primary" disabled={busy||!picked.length||picked.length>room} onClick={()=>act('participants',{userIds:picked},picked.length===1?'One person added.':`${picked.length} people added.`,()=>{Adding(false);Picked([]);})}><UserPlus size={15}/>Add to group</Button></div>
   </>:<>
    <form className="group-rename" onSubmit={e=>{e.preventDefault();if(title.trim()&&title.trim()!==thread.title)act('title',{title:title.trim()},'Group renamed.');}}><Label className="sr-only" htmlFor="group-title">Group name</Label><Input id="group-title" required maxLength={80} value={title} onChange={e=>Title(e.target.value)}/><Button variant="secondary" className="button secondary" disabled={busy||!title.trim()||title.trim()===thread.title}>Rename</Button></form>
-   <ul className="group-people" aria-label="Group members">{inside.map(({id,member})=><li key={id}><Avatar member={member}/><span><strong>{member?.name||'Former member'}{id===userId?' (you)':''}</strong><small>{id===thread.createdBy?'Started this group':member?.status==='left'?'This account was deleted':member?.headline||''}</small></span>{starter&&id!==userId&&<Button variant="secondary" size="sm" type="button" className="button secondary compact" disabled={busy} aria-label={`Remove ${member?.name||'former member'}`} onClick={()=>{if(window.confirm(`Remove ${member?.name||'this person'} from the group? Their messages stay.`))act(`participants/${id}/remove`,{},'Removed from the group.');}}><UserMinus size={14}/>Remove</Button>}</li>)}</ul>
-   <div className="group-actions"><Button variant="secondary" type="button" className="button secondary" disabled={busy} onClick={()=>{if(window.confirm('Leave this group? You will no longer be able to read it. Your messages stay for the others.'))act('leave',{},'You left the group.',onLeft);}}><LogOut size={14}/>Leave group</Button><Button variant="default" type="button" className="button primary" disabled={busy||room<1} onClick={()=>Adding(true)}><UserPlus size={15}/>Add people</Button></div>
+   <ul className="group-people" aria-label="Group members">{inside.map(({id,member})=><li key={id}><Avatar member={member}/><span><strong>{member?.name||'Former member'}{id===userId?' (you)':''}</strong><small>{id===thread.createdBy?'Started this group':member?.status==='left'?'This account was deleted':member?.headline||''}</small></span>{starter&&id!==userId&&<Button variant="secondary" size="sm" type="button" className="button secondary compact" disabled={busy} aria-label={`Remove ${member?.name||'former member'}`} onClick={async()=>{if(await confirm({title:`Remove ${member?.name||'this person'} from the group?`,body:'Their messages stay.',confirmText:'Remove'}))act(`participants/${id}/remove`,{},'Removed from the group.');}}><UserMinus size={14}/>Remove</Button>}</li>)}</ul>
+   <div className="group-actions"><Button variant="secondary" type="button" className="button secondary" disabled={busy} onClick={async()=>{if(await confirm({title:'Leave this group?',body:'You will no longer be able to read it. Your messages stay for the others.',confirmText:'Leave group'}))act('leave',{},'You left the group.',onLeft);}}><LogOut size={14}/>Leave group</Button><Button variant="default" type="button" className="button primary" disabled={busy||room<1} onClick={()=>Adding(true)}><UserPlus size={15}/>Add people</Button></div>
   </>}
  </div></Modal>;
 }
