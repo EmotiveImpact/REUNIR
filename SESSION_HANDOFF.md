@@ -543,7 +543,8 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, STATES.md, decisions/027-loading-
 - This slice: branch `claude/everyday-use-4z9rmz`. BUILD_STATUS.md records the local runs; the pull request records CI. The owner approved, on 3 October 2026, merging each feature into main with a normal merge commit once its checks pass. Never force-push.
 - Alpha 23 (upload scanning) is an open pull request from another thread. This thread uses Alpha 27 to 30.
 - Alpha 55, one confirmation box (decision 055): `useConfirm()` replaces every `window.confirm`; browser checks answer it with `answerConfirmations`. PR #45, merged as `ea77b43`.
-- Alpha 56, partial marks (decision 056): `partialCredit` on multiple-choice questions, scored by `partialPoints`; no migration.
+- Alpha 56, partial marks (decision 056): `partialCredit` on multiple-choice questions, scored by `partialPoints`; no migration. PR #46, merged as `4a019f8`.
+- Alpha 57, video chapters (decision 057): `chapters` on an uploaded video's lesson file; no migration.
 
 ### What is done
 

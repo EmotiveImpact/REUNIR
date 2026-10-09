@@ -187,6 +187,32 @@ try {
         await expect(clip.locator('video')).toBeVisible(); await expect(clip.locator('.lesson-resume')).toHaveCount(0);
         await a11y('learner-video-captions');
     });
+    await check('chapters list under the lesson video and jump to their place, before or after it loads', async () => {
+        await role('admin'); await studio();
+        const row = rows().filter({ hasText: 'WebM video' }), field = row.getByRole('textbox', { name: /^Chapters/ });
+        await expect(rows().filter({ hasText: 'Captions (WebVTT)' }).getByRole('textbox', { name: /^Chapters/ })).toHaveCount(0);
+        await field.fill('0:05 Too late');
+        await expect(row.getByRole('alert')).toHaveText('Start the first chapter at 0:00.');
+        await expect(editor().getByRole('button', { name: 'Save draft', exact: true })).toBeDisabled();
+        await field.fill('0:00 Welcome\nhalf past Setting up');
+        await expect(row.getByRole('alert')).toHaveText('Line 2: write a start time then a title, like 1:30 Setting up.');
+        await field.fill('0:00 Welcome\n0:20 Setting up\n0:30 Wrapping up');
+        await expect(row.getByRole('alert')).toHaveCount(0); await expect(row).toContainText('Edited');
+        await save(); await publish();
+        await role('member'); await lesson();
+        const clip = page.locator('.lesson-content .lesson-stage');
+        await expect(clip).toContainText('3 chapters');
+        const nav = clip.getByRole('navigation', { name: 'Chapters in Welcome clip' });
+        // Choosing a chapter before the video has loaded starts it there.
+        await nav.getByRole('button', { name: /Setting up/ }).click();
+        const video = clip.locator('video');
+        await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThanOrEqual(20);
+        await expect(nav.getByRole('button', { name: /Setting up/ })).toHaveAttribute('aria-current', 'step');
+        await nav.getByRole('button', { name: /Welcome/ }).click();
+        await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeLessThan(20);
+        await expect(nav.getByRole('button', { name: /Welcome/ })).toHaveAttribute('aria-current', 'step');
+        await overflow(); await a11y('learner-video-chapters');
+    });
     await check('the second community does not inherit files from the first', async () => {
         await page.getByRole('button', { name: 'Open Studio North demo community' }).click(); await lesson();
         await expect(page.locator('.lesson-content')).toBeVisible(); await expect(files()).toHaveCount(0);

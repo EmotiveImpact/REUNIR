@@ -1,7 +1,7 @@
 import { DomainError, newId, type Workspace, type TenantContext, type Member, type Upload, type Track } from '../../contracts/src/index';
 import {
-    MAX_PENDING_RESOURCE_UPLOADS, MAX_RESOURCE_UPLOADS, RESOURCE_UPLOAD_TTL_MS, isLessonResourceType, resourceFileName, resourceUploadRequest,
-    type LessonResource, type ResourceRef, type ResourceUploadRequest,
+    MAX_PENDING_RESOURCE_UPLOADS, MAX_RESOURCE_UPLOADS, RESOURCE_UPLOAD_TTL_MS, isLessonResourceType, isLessonVideo, resourceFileName, resourceUploadRequest,
+    type LessonResource, type ResourceRef, type ResourceUploadRequest, type VideoChapter,
 } from '../../contracts/src/lesson-resources';
 import { actorFor, canSeeSpace, isAdmin } from './access';
 import { contributedTracks, contributes, contributesAny, holdsGrant, seesTrack } from './instructors';
@@ -11,13 +11,17 @@ import { normalisePurposeState } from './purpose';
  * Lesson files bind to one track's upload records by ID. Clients never name storage keys.
  * Who may download follows the same rules as reading the lesson, draft or revision that lists the file.
  */
-type ResourceInput = { id: string; fileId: string; name: string; description?: string };
+type ResourceInput = { id: string; fileId: string; name: string; description?: string; chapters?: VideoChapter[] };
 const gone = (message = 'That file is not available.'): never => { throw new DomainError('NOT_FOUND', message, 404); };
 const lessonFile = (u: Upload, organizationId: string) => u.organizationId === organizationId && u.purpose === 'lesson_resource';
 
 /** Whitelist resource fields so stored or submitted extras never travel with lesson content. */
 export function normaliseResources(value: readonly LessonResource[] | null | undefined): LessonResource[] {
-    return (value ?? []).map(r => ({ id: r.id, fileId: r.fileId, name: r.name, description: r.description ?? '', contentType: r.contentType, sizeBytes: r.sizeBytes }));
+    return (value ?? []).map(r => ({ id: r.id, fileId: r.fileId, name: r.name, description: r.description ?? '', contentType: r.contentType, sizeBytes: r.sizeBytes, ...chapters(r.chapters) }));
+}
+/** Chapters travel only when there are some, so lessons saved before Alpha 57 compare unchanged. */
+function chapters(list: readonly VideoChapter[] | undefined): { chapters?: VideoChapter[] } {
+    return list?.length ? { chapters: list.map(c => ({ start: c.start, title: c.title.trim() })) } : {};
 }
 /** Storage keys and generations are server-only. */
 export const clientUpload = (u: Upload): Upload => ({ ...u, objectKey: '', generation: null, ...(u.thumbnailObjectKey !== undefined ? { thumbnailObjectKey: u.thumbnailObjectKey ? '' : null, thumbnailGeneration: null } : {}) });
@@ -36,7 +40,8 @@ export function resolveResources(s: Workspace, ctx: TenantContext, trackId: stri
         const upload = s.uploads.find(u => u.id === item.fileId && lessonFile(u, ctx.organizationId));
         if (!upload || upload.trackId !== trackId) throw new DomainError('RESOURCE_UNAVAILABLE', 'One of these files is not available for this lesson. Upload it again.', 409);
         if (upload.status !== 'ready' || !isLessonResourceType(upload.contentType)) throw new DomainError('RESOURCE_NOT_READY', 'A file has not passed verification yet. Upload it again.', 409);
-        return { id: item.id, fileId: upload.id, name: item.name, description: item.description ?? '', contentType: upload.contentType, sizeBytes: upload.sizeBytes };
+        if (item.chapters?.length && !isLessonVideo(upload.contentType)) throw new DomainError('CHAPTERS_NEED_VIDEO', 'Only an uploaded video can have chapters.', 400);
+        return { id: item.id, fileId: upload.id, name: item.name, description: item.description ?? '', contentType: upload.contentType, sizeBytes: upload.sizeBytes, ...chapters(item.chapters) };
     });
 }
 export function assertResourcesAvailable(s: Workspace, ctx: TenantContext, trackId: string, resources: LessonResource[] | null | undefined) {

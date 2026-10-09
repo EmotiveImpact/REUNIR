@@ -6,9 +6,22 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 Nothing in this list has been deployed. Deployment remains deferred by the owner.
 
-## Alpha 56: partial marks on multiple-choice questions (no version change), 9 October 2026
+## Alpha 57: chapters in lesson videos (no version change), 9 October 2026
 
-On a pull request from `claude/full-audit-yhvssj`. Decision 056; no migration. The version stays 0.39.0-alpha.1.
+On a pull request from `claude/full-audit-yhvssj`. Decision 057; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** a course author can split an uploaded lesson video into chapters, typed one a line like "1:30 Setting up". Learners see the chapters under the video and can jump straight to any of them, even before pressing play.
+
+Details:
+
+- `chapters` on an uploaded video's lesson file: up to 20, starting at 0:00, in order, titles up to 80 characters. `parseChapters`, `chaptersText`, `chapterTime` and `chaptersProblem` in `packages/contracts/src/lesson-resources.ts`.
+- The domain refuses chapters on anything but a video (`CHAPTERS_NEED_VIDEO`) and keeps the lesson's file list inside its 16,000-byte column.
+- The studio blocks saving while a chapter line cannot be read; the lesson stage lists chapters, seeks to them, and marks the one playing.
+- New tests: `video-chapters`; the resources browser check covers authoring errors, publishing, jumping before and after loading, and axe.
+
+## Alpha 56: partial marks on multiple-choice questions (no version change), 9 October 2026 (PR #46)
+
+Merged as `4a019f8`. Decision 056; no migration. The version stays 0.39.0-alpha.1.
 
 **In plain language:** a course author can let a multiple-choice question give partial marks. A learner who picks some of the right options earns part of the points, and each wrong option they pick takes a share away. Learners see "partial marks" beside the question before they answer.
 
