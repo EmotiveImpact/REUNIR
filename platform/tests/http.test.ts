@@ -1,4 +1,5 @@
 import { test, before, after } from 'node:test';
+import { CONTENT_SECURITY_POLICY } from '../apps/api/src/content-security';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { openDatabase, type Database } from '../packages/db/src/connection';
@@ -20,6 +21,7 @@ const send = (cmd: unknown, extra: Record<string, string> = {}) => app.request(b
 before(async () => { db = await openDatabase('pglite:memory'); await migrate(db); repo = new WorkspaceRepository(db); await repo.seed(createSeed()); app = createApp({ repository: repo, origin, resolveSession: async () => identity }); });
 after(async () => db?.close());
 test('health reports actual database adapter, not Neon when using PGlite', async () => { const r = await app.request('/api/health'); assert.equal(r.status, 200); assert.equal((await r.json()).database, 'pglite'); });
+test('every response carries the report-only Content-Security-Policy', async () => { const r = await app.request('/api/health/live'); assert.equal(r.headers.get('content-security-policy-report-only'), CONTENT_SECURITY_POLICY); });
 test('anonymous session is null', async () => { identity = null; const r = await app.request('/api/session'); assert.equal(await r.json(), null); identity = { id: DEMO_USER, name: 'Alex' }; });
 test('anonymous workspace request is 401 even with forged headers', async () => { identity = null; const r = await app.request(base + '/workspace', { headers: { 'X-User-Id': DEMO_ADMIN, 'X-Role': 'owner' } }); assert.equal(r.status, 401); identity = { id: DEMO_USER, name: 'Alex' }; });
 test('workspace response is scoped and never cacheable', async () => { const r = await app.request(base + '/workspace'); assert.equal(r.status, 200); assert.equal(r.headers.get('cache-control'), 'no-store'); const s = await r.json(); assert(!s.spaces.some((x: any) => x.visibility === 'private')); });

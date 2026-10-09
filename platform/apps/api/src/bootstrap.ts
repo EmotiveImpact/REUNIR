@@ -1,4 +1,4 @@
-import { adminTwoFactorMode, emailVerificationMode, lessonVideoBytes, validateRuntimeConfiguration } from './config';
+import { trustedIpHeader, adminTwoFactorMode, emailVerificationMode, lessonVideoBytes, validateRuntimeConfiguration } from './config';
 import { requireSafeRuntimeRole } from '../../../packages/db/src/runtime-safety';
 import { PilotOperations } from './operations';
 import {MailQueue,resendTransport} from './mail';
@@ -24,8 +24,9 @@ export async function bootstrap() {
     // Confirmation is required only where mail can actually be sent; the pilot check blocks a production server that requires
     // it without a sender, which would otherwise lock everyone out.
     const emailVerification = mail.transport ? emailVerificationMode(process.env) : 'optional';
-    const auth = createAuth(db, APP_ORIGIN, BETTER_AUTH_SECRET,false,mail,emailVerification);
-    const registration=createAuth(db,APP_ORIGIN,BETTER_AUTH_SECRET,true);
+    const ipHeader = trustedIpHeader(process.env);
+    const auth = createAuth(db, APP_ORIGIN, BETTER_AUTH_SECRET,false,mail,emailVerification,ipHeader);
+    const registration=createAuth(db,APP_ORIGIN,BETTER_AUTH_SECRET,true,undefined,'optional',ipHeader);
     const invitations=new InvitationService(repository,new URL(APP_ORIGIN).origin,mail);
     if (process.env.NODE_ENV === 'production') await requireSafeRuntimeRole(db);
     const operations=new PilotOperations(repository,process.env);
@@ -33,7 +34,7 @@ export async function bootstrap() {
     const digests=mail.transport?new DigestService(db,mail,new URL(APP_ORIGIN).origin):undefined;
     const app = createApp({ repository, invitations, mail, operations, cronSecret:process.env.CRON_SECRET, digests, retention:new RetentionJob(db),
         registerInvited:async(name,email,password)=>{const result=await registration.api.signUpEmail({body:{name,email,password}});return {id:result.user.id};},
-        verifyPassword: passwordCheck(auth), emailVerification, changeEmail: emailChanger(auth), emailChangeLinkValid: emailChangeLinkCheck(auth), origin: APP_ORIGIN, resolveSession: sessionResolver(auth), adminTwoFactor: adminTwoFactorMode(process.env), videoBytes: lessonVideoBytes(process.env), authHandler: req => auth.handler(req), storage: GCS_BUCKET ? googleStorage(GCS_BUCKET, GCS_CREDENTIALS_JSON) : undefined, scans: scannerFromEnvironment(process.env) ? new ScanQueue(repository) : undefined });
+        verifyPassword: passwordCheck(auth), emailVerification, changeEmail: emailChanger(auth), emailChangeLinkValid: emailChangeLinkCheck(auth), origin: APP_ORIGIN, clientIpHeader: ipHeader, resolveSession: sessionResolver(auth), adminTwoFactor: adminTwoFactorMode(process.env), videoBytes: lessonVideoBytes(process.env), authHandler: req => auth.handler(req), storage: GCS_BUCKET ? googleStorage(GCS_BUCKET, GCS_CREDENTIALS_JSON) : undefined, scans: scannerFromEnvironment(process.env) ? new ScanQueue(repository) : undefined });
     return { app, db, repository, auth, mail, invitations, digests };
     } catch(error) { await db.close(); throw error; }
 }

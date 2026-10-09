@@ -11,6 +11,15 @@ interface Invitation {id:string;organization_id:string;email:string;token_hash:s
 function active(i:Invitation|undefined):asserts i is Invitation {
     if(!i||i.status!=='pending'||new Date(i.expires_at)<=new Date()) throw new DomainError('INVITE_UNAVAILABLE','This invitation has expired, was used or has been revoked.',410);
 }
+/**
+ * An invitation speaks for the administrator who sent it, so it works only while they still administer the community. A
+ * sender who was demoted, suspended, removed or deleted leaves their pending invitations unusable. Needs the community's
+ * row-security context.
+ */
+async function senderStillAdministers(sql:SQL,i:Invitation) {
+    const sender=(await sql.query("SELECT 1 FROM members WHERE organization_id=$1 AND user_id=$2 AND status='active' AND role IN ('owner','admin')",[i.organization_id,i.created_by])).rows[0];
+    if(!sender)throw new DomainError('INVITE_UNAVAILABLE','This invitation has expired, was used or has been revoked.',410);
+}
 export class InvitationService {
     constructor(readonly repo:WorkspaceRepository,readonly origin:string,readonly mail:MailQueue){}
     private async administrator(sql:SQL,orgId:string,userId:string) {
@@ -22,7 +31,7 @@ export class InvitationService {
     }
     async list(slug:string,userId:string) {
         return this.repo.within(slug,userId,false,async(sql,org)=>{await this.administrator(sql,String(org.id),userId);
-            return (await sql.query(`SELECT i.id,i.email,i.status,i.track_id AS "trackId",(SELECT t.title FROM tracks t WHERE t.organization_id=i.organization_id AND t.id=i.track_id) AS "trackTitle",i.created_at AS "createdAt",i.expires_at AS "expiresAt",i.accepted_at AS "acceptedAt",(SELECT e.status FROM email_outbox e WHERE e.invitation_id=i.id ORDER BY e.created_at DESC LIMIT 1) AS delivery FROM invitations i WHERE i.organization_id=$1 ORDER BY i.created_at DESC LIMIT 100`,[org.id])).rows;
+            return (await sql.query(`SELECT i.id,i.email,i.status,i.track_id AS "trackId",(SELECT t.title FROM tracks t WHERE t.organization_id=i.organization_id AND t.id=i.track_id) AS "trackTitle",i.created_at AS "createdAt",i.expires_at AS "expiresAt",i.accepted_at AS "acceptedAt",(SELECT e.status FROM email_outbox e WHERE e.invitation_id=i.id ORDER BY e.created_at DESC LIMIT 1) AS delivery FROM invitations i WHERE i.organization_id=$1 ORDER BY (i.status='pending') DESC,i.created_at DESC LIMIT 100`,[org.id])).rows;
         });
     }
     /** An invitation grants ordinary membership; with `trackId` it also asks the person to teach that track. */
@@ -59,6 +68,7 @@ export class InvitationService {
         await sql.query("SELECT set_config('app.invitation_hash',$1,true)",[hash(token)]);
         const i=(await sql.query<Invitation>('SELECT * FROM invitations WHERE token_hash=$1',[hash(token)])).rows[0];active(i);
         await setContext(sql,i.organization_id,'');
+        await senderStillAdministers(sql,i);
         const o=(await sql.query<{slug:string;name:string}>('SELECT slug,name FROM organisations WHERE id=$1',[i.organization_id])).rows[0];
         const [local,domain]=i.email.split('@');
         const track=i.track_id?(await sql.query<{title:string}>('SELECT title FROM tracks WHERE organization_id=$1 AND id=$2',[i.organization_id,i.track_id])).rows[0]?.title??null:null;
@@ -66,7 +76,8 @@ export class InvitationService {
     });}
     async registrationEmail(token:string){return this.repo.db.transaction(async sql=>{
         await sql.query("SELECT set_config('app.invitation_hash',$1,true)",[hash(token)]);
-        const i=(await sql.query<Invitation>('SELECT * FROM invitations WHERE token_hash=$1',[hash(token)])).rows[0];active(i);return i.email;
+        const i=(await sql.query<Invitation>('SELECT * FROM invitations WHERE token_hash=$1',[hash(token)])).rows[0];active(i);
+        await setContext(sql,i.organization_id,'');await senderStillAdministers(sql,i);return i.email;
     });}
     async accept(token:string,userId:string){return this.repo.db.transaction(async sql=>{
         const digest=hash(token); await sql.query("SELECT set_config('app.invitation_hash',$1,true)",[digest]);
@@ -78,17 +89,17 @@ export class InvitationService {
         const org=(await sql.query<{slug:string;name:string}>('SELECT slug,name FROM organisations WHERE id=$1 FOR UPDATE',[initial.organization_id])).rows[0];
         const i=(await sql.query<Invitation>('SELECT * FROM invitations WHERE id=$1 FOR UPDATE',[initial.id])).rows[0];active(i);
         if(!u||u.email.toLowerCase()!==i.email)throw new DomainError('INVITE_ACCOUNT_MISMATCH','Sign in with the email address this invitation was sent to.',403);
+        await senderStillAdministers(sql,i);
         const existing=await sql.query<{status:string}>('SELECT status FROM members WHERE organization_id=$1 AND user_id=$2',[i.organization_id,userId]);
         if(existing.rows[0]?.status && existing.rows[0].status!=='active')throw new DomainError('MEMBERSHIP_RESTRICTED','Ask the owner to review your community access.',403);
         if(!existing.rows.length)await sql.query(`INSERT INTO members(organization_id,id,created_at,user_id,name,headline,bio,skills,colour,avatar,role,status) VALUES($1,$2,now(),$3,$4,'','', '[]','violet','','member','active')`,[i.organization_id,randomUUID(),userId,u.name]);
-        // The teaching grant goes in the sender's name, and only while the sender still administers the community; otherwise
-        // the person joins as a member and an administrator can add them later.
+        // The teaching grant goes in the sender's name; the sender was checked above. A person who is already an administrator
+        // joins without a grant, as administrators can already teach every track.
         let teaching:string|null=null;
         if(i.track_id){
-            const sender=(await sql.query("SELECT 1 FROM members WHERE organization_id=$1 AND user_id=$2 AND status='active' AND role IN ('owner','admin')",[i.organization_id,i.created_by])).rows[0];
             const track=(await sql.query<{title:string}>('SELECT title FROM tracks WHERE organization_id=$1 AND id=$2',[i.organization_id,i.track_id])).rows[0];
             const member=(await sql.query<{role:string}>('SELECT role FROM members WHERE organization_id=$1 AND user_id=$2',[i.organization_id,userId])).rows[0];
-            if(sender&&track&&member&&!['owner','admin'].includes(member.role)){
+            if(track&&member&&!['owner','admin'].includes(member.role)){
                 await sql.query('INSERT INTO track_instructors(id,organization_id,created_at,track_id,user_id,granted_by) SELECT $1,$2,now(),$3,$4,$5 WHERE NOT EXISTS(SELECT 1 FROM track_instructors WHERE organization_id=$2 AND track_id=$3 AND user_id=$4)',[randomUUID(),i.organization_id,i.track_id,userId,i.created_by]);
                 await sql.query('INSERT INTO audit(organization_id,id,created_at,actor_id,action,object_id,metadata) VALUES($1,$2,now(),$3,$4,$5,$6)',[i.organization_id,randomUUID(),i.created_by,'track.instructor.add',i.track_id,JSON.stringify({userId,invitationId:i.id})]);
                 teaching=track.title;

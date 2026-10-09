@@ -154,7 +154,8 @@ Detail: SETUP.md section 4. `vercel.json` already sets framework `vite`, `npm ci
 - [ ] Decide on Deployment Protection. Protecting the staging deployment keeps it private, but it also blocks schedulers and monitors unless they use Vercel's protection bypass for automation. Record the decision.
 - [ ] Deploy. If `/api/*` returns `NOT_CONFIGURED` (HTTP 503), read the function log for the configuration error; no demonstration data is served.
 - [ ] Since Alpha 42 (decision 042) no upload is scanned inside a request: completion reads only the first bytes and the scan worker reads the rest, so the 30 second function limit no longer caps lesson video. Before raising `LESSON_VIDEO_MAX_MB` above 25, raise clamd's `StreamMaxLength` to match, or larger videos wait unscanned and are never served.
-- [ ] Before inviting members, decide on a Content-Security-Policy for the static site: try one in Report-Only mode against the deployed build (Radix and the lesson editor use inline styles; lessons embed YouTube and Vimeo), then enforce it in a reviewed commit. `vercel.json` already sends Strict-Transport-Security and Permissions-Policy (Alpha 41).
+- [ ] Off Vercel, set `TRUSTED_IP_HEADER` to the one header your proxy overwrites with the visitor's address (Alpha 50); otherwise sign-in limits can be dodged or shared.
+- [ ] Before inviting members, enforce the Content-Security-Policy. Since Alpha 50 it is sent in Report-Only mode (`apps/api/src/content-security.ts`, mirrored in `vercel.json`). Open every area of the deployed build with the browser console open; when nothing is reported, rename the header to `Content-Security-Policy` in both places in a reviewed commit. `vercel.json` already sends Strict-Transport-Security and Permissions-Policy (Alpha 41).
 
 ## 9. After deploy: health and hosted privacy checks
 

@@ -24,7 +24,7 @@ New users choose their own password. Do not distribute generated passwords for n
 
 ## Proxy, rate limits and logs
 
-Exact application Origin and JSON content type are required for mutations. Invitation endpoints have per-route shared and per-peer DB rate limits (Alpha 41), so anonymous look-ups cannot use up the allowance for accepting or registering. The per-peer key uses x-real-ip; only deploy behind a trusted reverse proxy that overwrites client-supplied IP headers. Better Auth also needs a verified trusted-IP configuration for the final hosting topology. Its local fallback is a shared path bucket; this is conservative but can throttle multiple legitimate pilot users. Verify forwarded-header handling rather than disabling rate limits.
+Exact application Origin and JSON content type are required for mutations. Invitation endpoints have per-route shared and per-peer DB rate limits (Alpha 41), so anonymous look-ups cannot use up the allowance for accepting or registering. The per-peer key, and Better Auth's sign-in limits, use the header named by `TRUSTED_IP_HEADER` (default x-real-ip, which Vercel sets; Alpha 50); only deploy behind a trusted reverse proxy that overwrites that header. Its local fallback is a shared path bucket; this is conservative but can throttle multiple legitimate pilot users. Verify forwarded-header handling rather than disabling rate limits.
 
 Keep API request logs free of invitation/reset tokens, email payloads, passwords and private message text. Referrer-Policy is no-referrer. Configure the hosting edge not to retain sensitive reset-link URLs in broadly accessible logs. Pseudonymous IDs are not permission to publish private activity.
 

@@ -1,4 +1,37 @@
-# Alpha 48 lessons lead with their video
+# Alpha 50 security fixes from the October audit
+
+9 October 2026. Version stays 0.39.0-alpha.1. Decision 050; no migration. Edem asked for a full audit and fixes; the findings are in the project file `ferven/audit-2026-10-09.md`. This thread holds Alpha 50 to 54, decisions 050 to 054 and migrations 0048 to 0052.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/full-audit-yhvssj`, from main `4d82e9e` (PR #39) |
+| Verified locally | Yes: see below |
+| Merged | Not yet |
+| Deployed | No |
+
+## What changed
+
+- Invitations work only while their sender is an active owner or administrator (replaces decision 020's join-without-grant rule).
+- Invitation limits: per visitor first, unsigned accepts refused before the shared allowance.
+- `TRUSTED_IP_HEADER` (default `x-real-ip`) for Better Auth's sign-in limits and the invitation limits; Better Auth no longer reads `X-Forwarded-For`.
+- Lesson file uploads, cover uploads and lesson file discards honour `ADMIN_TWO_FACTOR=required`.
+- `Content-Security-Policy-Report-Only` on every Node response and in `vercel.json`.
+- Open message reports and pending invitations list first.
+
+## Checks run
+
+- `npm run typecheck` clean. `npm test`: 903 tests, all passing after the fixes below. Python helpers: 41 OK. `check_research.py` OK.
+- Failed attempts: `two-factor-http` and `email-http` sent `X-Forwarded-For` to spread sign-in limits across fake visitors; with Better Auth reading only the trusted header they hit 429 until they sent `X-Real-IP`. The instructor invitation test expected the old join-without-grant rule and now expects refusal. A single-quoted SQL string with `'open'` inside broke the transform once.
+
+## Not verified
+
+The report-only policy against a deployed build; Vercel's `x-real-ip` on a live request.
+
+---
+
+# Historical: Alpha 48 lessons lead with their video
 
 5 October 2026. Version stays 0.39.0-alpha.1. Decision 048; no migration, no API change. The owner said lessons had no space for video and asked what else in learning needed lifting.
 

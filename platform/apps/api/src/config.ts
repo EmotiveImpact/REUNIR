@@ -68,6 +68,18 @@ export function validateRuntimeConfiguration(env: Environment): void {
     const blocked = inspectConfiguration(env).filter(c=>fatal.has(c.key) && c.state==='blocked');
     if(blocked.length)throw new Error('Unsafe REUNIR runtime configuration: '+blocked.map(c=>c.key).join(', ')+'. Run npm run pilot:check for redacted guidance.');
 }
+/** Vercel and most reverse proxies overwrite X-Real-IP with the visitor's address. */
+export const DEFAULT_IP_HEADER = 'x-real-ip';
+/**
+ * TRUSTED_IP_HEADER names the one request header the host's proxy overwrites with the visitor's address. Rate limits key on
+ * it, so it must never be a header a visitor can set unchecked. Default x-real-ip, which Vercel sets.
+ */
+export function trustedIpHeader(env: Environment): string {
+    const raw = env.TRUSTED_IP_HEADER?.trim().toLowerCase();
+    if (!raw) return DEFAULT_IP_HEADER;
+    if (!/^[a-z0-9-]{1,64}$/.test(raw)) throw new Error('Unsafe REUNIR runtime configuration: trusted-ip-header. Set TRUSTED_IP_HEADER to one header name, such as x-real-ip.');
+    return raw;
+}
 /** The validated ADMIN_TWO_FACTOR setting. Throws on anything but required or optional. */
 export function adminTwoFactorMode(env: Environment) {
     const mode = adminTwoFactorSetting(env);
