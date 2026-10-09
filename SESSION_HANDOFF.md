@@ -1,8 +1,23 @@
-# Latest: Alpha 48 lessons lead with their video
+# Latest: the October audit, Alpha 50 to 54
 
-5 October 2026, on `claude/staging-launch-l1c2la` (PR #39), after PR #38 (page colour, main `d4393cd`). Read decisions/048-lesson-video-stage.md and the top of BUILD_STATUS.md. No migration. Numbering: Alpha 48 to 49, decisions 048 to 049, migrations 0046 to 0047 belong to this thread; Alpha 49, decision 049 and both migrations are unused. Next: merge PR #39 once CI is green, then republish the shared demo. Not built: chapters, captions upload, playback position.
+9 October 2026, on `claude/full-audit-yhvssj`. Edem asked for a full audit and for everything found to be fixed. The findings, in order of importance, are in the project file `ferven/audit-2026-10-09.md`. This thread holds Alpha 50 to 54, decisions 050 to 054 and migrations 0048 to 0052.
 
-# Current continuation: Alpha 42 virus scanning in the background
+- Alpha 50, security (decision 050): merged as PR #40, `57fd2e6`.
+- Alpha 51, app, accessibility and speed (decision 051): PR #41, merged as `7ffb982`.
+- Alpha 52, records (this note, BUILD_STATUS, CHANGELOG, READMEs, ROADMAP, LAUNCH_RUNBOOK, RECOVERY_STATUS marked historical, SOURCE_MANIFEST regenerated with `python3 scripts/publish_source.py --write-manifest "<release>"`, CI timeout 30 minutes). No decision record; no code change.
+- Next: Alpha 53 reads posts, comments and reactions in SQL a page at a time, so a community no longer stops at 5,000 rows in a table; Alpha 54 adds lesson video captions and resume position and removing someone from a project team.
+
+Not built, for Edem to choose: chapters, appeals against suspensions and message reports, credits on outcomes, privacy-respecting usage stats, partial marks, a shared confirmation dialogue in place of the browser's own. Deployment remains Edem's call.
+
+Checks are unchanged: from `platform/`, `npm run typecheck`, `npm test`, `npm run test:http`, `npm run build`, `npm run bundle:preview`, every `npm run test:browser:*` script with `CHROMIUM_PATH=/opt/pw-browsers/chromium`, and `npm run test:postgres` against a disposable `reunir_ci`; from the root, the Python helpers and `check_research.py`.
+
+---
+
+# Historical: Alpha 48 lessons lead with their video
+
+5 October 2026, on `claude/staging-launch-l1c2la` (PR #39), after PR #38 (page colour, main `d4393cd`). Read decisions/048-lesson-video-stage.md and the top of BUILD_STATUS.md. No migration. Numbering: Alpha 48 to 49, decisions 048 to 049, migrations 0046 to 0047 belong to this thread; Alpha 49, decision 049 and both migrations are unused. PR #39 merged as `4d82e9e`. Not built: chapters, captions upload, playback position.
+
+# Historical: Alpha 42 virus scanning in the background (merged as PR #36, `33e21b1`)
 
 Read AGENTS.md, platform/docs/BUILD_STATUS.md, decisions/042-background-scanning.md, decisions/023-upload-scanning.md, SETUP.md section 6 and LAUNCH_RUNBOOK.md first. UI_DESIGN_DIRECTION.md remains authoritative. Continue the existing React/Vite + Hono + Better Auth + PostgreSQL application; do not rebuild completed features.
 
@@ -63,7 +78,7 @@ Checks from `platform/`: `npm run typecheck`, `npm test`, `npm run test:http`, `
 
 ### Next
 
-Merge Alpha 44 once green. Deployment stays deferred until the owner says otherwise: prepare, never provision. Later, if a community approaches 5,000 posts, read posts in SQL a page at a time as the audit trail is. The business stage and the long-term vision stay parked.
+Alpha 44 merged as PR #35, `fd3e587`. Deployment stays deferred until the owner says otherwise: prepare, never provision. Later, if a community approaches 5,000 posts, read posts in SQL a page at a time as the audit trail is. The business stage and the long-term vision stay parked.
 
 Alpha 44 (paged posts and archived tasks) is on main. Later, if a community approaches 5,000 posts, read posts in SQL a page at a time as the audit trail is.
 
@@ -1148,7 +1163,7 @@ Read AGENTS.md, platform/docs/BUILD_STATUS.md, ASSESSMENTS.md, ROADMAP.md and re
 
 - Base: main `788e5d70df7083a07c6a254b315e7aa97965fd5a`, the merge of PR #3 (Alpha 09 private lesson resources), whose tree matches the tested PR head exactly. No other open pull requests existed when this slice started.
 - This slice: branch `claude/stoic-euler-lx2zk7`, restarted from that main by fast-forward. The publication receipt in BUILD_STATUS.md records the pushed commit, the pull request, the CI runs and whether it was merged. Main `365e1c9` merges PR #4, and its tree is identical to the PR head `abbb51f` (read back 3 October 2026).
-- Follow-up: branch `claude/laughing-goodall-2p7z0v` fixes the contrast of text on custom covers, returns the connected resources scan to the whole learner page and adds a custom cover check to the monochrome suite. It was built from main `788e5d7` and merged with main `365e1c9`; not yet merged into main. See "Follow-up: cover contrast" in BUILD_STATUS.md.
+- Follow-up: branch `claude/laughing-goodall-2p7z0v` fixes the contrast of text on custom covers, returns the connected resources scan to the whole learner page and adds a custom cover check to the monochrome suite. It was built from main `788e5d7` and merged with main `365e1c9`; later merged into main with PR #5 (`661fac9`). See "Follow-up: cover contrast" in BUILD_STATUS.md.
 
 ### What is done
 

@@ -6,9 +6,22 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 Nothing in this list has been deployed. Deployment remains deferred by the owner.
 
+## Alpha 52: records brought up to date (no version change), 9 October 2026
+
+On a pull request from `claude/full-audit-yhvssj`. No decision record or migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** nothing changes in the app. The project's own records now match what is really on main: which pull request carried each release, how many database changes there are, and what comes next.
+
+Details:
+
+- Merged rows and PR numbers filled in for Alpha 12, 13, 42, 44, 47 and 48.
+- ROADMAP, LAUNCH_RUNBOOK, READMEs and SESSION_HANDOFF brought up to date; RECOVERY_STATUS.md marked historical.
+- `scripts/publish_source.py --write-manifest` regenerates SOURCE_MANIFEST.json, which was stale.
+- CI application job timeout raised to 30 minutes.
+
 ## Alpha 51: app, accessibility and speed fixes from the October audit (no version change), 9 October 2026
 
-On a pull request from `claude/full-audit-yhvssj`. Decision 051; no migration. The version stays 0.39.0-alpha.1.
+PR #41, merged as `7ffb982`. Decision 051; no migration. The version stays 0.39.0-alpha.1.
 
 **In plain language:** when something goes wrong inside a dialogue, the reason now shows inside it. Someone whose membership ends while the app is open sees a clear message instead of a broken page. A lesson video whose link expired says so. The tab title and keyboard focus follow you between pages, filters say which one is on, and no text is smaller than 9px. Events stop counting people who left and say when they have ended. The app is lighter to load and its icon is black and white.
 
@@ -38,7 +51,7 @@ Details:
 
 ## Alpha 48: lessons lead with their video (no version change), 5 October 2026
 
-On a pull request from `claude/staging-launch-l1c2la`. Decision 048; no migration. The version stays 0.39.0-alpha.1.
+PR #39, merged as `4d82e9e`. Decision 048; no migration. The version stays 0.39.0-alpha.1.
 
 **In plain language:** a lesson with a video now opens with it, full width, above the reading. Uploaded videos play in place, and YouTube or Vimeo videos still ask before loading. The reading column is wider, practice prompts stand out, tracks without a cover no longer show an empty panel, and on a phone the lesson comes before the list of lessons.
 
@@ -50,7 +63,7 @@ Details:
 
 ## Alpha 47: scan host package and the staging scheduler (no version change), 5 October 2026
 
-On a pull request from `claude/staging-launch-l1c2la`, merged after Alpha 42 once its checks pass. Decision 047; no migration. The version stays 0.39.0-alpha.1.
+PR #37, merged as `91ac987` after Alpha 42. The page-colour fix that followed was PR #38, merged as `d4393cd`. Decision 047; no migration. The version stays 0.39.0-alpha.1.
 
 **In plain language:** staging now has exact steps for the free Vercel plan the owner chose, with Google's scheduler sending queued email every minute. A ready-made package runs the virus scanner and its worker on one small machine with nothing open to the internet, so uploads can be switched on for about $22 a month whenever the owner approves.
 
@@ -62,7 +75,7 @@ Details:
 
 ## Alpha 42: virus scanning in the background (no version change), 5 October 2026
 
-On a pull request from `claude/background-scanning-pxfq5c`, merged once its checks pass. Decision 042 and migration 0040, from the block allocated to background scanning (Alpha 42 to 43, migrations 0040 to 0041). The version stays 0.39.0-alpha.1.
+PR #36, merged as `33e21b1`. Decision 042 and migration 0040, from the block allocated to background scanning (Alpha 42 to 43, migrations 0040 to 0041). The version stays 0.39.0-alpha.1.
 
 **In plain language:** uploaded files are still checked for viruses before anyone can use them, but the check no longer happens while the person waits. The app says a file is being checked, and attaches it once the scanner says it is clean, even if the person has moved on. Large lesson videos can now be scanned, and the site can run on Vercel with uploads switched on, because the scanner no longer has to be reachable from the website itself.
 
@@ -77,7 +90,7 @@ Details:
 
 ## Alpha 44: posts and archived tasks a page at a time (no version change), 5 October 2026
 
-On a pull request from `claude/paged-loading-bu4poc`, merged once its checks pass. Decision 044; no migration. The version stays 0.39.0-alpha.1.
+PR #35, merged as `fd3e587`. Decision 044; no migration. The version stays 0.39.0-alpha.1.
 
 **In plain language:** busy communities stay quick. The conversation, spaces, Saved and Knowledge now show 20 posts at a time with a **Show older posts** button, instead of sending every post to every page. Archived project tasks load only when you open the Archive view. An old post or archived task still opens from a link.
 

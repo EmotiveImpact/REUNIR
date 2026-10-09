@@ -37,6 +37,17 @@ def records(root: Path) -> list[dict[str, str]]:
         seen.add(name)
     return rows
 
+def write_manifest(root: Path, release: str) -> int:
+    """Rewrite SOURCE_MANIFEST.json from the files Git tracks, keeping the manifest itself out of its own list."""
+    from datetime import datetime, timezone
+    names = sorted(n for n in git(["ls-files", "-z"], root, capture=True).split("\0") if n and n != "SOURCE_MANIFEST.json")
+    rows = [{"path": n, "sha256": digest(root / n), "bytes": (root / n).stat().st_size} for n in names]
+    package = json.loads((root / "platform" / "package.json").read_text())
+    manifest = {"release": release, "version": package["version"], "sourceBaseline": git(["rev-parse", "HEAD"], root, capture=True),
+                "generatedAt": datetime.now(timezone.utc).isoformat(), "files": rows}
+    (root / "SOURCE_MANIFEST.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    return len(rows)
+
 def collisions(root: Path, destination: Path, rows: list[dict[str, str]]) -> list[str]:
     conflicts = []
     for row in rows:
@@ -78,7 +89,11 @@ def main() -> int:
     parser.add_argument("--prepare", action="store_true", help="Clone current main and prepare a new integration branch, without pushing")
     parser.add_argument("--push", action="store_true", help="Prepare, commit and push the new branch. Never merge main")
     parser.add_argument("--directory", type=Path, help="New, empty destination for the staging clone")
+    parser.add_argument("--write-manifest", metavar="RELEASE", help="Regenerate SOURCE_MANIFEST.json from tracked files, naming the release")
     args = parser.parse_args()
+    if args.write_manifest:
+        print(f"Recorded {write_manifest(ROOT, args.write_manifest)} tracked files. Commit the manifest with the release.")
+        return 0
     rows = records(ROOT)
     print(f"Verified {len(rows)} source files against the supplied SHA-256 manifest. This is integrity checking, not a security certificate.")
     if not args.prepare and not args.push:
