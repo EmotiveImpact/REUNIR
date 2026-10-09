@@ -107,6 +107,15 @@ try{
     await check('missing tenant context denies rows on a fresh connection',async()=>{assert.equal((await runtime!.query('SELECT id FROM posts')).rows.length,0);});
     await check('parallel connection-pool reads keep two tenant contexts separate',async()=>{const repo=new WorkspaceRepository(runtime!);const slugs=Array.from({length:20},(_,i)=>i%2?'code-black':'studio-north');const rows=await Promise.all(slugs.map(s=>repo.snapshot(s,DEMO_USER)));rows.forEach((r,i)=>assert.equal(r.organisation.slug,slugs[i]));});
     await check('transaction context is reset before a pooled connection is reused',async()=>{await runtime!.transaction(async tx=>{await setContext(tx,'org_code_black',DEMO_USER);assert((await tx.query('SELECT id FROM posts')).rows.length>0);});assert.equal((await runtime!.query('SELECT id FROM posts')).rows.length,0);});
+    await check('feeds page in SQL under the restricted role, in the same order and with only visible posts',async()=>{
+        const repo=new WorkspaceRepository(runtime!),seen:string[]=[];
+        let page=await repo.page('code-black',DEMO_USER,'posts',{limit:2});const total=page.total;
+        for(;;){seen.push(...page.items.map(p=>p.id));if(!page.nextCursor)break;page=await repo.page('code-black',DEMO_USER,'posts',{limit:2,cursor:page.nextCursor});}
+        const expected=(await admin.query<{id:string}>("SELECT id FROM posts WHERE organization_id='org_code_black' AND space_id<>'space_studio' AND NOT pinned AND (NOT hidden OR author_id=$1) ORDER BY date_trunc('milliseconds',created_at) DESC,id DESC",[DEMO_USER])).rows.map(r=>r.id);
+        assert.deepEqual(seen,expected);assert.equal(total,expected.length);
+        const snapshot=await repo.snapshot('code-black',DEMO_USER);
+        assert.equal(snapshot.summary!.posts,(await admin.query<{n:number}>("SELECT count(*)::int AS n FROM posts WHERE organization_id='org_code_black' AND space_id<>'space_studio' AND NOT hidden")).rows[0].n);
+    });
     await check('owner console runs through the restricted PostgreSQL connection',async()=>{const ops=new PilotOperations(new WorkspaceRepository(runtime!),{NODE_ENV:'test',DATABASE_URL:url.toString()});const status=await ops.snapshot('code-black',DEMO_ADMIN);assert.equal(status.checks.find(x=>x.key==='runtime-role')!.state,'pass');assert.equal(status.community.activeMembers,8);});
     await check('rich lessons publish and restore through a restricted PostgreSQL connection',async()=>{
         const repo=new WorkspaceRepository(runtime!);

@@ -1,8 +1,8 @@
 {
-  "release": "REUNIR Alpha 52 records after the October audit",
+  "release": "REUNIR Alpha 53 feeds paged in SQL",
   "version": "0.39.0-alpha.1",
-  "sourceBaseline": "65479edddd5308485e6e9b6622ba31e854b888b5",
-  "generatedAt": "2026-10-09T06:15:09.304202+00:00",
+  "sourceBaseline": "81d4e1d20775ff54a4b07878d2b462378f7c8706",
+  "generatedAt": "2026-10-09T06:44:06.645522+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "abfaea0d3fc674fd6293ac9c2b84b9278e46b600353b6ffd3ae63b83bc47cf47",
-      "bytes": 63030
+      "sha256": "4c0ef46d280dec2d501477a3a481fcc46b2345ab1f9fe59e57a8393bc011e7ae",
+      "bytes": 64089
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "6fd0a8428c0d4e0e89dd15fa06fb9f2a53aefd0a453153f840c0bb8cb03fd21a",
-      "bytes": 121920
+      "sha256": "6388ce14e3d9befe3ad7b3f8ea8b1d2ce8817ac44153cc6df0dfa523b96a8b28",
+      "bytes": 121975
     },
     {
       "path": "platform/.dockerignore",
@@ -736,8 +736,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "2db1b23fd2f63790b258ee5560cf3f1156c1bee83349d346adfe7931d05cf39f",
-      "bytes": 224257
+      "sha256": "355ab6a69ca2ebc986546f160146dae07cdd12e7497f37ee8a20878c2f7d2122",
+      "bytes": 225666
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -846,8 +846,8 @@
     },
     {
       "path": "platform/docs/ROADMAP.md",
-      "sha256": "80e24f505a728ebc3db26eefa3be3f2281570a176063e4faffd6d907277055bb",
-      "bytes": 17818
+      "sha256": "1c30daec4934da20813c919d47e82b9e26bdc84970d9e96fc4235c5de11ec284",
+      "bytes": 18037
     },
     {
       "path": "platform/docs/SECURITY.md",
@@ -1088,6 +1088,11 @@
       "path": "platform/docs/decisions/051-audit-app-fixes.md",
       "sha256": "c532af8eff406be710e5c05117c4759819e5c3b959d82d89874087a3d4211c7c",
       "bytes": 3329
+    },
+    {
+      "path": "platform/docs/decisions/053-feeds-paged-in-sql.md",
+      "sha256": "f43f368e51678a590ee8566c6a375e18cc1ff86cc83ef69b1d6f8a5405914924",
+      "bytes": 2239
     },
     {
       "path": "platform/docs/history/ALPHA_05_BUILD_STATUS.md",
@@ -1726,8 +1731,8 @@
     },
     {
       "path": "platform/packages/db/src/repository.ts",
-      "sha256": "996ec72ba760f23c0d7b6a743fac036f743e09b9377b80e16fb53499f5e13860",
-      "bytes": 50763
+      "sha256": "71acc1a3baee162c6b007afad792f2afc4d2be51493973454228648b159fe0e8",
+      "bytes": 57566
     },
     {
       "path": "platform/packages/db/src/retention.ts",
@@ -2051,8 +2056,8 @@
     },
     {
       "path": "platform/scripts/postgres-check.ts",
-      "sha256": "a37d8a44dcc0ff5913652150779523cc4e9fa85a10ddb02184c5e0bfa7ad2d5d",
-      "bytes": 58784
+      "sha256": "57cc9d683ccc7cd0a069045daddf29ee1bcbbe31105293b8df26b0ffcc53504c",
+      "bytes": 59894
     },
     {
       "path": "platform/scripts/project-work-browser-check.ts",
@@ -2368,6 +2373,11 @@
       "path": "platform/tests/instructors.test.ts",
       "sha256": "8eaebc54b450f4bfa672594fe04d4d74c77b35829dd974acaccf935094077af8",
       "bytes": 13357
+    },
+    {
+      "path": "platform/tests/large-feed-database.test.ts",
+      "sha256": "2ef50d7ab3d7749988c9b96dc6f785ce2e24e54b3aebe209898399497c7ac20b",
+      "bytes": 8011
     },
     {
       "path": "platform/tests/launch-preflight.test.ts",

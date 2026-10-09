@@ -6,9 +6,22 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 Nothing in this list has been deployed. Deployment remains deferred by the owner.
 
+## Alpha 53: conversations without a ceiling (no version change), 9 October 2026
+
+On a pull request from `claude/full-audit-yhvssj`. Decision 053; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** a community can now hold as many posts, replies and appreciations as it likes. Before, it stopped opening at 5,000 of any of them. Feeds load from the database a page at a time, and old posts can still be replied to, appreciated, saved, reported and moderated.
+
+Details:
+
+- A workspace read carries the newest 300 posts, pinned posts, the person's own hidden posts and any post a collection, appeal, report, command or link names, with their replies, appreciations and bookmarks.
+- `GET /pages/posts` is cut in SQL with the same visibility rules and keyset as before; the snapshot's post count is a SQL count.
+- Account deletion reads the person's own appreciations and bookmarks on every post.
+- New `tests/large-feed-database.test.ts` (6,000 posts and 6,000 replies under the runtime role) and a Postgres check that the SQL feed matches the visibility rules.
+
 ## Alpha 52: records brought up to date (no version change), 9 October 2026
 
-On a pull request from `claude/full-audit-yhvssj`. No decision record or migration. The version stays 0.39.0-alpha.1.
+PR #42, merged as `fa3013a`. No decision record or migration. The version stays 0.39.0-alpha.1.
 
 **In plain language:** nothing changes in the app. The project's own records now match what is really on main: which pull request carried each release, how many database changes there are, and what comes next.
 

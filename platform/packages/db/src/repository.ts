@@ -1,8 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { applyCommand, visibleWorkspace, visibleRecords, actorFor, isAdmin } from '../../domain/src/engine';
+import { applyCommand, visibleWorkspace, visibleRecords, actorFor, isAdmin, isModerator } from '../../domain/src/engine';
 import { itemOf, pageOf } from '../../domain/src/pages';
 import { cursorFor, pageQuery, readCursor, type ItemList, type Page, type PageItem, type PagedItems, type PagedList, type PageQuery } from '../../contracts/src/pages';
-import { DomainError, commandSchema, type Workspace, type TenantContext, type MutationResult } from '../../contracts/src/index';
+import { DomainError, commandSchema, type Bookmark, type Comment, type Post, type Reaction, type Workspace, type TenantContext, type MutationResult } from '../../contracts/src/index';
 import type { ResourceRef, ResourceUploadRequest } from '../../contracts/src/lesson-resources';
 import { beginResourceUpload, completeResourceUpload, discardResourceUpload, resolveResourceDownload, type StoredObservation } from '../../domain/src/resources';
 import { releasedCoverKeys, beginCoverLibraryUpload, beginCoverUpload, completeCoverUpload, removeCoverLibraryItem, resolveCoverImage, resolveLibraryPicture, servedObject, staleCoverUploads, updateCoverLibraryItem, type CoverObservation } from '../../domain/src/covers';
@@ -67,35 +67,82 @@ async function putRow(sql: SQL, spec: TableSpec, row: Record<string, unknown>, e
 /** Audit entries a workspace read carries. The full trail is read a page at a time (`auditPage`). */
 const AUDIT_READ = 100;
 /**
- * The community's records for the domain rules. Write-only and personal histories are not read in full: the outbox not at
- * all, the audit trail only its newest entries, and, when `forUser` is given, only that person's own notices. Rules only
- * add to those collections, and `saveChanges` writes differences, so what is not read is never touched.
+ * Newest posts a workspace read carries, before visibility rules. The snapshot shows the newest `POST_WINDOW` a person may
+ * see from these; feeds page through every post in SQL (`postsPage`), so the number of posts in a community has no ceiling.
  */
-async function readAll(sql: SQL, organisation: Record<string, unknown>, forUser?: string, only?: readonly CollectionKey[]): Promise<Workspace> {
+const POST_READ = 300;
+const POST_TABLES: readonly CollectionKey[] = ['posts', 'comments', 'reactions', 'bookmarks'];
+/** Which posts beyond the newest a read must also carry: those a command or link names, and one person's own reactions and bookmarks (for account deletion). */
+type PostScope = { postIds?: readonly string[]; personalOf?: string };
+/** The post a command names, if any, so the rules can find it whatever its age. */
+const commandPost = (command: unknown) => {
+    const c = command as { postId?: unknown; kind?: unknown; targetId?: unknown };
+    const id = typeof c.postId === 'string' ? c.postId : c.kind === 'post' && typeof c.targetId === 'string' ? c.targetId : null;
+    return id ? [id] : [];
+};
+/**
+ * The community's records for the domain rules. Write-only and personal histories are not read in full: the outbox not at
+ * all, the audit trail only its newest entries, and, when `forUser` is given, only that person's own notices. Posts are
+ * read as a window: the newest, every pinned post, the person's own hidden posts, any post a collection, appeal or report
+ * names and any in `posts.postIds`, with the replies, appreciations and bookmarks on those posts. Rules only add to the
+ * shortened collections or change rows they were given, and `saveChanges` writes differences, so what is not read is never
+ * touched.
+ */
+async function readAll(sql: SQL, organisation: Record<string, unknown>, forUser?: string, only?: readonly CollectionKey[], posts: PostScope = {}): Promise<Workspace> {
     const state = { organisation: { id: organisation.id, slug: organisation.slug, name: organisation.name, tagline: organisation.tagline, accent: organisation.accent, createdAt: organisation.created_at instanceof Date ? organisation.created_at.toISOString() : organisation.created_at }, revision: organisation.revision } as Workspace;
+    const records = state as unknown as Record<string, unknown>;
     let total = 0;
-    for (const spec of tables) {
-        if (spec.key === 'outbox' || (only && !only.includes(spec.key))) { (state as unknown as Record<string, unknown>)[spec.key] = []; continue; }
-        const columns = spec.fields.map(f => f.column).join(','), where = `organization_id=$1${spec.where ? ' AND ' + spec.where : ''}`;
-        if (spec.key === 'audit') {
-            const recent = await sql.query(`SELECT ${columns} FROM audit WHERE ${where} ORDER BY created_at DESC,id DESC LIMIT $2`, [organisation.id, AUDIT_READ]);
-            state.audit = recent.rows.reverse().map(r => decode(r, spec)) as unknown as Workspace['audit'];
-            continue;
-        }
-        const mine = spec.key === 'notifications' && forUser;
-        const rows = await sql.query(`SELECT ${columns} FROM ${spec.table} WHERE ${where}${mine ? ' AND user_id=$3' : ''} ORDER BY created_at,id LIMIT $2`, mine ? [organisation.id, limitPerTable + 1, forUser] : [organisation.id, limitPerTable + 1]);
+    const take = async (spec: TableSpec, filter = '', params: unknown[] = []) => {
+        const where = `organization_id=$1${spec.where ? ' AND ' + spec.where : ''}${filter ? ' AND ' + filter : ''}`;
+        const rows = await sql.query(`SELECT ${spec.fields.map(f => f.column).join(',')} FROM ${spec.table} WHERE ${where} ORDER BY created_at,id LIMIT $2`, [organisation.id, limitPerTable + 1, ...params]);
         total += rows.rows.length;
         if (rows.rows.length > limitPerTable || total > 20000)
             throw new DomainError('WORKSPACE_LIMIT', 'This community needs the paginated workspace release before it can grow further.', 503);
-        (state as unknown as Record<string, unknown>)[spec.key] = rows.rows.map(r => decode(r, spec));
+        records[spec.key] = rows.rows.map(r => decode(r, spec));
+    };
+    for (const spec of tables) {
+        if (spec.key === 'outbox' || (only && !only.includes(spec.key))) { records[spec.key] = []; continue; }
+        if (POST_TABLES.includes(spec.key)) continue;
+        if (spec.key === 'audit') {
+            const recent = await sql.query(`SELECT ${spec.fields.map(f => f.column).join(',')} FROM audit WHERE organization_id=$1 ORDER BY created_at DESC,id DESC LIMIT $2`, [organisation.id, AUDIT_READ]);
+            state.audit = recent.rows.reverse().map(r => decode(r, spec)) as unknown as Workspace['audit'];
+            continue;
+        }
+        await (spec.key === 'notifications' && forUser ? take(spec, 'user_id=$3', [forUser]) : take(spec));
+    }
+    if (POST_TABLES.some(k => !only || only.includes(k))) {
+        const named = new Set(posts.postIds ?? []);
+        for (const i of state.collectionItems ?? []) if (i.postId) named.add(i.postId);
+        for (const a of state.moderationAppeals ?? []) named.add(a.subjectId);
+        for (const r of state.reports ?? []) named.add(r.postId);
+        const spec = (key: CollectionKey) => tables.find(t => t.key === key)!;
+        await take(spec('posts'), `(id IN (SELECT id FROM posts WHERE organization_id=$1 ORDER BY created_at DESC,id DESC LIMIT $3) OR pinned OR (hidden AND author_id=$4) OR id = ANY($5::text[]))`, [POST_READ, forUser ?? '', [...named]]);
+        const ids = state.posts.map(p => p.id), mine = posts.personalOf;
+        await take(spec('comments'), 'post_id = ANY($3::text[])', [ids]);
+        for (const key of ['reactions', 'bookmarks'] as const)
+            await (mine ? take(spec(key), '(post_id = ANY($3::text[]) OR user_id=$4)', [ids, mine]) : take(spec(key), 'post_id = ANY($3::text[])', [ids]));
     }
     return state;
 }
-/** The browser's view. Administrators see the audit trail's true length, which a workspace read does not hold. */
+/** Visible spaces and whether the person moderates: what decides which posts they may see. */
+function postAccess(state: Workspace, ctx: TenantContext) {
+    const actor = actorFor(state, ctx);
+    return { spaces: visibleRecords({ ...state, posts: [], comments: [], reactions: [], bookmarks: [] }, ctx).spaces.map(s => s.id), moderator: isModerator(actor) };
+}
+/** The SQL condition for posts this person may see, from parameter `$first` on. */
+function visiblePosts(access: ReturnType<typeof postAccess>, userId: string, first: number) {
+    return { where: `space_id = ANY($${first}::text[]) AND (NOT hidden OR $${first + 1}::boolean OR author_id=$${first + 2})`, params: [access.spaces, access.moderator, userId] };
+}
+/**
+ * The browser's view. Administrators see the audit trail's true length, which a workspace read does not hold, and everyone
+ * sees the true number of posts they may read, which a post window does not hold either.
+ */
 async function view(sql: SQL, state: Workspace, ctx: TenantContext): Promise<Workspace> {
     const actor = state.members.find(m => m.userId === ctx.userId && m.organizationId === ctx.organizationId);
     const auditTotal = actor && isAdmin(actor) ? (await sql.query<{ n: number }>('SELECT count(*)::int AS n FROM audit WHERE organization_id=$1', [ctx.organizationId])).rows[0].n : undefined;
-    return visibleWorkspace(state, ctx, auditTotal);
+    const shown = visibleWorkspace(state, ctx, auditTotal);
+    if (shown.summary) shown.summary.posts = (await sql.query<{ n: number }>('SELECT count(*)::int AS n FROM posts WHERE organization_id=$1 AND NOT hidden AND space_id = ANY($2::text[])', [ctx.organizationId, shown.spaces.map(s => s.id)])).rows[0].n;
+    return shown;
 }
 async function saveChanges(sql: SQL, before: Workspace, after: Workspace) {
     // Delete children before parents. Insert parents before children. Only actual diffs are written.
@@ -112,6 +159,37 @@ async function saveChanges(sql: SQL, before: Workspace, after: Workspace) {
                 await putRow(sql, spec, row as unknown as Record<string, unknown>, old.has(row.id));
     }
     await sql.query('UPDATE organisations SET name=$2,tagline=$3,accent=$4,revision=$5 WHERE id=$1', [after.organisation.id, after.organisation.name, after.organisation.tagline, after.organisation.accent, after.revision]);
+}
+/**
+ * One page of a feed, cut in SQL: visible posts that are not pinned, newest first, continuing strictly after the cursor,
+ * with the replies, appreciations and this person's bookmarks on them. Matches `pageOf` over every post, without reading
+ * every post.
+ */
+async function postsPage(sql: SQL, org: Record<string, unknown>, ctx: TenantContext, query: ReturnType<typeof pageQuery.parse>): Promise<Page<Post>> {
+    const after = query.cursor ? readCursor(query.cursor) : null;
+    if (query.cursor && !after) throw new DomainError('INVALID_CURSOR', 'That page is not available. Reload the list.', 400);
+    const state = await readAll(sql, org, ctx.userId, ['members', 'spaces', 'spaceMembers']);
+    const seen = visiblePosts(postAccess(state, ctx), ctx.userId, 2);
+    const filters = [seen.where, 'NOT pinned'], params: unknown[] = [ctx.organizationId, ...seen.params];
+    const add = (condition: (n: number) => string, value: unknown) => { params.push(value); filters.push(condition(params.length)); };
+    if (query.space) add(n => `space_id=$${n}`, query.space);
+    if (query.kind) add(n => `kind=$${n}`, query.kind);
+    if (query.saved) add(n => `id IN (SELECT post_id FROM bookmarks WHERE organization_id=$1 AND user_id=$${n})`, ctx.userId);
+    const total = (await sql.query<{ n: number }>(`SELECT count(*)::int AS n FROM posts WHERE organization_id=$1 AND ${filters.join(' AND ')}`, params)).rows[0].n;
+    // Positions compare at millisecond precision, the precision a cursor carries.
+    const ms = "date_trunc('milliseconds',created_at)", spec = tables.find(t => t.key === 'posts')!;
+    if (after) { params.push(after.createdAt, after.id); filters.push(`(${ms},id)<($${params.length - 1}::timestamptz,$${params.length})`); }
+    params.push(query.limit + 1);
+    const rows = (await sql.query(`SELECT ${spec.fields.map(f => f.column).join(',')} FROM posts WHERE organization_id=$1 AND ${filters.join(' AND ')} ORDER BY ${ms} DESC,id DESC LIMIT $${params.length}`, params)).rows.map(r => decode(r, spec)) as unknown as Post[];
+    const items = rows.slice(0, query.limit), ids = items.map(p => p.id);
+    const records = async (key: CollectionKey, extra = '', more: unknown[] = []) => {
+        const s = tables.find(t => t.key === key)!;
+        return (await sql.query(`SELECT ${s.fields.map(f => f.column).join(',')} FROM ${s.table} WHERE organization_id=$1 AND post_id = ANY($2::text[])${extra} ORDER BY created_at,id`, [ctx.organizationId, ids, ...more])).rows.map(r => decode(r, s));
+    };
+    return {
+        items, total, nextCursor: rows.length > query.limit ? cursorFor(items[items.length - 1]) : null,
+        records: { comments: await records('comments') as unknown as Comment[], reactions: await records('reactions') as unknown as Reaction[], bookmarks: await records('bookmarks', ' AND user_id=$3', [ctx.userId]) as unknown as Bookmark[] },
+    };
 }
 export class WorkspaceRepository {
     constructor(readonly db: Database) { }
@@ -156,7 +234,7 @@ export class WorkspaceRepository {
         const digest = createHash('sha256').update(JSON.stringify(command)).digest('hex');
         return this.within(slug, userId, true, async (sql, org) => {
             const orgId = String(org.id), ctx = context(orgId, userId, requestId);
-            const before = await readAll(sql, org, userId);
+            const before = await readAll(sql, org, userId, undefined, { postIds: commandPost(command) });
             actorFor(before, ctx);
             const old = await sql.query<{
                 body_hash: string;
@@ -436,7 +514,7 @@ export class WorkspaceRepository {
                 await setContext(sql, orgId, userId);
                 const org = (await sql.query('SELECT * FROM organisations WHERE id=$1 FOR UPDATE', [orgId])).rows[0];
                 if (!org) throw new Error('A community could not be locked for account deletion, so nothing was changed.');
-                const before = await readAll(sql, org);
+                const before = await readAll(sql, org, undefined, undefined, { personalOf: userId });
                 const erasure = eraseFromCommunity(before, userId, now, randomUUID), after = erasure.workspace;
                 // 1. While the membership is still current: notices lose the name, and claimed tasks without proof go back to
                 // their teams. The tasks are released directly, so this works where the person was suspended too (0018).
@@ -509,13 +587,14 @@ export class WorkspaceRepository {
         });
     }
     /**
-     * One page of a long list, read inside the person's own tenant transaction. The audit trail is paged in SQL by its
-     * index; the other lists apply the same visibility rules as the workspace snapshot before cutting the page.
+     * One page of a long list, read inside the person's own tenant transaction. The audit trail and feeds are paged in SQL
+     * by their indexes; the other lists apply the same visibility rules as the workspace snapshot before cutting the page.
      */
     async page<L extends PagedList>(slug: string, userId: string, list: L, raw: PageQuery = {}): Promise<Page<PagedItems[L]>> {
         const query = pageQuery.parse(raw);
         return this.within(slug, userId, false, async (sql, org) => {
             const ctx = context(String(org.id), userId);
+            if (list === 'posts') return await postsPage(sql, org, ctx, query) as Page<PagedItems[L]>;
             if (list !== 'audit') return pageOf(visibleRecords(await readAll(sql, org, userId), ctx), ctx, list, query);
             const admin = await sql.query("SELECT 1 FROM members WHERE organization_id=$1 AND user_id=$2 AND status='active' AND role IN ('owner','admin')", [ctx.organizationId, userId]);
             if (!admin.rows[0]) throw new DomainError('FORBIDDEN', 'An administrator is required.', 403);
@@ -533,7 +612,7 @@ export class WorkspaceRepository {
     async item<L extends ItemList>(slug: string, userId: string, list: L, itemId: string): Promise<PageItem<PagedItems[L]>> {
         return this.within(slug, userId, false, async (sql, org) => {
             const ctx = context(String(org.id), userId);
-            return itemOf(visibleRecords(await readAll(sql, org, userId), ctx), ctx, list, itemId);
+            return itemOf(visibleRecords(await readAll(sql, org, userId, undefined, list === 'posts' ? { postIds: [itemId] } : {}), ctx), ctx, list, itemId);
         });
     }
     /** The acting member's own learning record, read inside their own tenant transaction. */
