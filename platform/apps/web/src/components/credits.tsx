@@ -57,7 +57,7 @@ function CreditDialog({ contribution: c, onClose }: { contribution: Contribution
     const select = useId(), intro = useId();
     const credits = (data.contributionCredits ?? []).filter(k => k.contributionId === c.id);
     // Active teammates on this project, other than the author, without a live credit and who have not said no.
-    const team = new Set(data.projectMembers.filter(x => x.projectId === c.projectId).map(x => x.userId));
+    const team = new Set(data.projectMembers.filter(x => x.projectId === c.projectId && !x.leftAt).map(x => x.userId));
     const closed = new Set(credits.filter(k => k.status === 'invited' || k.status === 'accepted' || k.status === 'declined' || (k.status === 'withdrawn' && k.withdrawnBy === k.userId)).map(k => k.userId));
     const candidates = data.members.filter(m => m.status === 'active' && team.has(m.userId) && m.userId !== c.userId && !closed.has(m.userId)).sort((a, b) => a.name.localeCompare(b.name));
     const send = async () => {

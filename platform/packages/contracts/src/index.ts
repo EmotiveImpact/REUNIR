@@ -224,6 +224,10 @@ export interface Project extends TenantRecord {
 export interface ProjectMember extends TenantRecord {
     projectId: Id;
     userId: Id;
+    /** Alpha 54: when this person left the team or was removed. The row stays, because their work names it. */
+    leftAt?: string | null;
+    /** Who removed them, when it was not their own choice. Only the lead or an administrator lets them back. */
+    removedBy?: string | null;
 }
 export interface ProjectUpdate extends TenantRecord {
     projectId: Id;
@@ -535,6 +539,9 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('mission.submit'), missionId: id, body: text(10000), url: link.default('') }).strict(),
     z.object({ type: z.literal('submission.review'), submissionId: id, decision: z.enum(['approved', 'changes_requested']), feedback: text(4000) }).strict(),
     z.object({ type: z.literal('project.join'), projectId: id }).strict(),
+    z.object({ type: z.literal('project.leave'), projectId: id }).strict(),
+    z.object({ type: z.literal('project.member.remove'), projectId: id, userId: id }).strict(),
+    z.object({ type: z.literal('project.member.restore'), projectId: id, userId: id }).strict(),
     z.object({ type: z.literal('project.create'), title: text(100), tagline: text(180), summary: text(8000), category: text(40), skills: z.array(text(40)).max(8), spaceId: optionalSpace.default(null), purposeId: optionalSpace.default(null) }).strict(),
     z.object({ type: z.literal('project.update'), projectId: id, body: text(5000) }).strict(),
     z.object({ type: z.literal('event.rsvp'), eventId: id }).strict(),

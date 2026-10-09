@@ -1,6 +1,6 @@
 import { DomainError, type Command, type Contribution, type ContributionCredit, type Member, type TenantContext, type Workspace } from '../../contracts/src/index';
 import { CREDIT_HISTORY_LIMIT, CREDIT_LIMIT, LIVE_CREDIT, withNames } from '../../contracts/src/credits';
-import { actorFor, canSeeSpace, isFormer } from './access';
+import { actorFor, canSeeSpace, isFormer, onTeam } from './access';
 import { canWorkOnProject } from './project-work';
 
 /**
@@ -70,7 +70,7 @@ export function applyCredits(s: Workspace, ctx: TenantContext, cmd: Command, now
             if (!canWorkOnProject(s, actor, p)) fail('JOIN_PROJECT', 'Join this project before crediting others on its work.', 403);
             if (cmd.userId === ctx.userId) fail('SELF_CREDIT', 'This is already your contribution.');
             const target = s.members.find(m => m.organizationId === ctx.organizationId && m.userId === cmd.userId && m.status === 'active');
-            if (!target || !canSeeSpace(s, target, p.spaceId) || !s.projectMembers.some(x => x.organizationId === ctx.organizationId && x.projectId === p.id && x.userId === cmd.userId))
+            if (!target || !canSeeSpace(s, target, p.spaceId) || !onTeam(s, ctx.organizationId, p.id, cmd.userId))
                 fail('INVALID_CREDIT', 'Choose an active member of this project’s team.');
             if (hasReviewed(s, c, cmd.userId)) fail('REVIEWER_NOT_CREDITED', `${target!.name} reviewed this contribution, so they cannot also be credited on it.`);
             const history = s.contributionCredits.filter(k => k.organizationId === ctx.organizationId && k.contributionId === c.id);

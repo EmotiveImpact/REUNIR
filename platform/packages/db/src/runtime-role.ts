@@ -40,4 +40,7 @@ export async function grantRuntimeTables(sql: SQL): Promise<void> {
     await sql.query(`GRANT UPDATE (title,description,status,featured,updated_by,updated_at,published_at) ON collections TO ${role}`);
     await sql.query(`GRANT UPDATE (position,note) ON collection_items TO ${role}`);
     await sql.query(`GRANT UPDATE (label,tags) ON cover_library TO ${role}`);
+    // A project team membership only ends or resumes; who and which project never change (migration 0048).
+    await sql.query(`REVOKE UPDATE ON project_members FROM ${role}`);
+    await sql.query(`GRANT UPDATE (left_at,removed_by) ON project_members TO ${role}`);
 }

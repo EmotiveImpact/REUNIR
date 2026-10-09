@@ -24,7 +24,7 @@ Demo mode needs no credentials and uses fictional browser-local data. Do not ent
 
 React/Vite, Hono, Better Auth and PostgreSQL remain the chosen stack. The approved design uses actual shadcn/Radix components, consistent Lucide icons, two-level navigation, one top-right account menu and natural portraits within neutral interface chrome. Preserve [UI_DESIGN_DIRECTION.md](platform/docs/UI_DESIGN_DIRECTION.md).
 
-The 34 additive migrations in `platform/packages/db/migrations` preserve the community, purpose and progress, messaging, operational, project-work, authoring, lesson, assessment, cover, account, appeal, credit and scanning models. Tenant isolation, private goals/messages, draft publication and reviewed evidence remain product invariants.
+The 35 additive migrations in `platform/packages/db/migrations` preserve the community, purpose and progress, messaging, operational, project-work, authoring, lesson, assessment, cover, account, appeal, credit, scanning and project-team models. Tenant isolation, private goals/messages, draft publication and reviewed evidence remain product invariants.
 
 ## Verification and release
 

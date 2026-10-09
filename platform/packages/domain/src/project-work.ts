@@ -1,5 +1,5 @@
 import { DomainError, type Workspace, type Member, type ProjectTask, type Project, type Command, type TenantContext } from '../../contracts/src/index';
-import { actorFor, canSeeSpace, isAdmin, isFormer } from './access';
+import { actorFor, canSeeSpace, isAdmin, isFormer, onTeam } from './access';
 import { applyPurposeCommand } from './purpose';
 
 export type TaskStage = 'todo' | 'doing' | 'review' | 'done';
@@ -9,7 +9,7 @@ export const TASK_STAGES: {id:TaskStage;label:string}[] = [
 ];
 export function canWorkOnProject(s:Workspace,m:Member,p:Project):boolean {
     return m.status==='active' && m.organizationId===p.organizationId && canSeeSpace(s,m,p.spaceId)
-        && (isAdmin(m) || p.ownerId===m.userId || s.projectMembers.some(x=>x.projectId===p.id&&x.userId===m.userId&&x.organizationId===p.organizationId));
+        && (isAdmin(m) || p.ownerId===m.userId || onTeam(s,p.organizationId,p.id,m.userId));
 }
 export function taskStage(s:Workspace,t:ProjectTask):TaskStage {
     const c=t.contributionId?s.contributions.find(x=>x.id===t.contributionId&&x.projectId===t.projectId&&x.organizationId===t.organizationId):null;
@@ -35,7 +35,7 @@ export function applyProjectWork(s:Workspace,ctx:TenantContext,cmd:Command,now:s
     const project=(id:string)=>{const p=s.projects.find(x=>x.id===id&&x.organizationId===ctx.organizationId);if(!p||!canWorkOnProject(s,actor,p))return missing();return p;};
     const lead=(p:Project)=>{if(p.ownerId!==ctx.userId&&!isAdmin(actor))fail('PROJECT_LEAD_REQUIRED','The project lead or a community administrator plans this work.',403);};
     const assignee=(p:Project,userId:string|null)=>{if(userId===null)return;const m=s.members.find(x=>x.organizationId===ctx.organizationId&&x.userId===userId&&x.status==='active');
-        if(!m||!canSeeSpace(s,m,p.spaceId)||!s.projectMembers.some(x=>x.organizationId===ctx.organizationId&&x.projectId===p.id&&x.userId===userId))fail('INVALID_ASSIGNEE','Choose an active, authorised member of this project.');};
+        if(!m||!canSeeSpace(s,m,p.spaceId)||!onTeam(s,ctx.organizationId,p.id,userId))fail('INVALID_ASSIGNEE','Choose an active, authorised member of this project.');};
     const task=(id:string)=>{const t=s.projectTasks.find(x=>x.id===id&&x.organizationId===ctx.organizationId);if(!t)return missing();project(t.projectId);return t;};
     const current=(t:ProjectTask,version:number)=>{if(t.version!==version)fail('STALE_TASK','Someone else changed this task. Reload it to see the latest version, then try again.');};
     const open=(t:ProjectTask)=>{if(t.archived)fail('TASK_ARCHIVED','Restore this task before changing it.');};

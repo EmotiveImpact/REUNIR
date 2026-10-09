@@ -1,6 +1,7 @@
 import { commandSchema, DomainError, newId, type Command, type Workspace, type TenantContext, type TenantRecord, type Member, type MutationResult } from '../../contracts/src/index';
-import { isAdmin, isModerator, actorFor, canSeeSpace, isFormer, formerMember } from './access';
-export { isAdmin, isModerator, actorFor, canSeeSpace, isFormer } from './access';
+import { isAdmin, isModerator, actorFor, canSeeSpace, isFormer, formerMember, onTeam } from './access';
+import { applyProjectTeam } from './project-team';
+export { isAdmin, isModerator, actorFor, canSeeSpace, isFormer, onTeam } from './access';
 import { applyProjectWork, filterProjectWork } from './project-work';
 import { applyAuthoring, filterAuthoring } from './authoring';
 import { normalisePurposeState, filterPurposeWorkspace, applyPurposeCommand } from './purpose';
@@ -47,7 +48,8 @@ export function visibleRecords(state: Workspace, ctx: TenantContext): Workspace 
     s.submissions = s.submissions.filter(x => missions.has(x.missionId) && (x.authorId === ctx.userId || isAdmin(actor) || x.status === 'approved'));
     s.projects = s.projects.filter(x => !x.spaceId || spaces.has(x.spaceId));
     const projects = new Set(s.projects.map(x => x.id));
-    s.projectMembers = s.projectMembers.filter(x => projects.has(x.projectId));
+    // A membership that ended is gone from view, except that a project's lead and administrators see whom they removed, to let them back.
+    s.projectMembers = s.projectMembers.filter(x => projects.has(x.projectId) && (!x.leftAt || (!!x.removedBy && (isAdmin(actor) || s.projects.some(p => p.id === x.projectId && p.ownerId === ctx.userId)))));
     s.projectUpdates = s.projectUpdates.filter(x => projects.has(x.projectId));
     s.events = s.events.filter(x => !x.spaceId || spaces.has(x.spaceId));
     const events = new Set(s.events.map(x => x.id));
@@ -113,7 +115,7 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
     let objectId: string | undefined;
     let changed = true;
     const noticesBefore = new Set(s.notifications.map(n => n.id));
-    const purposeResult = applyNotificationSettings(s, ctx, cmd, now, makeId) ?? applyAuthoring(s, ctx, cmd, now, makeId) ?? applyAssessment(s, ctx, cmd, now, makeId) ?? applyProjectWork(s, ctx, cmd, now, makeId) ?? applyCovers(s, ctx, cmd, now, makeId) ?? applyInstructors(s, ctx, cmd, now, makeId) ?? applyAppeals(s, ctx, cmd, now, makeId) ?? applyCollections(s, ctx, cmd, now, makeId) ?? applyPurposeCommand(s, ctx, cmd, now, makeId) ?? applyEvidenceHistory(s, ctx, cmd, now, makeId) ?? applyCredits(s, ctx, cmd, now, makeId);
+    const purposeResult = applyNotificationSettings(s, ctx, cmd, now, makeId) ?? applyAuthoring(s, ctx, cmd, now, makeId) ?? applyAssessment(s, ctx, cmd, now, makeId) ?? applyProjectWork(s, ctx, cmd, now, makeId) ?? applyCovers(s, ctx, cmd, now, makeId) ?? applyInstructors(s, ctx, cmd, now, makeId) ?? applyAppeals(s, ctx, cmd, now, makeId) ?? applyCollections(s, ctx, cmd, now, makeId) ?? applyPurposeCommand(s, ctx, cmd, now, makeId) ?? applyEvidenceHistory(s, ctx, cmd, now, makeId) ?? applyCredits(s, ctx, cmd, now, makeId) ?? applyProjectTeam(s, ctx, cmd, now, makeId);
     if (purposeResult) {
         message = purposeResult.message;
         objectId = purposeResult.objectId;
@@ -303,20 +305,6 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
             message = cmd.decision === 'approved' ? 'Proof approved. Building points awarded once.' : 'Feedback sent for another iteration.';
             break;
         }
-        case 'project.join': {
-            const p = project(cmd.projectId);
-            if (s.projectMembers.some(x => x.projectId === p.id && x.userId === ctx.userId)) {
-                changed = false;
-                message = 'You are already on the team.';
-            }
-            else {
-                s.projectMembers.push({ ...base(), projectId: p.id, userId: ctx.userId });
-                notify(p.ownerId, 'Your team is growing', `${actor.name} joined ${p.title}.`, `/projects/${p.id}`);
-                message = 'You are part of the team.';
-            }
-            objectId = p.id;
-            break;
-        }
         case 'project.create': {
             scope(cmd.spaceId);
             if (cmd.purposeId && !s.purposes.some(p => p.id === cmd.purposeId && p.organizationId === ctx.organizationId && p.status === 'active')) fail();
@@ -329,7 +317,7 @@ export function applyCommand(input: Workspace, ctx: TenantContext, raw: unknown,
         }
         case 'project.update': {
             const p = project(cmd.projectId);
-            if (!isAdmin(actor) && !s.projectMembers.some(x => x.projectId === p.id && x.userId === ctx.userId))
+            if (!isAdmin(actor) && !onTeam(s, ctx.organizationId, p.id, ctx.userId))
                 throw new DomainError('JOIN_PROJECT', 'Join the project before publishing an update.', 403);
             s.projectUpdates.push({ ...base(), projectId: p.id, authorId: ctx.userId, body: cmd.body });
             objectId = p.id;

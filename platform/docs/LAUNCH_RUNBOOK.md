@@ -42,7 +42,7 @@ Detail: SETUP.md section 3.
 
 ## 3. Migrations and the restricted runtime role
 
-There are 34 ordered migrations on main at 0.39.0-alpha.1 (9 October 2026), `0001_foundation.sql` to `0040_background_scanning.sql`, in `packages/db/migrations/`. Numbers 0024 to 0027, 0037 and 0039 were reserved for parallel work and never used, so those gaps are expected and are not missing files. Later releases add more: the expected count is always the number of `.sql` files in that folder for the commit being deployed. They are additive, checksummed and serialised by an advisory lock. Migrations never run on a cold start.
+There are 35 ordered migrations from Alpha 54 (9 October 2026), `0001_foundation.sql` to `0048_project_team_leaving.sql`, in `packages/db/migrations/`. Numbers 0024 to 0027, 0037, 0039 and 0041 to 0047 were reserved for parallel work and never used, so those gaps are expected and are not missing files. Later releases add more: the expected count is always the number of `.sql` files in that folder for the commit being deployed. They are additive, checksummed and serialised by an advisory lock. Migrations never run on a cold start.
 
 With only `MIGRATION_DATABASE_URL` set in the local shell (leave `DATABASE_URL` unset so nothing falls back to it):
 

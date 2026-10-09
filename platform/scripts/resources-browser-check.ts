@@ -50,7 +50,7 @@ try {
     });
     await check('unsupported and disguised files are refused without changing the draft', async () => {
         await choose('Add file', { name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('plain text') });
-        await expect(page.locator('.toast')).toContainText('Use a PDF, Word, PowerPoint, Excel, JPEG, PNG, WebP, MP4 or WebM file.');
+        await expect(page.locator('.toast')).toContainText('Use a PDF, Word, PowerPoint, Excel, JPEG, PNG, WebP, MP4, WebM or WebVTT captions file.');
         await choose('Add file', { name: 'worksheet.pdf', mimeType: 'application/pdf', buffer: Buffer.from('<html><script>alert(1)</script></html>') });
         await expect(page.locator('.toast')).toContainText('does not match its type');
         await expect(rows()).toHaveCount(1); await expect(editor().getByRole('button', { name: 'Save draft', exact: true })).toBeDisabled();
@@ -150,7 +150,7 @@ try {
     await check('an uploaded lesson video is published and plays at the top of the lesson for learners', async () => {
         await studio();
         await expect(editor().locator('.resource-editor-head p')).toContainText('MP4 or WebM video up to 500 MB');
-        await choose('Add file', { name: 'Welcome clip.webm', mimeType: 'video/webm', buffer: await readFile(root + '/scripts/fixtures/lesson-clip.webm') });
+        await choose('Add file', { name: 'Welcome clip.webm', mimeType: 'video/webm', buffer: await readFile(root + '/scripts/fixtures/lesson-long.webm') });
         await expect(rows().last()).toContainText('WebM video'); await expect(rows().last()).toContainText('New');
         await save(); await publish();
         await role('member'); await lesson();
@@ -167,6 +167,25 @@ try {
         await overflow(); await a11y('learner-video'); await page.screenshot({ path: dir + '/learner-video.png', fullPage: true, animations: 'disabled' });
         const got = await fetchFile(clip.getByRole('button', { name: 'Download Welcome clip', exact: true }));
         expect(got.name).toBe('Welcome clip.webm');
+    });
+    await check('captions show as a track on the lesson video, and a browser that refuses storage still plays it', async () => {
+        await role('admin'); await studio();
+        await choose('Add file', { name: 'Welcome clip.vtt', mimeType: 'text/vtt', buffer: Buffer.from('WEBVTT\n\n00:00:00.000 --> 00:00:05.000\nWelcome to the lesson.\n') });
+        await expect(rows().last()).toContainText('Captions (WebVTT)');
+        await save(); await publish();
+        await role('member'); await lesson();
+        const clip = page.locator('.lesson-content .lesson-stage');
+        await expect(clip).toContainText('Captions available');
+        await clip.getByRole('button', { name: 'Play Welcome clip', exact: true }).click();
+        const video = clip.locator('video');
+        await expect(video.locator('track[kind="captions"]')).toHaveAttribute('label', 'Welcome clip');
+        await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.textTracks.length)).toBe(1);
+        // This preview runs in a blank document, where the browser refuses local storage: the video still plays from the
+        // start and nothing breaks. Remembering the place is covered by tests/video-position.test.ts.
+        await video.evaluate((v: HTMLVideoElement) => { v.pause(); v.currentTime = 20; v.dispatchEvent(new Event('pause')); });
+        await lesson(); await clip.getByRole('button', { name: 'Play Welcome clip', exact: true }).click();
+        await expect(clip.locator('video')).toBeVisible(); await expect(clip.locator('.lesson-resume')).toHaveCount(0);
+        await a11y('learner-video-captions');
     });
     await check('the second community does not inherit files from the first', async () => {
         await page.getByRole('button', { name: 'Open Studio North demo community' }).click(); await lesson();

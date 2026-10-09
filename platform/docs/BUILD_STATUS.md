@@ -1,4 +1,38 @@
-# Alpha 53 feeds paged in SQL, so posts have no ceiling
+# Alpha 54 leaving project teams, lesson captions and video resume
+
+9 October 2026. Version stays 0.39.0-alpha.1. Decision 054; migration 0048 (additive). Migrations 0049 to 0052 and Alpha numbers above 54 in this block are unused.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/full-audit-yhvssj` |
+| Verified locally | Yes: see below |
+| Merged | Not yet |
+| Deployed | No |
+
+## What changed
+
+See decision 054.
+
+- Project teams: members can leave a team; the project lead or an administrator can remove someone and let them back. Rows are kept and marked with `left_at` and `removed_by` (migration 0048, column-level `UPDATE` grant on those two columns only). Claimed tasks without proof go back to the team; recognised work stays credited. Someone removed cannot rejoin until let back. Row-level security on tasks and task notes now requires a current membership.
+- Captions: lessons accept a WebVTT file (up to 512 KB, signature checked) and the player offers it as a subtitle track, served from the same origin with `nosniff`, `no-store` and a sandbox policy.
+- Video resume: the player remembers where you stopped on this device (browser storage only, never sent to the server) and offers to start from the beginning.
+
+## Checks run
+
+- Typecheck clean. `npm test`: 917 passed, 0 failed, including `tests/project-team-database.test.ts`, `tests/lesson-captions.test.ts` and `tests/video-position.test.ts`.
+- `npm run test:postgres` against a fresh local PostgreSQL 16: 32 checks passed, including the team leaving check under the runtime role.
+- `npm run test:http`: 19 checks passed. Build and preview bundle succeeded.
+- Every browser suite passed, including `test:browser` (24, 34 purpose and 27 pilot), `test:browser:v4`, `test:browser:monochrome`, `test:browser:work` (31, two new team checks) and `test:browser:resources` (21, new captions check).
+- `python3 -m unittest discover -s scripts -p "test_*.py"`: OK.
+- Failed attempts: older-schema upgrade tests broke on the new columns until the legacy fixture skipped them; the main browser check still expected the old disabled "You are on the team" button; resume could not be exercised in the preview because its opaque origin blocks browser storage, so the storage logic has unit tests and the browser check confirms the player degrades quietly. Writing the leaver's task release before ending the membership was required: with the order reversed, row-level security silently skipped the task update.
+
+## Not verified
+
+- Captions and resume on Safari and mobile browsers. Nothing deployed.
+
+# Historical: Alpha 53 feeds paged in SQL, so posts have no ceiling
 
 9 October 2026. Version stays 0.39.0-alpha.1. Decision 053; no migration, no API shape change.
 
@@ -8,7 +42,7 @@
 | --- | --- |
 | Implemented | Yes, on `claude/full-audit-yhvssj` |
 | Verified locally | Yes: see below |
-| Merged | Not yet |
+| Merged | Yes: PR #43, merged as `cae20e1` |
 | Deployed | No |
 
 ## What changed

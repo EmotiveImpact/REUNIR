@@ -19,7 +19,7 @@ import type { ScanQueue } from '../../../packages/db/src/scans';
 import { coverLibraryObjectKey, coverObjectKey, coverThumbnailObjectKey, isMissingObject, objectKey, resourceObjectKey, taskFileObjectKey, uploadSchema, type PrivateStorage } from './storage';
 import { taskFileUploadRequest } from '../../../packages/contracts/src/task-files';
 import { learningRecordFilename } from '../../../packages/domain/src/learning-record';
-import { VIDEO_PLAYBACK_TTL_SECONDS, isLessonVideo, resourceSizeProblem, resourceUploadRequest, type ResourceContext } from '../../../packages/contracts/src/lesson-resources';
+import { MAX_CAPTION_BYTES, VIDEO_PLAYBACK_TTL_SECONDS, isCaptions, isLessonVideo, resourceSizeProblem, resourceUploadRequest, type ResourceContext } from '../../../packages/contracts/src/lesson-resources';
 import { accountDeletionRequest } from '../../../packages/contracts/src/account';
 import { ITEM_LISTS, pagedList, pageQuery } from '../../../packages/contracts/src/pages';
 import { ownershipTransferRequest } from '../../../packages/contracts/src/ownership';
@@ -366,6 +366,30 @@ export function createApp({ repository, operations, origin, resolveSession, auth
         const url = await storage.download(target.objectKey, { filename: target.filename, contentType: target.contentType, generation: target.generation, disposition: 'inline', expiresInSeconds: VIDEO_PLAYBACK_TTL_SECONDS });
         return { url, expiresIn: VIDEO_PLAYBACK_TTL_SECONDS, contentType: target.contentType };
     };
+    /**
+     * Verified lesson captions as text, through the application: a video plays from storage on another origin, and a caption
+     * track loaded from there would need that origin to allow it. Access is checked as for a download.
+     */
+    const resourceCaptions = async (c: Context, context: ResourceContext) => {
+        if (!storage)
+            throw new DomainError('STORAGE_UNAVAILABLE', 'Private storage is not configured.', 503);
+        const target = await repository.resourceDownload(c.req.param('slug')!, c.get('identity').id, { context, recordId: id.parse(c.req.param('recordId')), resourceId: id.parse(c.req.param('resourceId')) });
+        if (!isCaptions(target.contentType) || !target.generation || target.sizeBytes > MAX_CAPTION_BYTES)
+            throw new DomainError('NOT_CAPTIONS', 'Only a WebVTT captions file shows on a lesson video.', 409);
+        let bytes: Uint8Array;
+        try { bytes = await storage.head(target.objectKey, target.sizeBytes, target.generation); }
+        catch (error) {
+            if (isMissingObject(error))
+                throw new DomainError('NOT_FOUND', 'These captions are no longer available.', 404);
+            throw error;
+        }
+        c.header('Cache-Control', 'private, no-store');
+        c.header('Content-Type', 'text/vtt; charset=utf-8');
+        c.header('Content-Disposition', 'inline');
+        c.header('X-Content-Type-Options', 'nosniff');
+        c.header('Content-Security-Policy', "default-src 'none'; sandbox");
+        return c.body(bytes as Uint8Array<ArrayBuffer>, 200);
+    };
     /** Verified image bytes, pinned to their generation, with headers that only let them render as an image. */
     const sendImage = async (c: Context, target: { objectKey: string; generation: string; contentType: string; sizeBytes: number }, missing: string) => {
         let bytes: Uint8Array;
@@ -441,6 +465,7 @@ export function createApp({ repository, operations, origin, resolveSession, auth
     for (const [segment, context] of [['lessons', 'lesson'], ['lesson-drafts', 'draft'], ['lesson-revisions', 'revision']] as const)
     {
         app.get(`/api/organisations/:slug/${segment}/:recordId/resources/:resourceId/download`, async (c) => c.json(await resourceDownload(c.req.param('slug'), c.get('identity').id, context, c.req.param('recordId'), c.req.param('resourceId'))));
+        app.get(`/api/organisations/:slug/${segment}/:recordId/resources/:resourceId/captions`, async (c) => resourceCaptions(c, context));
         app.get(`/api/organisations/:slug/${segment}/:recordId/resources/:resourceId/play`, async (c) => c.json(await resourcePlayback(c.req.param('slug'), c.get('identity').id, context, c.req.param('recordId'), c.req.param('resourceId'))));
     }
     app.notFound(c => c.json({ error: { code: 'NOT_FOUND', message: 'Endpoint not found.' } }, 404));

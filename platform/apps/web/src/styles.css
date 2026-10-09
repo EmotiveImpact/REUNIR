@@ -180,3 +180,4 @@ input,progress{accent-color:var(--accent)}
 .lesson-join{display:flex;flex-direction:column;align-items:flex-start;gap:8px;}.lesson-join span{font-size:12px;color:#a8a8a8;}
 @media(max-width:1080px){.lesson-content{order:-1;}.curriculum{position:static;}}
 @media(max-width:760px){.lesson-body p{font-size:14px;}.lesson-join{width:100%;}}
+.lesson-resume{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 0;font-size:11px;color:var(--muted);}

@@ -116,6 +116,17 @@ try{
         const snapshot=await repo.snapshot('code-black',DEMO_USER);
         assert.equal(snapshot.summary!.posts,(await admin.query<{n:number}>("SELECT count(*)::int AS n FROM posts WHERE organization_id='org_code_black' AND space_id<>'space_studio' AND NOT hidden")).rows[0].n);
     });
+    await check('leaving a project team hands claimed tasks back and row security stops admitting the person (migration 0048)',async()=>{
+        const repo=new WorkspaceRepository(runtime!),run=(user:string,cmd:unknown)=>repo.execute('code-black',user,cmd,randomUUID(),'team-postgres');
+        const admitted=async()=>(await runtime!.transaction(async sql=>{await setContext(sql,'org_code_black',DEMO_USER);return (await sql.query<{n:number}>("SELECT count(*)::int AS n FROM project_tasks WHERE project_id='project_common'")).rows[0].n;}));
+        assert((await admitted())>0);
+        await run(DEMO_USER,{type:'project.leave',projectId:'project_common'});
+        assert.equal((await admin.query<{n:number}>("SELECT count(*)::int AS n FROM project_tasks WHERE organization_id='org_code_black' AND assignee_id=$1 AND contribution_id IS NULL AND NOT archived",[DEMO_USER])).rows[0].n,0);
+        assert.equal(await admitted(),0);
+        await run(DEMO_USER,{type:'project.join',projectId:'project_common'});
+        assert((await admitted())>0);
+        await assert.rejects(runtime!.transaction(async sql=>{await setContext(sql,'org_code_black',DEMO_ADMIN);await sql.query("UPDATE project_members SET user_id='member_theo' WHERE organization_id='org_code_black' AND user_id=$1",[DEMO_USER]);}),/permission denied/);
+    });
     await check('owner console runs through the restricted PostgreSQL connection',async()=>{const ops=new PilotOperations(new WorkspaceRepository(runtime!),{NODE_ENV:'test',DATABASE_URL:url.toString()});const status=await ops.snapshot('code-black',DEMO_ADMIN);assert.equal(status.checks.find(x=>x.key==='runtime-role')!.state,'pass');assert.equal(status.community.activeMembers,8);});
     await check('rich lessons publish and restore through a restricted PostgreSQL connection',async()=>{
         const repo=new WorkspaceRepository(runtime!);
