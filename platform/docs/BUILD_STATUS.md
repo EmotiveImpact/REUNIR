@@ -1,4 +1,31 @@
-# Alpha 52 records brought up to date after the October audit
+# Alpha 53 feeds paged in SQL, so posts have no ceiling
+
+9 October 2026. Version stays 0.39.0-alpha.1. Decision 053; no migration, no API shape change.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/full-audit-yhvssj` |
+| Verified locally | Yes: see below |
+| Merged | Not yet |
+| Deployed | No |
+
+## What changed
+
+See decision 053. `readAll` reads a window of posts (newest 300, pinned, own hidden, and any named by a collection, appeal, report, command or link) and only their replies, appreciations and bookmarks; account deletion adds the person's own. `repository.page('posts')` is cut in SQL; the snapshot's post count is a SQL count; `repository.item('posts')` reads the one post.
+
+## Checks run
+
+- Typecheck clean. `npm test`: 907 passed, including the new `tests/large-feed-database.test.ts` (6,000 posts and replies: the snapshot opens, every page matches a direct SQL ordering for a member and a moderator, filters and saved posts, commands on old posts, account deletion).
+- `npm run test:postgres` against a fresh local PostgreSQL 16 `reunir_ci`: 31 checks passed, including the new feed check.
+- Failed attempts: the first test expected a member never to see a hidden post, but its author does; the test was wrong, not the query.
+
+## Not verified
+
+- Query plans on a large real PostgreSQL database. Nothing deployed.
+
+# Historical: Alpha 52 records brought up to date after the October audit
 
 9 October 2026. Version stays 0.39.0-alpha.1. No decision record of its own (part of the audit, decision 050 and 051 cover the code); no migration, no code change in the app.
 
