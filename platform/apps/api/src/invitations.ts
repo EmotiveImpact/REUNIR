@@ -88,8 +88,8 @@ export class InvitationService {
         const u=(await sql.query<{email:string;name:string}>('SELECT email,name FROM auth_user WHERE id=$1 FOR SHARE',[userId])).rows[0];
         const org=(await sql.query<{slug:string;name:string}>('SELECT slug,name FROM organisations WHERE id=$1 FOR UPDATE',[initial.organization_id])).rows[0];
         const i=(await sql.query<Invitation>('SELECT * FROM invitations WHERE id=$1 FOR UPDATE',[initial.id])).rows[0];active(i);
-        await senderStillAdministers(sql,i);
         if(!u||u.email.toLowerCase()!==i.email)throw new DomainError('INVITE_ACCOUNT_MISMATCH','Sign in with the email address this invitation was sent to.',403);
+        await senderStillAdministers(sql,i);
         const existing=await sql.query<{status:string}>('SELECT status FROM members WHERE organization_id=$1 AND user_id=$2',[i.organization_id,userId]);
         if(existing.rows[0]?.status && existing.rows[0].status!=='active')throw new DomainError('MEMBERSHIP_RESTRICTED','Ask the owner to review your community access.',403);
         if(!existing.rows.length)await sql.query(`INSERT INTO members(organization_id,id,created_at,user_id,name,headline,bio,skills,colour,avatar,role,status) VALUES($1,$2,now(),$3,$4,'','', '[]','violet','','member','active')`,[i.organization_id,randomUUID(),userId,u.name]);
