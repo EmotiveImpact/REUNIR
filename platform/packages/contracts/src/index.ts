@@ -326,6 +326,11 @@ export interface ContributionCredit extends TenantRecord {
     contributionId: Id; projectId: Id; userId: Id; invitedBy: Id; role: string;
     status: CreditStatus; respondedAt: string | null; withdrawnBy: Id | null; withdrawnAt: string | null;
 }
+/** A credit on an outcome (decision 059), on the same terms as a credit on a contribution. No project for a mission's. */
+export interface OutcomeCredit extends TenantRecord {
+    outcomeId: Id; projectId: Id | null; userId: Id; invitedBy: Id; role: string;
+    status: CreditStatus; respondedAt: string | null; withdrawnBy: Id | null; withdrawnAt: string | null;
+}
 export interface Outcome extends TenantRecord {
     purposeId: Id; projectId: Id | null; submissionId: Id | null; contributionId: Id | null;
     authorId: Id; title: string; summary: string; evidenceUrl: string;
@@ -444,6 +449,7 @@ export interface Workspace {
     pathEnrolments: PathEnrolment[];
     contributions: Contribution[];
     contributionCredits: ContributionCredit[];
+    outcomeCredits: OutcomeCredit[];
     outcomes: Outcome[];
     communityOutputs: CommunityOutput[];
     memberGoals: MemberGoal[];
@@ -538,6 +544,9 @@ export const commandSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('credit.invite'), contributionId: id, userId: id, role: creditRole }).strict(),
     z.object({ type: z.literal('credit.respond'), creditId: id, decision: z.enum(['accepted', 'declined']) }).strict(),
     z.object({ type: z.literal('credit.withdraw'), creditId: id }).strict(),
+    z.object({ type: z.literal('outcome.credit.invite'), outcomeId: id, userId: id, role: creditRole }).strict(),
+    z.object({ type: z.literal('outcome.credit.respond'), creditId: id, decision: z.enum(['accepted', 'declined']) }).strict(),
+    z.object({ type: z.literal('outcome.credit.withdraw'), creditId: id }).strict(),
     z.object({ type: z.literal('outcome.submit'), purposeId: id, submissionId: optionalSpace.default(null), contributionId: optionalSpace.default(null), title: text(160), summary: text(5000), evidenceUrl: link.default('') }).strict(),
     z.object({ type: z.literal('outcome.resubmit'), outcomeId: id, title: text(160), summary: text(5000), evidenceUrl: link.default('') }).strict(),
     z.object({ type: z.literal('outcome.review'), outcomeId: id, decision: z.enum(['verified', 'changes_requested']), feedback: text(2000) }).strict(),

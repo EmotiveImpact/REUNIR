@@ -60,6 +60,7 @@ People + Purpose + Progress + Projects + Proof. People join to become, build or 
 | Alpha 56 | Partial marks on multiple-choice questions, chosen per question by the author | Question banks and timers stay parked |
 | Alpha 57 | Chapters on uploaded lesson videos, typed by the author and listed under the video for learners | Embedded videos keep their own players' chapters |
 | Alpha 58 | Appeals for suspensions, made from the account and decided by an owner or administrator who did not suspend, and one second look at a closed message report | Appeals against removal from a community |
+| Alpha 59 | Credits on outcomes, with consent, shown on the outcome, its archived output and the credited person's profile | Public portfolios and credits across communities |
 
 UI_DESIGN_DIRECTION.md records the approved interface. Do not restart design exploration or discard existing routes while implementing the next feature.
 

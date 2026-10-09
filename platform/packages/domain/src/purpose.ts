@@ -6,7 +6,7 @@ export function normalisePurposeState(s: Workspace): Workspace {
     s.collections ??= []; s.collectionItems ??= []; s.moderationAppeals ??= []; s.suspensionAppeals ??= []; s.notificationPreferences ??= []; s.coverLibrary ??= []; for (const item of s.coverLibrary) item.tags ??= []; s.trackInstructors ??= []; s.quizAttempts ??= []; s.uploads ??= []; s.lessonDrafts ??= []; s.lessonRevisions ??= [];
     s.projectTasks ??= []; s.taskNotes ??= [];
     s.purposes ??= []; s.paths ??= []; s.milestones ??= []; s.pathEnrolments ??= [];
-    s.contributions ??= []; s.contributionCredits ??= []; s.outcomes ??= []; s.evidenceChanges ??= []; s.communityOutputs ??= []; s.memberGoals ??= [];
+    s.contributions ??= []; s.contributionCredits ??= []; s.outcomeCredits ??= []; s.outcomes ??= []; s.evidenceChanges ??= []; s.communityOutputs ??= []; s.memberGoals ??= [];
     for (const p of s.projects) p.purposeId ??= null;
     for (const g of s.memberGoals) g.outcomeId ??= null;
     return s;
@@ -29,7 +29,9 @@ export function filterPurposeWorkspace(s: Workspace, ctx: TenantContext, actor: 
     const credited = new Set((s.contributionCredits ?? []).filter(k => k.organizationId === ctx.organizationId && k.userId === ctx.userId && (k.status === 'invited' || k.status === 'accepted')).map(k => k.contributionId));
     s.contributions = tenant(s.contributions).filter(c => projects.has(c.projectId) && (teamProof.has(c.id) || c.status === 'recognised' || c.status === 'withdrawn' || c.userId === ctx.userId || credited.has(c.id) || isAdmin(actor) || s.projects.some(p => p.id === c.projectId && p.ownerId === ctx.userId)));
     const contributions = new Set(s.contributions.map(x => x.id)), submissions = new Set(s.submissions.map(x => x.id));
-    s.outcomes = tenant(s.outcomes).filter(o => purposes.has(o.purposeId) && (!o.projectId || projects.has(o.projectId)) && (o.contributionId ? contributions.has(o.contributionId) : !!o.submissionId && submissions.has(o.submissionId)) && (o.status === 'verified' || o.status === 'withdrawn' || o.authorId === ctx.userId || isAdmin(actor)));
+    // Likewise a person invited or credited on an outcome may read it before it is verified (decision 059).
+    const creditedOutcomes = new Set((s.outcomeCredits ?? []).filter(k => k.organizationId === ctx.organizationId && k.userId === ctx.userId && (k.status === 'invited' || k.status === 'accepted')).map(k => k.outcomeId));
+    s.outcomes = tenant(s.outcomes).filter(o => purposes.has(o.purposeId) && (!o.projectId || projects.has(o.projectId)) && (o.contributionId ? contributions.has(o.contributionId) : !!o.submissionId && submissions.has(o.submissionId)) && (o.status === 'verified' || o.status === 'withdrawn' || o.authorId === ctx.userId || creditedOutcomes.has(o.id) || isAdmin(actor)));
     const outcomes = new Set(s.outcomes.filter(o => o.status === 'verified').map(x => x.id));
     s.memberGoals = s.memberGoals.filter(g=>!g.outcomeId || outcomes.has(g.outcomeId));
     s.communityOutputs = tenant(s.communityOutputs).filter(o => outcomes.has(o.outcomeId) && purposes.has(o.purposeId) && (!o.projectId || projects.has(o.projectId)));
@@ -174,7 +176,7 @@ export function applyPurposeCommand(s: Workspace, ctx: TenantContext, cmd: Comma
             Object.assign(o,{title:cmd.title,summary:cmd.summary,evidenceUrl:cmd.evidenceUrl,status:'submitted',reviewerId:null,reviewedAt:null,feedback:''});return result(o.id,'Outcome resubmitted.');
         }
         case 'outcome.review': {
-            admin();const o=find(s.outcomes,cmd.outcomeId);if(o.authorId===ctx.userId)forbidden('You cannot verify your own outcome.');outcomeAccessible(o);if(o.status!=='submitted')conflict('NOT_PENDING','This outcome is no longer awaiting review.');
+            admin();const o=find(s.outcomes,cmd.outcomeId);if(o.authorId===ctx.userId)forbidden('You cannot verify your own outcome.');if((s.outcomeCredits??[]).some(k=>k.outcomeId===o.id&&k.userId===ctx.userId&&k.status==='accepted'))forbidden('You are credited on this outcome, so another administrator verifies it.');outcomeAccessible(o);if(o.status!=='submitted')conflict('NOT_PENDING','This outcome is no longer awaiting review.');
             if(o.submissionId&&approvedSubmission(o.submissionId).status!=='approved')conflict('UNREVIEWED_SOURCE','The underlying proof is not approved.');
             if(o.contributionId&&find(s.contributions,o.contributionId).status!=='recognised')conflict('UNREVIEWED_SOURCE','The underlying contribution is not recognised.');
             o.status=cmd.decision;o.reviewerId=ctx.userId;o.reviewedAt=now;o.feedback=cmd.feedback;notify(o.authorId,cmd.decision==='verified'?'Your outcome was reviewed':'Feedback on your outcome',cmd.feedback,'/outputs');

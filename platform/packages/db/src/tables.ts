@@ -1784,6 +1784,12 @@ tables.push({key:'contributionCredits',table:'contribution_credits',mutable:['st
     {property:'contributionId',column:'contribution_id',type:'text'},{property:'projectId',column:'project_id',type:'text'},{property:'userId',column:'user_id',type:'text'},
     {property:'invitedBy',column:'invited_by',type:'text'},{property:'role',column:'role',type:'text'},{property:'status',column:'status',type:'text'},
     {property:'respondedAt',column:'responded_at',type:'timestamptz'},{property:'withdrawnBy',column:'withdrawn_by',type:'text'},{property:'withdrawnAt',column:'withdrawn_at',type:'timestamptz'}]});
+// Alpha 59: credits on an outcome, on the same terms (migration 0050). An outcome from a mission proof has no project.
+tables.push({key:'outcomeCredits',table:'outcome_credits',mutable:['status','respondedAt','withdrawnBy','withdrawnAt'],fields:[
+    {property:'id',column:'id',type:'text'},{property:'organizationId',column:'organization_id',type:'text'},{property:'createdAt',column:'created_at',type:'timestamptz'},
+    {property:'outcomeId',column:'outcome_id',type:'text'},{property:'projectId',column:'project_id',type:'text'},{property:'userId',column:'user_id',type:'text'},
+    {property:'invitedBy',column:'invited_by',type:'text'},{property:'role',column:'role',type:'text'},{property:'status',column:'status',type:'text'},
+    {property:'respondedAt',column:'responded_at',type:'timestamptz'},{property:'withdrawnBy',column:'withdrawn_by',type:'text'},{property:'withdrawnAt',column:'withdrawn_at',type:'timestamptz'}]});
 
 // Alpha 35: a grant may cover only some of a track's lessons. NULL keeps the whole track.
 tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'lessonIds',column:'lesson_ids',type:'jsonb'});
