@@ -152,12 +152,19 @@ async function saveChanges(sql: SQL, before: Workspace, after: Workspace) {
             if (!remaining.has(old.id))
                 await sql.query(`DELETE FROM ${spec.table} WHERE organization_id=$1 AND id=$2`, [before.organisation.id, old.id]);
     }
+    // A team membership that ends is written last: until then row security still admits the person, so the tasks they
+    // hand back on leaving are released under their own name (migration 0048).
+    const ending: Record<string, unknown>[] = [];
     for (const spec of tables) {
         const old = new Map(before[spec.key].map(r => [r.id, JSON.stringify(r)]));
-        for (const row of after[spec.key])
-            if (JSON.stringify(row) !== old.get(row.id))
-                await putRow(sql, spec, row as unknown as Record<string, unknown>, old.has(row.id));
+        const was = new Map((before[spec.key] as unknown as Record<string, unknown>[]).map(r => [r.id, r]));
+        for (const row of after[spec.key] as unknown as Record<string, unknown>[])
+            if (JSON.stringify(row) !== old.get(row.id as string)) {
+                if (spec.key === 'projectMembers' && row.leftAt && !was.get(row.id)?.leftAt && was.has(row.id)) ending.push(row);
+                else await putRow(sql, spec, row, old.has(row.id as string));
+            }
     }
+    for (const row of ending) await putRow(sql, tables.find(t => t.key === 'projectMembers')!, row, true);
     await sql.query('UPDATE organisations SET name=$2,tagline=$3,accent=$4,revision=$5 WHERE id=$1', [after.organisation.id, after.organisation.name, after.organisation.tagline, after.organisation.accent, after.revision]);
 }
 /**
@@ -622,7 +629,7 @@ export class WorkspaceRepository {
     async resourceDownload(slug: string, userId: string, ref: ResourceRef) {
         return this.within(slug, userId, false, async (sql, org) => {
             const target = resolveResourceDownload(await readAll(sql, org, userId), context(String(org.id), userId), ref);
-            return { objectKey: target.upload.objectKey, generation: target.upload.generation, contentType: target.upload.contentType, filename: target.filename };
+            return { objectKey: target.upload.objectKey, generation: target.upload.generation, contentType: target.upload.contentType, sizeBytes: target.upload.sizeBytes, filename: target.filename };
         });
     }
 }

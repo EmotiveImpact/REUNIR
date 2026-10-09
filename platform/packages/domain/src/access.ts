@@ -6,6 +6,8 @@ export const isModerator = (m: Member) => isAdmin(m) || m.role === 'moderator';
 export const isFormer = (s: Workspace, userId: string | null | undefined) => !!userId && s.members.some(m => m.userId === userId && m.organizationId === s.organisation.id && m.status === 'left');
 /** What a former membership shows: its identifiers and joining date. Everything that described the person goes. */
 export const formerMember = (m: Member): Member => ({ ...m, name: FORMER_MEMBER, headline: '', bio: '', skills: [], colour: 'neutral', avatar: '', role: 'member', status: 'left' });
+/** Whether this person is on the project's team now. Someone who left or was removed keeps their row but is not. */
+export const onTeam = (s: Workspace, organizationId: string, projectId: string, userId: string) => s.projectMembers.some(x => x.organizationId === organizationId && x.projectId === projectId && x.userId === userId && !x.leftAt);
 export function actorFor(state: Workspace, ctx: TenantContext): Member {
     if (state.organisation.id !== ctx.organizationId)
         throw new DomainError('NOT_FOUND', 'Community not found.', 404);

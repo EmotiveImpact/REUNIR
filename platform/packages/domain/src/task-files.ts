@@ -132,7 +132,7 @@ export function projectWorkVersion(s: Workspace, ctx: TenantContext, projectId: 
     if (!project || !canWorkOnProject(s, actor, project)) return gone('This project work is not available.');
     const tasks = (s.projectTasks ?? []).filter(t => t.organizationId === org && t.projectId === project.id).sort((a, b) => a.id.localeCompare(b.id));
     const ids = new Set(tasks.map(t => t.id)), proof = new Set(tasks.map(t => t.contributionId).filter(Boolean));
-    const team = s.projectMembers.filter(m => m.organizationId === org && m.projectId === project.id).map(m => m.userId).sort();
+    const team = s.projectMembers.filter(m => m.organizationId === org && m.projectId === project.id && !m.leftAt).map(m => m.userId).sort();
     const people = s.members.filter(m => m.organizationId === org && (team.includes(m.userId) || m.userId === project.ownerId)).map(m => [m.userId, m.name, m.status, m.avatar]).sort();
     const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id);
     return fingerprint(JSON.stringify([

@@ -25,15 +25,20 @@ export const lessonResourceTypes = {
     'image/webp': { extension: 'webp', label: 'WebP image' },
     'video/mp4': { extension: 'mp4', label: 'MP4 video' },
     'video/webm': { extension: 'webm', label: 'WebM video' },
+    /** Alpha 54: captions for a lesson video, shown as a track on the lesson's own video. */
+    'text/vtt': { extension: 'vtt', label: 'Captions (WebVTT)' },
 } as const;
 export type LessonResourceType = keyof typeof lessonResourceTypes;
 const typeNames = Object.keys(lessonResourceTypes) as [LessonResourceType, ...LessonResourceType[]];
-export const RESOURCE_TYPES_HINT = 'Use a PDF, Word, PowerPoint, Excel, JPEG, PNG, WebP, MP4 or WebM file.';
+export const RESOURCE_TYPES_HINT = 'Use a PDF, Word, PowerPoint, Excel, JPEG, PNG, WebP, MP4, WebM or WebVTT captions file.';
 export const lessonResourceType = z.enum(typeNames, RESOURCE_TYPES_HINT);
 export const isLessonResourceType = (value: unknown): value is LessonResourceType => typeof value === 'string' && Object.hasOwn(lessonResourceTypes, value);
 export const lessonVideoTypes = ['video/mp4', 'video/webm'] as const;
 export type LessonVideoType = typeof lessonVideoTypes[number];
 export const isLessonVideo = (contentType: string): contentType is LessonVideoType => (lessonVideoTypes as readonly string[]).includes(contentType);
+/** Alpha 54: captions are small text files, served through the application so a video on another origin can show them. */
+export const MAX_CAPTION_BYTES = 512 * 1024;
+export const isCaptions = (contentType: string) => contentType === 'text/vtt';
 const megabytes = (bytes: number) => `${Math.floor(bytes / (1024 * 1024))} MB`;
 /**
  * Why a file of this type and size cannot be attached, or null when it can. `videoBytes` is the limit this
@@ -41,6 +46,7 @@ const megabytes = (bytes: number) => `${Math.floor(bytes / (1024 * 1024))} MB`;
  */
 export function resourceSizeProblem(contentType: LessonResourceType, sizeBytes: number, videoBytes: number): string | null {
     if (sizeBytes <= 0) return 'This file is empty.';
+    if (isCaptions(contentType)) return sizeBytes > MAX_CAPTION_BYTES ? 'Captions files can be up to 512 KB.' : null;
     if (!isLessonVideo(contentType)) return sizeBytes > MAX_RESOURCE_BYTES ? 'Files can be up to 10 MB.' : null;
     if (videoBytes <= 0) return 'Video uploads are not switched on for this community.';
     return sizeBytes > Math.min(videoBytes, MAX_VIDEO_BYTES) ? `Videos can be up to ${megabytes(Math.min(videoBytes, MAX_VIDEO_BYTES))}.` : null;
@@ -118,6 +124,11 @@ export function fileSignatureMatches(contentType: string, bytes: Uint8Array): bo
             const marker = ascii('webm'), last = Math.min(bytes.length, 64) - marker.length;
             for (let i = 4; i <= last; i++) if (at(bytes, marker, i)) return true;
             return false;
+        }
+        // A WebVTT file opens with its signature line, after an optional byte order mark.
+        case 'text/vtt': {
+            const start = at(bytes, [0xef, 0xbb, 0xbf]) ? 3 : 0;
+            return at(bytes, ascii('WEBVTT'), start) && (bytes.length === start + 6 || [0x20, 0x09, 0x0a, 0x0d].includes(bytes[start + 6]));
         }
         default: return false;
     }

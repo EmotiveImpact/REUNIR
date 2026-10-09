@@ -1,5 +1,5 @@
 import { DomainError, type Command, type Workspace, type TenantContext, type Member, type Milestone, type Purpose } from '../../contracts/src/index';
-import { actorFor, canSeeSpace, isAdmin, isFormer } from './access';
+import { actorFor, canSeeSpace, isAdmin, isFormer, onTeam } from './access';
 
 /** Additive browser-state upgrade. Never invent a purpose or evidence for existing user data. */
 export function normalisePurposeState(s: Workspace): Workspace {
@@ -24,7 +24,7 @@ export function filterPurposeWorkspace(s: Workspace, ctx: TenantContext, actor: 
     s.milestones = tenant(s.milestones).filter(m => paths.has(m.pathId) && targetVisible(m));
     s.pathEnrolments = tenant(s.pathEnrolments).filter(x => paths.has(x.pathId) && x.userId === ctx.userId);
     s.memberGoals = tenant(s.memberGoals).filter(g => purposes.has(g.purposeId) && (!g.pathId || paths.has(g.pathId)) && (g.userId === ctx.userId || g.visibility === 'members'));
-    const teamProof = new Set(s.projectTasks.filter(t => t.organizationId === ctx.organizationId && projects.has(t.projectId) && (isAdmin(actor) || s.projects.some(p=>p.id===t.projectId&&p.ownerId===ctx.userId) || s.projectMembers.some(m=>m.projectId===t.projectId&&m.userId===ctx.userId&&m.organizationId===ctx.organizationId))).map(t=>t.contributionId));
+    const teamProof = new Set(s.projectTasks.filter(t => t.organizationId === ctx.organizationId && projects.has(t.projectId) && (isAdmin(actor) || s.projects.some(p=>p.id===t.projectId&&p.ownerId===ctx.userId) || onTeam(s,ctx.organizationId,t.projectId,ctx.userId))).map(t=>t.contributionId));
     // A person the author credits or invites may read that contribution, so they can decide whether to accept.
     const credited = new Set((s.contributionCredits ?? []).filter(k => k.organizationId === ctx.organizationId && k.userId === ctx.userId && (k.status === 'invited' || k.status === 'accepted')).map(k => k.contributionId));
     s.contributions = tenant(s.contributions).filter(c => projects.has(c.projectId) && (teamProof.has(c.id) || c.status === 'recognised' || c.status === 'withdrawn' || c.userId === ctx.userId || credited.has(c.id) || isAdmin(actor) || s.projects.some(p => p.id === c.projectId && p.ownerId === ctx.userId)));
@@ -68,7 +68,7 @@ export function applyPurposeCommand(s: Workspace, ctx: TenantContext, cmd: Comma
     const path = (id:string) => {const p=find(s.paths,id); space(p.spaceId); if(p.status!=='published'&&!isAdmin(actor)) missing(); return p;};
     const result = (objectId:string,message:string,audit=false,changed=true):Result=>({objectId,message,audit,changed});
     const notify = (userId:string,title:string,body:string,href:string) => {if(userId!==ctx.userId && !isFormer(s,userId)) s.notifications.push({...base(),userId,title,body,href,readAt:null});};
-    const teamMember = (projectId:string) => s.projectMembers.some(m=>m.projectId===projectId&&m.userId===ctx.userId);
+    const teamMember = (projectId:string) => onTeam(s,ctx.organizationId,projectId,ctx.userId);
     const approvedSubmission = (id:string) => {const x=find(s.submissions,id); const m=find(s.missions,x.missionId); space(m.spaceId); if(m.trackId) space(find(s.tracks,m.trackId).spaceId); return x;};
     const sourceSpaces = (m: Pick<Milestone,'lessonId'|'missionId'|'projectId'>): (string|null)[] => {
         if(m.lessonId){const l=find(s.lessons,m.lessonId),t=find(s.tracks,l.trackId);if(!l.published||!t.published)missing();return [t.spaceId];}

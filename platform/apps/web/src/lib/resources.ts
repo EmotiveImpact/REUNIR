@@ -2,7 +2,7 @@ import { api, commitDemo, demoState, mode, snapshot } from './data';
 import { getDemoFile, putDemoFile, removeDemoFile } from './demo-files';
 import { finishUpload, scanPatienceMs } from './uploads';
 import { newId, type Upload, type Workspace } from '../../../../packages/contracts/src/index';
-import { MAX_VIDEO_BYTES, RESOURCE_TYPES_HINT, SIGNATURE_BYTES, fileSignatureMatches, isLessonVideo, resourceSizeProblem, resourceTypeForFile, type LessonResourceType, type ResourceRef } from '../../../../packages/contracts/src/lesson-resources';
+import { MAX_VIDEO_BYTES, RESOURCE_TYPES_HINT, SIGNATURE_BYTES, fileSignatureMatches, isCaptions, isLessonVideo, resourceSizeProblem, resourceTypeForFile, type LessonResourceType, type ResourceRef } from '../../../../packages/contracts/src/lesson-resources';
 import { beginResourceUpload, clientUpload, completeResourceUpload, discardResourceUpload, resolveResourceDownload } from '../../../../packages/domain/src/resources';
 import { DEMO_WORKSHEET_FILE, demoWorksheetPdf } from '../../../../packages/domain/src/demo-files';
 
@@ -99,6 +99,28 @@ export async function playLessonResource(slug: string, userId: string, ref: Reso
         return URL.createObjectURL(new Blob([stored], { type: target.upload.contentType }));
     }
     return (await api<{ url: string }>(`${base(slug)}/${segments[ref.context]}/${encodeURIComponent(ref.recordId)}/resources/${encodeURIComponent(ref.resourceId)}/play`)).url;
+}
+
+/**
+ * A lesson's captions as a browser-local address for a video track. Live, the text comes through the application, since
+ * the video itself plays from storage on another origin; in the fictional preview it is this browser's copy.
+ */
+export async function lessonCaptions(slug: string, userId: string, ref: ResourceRef): Promise<string> {
+    let text: Blob;
+    if (mode === 'demo') {
+        const s = demoState(slug), target = resolveResourceDownload(s, tenant(s, userId), ref);
+        if (!isCaptions(target.upload.contentType)) throw new Error('Only a WebVTT captions file shows on a lesson video.');
+        const stored = await getDemoFile(slug, target.upload.id);
+        if (!stored) throw new Error('These fictional captions are no longer stored in this browser. Upload them again.');
+        text = new Blob([stored], { type: 'text/vtt' });
+    } else {
+        let res: Response;
+        try { res = await fetch(`${base(slug)}/${segments[ref.context]}/${encodeURIComponent(ref.recordId)}/resources/${encodeURIComponent(ref.resourceId)}/captions`, { credentials: 'include' }); }
+        catch { throw new Error('The captions could not load. Check your connection.'); }
+        if (!res.ok) throw new Error('The captions for this video are not available.');
+        text = new Blob([await res.text()], { type: 'text/vtt' });
+    }
+    return URL.createObjectURL(text);
 }
 
 export interface UploadLimits { uploads: boolean; videoBytes: number }

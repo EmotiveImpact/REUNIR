@@ -85,7 +85,7 @@ test('the restricted runtime role records, verifies, attaches and publishes a le
     assert.deepEqual(member.lessons.find(l => l.id === 'lesson_4')!.resources!.map(x => x.name), ['Problem interview worksheet', 'Interview guide']);
     assert.deepEqual(member.uploads, []);
     const target = await repo.resourceDownload('code-black', DEMO_USER, { context: 'lesson', recordId: 'lesson_4', resourceId: 'resource_guide' });
-    assert.deepEqual(target, { objectKey: key('org_code_black', upload.id), generation: '1712345678901234', contentType: PDF, filename: 'Interview guide.pdf' });
+    assert.deepEqual(target, { objectKey: key('org_code_black', upload.id), generation: '1712345678901234', contentType: PDF, sizeBytes: upload.sizeBytes, filename: 'Interview guide.pdf' });
     await assert.rejects(() => repo.resourceDownload('code-black', DEMO_USER, { context: 'draft', recordId: d.id, resourceId: 'resource_guide' }), { code: 'NOT_FOUND' });
     await assert.rejects(() => repo.resourceDownload('studio-north', DEMO_USER, { context: 'lesson', recordId: 'lesson_4', resourceId: 'resource_guide' }), { code: 'NOT_FOUND' });
     assert.equal((await repo.resourceDownload('code-black', DEMO_ADMIN, { context: 'revision', recordId: r.workspace.lessonRevisions.at(-1)!.id, resourceId: 'resource_guide' })).filename, 'Interview guide.pdf');

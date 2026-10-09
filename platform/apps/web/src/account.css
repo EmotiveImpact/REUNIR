@@ -66,3 +66,13 @@
 .retention-kept{color:#dedede}
 .retention-why{grid-column:1/-1;color:var(--muted)}
 @media (max-width:560px){.retention-list>div{grid-template-columns:1fr}}
+/* Alpha 54: project team rows carry a small remove or let-back action, confirmed in place. */
+.team-list>.team-row,.team-removed>.team-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.team-row>a,.team-row>.team-former{display:flex;align-items:center;gap:10px;min-width:0}
+.team-row .button.small{min-height:24px;padding:0 8px;font-size:10px;gap:4px}
+.team-confirm{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.team-row .team-confirm{flex-direction:row;margin-top:0}
+.team-removed{display:grid;gap:12px;margin:20px 0;padding-top:16px;border-top:1px solid #323232}
+.team-removed h3{font-size:12px!important;font-weight:550;color:#bdbdbd}
+.team-removed strong{display:block;font-size:11px;font-weight:500}
+.team-removed small{display:block;color:#9d9d9d;font-size:9px}

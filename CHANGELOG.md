@@ -6,9 +6,23 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 Nothing in this list has been deployed. Deployment remains deferred by the owner.
 
-## Alpha 53: conversations without a ceiling (no version change), 9 October 2026
+## Alpha 54: leaving a project team, captions and picking up a video (no version change), 9 October 2026
 
-On a pull request from `claude/full-audit-yhvssj`. Decision 053; no migration. The version stays 0.39.0-alpha.1.
+On a pull request from `claude/full-audit-yhvssj`. Decision 054; migration 0048. The version stays 0.39.0-alpha.1.
+
+**In plain language:** you can now leave a project team, and a project's lead or an administrator can remove someone and later let them back. Tasks the person had claimed without proof go back to the team; their recognised work stays credited to them. Lessons can carry captions for their video, and a lesson video picks up where you stopped on the same device.
+
+Details:
+
+- Migration 0048: `project_members.left_at` and `removed_by`; row security on tasks and task notes admits only current team members; the runtime role may update only those two columns.
+- Commands `project.leave`, `project.member.remove` and `project.member.restore`; `project.join` resumes a membership left by choice. A team panel on the project page confirms each step in place.
+- WebVTT captions (`text/vtt`, up to 512 KB) as lesson files, served as text through `GET …/resources/:resourceId/captions` and shown as tracks on the lesson's video.
+- The lesson stage keeps the last whole second watched in local storage only, with "Start from the beginning".
+- New tests: `project-team-database`, `lesson-captions`, `video-position`; Postgres check for leaving a team; browser checks for the team panel and captions.
+
+## Alpha 53: conversations without a ceiling (no version change), 9 October 2026 (PR #43)
+
+Merged as `cae20e1`. Decision 053; no migration. The version stays 0.39.0-alpha.1.
 
 **In plain language:** a community can now hold as many posts, replies and appreciations as it likes. Before, it stopped opening at 5,000 of any of them. Feeds load from the database a page at a time, and old posts can still be replied to, appreciated, saved, reported and moderated.
 

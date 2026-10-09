@@ -1760,6 +1760,8 @@ tables.find(t => t.key === 'trackInstructors')!.fields.push({property:'role',col
 // Task files: verified uploads bound to one project task, and who made a task's latest change, for conflict messages.
 tables.find(t => t.key === 'uploads')!.fields.push({property:'taskId',column:'task_id',type:'text'});
 tables.find(t => t.key === 'projectTasks')!.fields.push({property:'updatedBy',column:'updated_by',type:'text'});
+// Alpha 54: a team membership ends rather than going, because contributions and credits name it. Only its end changes.
+{ const team = tables.find(t => t.key === 'projectMembers')!; team.mutable = ['leftAt', 'removedBy']; team.fields.push({property:'leftAt',column:'left_at',type:'timestamptz'},{property:'removedBy',column:'removed_by',type:'text'}); }
 // Appeals against moderation. Posts record who last hid or restored them; an appeal changes only its decision fields.
 tables.find(t => t.key === 'posts')!.fields.push({property:'moderatedBy',column:'moderated_by',type:'text'},{property:'moderatedAt',column:'moderated_at',type:'timestamptz'});
 tables.push({key:'moderationAppeals',table:'moderation_appeals',mutable:['status','decidedBy','decidedAt','response'],fields:[

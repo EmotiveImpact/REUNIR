@@ -4,6 +4,7 @@ import { isLessonDocument, lessonVideoUrl, type LessonDocument, type LessonNode 
 import { isLessonVideo, type LessonResource } from '../../../../packages/contracts/src/lesson-resources';
 import { Button } from './ui/button';
 import { describeResource } from './resource-list';
+import { browserStore, clock, rememberPosition, savedPosition } from '../lib/video-position';
 
 function ExternalMedia({node,stage=false}:{node:LessonNode;stage?:boolean}) {
     const [loaded,load] = useState(false);
@@ -22,22 +23,40 @@ export function featuredVideo(lesson:{resources?:LessonResource[]|null;richBody?
     return node?{kind:'embed',node}:null;
 }
 
-/** Full-width video at the top of a lesson. An uploaded file plays in place; an embed still asks before loading. */
-export function LessonStage({video,onPlay,onDownload}:{video:FeaturedVideo;onPlay:(r:LessonResource)=>Promise<string|undefined>;onDownload:(r:LessonResource)=>Promise<boolean>}) {
+/**
+ * Full-width video at the top of a lesson. An uploaded file plays in place, with any WebVTT captions the lesson carries
+ * as tracks, and picks up where this browser last stopped (`resumeKey`); an embed still asks before loading.
+ */
+export function LessonStage({video,onPlay,onDownload,captions=[],onCaptions,resumeKey}:{video:FeaturedVideo;onPlay:(r:LessonResource)=>Promise<string|undefined>;onDownload:(r:LessonResource)=>Promise<boolean>;captions?:LessonResource[];onCaptions?:(r:LessonResource)=>Promise<string|undefined>;resumeKey?:string}) {
     const [url,setUrl]=useState<string|null>(null), [pending,setPending]=useState(false), [failed,setFailed]=useState(false);
-    const owned=useRef<string|null>(null);
+    const [tracks,setTracks]=useState<{id:string;label:string;src:string}[]>([]), [resumed,setResumed]=useState(0);
+    const owned=useRef<string|null>(null), player=useRef<HTMLVideoElement|null>(null), saved=useRef(0);
     const release=()=>{ if(owned.current) URL.revokeObjectURL(owned.current); owned.current=null; };
     const id=video.kind==='file'?video.resource.id:JSON.stringify(video.node.attrs);
+    const captionIds=captions.map(c=>c.id).join(',');
     // A new lesson starts from its own poster, and a browser-local preview address is freed once it is no longer shown.
-    useEffect(()=>{ setUrl(null); setFailed(false); return release; },[id]);
+    useEffect(()=>{ setUrl(null); setFailed(false); setResumed(0); return release; },[id]);
+    // Captions load once the video does, and their browser-local addresses are freed with it.
+    useEffect(()=>{
+        if(!url||!onCaptions||!captions.length) return;
+        let live=true; const made:string[]=[];
+        void Promise.all(captions.map(async c=>{ const src=await onCaptions(c); if(src) made.push(src); return src?{id:c.id,label:c.name.replace(/\.vtt$/i,''),src}:null; })).then(list=>{ if(live) setTracks(list.filter((x):x is {id:string;label:string;src:string}=>!!x)); else made.forEach(u=>URL.revokeObjectURL(u)); });
+        return ()=>{ live=false; made.forEach(u=>URL.revokeObjectURL(u)); setTracks([]); };
+    },[url,captionIds]);
     if(video.kind==='embed') return <ExternalMedia key={id} node={video.node} stage/>;
     const r=video.resource;
     const play=async()=>{ setPending(true); setFailed(false); try { const u=await onPlay(r); if(!u) return; release(); if(u.startsWith('blob:')) owned.current=u; setUrl(u); } finally { setPending(false); } };
+    const loaded=()=>{ const v=player.current, at=v&&resumeKey?savedPosition(browserStore(),resumeKey,v.duration):0; if(v&&at){ v.currentTime=at; setResumed(at); } };
+    const progress=()=>{ const v=player.current; if(!v||!resumeKey) return; if(Math.abs(v.currentTime-saved.current)>=5){ saved.current=v.currentTime; rememberPosition(browserStore(),resumeKey,v.currentTime); } };
+    const restart=()=>{ const v=player.current; if(v) v.currentTime=0; if(resumeKey) rememberPosition(browserStore(),resumeKey,null); setResumed(0); };
     return <figure className="lesson-media lesson-stage">
-        {url?<video src={url} controls autoPlay playsInline aria-label={r.name} onError={()=>{ release(); setUrl(null); setFailed(true); }}/>:<div className="lesson-stage-poster">
+        {url?<video ref={player} src={url} controls autoPlay playsInline aria-label={r.name} onLoadedMetadata={loaded} onTimeUpdate={progress} onPause={()=>{ const v=player.current; if(v&&resumeKey) rememberPosition(browserStore(),resumeKey,v.currentTime); }} onEnded={()=>{ if(resumeKey) rememberPosition(browserStore(),resumeKey,null); }} onError={()=>{ release(); setUrl(null); setFailed(true); }}>
+            {tracks.map((c,i)=><track key={c.id} kind="captions" label={c.label} src={c.src} default={i===0}/>)}
+        </video>:<div className="lesson-stage-poster">
             <Button variant="default" className="lesson-stage-play" aria-label={`Play ${r.name}`} disabled={pending} onClick={play}>{pending?<LoaderCircle size={22} className="spin" aria-hidden="true"/>:<Play size={22} aria-hidden="true"/>}</Button>
-            <strong>{r.name}</strong><span>{describeResource(r)}</span>{failed&&<span role="alert">The video stopped loading. Its link may have expired; press play to try again.</span>}
+            <strong>{r.name}</strong><span>{describeResource(r)}{captions.length?' · Captions available':''}</span>{failed&&<span role="alert">The video stopped loading. Its link may have expired; press play to try again.</span>}
         </div>}
+        {url&&resumed>0&&<p className="lesson-resume" role="status">Picked up at {clock(resumed)}, where you stopped on this device. <button type="button" className="text-link" onClick={restart}>Start from the beginning</button></p>}
         <figcaption>{r.description||r.name}<button type="button" className="text-link" aria-label={`Download ${r.name}`} disabled={pending} onClick={async()=>{ setPending(true); try { await onDownload(r); } finally { setPending(false); } }}><Download size={13} aria-hidden="true"/>Download</button></figcaption>
     </figure>;
 }

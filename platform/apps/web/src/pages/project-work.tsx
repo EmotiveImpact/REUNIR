@@ -73,7 +73,7 @@ function ProjectBoard({filter,F,archive,linkPending}:{filter:string;F:(v:string)
     const lead=isAdmin(me)||project.ownerId===me.userId;
     const all=data.projectTasks.filter(t=>t.projectId===project.id);
     const tasks=all.filter(t=>(filter==='archive'?t.archived:!t.archived)&&(filter!=='mine'||t.assigneeId===me.userId)&&(filter!=='unassigned'||t.assigneeId===null)&&(t.title+' '+t.brief).toLowerCase().includes(search.toLowerCase()));
-    const team=data.members.filter(m=>m.status==='active'&&data.projectMembers.some(pm=>pm.projectId===project.id&&pm.userId===m.userId));
+    const team=data.members.filter(m=>m.status==='active'&&data.projectMembers.some(pm=>pm.projectId===project.id&&pm.userId===m.userId&&!pm.leftAt));
     const purpose=data.purposes.find(x=>x.id===project.purposeId);
     const active=all.filter(t=>!t.archived),done=active.filter(t=>taskStage(data,t)==='done').length;
     const mine=active.filter(t=>t.assigneeId===me.userId&&!['done','review'].includes(taskStage(data,t)));
@@ -113,7 +113,7 @@ function ProjectBoard({filter,F,archive,linkPending}:{filter:string;F:(v:string)
 function TaskEditor({projectId,task,onClose}:{projectId:string;task?:ProjectTask;onClose:()=>void}) {
     const {data,me,command,busy,toast,reload}=useWorkspace();
     const project=data.projects.find(p=>p.id===projectId)!;
-    const team=data.members.filter(m=>m.status==='active'&&canSeeSpace(data,m,project.spaceId)&&data.projectMembers.some(x=>x.projectId===projectId&&x.userId===m.userId));
+    const team=data.members.filter(m=>m.status==='active'&&canSeeSpace(data,m,project.spaceId)&&data.projectMembers.some(x=>x.projectId===projectId&&x.userId===m.userId&&!x.leftAt));
     // Optimistic concurrency: the form saves against the version it was loaded from. When someone else saves first, live
     // updates (or the refused save) bring their version here, and the person chooses; nothing is overwritten silently.
     const latest=task?data.projectTasks.find(t=>t.id===task.id):undefined;
@@ -140,7 +140,7 @@ function TaskDetail({task:t,onClose,onEdit}:{task:ProjectTask;onClose:()=>void;o
     const act=(c:CommandInput)=>command(c,{onError:(message,code)=>{toast(message);if(code==='STALE_TASK')reload();}});
     const p=data.projects.find(p=>p.id===t.projectId)!,lead=isAdmin(me)||p.ownerId===me.userId,mine=t.assigneeId===me.userId;
     const assigned=data.members.find(m=>m.userId===t.assigneeId),proof=data.contributions.find(c=>c.id===t.contributionId),stage=taskStage(data,t);
-    const team=data.projectMembers.some(m=>m.projectId===p.id&&m.userId===me.userId);
+    const team=data.projectMembers.some(m=>m.projectId===p.id&&m.userId===me.userId&&!m.leftAt);
     const notes=data.taskNotes.filter(n=>n.taskId===t.id).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));
     return <Modal title={t.title} onClose={onClose} wide><div className="task-detail">
         <div className="task-detail-meta"><Pill tone={stage==='done'?'mint':stage==='review'?'amber':'violet'}>{TASK_STAGES.find(s=>s.id===stage)?.label}</Pill>{t.archived&&<Pill>Archived</Pill>}<span>{assigned?.name||'Open to claim'}</span>{t.dueOn&&<span>Target {date(t.dueOn+'T12:00:00Z',{day:'numeric',month:'short',year:'numeric'})}</span>}</div>
