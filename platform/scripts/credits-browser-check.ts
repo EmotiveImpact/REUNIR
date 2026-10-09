@@ -97,6 +97,72 @@ try {
         await overflow(); await neutral();
         await page.screenshot({ path: dir + '/phone.png', fullPage: true });
     });
+    // Alpha 59: credits on outcomes (decision 059), on the same terms as credits on contributions.
+    await page.setViewportSize({ width: 1512, height: 1100 });
+    const outcome = (title: string) => page.locator('.outcome-card').filter({ hasText: title });
+    const OUT = 'A clearer first run for new members';
+    await check('the archived output in the fictional seed reads "With Nia James"', async () => {
+        await go('/outputs');
+        await expect(page.locator('.output-card').filter({ hasText: 'Notes from the studio: issue 01' }).locator('.credit-line')).toHaveText('With Nia James');
+    });
+    await switchPreviewRole(page, 'admin');
+    await check('an administrator recognises the contribution, so its author can record an outcome from it', async () => {
+        await project('Common Ground');
+        await item(WORK).getByLabel('contribution review feedback').fill('Three observed sessions and clear notes.');
+        await item(WORK).getByRole('button', { name: 'Recognise contribution', exact: true }).click();
+        await expect(item(WORK)).toContainText('recognised');
+    });
+    await switchPreviewRole(page, 'member');
+    await check('the author records an outcome and credits a teammate on it, who is asked first', async () => {
+        await go('/outputs');
+        await page.getByRole('button', { name: 'Record outcome', exact: true }).click();
+        await dialog().getByLabel('Reviewed evidence').selectOption({ label: WORK });
+        await dialog().getByLabel('The outcome', { exact: true }).fill(OUT);
+        await dialog().locator('[name=summary]').fill('Three observed sessions led to a simpler first screen.');
+        await dialog().getByRole('button', { name: 'Submit outcome', exact: true }).click();
+        await expect(outcome(OUT)).toContainText('submitted');
+        await outcome(OUT).getByRole('button', { name: 'Credit someone…', exact: true }).click();
+        await expect(dialog().getByRole('heading', { name: 'Credit someone on this outcome' })).toBeVisible();
+        expect(await dialog().getByLabel('Teammate').locator('option').allTextContents()).toEqual(['Choose a teammate', 'Idris Cole']);
+        await dialog().getByLabel('Teammate').selectOption({ label: 'Idris Cole' });
+        await dialog().getByLabel('What they did (optional)').fill('co-author');
+        await neutral(); await a11y('outcome-credit-dialog');
+        await dialog().getByRole('button', { name: 'Ask to credit', exact: true }).click();
+        await expect(toast()).toContainText('Invitation sent.');
+        await expect(outcome(OUT).locator('.credit-list li')).toContainText('Waiting for an answer');
+        await expect(outcome(OUT).locator('.credit-line')).toHaveCount(0);
+    });
+    await switchPreviewRole(page, 'instructor');
+    await check('the invitee opens the outcome from the notice before it is reviewed, accepts, and sees it on their profile', async () => {
+        await page.locator('a[href="/notifications"]').first().click();
+        await page.locator('.notification-row').filter({ hasText: OUT }).click();
+        await expect(page.locator('h1')).toHaveText('Made here. Meant something.');
+        const prompt = outcome(OUT).locator('.credit-prompt');
+        await expect(prompt).toContainText('Alex Morgan would like to credit you on this outcome as co-author');
+        await neutral(); await overflow(); await a11y('outcome-invitee');
+        await prompt.getByRole('button', { name: 'Accept credit', exact: true }).click();
+        await expect(toast()).toContainText('Credit accepted.');
+        await expect(outcome(OUT).locator('.credit-line')).toHaveText('With Idris Cole');
+        await openProfile(page);
+        await expect(page.locator('.credited-on')).toContainText(OUT);
+        await expect(page.locator('.credited-on')).toContainText('Outcome recorded by Alex Morgan · not yet reviewed · co-author');
+        await expect(page.locator('.panel').filter({ hasText: 'What changed' })).not.toContainText(OUT);
+    });
+    await switchPreviewRole(page, 'admin');
+    await check('an administrator sees the accepted credit, verifies the outcome and publishes it; the output names the credit', async () => {
+        await go('/outputs');
+        await expect(outcome(OUT).locator('.credit-line')).toHaveText('With Idris Cole');
+        await expect(outcome(OUT).locator('.credit-list, .credit-prompt')).toHaveCount(0);
+        await outcome(OUT).getByLabel('outcome review feedback').fill('The recognised contribution supports this.');
+        await outcome(OUT).getByRole('button', { name: 'Verify outcome', exact: true }).click();
+        await expect(outcome(OUT)).toContainText('Community verified');
+        await outcome(OUT).getByLabel('Output type').selectOption('software');
+        await outcome(OUT).getByRole('button', { name: 'Publish output', exact: true }).click();
+        await expect(page.locator('.output-card').filter({ hasText: OUT }).locator('.credit-line')).toHaveText('With Idris Cole');
+        await neutral(); await overflow(); await a11y('outputs-credited'); await page.screenshot({ path: dir + '/outputs.png', fullPage: true });
+        await page.setViewportSize({ width: 390, height: 900 });
+        await overflow(); await neutral();
+    });
     expect(errors).toEqual([]);
 } finally {
     await writeFile(dir + '/results.json', JSON.stringify({ generatedAt: new Date().toISOString(), method: 'Bundled demo in Chromium with fictional browser-local data.', results, errors }, null, 2));

@@ -1,4 +1,33 @@
-# Alpha 58 appeals for suspensions and message reports
+# Alpha 59 credits on outcomes
+
+9 October 2026. Version stays 0.39.0-alpha.1. Decision 059; migration 0050.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/full-audit-yhvssj` |
+| Verified locally | Yes: see below |
+| Merged | Not yet |
+| Deployed | No |
+
+## What changed
+
+See decision 059. An outcome's author credits the people who helped, with their consent. Accepted credits show on the outcome, the archived output and the credited person's profile, and never count as that person's evidence.
+
+## Checks run
+
+- Typecheck clean. `npm test`: 949 passed, 0 failed, including `tests/outcome-credits.test.ts` (8) and `tests/outcome-credits-database.test.ts` (6: the 0050 upgrade, row security for invitations, the insert policy's author, team, project and withdrawn-outcome checks, answering, withdrawing and grants).
+- `npm run test:postgres` against a fresh local PostgreSQL 16: 34 checks passed, including the new migration 0050 check and account deletion removing an outcome credit.
+- `npm run test:browser:credits`: 12 checks passed, including the seed's archived output, crediting a teammate on a new outcome, the invitee accepting before review, the profile, and the administrator verifying and publishing.
+- Browser suites: `test:browser` (24, 34 purpose and 27 pilot checks), `test:browser:evidence` (7), `test:browser:accounts` (13), `test:browser:forms` (11), `test:browser:v4` (20), `test:browser:monochrome` (16), `test:browser:work` (31) and `test:http` (19), all passed.
+- `python3 -m unittest discover -s scripts -p "test_*.py"`: 43 tests OK.
+
+## Not verified
+
+- Who can see a mission is checked by the server; the credit dialog for an outcome from a mission proof lists every active member it can see, so the server may refuse a choice. Nothing deployed.
+
+# Historical: Alpha 58 appeals for suspensions and message reports
 
 9 October 2026. Version stays 0.39.0-alpha.1. Decision 058; migration 0049.
 
@@ -8,7 +37,7 @@
 | --- | --- |
 | Implemented | Yes, on `claude/full-audit-yhvssj` |
 | Verified locally | Yes: see below |
-| Merged | Not yet |
+| Merged | Yes: PR #48, merged as `22e0171` |
 | Deployed | No |
 
 ## What changed

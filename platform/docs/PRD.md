@@ -226,7 +226,7 @@ A team member records concrete project work with text and an optional safe evide
 
 An Outcome states what changed and links exactly one approved own mission proof or recognised own contribution. A project-linked outcome uses the project's purpose when linked. A different community administrator reviews it separately. Sources cannot be reused to manufacture duplicate outcomes. This is a community review, not independent accreditation.
 
-A Community output is an admin-published member-archive record derived from a verified outcome. It records kind, title, summary, source, purpose, project where applicable, publisher and time. Private project/mission evidence cannot be published to the wider community. The same outcome is not published twice. Public portfolios, multi-author output credits and real-world impact aggregation remain future work.
+A Community output is an admin-published member-archive record derived from a verified outcome. It records kind, title, summary, source, purpose, project where applicable, publisher and time. Private project/mission evidence cannot be published to the wider community. The same outcome is not published twice. Since Alpha 59 (decision 059) an outcome's author may credit other people on it with their consent, and an archived output shows those accepted credits ("With Nia James"); a credit is acknowledgement, never the credited person's evidence, and someone credited on an outcome cannot review it. Public portfolios and real-world impact aggregation remain future work.
 
 ### Knowledge and ordinary community work
 

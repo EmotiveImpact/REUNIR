@@ -6,9 +6,24 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 Nothing in this list has been deployed. Deployment remains deferred by the owner.
 
-## Alpha 58: appeals for suspensions and message reports (no version change), 9 October 2026
+## Alpha 59: credits on outcomes (no version change), 9 October 2026
 
-On a pull request from `claude/full-audit-yhvssj`. Decision 058; migration 0049. The version stays 0.39.0-alpha.1.
+On a pull request from `claude/full-audit-yhvssj`. Decision 059; migration 0050. The version stays 0.39.0-alpha.1.
+
+**In plain language:** the person who records an outcome can now credit the people who helped bring it about, as they already could on a contribution. Each person is asked first and nothing shows until they accept. Accepted credits read "With Nia James" on the outcome, on the community output published from it, and under "Credited on" on the person's profile. A credit is never the credited person's own evidence, and someone credited on an outcome cannot review it.
+
+Details:
+
+- `outcome.credit.invite`, `outcome.credit.respond` and `outcome.credit.withdraw` in `packages/domain/src/outcome-credits.ts`, on the same terms as contribution credits: one live credit per person, no asking again after a refusal, 10 live and 30 records per outcome.
+- An outcome from project work credits its project's team; one from a mission proof, any active member who can see the mission. Withdrawn outcomes take no new credits.
+- The person invited may read the outcome before it is reviewed. A credited administrator cannot verify the outcome or decide a correction to it; the administrator who reviewed it cannot be credited.
+- `outcome_credits` with forced row security. The insert policy also checks the outcome's author, its own project and that it is not withdrawn. The runtime role may update only the answer and withdrawal columns. Account deletion removes credits naming the person.
+- The shared credits panel now serves contributions and outcomes alike. The fictional seed credits Nia on the published Notes outcome.
+- New tests: `outcome-credits`, `outcome-credits-database`; five new credits browser checks and a real PostgreSQL check.
+
+## Alpha 58: appeals for suspensions and message reports (no version change), 9 October 2026 (PR #48)
+
+Merged as `22e0171`. Decision 058; migration 0049. The version stays 0.39.0-alpha.1.
 
 **In plain language:** a member whose access was suspended can now ask, from their account, for the suspension to be looked at again. An owner or administrator who did not suspend them decides, and reversing restores their access straight away. Someone who reports a private message is now told when the report is closed, sees their reports on the Appeals page, and can ask once for another moderator to look again.
 

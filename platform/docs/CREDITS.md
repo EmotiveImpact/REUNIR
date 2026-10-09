@@ -1,6 +1,6 @@
-# Contribution credits
+# Contribution and outcome credits
 
-The member who recorded a project contribution can credit teammates who worked on it with them. Decision: decisions/034-contribution-credits.md.
+The member who recorded a project contribution can credit teammates who worked on it with them. Decision: decisions/034-contribution-credits.md. Since Alpha 59 the person who recorded an outcome can do the same on the outcome (decisions/059-outcome-credits.md; see **Outcome credits** below).
 
 ## How it works
 
@@ -24,8 +24,19 @@ Migration `0033_contribution_credits.sql`, additive, with forced row security an
 - There is no way to leave a project team yet, so a credit cannot end because someone left the team.
 - An open invitation from a person who then deletes their account can still be accepted or declined.
 - Credit descriptions are free text chosen by the author and are not moderated separately.
-- The demo seed holds one fictional accepted credit (Nia James on Sofia Chen's Notes contribution).
+- The demo seed holds two fictional accepted credits: Nia James on Sofia Chen's Notes contribution and on the outcome published from it.
 
 ## Reviewers and credits
 
 Nobody both reviews a contribution and shares its credit. A credited person cannot recognise the contribution or decide a correction to it, and someone who reviewed it or decided a correction cannot be invited or accept a credit on it (`REVIEWER_NOT_CREDITED`).
+
+## Outcome credits
+
+Alpha 59 adds the same consent flow to outcomes, on **Community outputs**.
+
+- The outcome's author chooses **Credit someone…** on the outcome. For an outcome from project work the choice is the project's team; for one from a mission proof, any active member who can see the mission (the server checks who can see it).
+- The person invited is notified and may read the outcome before it is reviewed, so they can decide. Once they accept, the outcome reads "With Idris Cole", and so does the community output published from it. Their profile lists it under **Credited on** as "Outcome recorded by …".
+- A credited administrator cannot verify the outcome or decide a correction to it, and the administrator who verified it, or decided a correction, cannot be credited on it. A withdrawn outcome takes no new credits.
+- A credit never lets the credited person complete a goal with the outcome, and adds nothing to reputation or roles.
+
+Storage: migration `0050_outcome_credits.sql` (`outcome_credits`, forced row security, the same column-limited update grant). Tests: `tests/outcome-credits.test.ts`, `tests/outcome-credits-database.test.ts`, the outcome credits check in `scripts/postgres-check.ts`, and the outcome checks in `npm run test:browser:credits`.

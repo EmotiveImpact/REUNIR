@@ -1,6 +1,7 @@
 import { DomainError, type Command, type Contribution, type EvidenceChange, type EvidenceSubject, type EvidenceText, type Member, type Outcome, type TenantContext, type Workspace } from '../../contracts/src/index';
 import { actorFor, canSeeSpace, isAdmin, isFormer } from './access';
 import { isCreditedOn } from './credits';
+import { isCreditedOnOutcome } from './outcome-credits';
 
 /**
  * Reviewed evidence is never rewritten in place. Its author can propose a correction, which a reviewer accepts or declines,
@@ -101,6 +102,7 @@ export function applyEvidenceHistory(s: Workspace, ctx: TenantContext, cmd: Comm
             }
             if (change.requestedBy === ctx.userId || author === ctx.userId) forbidden('You cannot review a correction to your own evidence.');
             if (change.subject === 'contribution' && isCreditedOn(s, x.id, ctx.userId)) forbidden('You are credited on this contribution, so another reviewer decides the correction.');
+            if (change.subject === 'outcome' && isCreditedOnOutcome(s, x.id, ctx.userId)) forbidden('You are credited on this outcome, so another administrator decides the correction.');
             if (!canReviewEvidence(s, change.subject, x, actor)) missing();
             Object.assign(change, { status: cmd.decision, decidedBy: ctx.userId, decidedAt: now, response: cmd.response });
             if (cmd.decision === 'accepted') {
