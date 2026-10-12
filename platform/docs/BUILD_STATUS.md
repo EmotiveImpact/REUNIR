@@ -1,4 +1,17 @@
-# Alpha 61 the app is called Ferven
+# Alpha 62 tidier People cards and plain covers
+
+12 October 2026, on `claude/project-thread-oaizhp`, part of the sleek and powerful work that began with Alpha 61. Version stays 0.39.0-alpha.1. No decision record; no migration. Not yet merged when written; the demo at https://ferven.vercel.app follows main.
+
+## What changed
+
+People cards show each person's role as a quiet caption instead of a grey highlighted box, the member count stays on one line, and tracks or projects without a picture show a shorter plain panel instead of a tall empty block.
+
+## Checks run
+
+- Typecheck clean, `npm test` passed, build and `bundle:preview` succeeded.
+- Every demo browser script passed. Python helpers OK.
+
+# Historical: Alpha 61 the app is called Ferven
 
 12 October 2026, on `claude/project-thread-oaizhp`. Version stays 0.39.0-alpha.1. No decision record; no migration.
 
@@ -10,7 +23,7 @@ Edem asked what it would take to make Ferven sleek and powerful. The plan, one p
 | --- | --- |
 | Implemented | Yes, on `claude/project-thread-oaizhp` |
 | Verified locally | Yes: see below |
-| Merged | Not yet |
+| Merged | Yes: PR #52, merged as `20eb723` |
 | Deployed | The demo at https://ferven.vercel.app follows main |
 
 ## What changed
