@@ -6,6 +6,17 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 The fictional browser demo has been live at https://ferven.vercel.app since 11 October 2026 and follows main. The connected application (sign-ups, email, database) has not been deployed.
 
+## Alpha 63: readable text on phones (no version change), 12 October 2026
+
+No decision record; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** On phones, text that was 9 to 11 pixels is raised to 11 to 12.5 pixels, so labels, captions and buttons are easier to read. Before, more than half the text on the main pages was under 12 pixels; now nothing is under 11. Laptops and desktops are unchanged.
+
+Details:
+
+- `scripts/phone_type.py` writes `apps/web/src/phone-type.css`: every font size that can apply at phone width is repeated in stylesheet import order, under a phone-width media query, raising sizes under 12px (9 to 11, 10 to 12, 11 to 12.5). Repeating the unchanged sizes too keeps the original cascade order. Rules for wider screens only are left alone.
+- `scripts/test_phone_type.py` fails when the generated sheet is out of date: after changing a font size, run `python3 scripts/phone_type.py`.
+
 ## Alpha 62: tidier People cards and plain covers (no version change), 12 October 2026
 
 No decision record; no migration. The version stays 0.39.0-alpha.1.

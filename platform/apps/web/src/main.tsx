@@ -41,3 +41,4 @@ import './collections.css';
 import './project-work.css';
 import './forms.css';
 import './polish.css';
+import './phone-type.css';
