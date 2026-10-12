@@ -29,7 +29,7 @@ export async function api<T>(path: string, body?: unknown, requestKey?: string):
     try { res = await fetch(path, { credentials: 'include', headers: body ? { 'Content-Type': 'application/json', 'Idempotency-Key': requestKey || newId() } : undefined, method: body ? 'POST' : 'GET', body: body ? JSON.stringify(body) : undefined }); }
     catch { throw new ApiError(OFFLINE_MESSAGE, 0, 'OFFLINE'); }
     if (!res.headers.get('content-type')?.includes('application/json'))
-        throw new ApiError('The REUNIR API is not connected. Live mode never falls back to demo data.', res.status, 'API_UNAVAILABLE');
+        throw new ApiError('The Ferven API is not connected. Live mode never falls back to demo data.', res.status, 'API_UNAVAILABLE');
     const data = await res.json();
     if (!res.ok)
         throw new ApiError(data.error?.message || data.message || 'Something did not go through. Please try again.', res.status, data.error?.code || 'HTTP_' + res.status);

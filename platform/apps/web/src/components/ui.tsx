@@ -6,7 +6,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { UserRound, X, Lock, ArrowLeft, Check, Inbox, type LucideIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Member, Track, Project } from '../../../../packages/contracts/src/index';
-export function Mark({size=27}:{size?:number}) {return <span className="brand-mark" style={{width:size,height:size,fontSize:size*.67}} aria-hidden="true">R</span>;}
+export function Mark({size=27}:{size?:number}) {return <span className="brand-mark" style={{width:size,height:size,fontSize:size*.67}} aria-hidden="true">F</span>;}
 export function Avatar({member,size='md'}:{member?:Member;size?:'xs'|'sm'|'md'|'lg'|'xl'}) {
  // A former member has no photo: their account is gone, and demo portraits never stand in for one.
  const photo=member?.status==='left'?undefined:member?.avatar || (mode==='demo'&&member?demoPortraits[member.userId]:undefined);

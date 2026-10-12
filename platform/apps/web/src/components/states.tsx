@@ -11,13 +11,13 @@ import { Button } from './ui/button';
  */
 
 const failures: Record<Failure, { icon: LucideIcon; title: string; body: string }> = {
-    offline: { icon: WifiOff, title: 'You appear to be offline.', body: 'REUNIR could not be reached. Check your connection, then try again.' },
+    offline: { icon: WifiOff, title: 'You appear to be offline.', body: 'Ferven could not be reached. Check your connection, then try again.' },
     session: { icon: KeyRound, title: 'Your session has ended.', body: 'Sign in again to carry on. Nothing you saved has been lost.' },
     'two-factor': { icon: ShieldAlert, title: 'Two-step sign-in comes first.', body: 'Owner and administrator tools need two-step sign-in. Turn it on from Your account, then try again.' },
     forbidden: { icon: Lock, title: 'This is not open to your account.', body: 'Your role in this community does not include it. If you think it should, ask an owner or administrator.' },
     'not-found': { icon: Compass, title: 'We could not find that.', body: 'It may have been removed, or the link may be out of date.' },
-    outdated: { icon: RefreshCw, title: 'This part of REUNIR did not load.', body: 'REUNIR may have been updated since you opened it. Reloading fetches the latest version.' },
-    unknown: { icon: TriangleAlert, title: 'This page ran into a problem.', body: 'The rest of REUNIR still works. Try again, or head back to your home.' },
+    outdated: { icon: RefreshCw, title: 'This part of Ferven did not load.', body: 'Ferven may have been updated since you opened it. Reloading fetches the latest version.' },
+    unknown: { icon: TriangleAlert, title: 'This page ran into a problem.', body: 'The rest of Ferven still works. Try again, or head back to your home.' },
 };
 /** The reassurance that goes with a page that failed to display. */
 export const SAVED_NOTE = mode === 'demo' ? 'Your saved demo data has not been deleted.' : 'A page that fails to display does not change anything you have saved.';
@@ -62,7 +62,7 @@ export function ErrorState({ error, onRetry, retryLabel, home = true, saved = fa
         <p>{copy.body}</p>
         {saved && <p className="state-note">{SAVED_NOTE}</p>}
         <div className="empty-actions">
-            {retry && <Button variant="default" type="button" className="button primary" onClick={retry}><RefreshCw size={16} aria-hidden="true"/>{retryLabel ?? (kind === 'session' ? 'Sign in again' : kind === 'outdated' ? 'Reload REUNIR' : 'Try again')}</Button>}
+            {retry && <Button variant="default" type="button" className="button primary" onClick={retry}><RefreshCw size={16} aria-hidden="true"/>{retryLabel ?? (kind === 'session' ? 'Sign in again' : kind === 'outdated' ? 'Reload Ferven' : 'Try again')}</Button>}
             {kind === 'two-factor' && <Link className="button secondary" to="/account">Open Your account</Link>}
             {home && <Link className="button secondary" to="/"><Home size={16} aria-hidden="true"/>Go to your home</Link>}
         </div>

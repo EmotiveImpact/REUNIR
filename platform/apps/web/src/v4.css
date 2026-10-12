@@ -10,7 +10,7 @@
 .workspace-icon::before,.workspace-icon::after,.rail-indicator{display:none!important}
 .rail-add{color:#999}.rail-add:hover,.workspace-icon:hover{background:#151515;color:#fff}.rail-bottom{margin-top:auto}.rail-bottom .icon-button{color:#999}
 .sidebar{position:sticky;top:0;left:auto;height:100dvh;width:auto;border-right:1px solid #191919;background:#090909;padding:25px 16px 18px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#292929 #090909;z-index:31}
-.sidebar-brand{display:block;padding:0 8px 24px}.sidebar-brand strong{display:block;font-size:13px;letter-spacing:.19em;font-weight:650}.sidebar-brand small{display:block;font-size:9px;color:#969696;letter-spacing:.045em;margin-top:5px}
+.sidebar-brand{display:block;padding:0 8px 24px}.sidebar-brand strong{display:block;font-size:13px;letter-spacing:.19em;font-weight:650;text-transform:uppercase}.sidebar-brand small{display:block;font-size:9px;color:#969696;letter-spacing:.045em;margin-top:5px}
 .primary-nav{gap:2px}.primary-nav a,.spaces-nav a,.sidebar-lower a{min-height:39px;padding:8px;color:#aaa;font-size:12px;gap:10px;line-height:1.4;border-radius:6px;border:0!important;box-shadow:none!important}
 .primary-nav a.active,.spaces-nav a.active,.sidebar-lower a.active{background:transparent;color:#fff;border:0;box-shadow:none}
 .primary-nav a svg,.spaces-nav a svg,.sidebar-lower a svg{color:#999;stroke-width:1.65;width:17px;height:17px}

@@ -1,4 +1,16 @@
-# Latest: the October audit, Alpha 50 to 54
+# Latest: making Ferven sleek and powerful, Alpha 61 onwards
+
+12 October 2026, on `claude/project-thread-oaizhp`. Edem asked what it would take to make Ferven sleek and powerful. Numbering from Alpha 61 (highest before was Alpha 60, decision 060, migration 0051). One pull request each, merged when green, restarting the branch from main each time:
+
+- Alpha 61, the Ferven name everywhere (no decision, no migration).
+- Next: phone rough edges (People card labels, member count, plain project covers), larger text on phones, clean web addresses and link previews, add to home screen.
+- Waiting on Edem's accounts or spend: real staging (Neon, Resend, Google Cloud), the scan machine for uploads (about $22 a month), a domain.
+
+The demo at https://ferven.vercel.app redeploys from main on every merge.
+
+---
+
+# Historical: the October audit, Alpha 50 to 54
 
 9 October 2026, on `claude/full-audit-yhvssj`. Edem asked for a full audit and for everything found to be fixed. The findings, in order of importance, are in the project file `ferven/audit-2026-10-09.md`. This thread holds Alpha 50 to 54, decisions 050 to 054 and migrations 0048 to 0052.
 

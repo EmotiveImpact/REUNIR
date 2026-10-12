@@ -6,7 +6,7 @@ import { TWO_FACTOR_REQUIRED } from '../../../../packages/contracts/src/two-fact
 export class ApiError extends Error {
     constructor(message: string, readonly status: number, readonly code: string) { super(message); this.name = 'ApiError'; }
 }
-export const OFFLINE_MESSAGE = 'REUNIR could not be reached. Check your connection and try again. Nothing was saved.';
+export const OFFLINE_MESSAGE = 'Ferven could not be reached. Check your connection and try again. Nothing was saved.';
 /** What went wrong, in the terms a person can act on. */
 export type Failure = 'offline' | 'session' | 'two-factor' | 'forbidden' | 'not-found' | 'outdated' | 'unknown';
 export function failureOf(error: unknown): Failure {

@@ -124,7 +124,7 @@ test('turning it on needs the password, shows a setup link once, and takes effec
     assert.equal(r.status, 200);
     const body = await r.json();
     totpURI = body.totpURI; backupCodes = body.backupCodes;
-    assert.match(totpURI, /^otpauth:\/\/totp\/REUNIR:amina%40example\.test\?secret=[A-Z2-7]+&issuer=REUNIR&digits=6&period=30$/);
+    assert.match(totpURI, /^otpauth:\/\/totp\/Ferven:amina%40example\.test\?secret=[A-Z2-7]+&issuer=Ferven&digits=6&period=30$/);
     assert.match(setupKey(totpURI), /^([A-Z2-7]{4} )+[A-Z2-7]{1,4}$/);
     assert.equal(backupCodes.length, 10);
     assert(backupCodes.every(c => /^[A-Za-z0-9]{5}-[A-Za-z0-9]{5}$/.test(c)));

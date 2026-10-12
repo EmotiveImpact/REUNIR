@@ -1,5 +1,5 @@
 /** Two-step sign-in: the shared words and rules. Nothing here holds or derives a secret. */
-export const TWO_FACTOR_ISSUER = 'REUNIR';
+export const TWO_FACTOR_ISSUER = 'Ferven';
 
 /** Whether owners and administrators must have two-step sign-in turned on to use their authority. */
 export type AdminTwoFactor = 'required' | 'optional';

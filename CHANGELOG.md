@@ -4,7 +4,18 @@ Every release of REUNIR so far, newest first. Each release opens with a short pl
 
 Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main together in PR #1. From Alpha 08 onwards each release arrived on main through its own pull request, listed under its heading. Exact test runs, failed attempts and what remains unverified are in [platform/docs/BUILD_STATUS.md](platform/docs/BUILD_STATUS.md) and the files in [platform/docs/history](platform/docs/history).
 
-Nothing in this list has been deployed. Deployment remains deferred by the owner.
+The fictional browser demo has been live at https://ferven.vercel.app since 11 October 2026 and follows main. The connected application (sign-ups, email, database) has not been deployed.
+
+## Alpha 61: the app is called Ferven (no version change), 12 October 2026
+
+No decision record; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** everything a person sees now says Ferven: the logo letter, the tab title, the sign-in and invitation pages, error messages, emails and the name an authenticator app shows.
+
+Details:
+
+- Visible text in the web app, the password reset, invitation, digest and email-change messages, the calendar export and the two-step issuer (`TWO_FACTOR_ISSUER`, Better Auth `appName`) say Ferven. The mark and favicon show F.
+- Internal names stay as they were: the `reunir` package, `REUNIR_` settings, log lines, configuration errors and the `.preview/REUNIR-preview.html` file. Existing authenticator entries keep working; only the label shown for new ones changes.
 
 ## Alpha 60: usage counts that name no one (no version change), 9 October 2026 (PR #50)
 
