@@ -1,6 +1,19 @@
-# Alpha 62 tidier People cards and plain covers
+# Alpha 63 readable text on phones
 
 12 October 2026, on `claude/project-thread-oaizhp`, part of the sleek and powerful work that began with Alpha 61. Version stays 0.39.0-alpha.1. No decision record; no migration. Not yet merged when written; the demo at https://ferven.vercel.app follows main.
+
+## What changed
+
+On phones, text that was 9 to 11 pixels is raised to 11 to 12.5 pixels, so labels, captions and buttons are easier to read. Before, more than half the text on the main pages was under 12 pixels; now nothing is under 11. Laptops and desktops are unchanged.
+
+## Checks run
+
+- Typecheck clean, `npm test` passed, build and `bundle:preview` succeeded.
+- Every demo browser script passed; no page scrolls sideways at 390 pixels wide. Python helpers OK, including the three new phone type tests.
+
+# Historical: Alpha 62 tidier People cards and plain covers
+
+12 October 2026, on `claude/project-thread-oaizhp`, part of the sleek and powerful work that began with Alpha 61. Version stays 0.39.0-alpha.1. No decision record; no migration. Merged as PR #53, `c1f9500`; the demo at https://ferven.vercel.app follows main.
 
 ## What changed
 
