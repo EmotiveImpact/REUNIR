@@ -6,6 +6,19 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 The fictional browser demo has been live at https://ferven.vercel.app since 11 October 2026 and follows main. The connected application (sign-ups, email, database) has not been deployed.
 
+## Alpha 65: link previews and add to home screen (no version change), 12 October 2026
+
+No decision record; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** A Ferven link shared in a message or post now shows a tidy black and white card with the name and tagline. On a phone, Ferven can be added to the home screen with its own F icon and opens full screen like an app.
+
+Details:
+
+- `apps/web/public`: `og.png` (1200 by 630), `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` and `manifest.webmanifest` (standalone, black theme).
+- `apps/web/index.html`: Open Graph and Twitter card tags, the manifest and touch icon, and the home screen title. The image path is relative, so it follows whatever address serves the app.
+- The self-hosted server serves these five files; the single-file preview drops the manifest and touch icon links because nothing sits beside it.
+- Clean addresses without `#` were considered and left out: invitation and password reset tokens sit after `#`, so they never reach the server or its logs.
+
 ## Alpha 64: the demo calendar follows today (no version change), 12 October 2026
 
 No decision record; no migration. The version stays 0.39.0-alpha.1.

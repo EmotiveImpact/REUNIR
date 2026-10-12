@@ -1,8 +1,8 @@
 {
-  "release": "REUNIR Alpha 64 demo calendar",
+  "release": "REUNIR Alpha 65 link previews",
   "version": "0.39.0-alpha.1",
-  "sourceBaseline": "5e47b95e60d7905f487760635f31abc25c47eb4e",
-  "generatedAt": "2026-10-12T02:36:24.377584+00:00",
+  "sourceBaseline": "c4027ed1a526bdfcd6da3d8451be6f9f07e2afc8",
+  "generatedAt": "2026-10-12T03:05:04.820177+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "8ccb9509e409e9c7125842849002fec544acf9a5631c296eb95ddf4c44482e19",
-      "bytes": 77555
+      "sha256": "b07f4deca6db301f894b4c206d38a9ce8d8d272bf03c5fbd4765b57ab6403b24",
+      "bytes": 78606
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "a16bcf49c3fd91c95ef15031c8e1672edf17c3d483ac873baa8ed8e4e5fb9206",
-      "bytes": 124644
+      "sha256": "ff4f74599d324b7ce9e419248c791a96de130958b360485277fdd1675d47f01b",
+      "bytes": 124523
     },
     {
       "path": "platform/.dockerignore",
@@ -146,8 +146,8 @@
     },
     {
       "path": "platform/apps/api/src/server.ts",
-      "sha256": "bcad234af51a606e3451cdf09127ec47107f8622e05fa2d718b8aa6d3a23168b",
-      "bytes": 730
+      "sha256": "608dc4a73ffe8e6eb3b3fcc025818157b2396894cb687219b2d0f7a5b0255dd8",
+      "bytes": 894
     },
     {
       "path": "platform/apps/api/src/storage.ts",
@@ -161,8 +161,8 @@
     },
     {
       "path": "platform/apps/web/index.html",
-      "sha256": "10079f32d6667c42ba0e17e56a73f5e11a48e1f375b4adff167188b7daa8a61a",
-      "bytes": 688
+      "sha256": "9a7e176777a7b6e30612ca51f42015f4ad889e628527cdbd1485545c309a4aaf",
+      "bytes": 1597
     },
     {
       "path": "platform/apps/web/package.json",
@@ -170,9 +170,34 @@
       "bytes": 89
     },
     {
+      "path": "platform/apps/web/public/apple-touch-icon.png",
+      "sha256": "c6289b0d4404c945d5fba514d9f83cfb1050b89e3f0768c6e0b37716920e6e06",
+      "bytes": 567
+    },
+    {
       "path": "platform/apps/web/public/hero.jpg",
       "sha256": "6fce202220170a9a1f5ac8ee01b16f4795a66df8915b90f6e82132cb22bf9666",
       "bytes": 30734
+    },
+    {
+      "path": "platform/apps/web/public/icon-192.png",
+      "sha256": "102b6f22d413c03dc3651803cc08d569b871a59b259b125ee59671615dbf50a0",
+      "bytes": 681
+    },
+    {
+      "path": "platform/apps/web/public/icon-512.png",
+      "sha256": "ba30865617dd69147cc648f5adeb0cb542521aa80962f8af79249607dbcf7a8a",
+      "bytes": 2012
+    },
+    {
+      "path": "platform/apps/web/public/manifest.webmanifest",
+      "sha256": "965980a553dc8c7a233feb6cb25be042669985e306cb0f92218aaf23679c36b9",
+      "bytes": 471
+    },
+    {
+      "path": "platform/apps/web/public/og.png",
+      "sha256": "8262eb254bf7e62de1d1a98bc2fcc3810bc30f5bcd934ce66cccd44db08998cb",
+      "bytes": 37546
     },
     {
       "path": "platform/apps/web/src/App.tsx",
@@ -786,8 +811,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "16867f3336a22f8987ccb345b710eb08d2b441bbae0e8bc864f97dcb07cbfd50",
-      "bytes": 241865
+      "sha256": "0ac1ca76b1357f96a8941cacb229b8cf43d4f599de5283d873a4a9201648d907",
+      "bytes": 242691
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -2051,8 +2076,8 @@
     },
     {
       "path": "platform/scripts/bundle-preview.ts",
-      "sha256": "35d8f4a258be27c9c4afaabeeb774762862bc7c21493d6a55c35dded7c5e0a66",
-      "bytes": 1234
+      "sha256": "24741ea2f70218b51b9a918d9c0d19353cecf6caabfb285dcf5a8261338d91e8",
+      "bytes": 1428
     },
     {
       "path": "platform/scripts/collections-browser-check.ts",
@@ -2116,8 +2141,8 @@
     },
     {
       "path": "platform/scripts/forms-browser-check.ts",
-      "sha256": "263a30015cdf5a79cb9b2f5e25f7b37f24fa8c646ce0fc1d24132dc0e671412d",
-      "bytes": 16073
+      "sha256": "54cc3bf0b1f49de32f1bc0375004b90803536dbb4169663faebea6333f8bdbcf",
+      "bytes": 16152
     },
     {
       "path": "platform/scripts/groups-browser-check.ts",

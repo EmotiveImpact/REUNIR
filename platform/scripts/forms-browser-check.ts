@@ -35,6 +35,7 @@ try {
     await expect(page.locator('h1')).toContainText('Build together.');
     await check('every page an administrator can open uses only the shared form components', async () => {
         await switchPreviewRole(page, 'admin');
+        await expect(sidebar().locator('a[href^="/"]').first()).toBeVisible();
         const hrefs = await sidebar().locator('a[href^="/"]').evaluateAll(as => [...new Set(as.map(a => a.getAttribute('href')!))]);
         expect(hrefs.length).toBeGreaterThan(10);
         for (const href of hrefs) {

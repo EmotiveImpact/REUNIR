@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 let html = await readFile(root + '/.standalone-dist/index.html', 'utf8');
 html=html.replace(/<link[^>]*rel="modulepreload"[^>]*>/g,'');
+// The single-file preview has no files beside it: the home screen manifest and touch icon are for the served site.
+html=html.replace(/<link[^>]*rel="(?:manifest|apple-touch-icon)"[^>]*>/g,'');
 for (const match of [...html.matchAll(/<link[^>]*href="([^"]+\.css)"[^>]*>/g)]) {
     let css = await readFile(resolve(root, '.standalone-dist', match[1].replace(/^\.\//, '')), 'utf8');
     const image = await readFile(root + '/apps/web/public/hero.jpg');
