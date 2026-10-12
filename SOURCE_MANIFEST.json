@@ -1,8 +1,8 @@
 {
   "release": "REUNIR Alpha 65 link previews",
   "version": "0.39.0-alpha.1",
-  "sourceBaseline": "cf33784c2b050e19040fc610fe1f753a140098ad",
-  "generatedAt": "2026-10-12T02:53:10.378572+00:00",
+  "sourceBaseline": "c4027ed1a526bdfcd6da3d8451be6f9f07e2afc8",
+  "generatedAt": "2026-10-12T03:05:04.820177+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -2141,8 +2141,8 @@
     },
     {
       "path": "platform/scripts/forms-browser-check.ts",
-      "sha256": "263a30015cdf5a79cb9b2f5e25f7b37f24fa8c646ce0fc1d24132dc0e671412d",
-      "bytes": 16073
+      "sha256": "54cc3bf0b1f49de32f1bc0375004b90803536dbb4169663faebea6333f8bdbcf",
+      "bytes": 16152
     },
     {
       "path": "platform/scripts/groups-browser-check.ts",
