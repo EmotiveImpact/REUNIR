@@ -1,6 +1,19 @@
-# Alpha 64 the demo calendar follows today
+# Alpha 65 link previews and add to home screen
 
 12 October 2026, on `claude/project-thread-oaizhp`, part of the sleek and powerful work that began with Alpha 61. Version stays 0.39.0-alpha.1. No decision record; no migration. Not yet merged when written; the demo at https://ferven.vercel.app follows main.
+
+## What changed
+
+A Ferven link shared in a message or post now shows a tidy black and white card with the name and tagline. On a phone, Ferven can be added to the home screen with its own F icon and opens full screen like an app.
+
+## Checks run
+
+- Typecheck clean, `npm test` passed, build and `bundle:preview` succeeded; the built page carries the manifest and preview tags and the preview file does not carry the manifest.
+- Every demo browser script passed. `test:http`: 19 passed. Python helpers OK.
+
+# Historical: Alpha 64 the demo calendar follows today
+
+12 October 2026, on `claude/project-thread-oaizhp`, part of the sleek and powerful work that began with Alpha 61. Version stays 0.39.0-alpha.1. No decision record; no migration. Merged as PR #55, `6cb4249`; the demo at https://ferven.vercel.app follows main.
 
 ## What changed
 
