@@ -1,8 +1,8 @@
 {
-  "release": "REUNIR Alpha 62 tidier cards",
+  "release": "REUNIR Alpha 63 phone text",
   "version": "0.39.0-alpha.1",
-  "sourceBaseline": "06b09c3b00b12c0983d3b6c281358a247b4ff71a",
-  "generatedAt": "2026-10-12T02:03:47.887469+00:00",
+  "sourceBaseline": "5fef0211112a810ef183210f50af059778472e68",
+  "generatedAt": "2026-10-12T02:21:11.203571+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "ad17002afc69e6b550a8955d0ce5423652fafb044fb6285f39e425d999e3075c",
-      "bytes": 75691
+      "sha256": "c7bffea82e15cdbb854c7405b842e55e5856886b2bd6674b8fbe785c32b1dc62",
+      "bytes": 76623
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "85ca7d3c0c718bf00640824245b7fda3b34f5af497405fb2a06de08d51ec9e28",
-      "bytes": 124350
+      "sha256": "9e094a1160a24e8557e769d910a8b2fd009d02a1731fe7f006768007ea006188",
+      "bytes": 124505
     },
     {
       "path": "platform/.dockerignore",
@@ -611,8 +611,8 @@
     },
     {
       "path": "platform/apps/web/src/main.tsx",
-      "sha256": "abfba947e3d3740a25deec23d4cdccc05be343060cd56c2b82eb76ffa95f10af",
-      "bytes": 2264
+      "sha256": "e9cf8243ed6df98c721e239e1b12dd39a9433142eaeb81b16c6befee1f947847",
+      "bytes": 2291
     },
     {
       "path": "platform/apps/web/src/pages/access.tsx",
@@ -693,6 +693,11 @@
       "path": "platform/apps/web/src/pages/teaching.tsx",
       "sha256": "8312648246133a41ee668641cb25cdd4402c69bd2b8eaee1bdd147e9250537d2",
       "bytes": 3288
+    },
+    {
+      "path": "platform/apps/web/src/phone-type.css",
+      "sha256": "d6fd6e4a805ef2d838a2b1f6399857883b7ece8592e69295afdf276d213e1900",
+      "bytes": 30687
     },
     {
       "path": "platform/apps/web/src/polish.css",
@@ -781,8 +786,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "eb380910b6f3cced1d8104371c0b9ad71ca24e6a4eca866a62e5155c966a7f6a",
-      "bytes": 240202
+      "sha256": "ee2d98270d270958d149029d98f627324f97a4aec4568697a2e6b13609b549b9",
+      "bytes": 241018
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -2930,6 +2935,11 @@
       "bytes": 3831
     },
     {
+      "path": "scripts/phone_type.py",
+      "sha256": "63dd28117729582633891c9a30cf4440df9ae53292ba7fee3e83a85529053901",
+      "bytes": 3809
+    },
+    {
       "path": "scripts/publish_source.py",
       "sha256": "88b7924393165a2dfefde6df57195ce6bf6582470c11ad48026e07842f3d10a8",
       "bytes": 8372
@@ -2953,6 +2963,11 @@
       "path": "scripts/test_forms_contract.py",
       "sha256": "04f3938c157b67877a642ae4c71b3163fc6c596a9bd9c78b53332d864294c780",
       "bytes": 4463
+    },
+    {
+      "path": "scripts/test_phone_type.py",
+      "sha256": "5d0ca7e256e9f0b3cd93ef2381a58efd3861295cb0a32b20f827806326ec34d6",
+      "bytes": 1005
     },
     {
       "path": "scripts/test_publish_source.py",
