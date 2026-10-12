@@ -1,8 +1,8 @@
 {
-  "release": "REUNIR Alpha 61 Ferven name",
+  "release": "REUNIR Alpha 62 tidier cards",
   "version": "0.39.0-alpha.1",
-  "sourceBaseline": "cbf793bff2e0d62195d89f762b6f1187a2769cf4",
-  "generatedAt": "2026-10-12T01:36:05.353558+00:00",
+  "sourceBaseline": "06b09c3b00b12c0983d3b6c281358a247b4ff71a",
+  "generatedAt": "2026-10-12T02:03:47.887469+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "a09c0fff8b1f3ab4ddcefb116fb06413c19dfcbdb04ebe817cc75f668b9a59e1",
-      "bytes": 74991
+      "sha256": "ad17002afc69e6b550a8955d0ce5423652fafb044fb6285f39e425d999e3075c",
+      "bytes": 75691
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "6921cdf81bfbeea1b7de019ad6fdc6da5bb68f33035ef58147304c80bca1da73",
-      "bytes": 124050
+      "sha256": "85ca7d3c0c718bf00640824245b7fda3b34f5af497405fb2a06de08d51ec9e28",
+      "bytes": 124350
     },
     {
       "path": "platform/.dockerignore",
@@ -611,8 +611,8 @@
     },
     {
       "path": "platform/apps/web/src/main.tsx",
-      "sha256": "dbb993af1531ae837c6662421a623447a302251b7260197470fd5092f889fdab",
-      "bytes": 2241
+      "sha256": "abfba947e3d3740a25deec23d4cdccc05be343060cd56c2b82eb76ffa95f10af",
+      "bytes": 2264
     },
     {
       "path": "platform/apps/web/src/pages/access.tsx",
@@ -693,6 +693,11 @@
       "path": "platform/apps/web/src/pages/teaching.tsx",
       "sha256": "8312648246133a41ee668641cb25cdd4402c69bd2b8eaee1bdd147e9250537d2",
       "bytes": 3288
+    },
+    {
+      "path": "platform/apps/web/src/polish.css",
+      "sha256": "e6ca63fdb49763e0915b68d10a6d7f2fcefe0f0392d23762d8bcbbffbcb23c76",
+      "bytes": 994
     },
     {
       "path": "platform/apps/web/src/project-work.css",
@@ -776,8 +781,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "62d5e70f1989771879ad6cffe03b35a43afec51d923477b31bfe795fd6f7bc0a",
-      "bytes": 239465
+      "sha256": "eb380910b6f3cced1d8104371c0b9ad71ca24e6a4eca866a62e5155c966a7f6a",
+      "bytes": 240202
     },
     {
       "path": "platform/docs/COVERS.md",

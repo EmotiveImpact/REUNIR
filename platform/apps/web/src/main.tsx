@@ -40,3 +40,4 @@ import './evidence-history.css';
 import './collections.css';
 import './project-work.css';
 import './forms.css';
+import './polish.css';

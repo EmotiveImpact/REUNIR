@@ -1,0 +1,13 @@
+/* Alpha 62: rough edges found on the live demo. Monochrome only. */
+
+/* People: the role reads as a quiet label above the portrait, not a grey highlighted box. */
+.member-backdrop{background:none;display:block;width:100%;margin-bottom:16px}
+.member-backdrop>i{display:none}
+.member-backdrop>span{font-size:10px;font-weight:600;letter-spacing:.14em;color:#8c8c8c;background:none}
+.member-card .member-copy{display:flex;flex-direction:column;flex:1;width:100%}
+.member-card footer{display:flex;align-items:center;gap:6px;margin-top:auto;padding-top:18px;font-size:12px;color:#d4d4d4}
+.directory-search>span{white-space:nowrap;font-size:11px;color:#8c8c8c}
+
+/* Tracks and projects without an uploaded cover: a shorter plain panel instead of a tall empty block. */
+.project-card .cover-media.cover-plain,.track-card .cover-media.cover-plain{height:120px;background:var(--surface-2)}
+@media(max-width:760px){.project-card .cover-media.cover-plain,.track-card .cover-media.cover-plain{height:96px}}

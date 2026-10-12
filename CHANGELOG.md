@@ -6,6 +6,16 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 The fictional browser demo has been live at https://ferven.vercel.app since 11 October 2026 and follows main. The connected application (sign-ups, email, database) has not been deployed.
 
+## Alpha 62: tidier People cards and plain covers (no version change), 12 October 2026
+
+No decision record; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** People cards show each person's role as a quiet caption instead of a grey highlighted box, the member count stays on one line, and tracks or projects without a picture show a shorter plain panel instead of a tall empty block.
+
+Details:
+
+- `apps/web/src/polish.css`, loaded after the other stylesheets: `.member-backdrop` styled as a caption, the card footer pushed to the bottom, the directory count kept on one line, and `.cover-plain` on track and project cards 120px high (96px on phones). Monochrome, no gradients.
+
 ## Alpha 61: the app is called Ferven (no version change), 12 October 2026
 
 No decision record; no migration. The version stays 0.39.0-alpha.1.
