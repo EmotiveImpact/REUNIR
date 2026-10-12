@@ -4,7 +4,7 @@ export const DEMO_WORKSHEET_FILE = 'file_problem_worksheet';
 export const DEMO_COVER_LIBRARY_FILE = 'file_cover_mountain';
 const lines = [
     'Problem interview worksheet',
-    'Fictional REUNIR demonstration resource',
+    'Fictional Ferven demonstration resource',
     '',
     '1. Who did you speak to, and what are they trying to do?',
     '2. When did the problem last happen?',

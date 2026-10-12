@@ -168,9 +168,9 @@ try {
         await expect(dialog(stewardPage).getByRole('alert')).toHaveText('That password is not right.');
         await dialog(stewardPage).getByLabel('Your password', { exact: true }).fill(PASSWORDS.steward);
         await dialog(stewardPage).getByRole('button', { name: 'Continue', exact: true }).click();
-        await expect(dialog(stewardPage).getByRole('heading', { name: 'Add REUNIR to your authenticator app' })).toBeVisible();
+        await expect(dialog(stewardPage).getByRole('heading', { name: 'Add Ferven to your authenticator app' })).toBeVisible();
         const link = await dialog(stewardPage).getByRole('link', { name: 'Open in an authenticator app' }).getAttribute('href');
-        expect(link).toMatch(/^otpauth:\/\/totp\/REUNIR:steward%40example\.test\?secret=[A-Z2-7]+&issuer=REUNIR/);
+        expect(link).toMatch(/^otpauth:\/\/totp\/Ferven:steward%40example\.test\?secret=[A-Z2-7]+&issuer=Ferven/);
         const key = new URL(link!).searchParams.get('secret')!;
         await expect(dialog(stewardPage).locator('.two-step-key code')).toHaveText(key.replace(/(.{4})/g, '$1 ').trim());
         await a11y('two-step-setup', stewardPage);

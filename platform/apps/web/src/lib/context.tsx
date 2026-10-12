@@ -206,7 +206,7 @@ function Toast({ register }: { register: (show: (s: string, tone?: 'error') => v
 function Login({ onDone }: {
     onDone: () => void;
 }) { const [email, E] = useState(''); const [password, P] = useState(''); const [error, Err] = useState(''); const [busy, B] = useState(false); const [recover,R]=useState(false);const [sent,Sent]=useState(false);const [secondStep,Second]=useState(false);const [farewell]=useState(takeDeletionNotice);
-    const art=<div className="login-art"><span className="eyebrow">REUNIR</span><h1>Your people.<br />Real progress.</h1><p>A space for the conversations, ideas and work that move you forward.</p></div>;
+    const art=<div className="login-art"><span className="eyebrow">Ferven</span><h1>Your people.<br />Real progress.</h1><p>A space for the conversations, ideas and work that move you forward.</p></div>;
     // Two-step sign-in: the password was right, and the account asks for its second step before a session exists.
     if(secondStep)return <main className="login-page">{art}<SecondStepForm onDone={onDone} onRestart={()=>{Second(false);P('');}}/></main>;
     return <main className="login-page">{art}<form className="form-stack" onSubmit={async (e) => { e.preventDefault(); B(true); Err(''); try {

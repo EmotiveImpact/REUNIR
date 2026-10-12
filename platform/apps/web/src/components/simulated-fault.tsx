@@ -12,5 +12,5 @@ import { Button } from './ui/button';
 export function SimulatedFault() {
     const [, rerender] = useState(0);
     if (simulatedFault.armed) throw new Error('A simulated display fault in the fictional demo. No data was changed.');
-    return <Empty icon={CheckCircle2} title="The page recovered." body="This demo-only page fails on purpose to show how REUNIR handles a page that cannot be displayed. No data was changed." action={<><Button variant="secondary" type="button" className="button secondary" onClick={() => { simulatedFault.armed = true; rerender(n => n + 1); }}>Simulate the problem again</Button><Link className="button secondary" to="/">Go to your home</Link></>}/>;
+    return <Empty icon={CheckCircle2} title="The page recovered." body="This demo-only page fails on purpose to show how Ferven handles a page that cannot be displayed. No data was changed." action={<><Button variant="secondary" type="button" className="button secondary" onClick={() => { simulatedFault.armed = true; rerender(n => n + 1); }}>Simulate the problem again</Button><Link className="button secondary" to="/">Go to your home</Link></>}/>;
 }

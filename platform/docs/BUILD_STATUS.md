@@ -1,4 +1,33 @@
-# Alpha 60 usage counts that name no one
+# Alpha 61 the app is called Ferven
+
+12 October 2026, on `claude/project-thread-oaizhp`. Version stays 0.39.0-alpha.1. No decision record; no migration.
+
+Edem asked what it would take to make Ferven sleek and powerful. The plan, one pull request each: the Ferven name everywhere (Alpha 61), phone rough edges, larger text on phones, clean web addresses with link previews, and add to home screen. Real sign-ups, uploads and a domain wait on Edem's accounts and spend.
+
+## Status at a glance
+
+| Item | State |
+| --- | --- |
+| Implemented | Yes, on `claude/project-thread-oaizhp` |
+| Verified locally | Yes: see below |
+| Merged | Not yet |
+| Deployed | The demo at https://ferven.vercel.app follows main |
+
+## What changed
+
+Every visible use of the old name says Ferven: web app text, the mark and favicon, emails, the calendar export and the two-step issuer. Internal names (`reunir` package, `REUNIR_` settings, logs, the preview file name) are unchanged.
+
+## Checks run
+
+- Typecheck clean. `npm test`: 962 passed, 0 failed. `npm run build` and `npm run bundle:preview` succeeded.
+- Every demo browser script (`test:browser` and each `test:browser:*` without `connected`), all passed. `test:http`: 19 passed.
+- `python3 -m unittest discover -s scripts -p "test_*.py"`: OK. `check_research.py`: valid.
+
+## Not verified
+
+- `npm run test:postgres` and the connected browser checks were not run locally: no database change. CI runs them.
+
+# Historical: Alpha 60 usage counts that name no one
 
 9 October 2026. Version stays 0.39.0-alpha.1. Decision 060; migration 0051.
 

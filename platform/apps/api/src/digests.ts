@@ -12,7 +12,7 @@ export function digestEmail(community: string, origin: string, frequency: 'daily
     const rest = total - lines.length;
     return {
         subject: `Your ${frequency} ${community} digest: ${total} ${total === 1 ? 'notice' : 'notices'} you have not read`,
-        text: [`Here is what you have not read in ${community}.`, '', ...lines, ...(rest > 0 ? ['', `And ${rest} more in REUNIR.`] : []), '',
+        text: [`Here is what you have not read in ${community}.`, '', ...lines, ...(rest > 0 ? ['', `And ${rest} more in Ferven.`] : []), '',
             `Read them all: ${new URL('/notifications', origin)}`, `Change or stop these emails from Notification settings on that page.`].join('\n'),
     };
 }

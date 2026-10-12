@@ -29,7 +29,7 @@ export function AccountPage() {
         : identity.memberships;
     const owned = ownedCommunities(userId, identity.memberships);
     return <>
-        <PageHeading eyebrow="ONE SIGN-IN, EVERY COMMUNITY" title="Your account." body="Where you belong, and what happens if you leave REUNIR altogether."/>
+        <PageHeading eyebrow="ONE SIGN-IN, EVERY COMMUNITY" title="Your account." body="Where you belong, and what happens if you leave Ferven altogether."/>
         <div className="reading-width account-page">
             <section className="panel">
                 <h2>Your communities</h2>

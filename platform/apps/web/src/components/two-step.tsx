@@ -126,7 +126,7 @@ function TurnOnDialogue({ onClose }: { onClose: () => void }) {
     };
     const close = () => { if (!working) onClose(); };
     if (step === 'codes' && setup) return <Modal title="Two-step sign-in is on" onClose={onClose}><div className="form-stack"><BackupCodes codes={setup.backupCodes}/><div className="modal-actions"><Button variant="default" type="button" className="button primary" onClick={onClose}>I have saved them</Button></div></div></Modal>;
-    if (step === 'app' && setup) return <Modal title="Add REUNIR to your authenticator app" onClose={close}>
+    if (step === 'app' && setup) return <Modal title="Add Ferven to your authenticator app" onClose={close}>
         <form className="form-stack" onSubmit={confirm} noValidate>
             <p className="account-warning">In your authenticator app, add an account and enter this setup key, or open the link on the device that has the app. A QR code to scan can follow in a later release.</p>
             <div className="two-step-key"><span id={keyLabel}>Setup key</span><code aria-labelledby={keyLabel}>{setupKey(setup.totpURI)}</code><small>Time-based, six digits, every 30 seconds.</small></div>

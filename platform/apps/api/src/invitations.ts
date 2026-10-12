@@ -51,7 +51,7 @@ export class InvitationService {
             const url=this.origin+'/#/invite?token='+token;
             const teach=track?` to teach ${track.title}`:'';
             const role=track?`\n\nAs an instructor you can write lessons and knowledge checks for ${track.title} and give feedback on its knowledge checks. You can turn this down later by asking an administrator.`:'';
-            await this.mail.enqueue({to:email,subject:`Your invitation${teach} in ${org.name} on REUNIR`,text:`You have been invited${teach} in ${org.name}.\n\nJoin your community: ${url}${role}\n\nThis personal invitation expires in seven days and can be used once. Already have a REUNIR account? Sign in to accept it.\n\nIf you were not expecting this invitation, you can ignore this message.`},sql,String(org.id),id);
+            await this.mail.enqueue({to:email,subject:`Your invitation${teach} in ${org.name} on Ferven`,text:`You have been invited${teach} in ${org.name}.\n\nJoin your community: ${url}${role}\n\nThis personal invitation expires in seven days and can be used once. Already have a Ferven account? Sign in to accept it.\n\nIf you were not expecting this invitation, you can ignore this message.`},sql,String(org.id),id);
             await this.log(sql,String(org.id),userId,track?'invitation.instructor.created':'invitation.created',id);
             return {id,url,delivery:'queued',emailConfigured:!!this.mail.transport};
         });

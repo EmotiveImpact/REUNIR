@@ -19,14 +19,14 @@ export function createAuth(db: Database, baseURL: string, secret: string, bootst
     const base = new URL(baseURL);
     if (process.env.NODE_ENV === 'production' && base.protocol !== 'https:')
         throw new Error('Production APP_ORIGIN must use HTTPS.');
-    return betterAuth({ appName: 'REUNIR', baseURL: base.origin, basePath: '/api/auth', secret,
+    return betterAuth({ appName: 'Ferven', baseURL: base.origin, basePath: '/api/auth', secret,
         database: drizzleAdapter(db.orm, { provider: 'pg', schema }),
         trustedOrigins: [base.origin],
         emailAndPassword: { enabled: true, disableSignUp: !bootstrap, minPasswordLength: 12, maxPasswordLength: 128, requireEmailVerification: !!mail && emailVerification === 'required',
             ...(bootstrap ? {autoSignIn:false} : {}),
             revokeSessionsOnPasswordReset: true, resetPasswordTokenExpiresIn: 1800,
             ...(mail ? {sendResetPassword: async ({user,url}: {user:{email:string};url:string}) => {
-                await mail.enqueue({to:user.email,subject:'Reset your REUNIR password',text:`A password reset was requested for your REUNIR account.\n\n${url}\n\nThis link expires in 30 minutes. If this was not you, ignore this message. Your existing password still works.`});
+                await mail.enqueue({to:user.email,subject:'Reset your Ferven password',text:`A password reset was requested for your Ferven account.\n\n${url}\n\nThis link expires in 30 minutes. If this was not you, ignore this message. Your existing password still works.`});
             }} : {}) },
         // Confirming an address: one link, for 24 hours, to the address being confirmed. The same link confirms a new address
         // when someone changes theirs, and only then does the address change. Signing in with an unconfirmed address, when

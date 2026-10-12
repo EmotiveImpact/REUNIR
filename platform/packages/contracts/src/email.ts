@@ -37,12 +37,12 @@ export function maskEmail(email: string): string {
 }
 
 export const verificationMail = (url: string) => ({
-    subject: 'Confirm your email address for REUNIR',
-    text: `Open this link to confirm this email address for your REUNIR account:\n\n${url}\n\nThe link works for 24 hours. If you did not ask for this, ignore this message and nothing will change.`,
+    subject: 'Confirm your email address for Ferven',
+    text: `Open this link to confirm this email address for your Ferven account:\n\n${url}\n\nThe link works for 24 hours. If you did not ask for this, ignore this message and nothing will change.`,
 });
 
 /** Sent to the current address when someone asks to move the account to another one. */
 export const changeNoticeMail = (newEmail: string) => ({
-    subject: 'Your REUNIR email address is being changed',
-    text: `Someone signed in to your REUNIR account asked to change its email address to ${maskEmail(newEmail)}. The change happens only when the confirmation link sent to that address is opened.\n\nIf this was not you, sign in and change your password straight away: that cancels the link. Until the link is opened, this address still signs you in.`,
+    subject: 'Your Ferven email address is being changed',
+    text: `Someone signed in to your Ferven account asked to change its email address to ${maskEmail(newEmail)}. The change happens only when the confirmation link sent to that address is opened.\n\nIf this was not you, sign in and change your password straight away: that cancels the link. Until the link is opened, this address still signs you in.`,
 });
