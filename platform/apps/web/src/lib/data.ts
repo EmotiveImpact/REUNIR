@@ -1,6 +1,7 @@
 import { normalisePurposeState } from '../../../../packages/domain/src/purpose';
 import { applyCommand, visibleWorkspace } from '../../../../packages/domain/src/engine';
 import { createSeed, DEMO_USER } from '../../../../packages/domain/src/seed';
+import { freshenDemoDates } from '../../../../packages/domain/src/demo-calendar';
 import { newId } from '../../../../packages/contracts/src/index';
 import type { Workspace, CommandInput, MutationResult } from '../../../../packages/contracts/src/index';
 import { clearDemoFiles } from './demo-files';
@@ -50,7 +51,8 @@ export function demoState(slug: string): Workspace {
         }
     }
     catch { /* Storage can be unavailable in a private browser. Continue in memory. */ }
-    return memory[slug] = createSeed(slug);
+    // Visitors see the demo's calendar moved up to today; automated checks keep the fixed calendar they were written for.
+    return memory[slug] = navigator.webdriver ? createSeed(slug) : freshenDemoDates(createSeed(slug));
 }
 /**
  * Another tab of the demo may have saved newer fictional state. Adopt it when its revision is ahead, so this tab sees

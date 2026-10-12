@@ -1,6 +1,19 @@
-# Alpha 63 readable text on phones
+# Alpha 64 the demo calendar follows today
 
 12 October 2026, on `claude/project-thread-oaizhp`, part of the sleek and powerful work that began with Alpha 61. Version stays 0.39.0-alpha.1. No decision record; no migration. Not yet merged when written; the demo at https://ferven.vercel.app follows main.
+
+## What changed
+
+Visitors to the demo now see upcoming events and recent activity, because a fresh demo moves its made-up dates forward to today. Before, the demo was stuck on 24 September 2026, so Events said nothing was coming up. Someone who already has the demo saved in their browser keeps their copy until they reset it.
+
+## Checks run
+
+- Typecheck clean, `npm test`: 965 passed, 0 failed, including the 3 new demo calendar tests. Build and `bundle:preview` succeeded.
+- Every demo browser script passed. Python helpers OK.
+
+# Historical: Alpha 63 readable text on phones
+
+12 October 2026, on `claude/project-thread-oaizhp`, part of the sleek and powerful work that began with Alpha 61. Version stays 0.39.0-alpha.1. No decision record; no migration. Merged as PR #54, `d66e509`; the demo at https://ferven.vercel.app follows main.
 
 ## What changed
 

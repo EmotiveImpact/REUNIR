@@ -1,8 +1,8 @@
 {
-  "release": "REUNIR Alpha 63 phone text",
+  "release": "REUNIR Alpha 64 demo calendar",
   "version": "0.39.0-alpha.1",
-  "sourceBaseline": "5fef0211112a810ef183210f50af059778472e68",
-  "generatedAt": "2026-10-12T02:21:11.203571+00:00",
+  "sourceBaseline": "5e47b95e60d7905f487760635f31abc25c47eb4e",
+  "generatedAt": "2026-10-12T02:36:24.377584+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,8 +21,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "c7bffea82e15cdbb854c7405b842e55e5856886b2bd6674b8fbe785c32b1dc62",
-      "bytes": 76623
+      "sha256": "8ccb9509e409e9c7125842849002fec544acf9a5631c296eb95ddf4c44482e19",
+      "bytes": 77555
     },
     {
       "path": "README.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "9e094a1160a24e8557e769d910a8b2fd009d02a1731fe7f006768007ea006188",
-      "bytes": 124505
+      "sha256": "a16bcf49c3fd91c95ef15031c8e1672edf17c3d483ac873baa8ed8e4e5fb9206",
+      "bytes": 124644
     },
     {
       "path": "platform/.dockerignore",
@@ -516,8 +516,8 @@
     },
     {
       "path": "platform/apps/web/src/lib/data.ts",
-      "sha256": "cbb21be72fd1c75b3bda146f48654f1301ca941e656938b9a54e76f7aa480b77",
-      "bytes": 5899
+      "sha256": "91fbe47bea2149c5629705fc33d27ea24eb5614c33bc0fd2a49dfbb4cded0900",
+      "bytes": 6163
     },
     {
       "path": "platform/apps/web/src/lib/demo-files.ts",
@@ -786,8 +786,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "ee2d98270d270958d149029d98f627324f97a4aec4568697a2e6b13609b549b9",
-      "bytes": 241018
+      "sha256": "16867f3336a22f8987ccb345b710eb08d2b441bbae0e8bc864f97dcb07cbfd50",
+      "bytes": 241865
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -1920,6 +1920,11 @@
       "bytes": 10053
     },
     {
+      "path": "platform/packages/domain/src/demo-calendar.ts",
+      "sha256": "12ac8892fbe8db08c74e1b0d059b614951ccde1ce980e34f6c139718282190a0",
+      "bytes": 1281
+    },
+    {
       "path": "platform/packages/domain/src/demo-files.ts",
       "sha256": "a8d04f964d4be35497027e4e7a9750b07b0281788fdeef1670f71ea4d65ab953",
       "bytes": 2006
@@ -2413,6 +2418,11 @@
       "path": "platform/tests/database.test.ts",
       "sha256": "dd34069fe076a499455fbd0fb8da667c8be40da1ed38aa211624641a746f21d2",
       "bytes": 7368
+    },
+    {
+      "path": "platform/tests/demo-calendar.test.ts",
+      "sha256": "411eda190d30d25b0279f729f50541263878a01f3af4db063790f4a371a07a48",
+      "bytes": 1461
     },
     {
       "path": "platform/tests/domain.test.ts",
