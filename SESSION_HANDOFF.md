@@ -4,7 +4,8 @@
 
 - Alpha 61, the Ferven name everywhere (no decision, no migration): PR #52, merged as `20eb723`.
 - Alpha 62, tidier People cards and plain covers: PR #53, merged as `c1f9500`.
-- Alpha 63, readable text on phones (`scripts/phone_type.py` writes `phone-type.css`; rerun it after changing any font size).
+- Alpha 63, readable text on phones (`scripts/phone_type.py` writes `phone-type.css`; rerun it after changing any font size): PR #54, merged as `d66e509`.
+- Alpha 64, the demo calendar follows today (`freshenDemoDates`; automated browsers keep the fixed calendar).
 - Next, built locally: Alpha 63 readable text on phones (generated `phone-type.css` from `scripts/phone_type.py`), Alpha 64 demo dates follow today (`freshenDemoDates`, skipped for automated browsers), Alpha 65 link previews and add to home screen.
 - Clean web addresses were considered and left out: invitation and reset tokens sit after `#` so they never reach the server or its logs.
 - Waiting on Edem's accounts or spend: real staging (Neon, Resend, Google Cloud), the scan machine for uploads (about $22 a month), a domain.

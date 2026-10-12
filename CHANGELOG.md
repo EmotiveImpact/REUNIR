@@ -6,6 +6,18 @@ Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main toget
 
 The fictional browser demo has been live at https://ferven.vercel.app since 11 October 2026 and follows main. The connected application (sign-ups, email, database) has not been deployed.
 
+## Alpha 64: the demo calendar follows today (no version change), 12 October 2026
+
+No decision record; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** Visitors to the demo now see upcoming events and recent activity, because a fresh demo moves its made-up dates forward to today. Before, the demo was stuck on 24 September 2026, so Events said nothing was coming up. Someone who already has the demo saved in their browser keeps their copy until they reset it.
+
+Details:
+
+- `packages/domain/src/demo-calendar.ts`: `freshenDemoDates` moves every ISO time and date in a newly created demo forward by whole days since 24 September 2026, keeping times of day. It never moves dates back.
+- `apps/web/src/lib/data.ts` applies it when it creates a demo, except in automated browsers (`navigator.webdriver`), so the browser checks keep the fixed calendar they were written for.
+- `tests/demo-calendar.test.ts` (3).
+
 ## Alpha 63: readable text on phones (no version change), 12 October 2026
 
 No decision record; no migration. The version stays 0.39.0-alpha.1.
