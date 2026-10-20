@@ -1,8 +1,8 @@
 {
-  "release": "REUNIR Alpha 65 link previews",
+  "release": "Ferven Alpha 66 records and code tidied",
   "version": "0.39.0-alpha.1",
-  "sourceBaseline": "c4027ed1a526bdfcd6da3d8451be6f9f07e2afc8",
-  "generatedAt": "2026-10-12T03:05:04.820177+00:00",
+  "sourceBaseline": "c4923e09041eca1d7528805dd6880d444b95adf0",
+  "generatedAt": "2026-10-20T02:58:39.485685+00:00",
   "files": [
     {
       "path": ".github/workflows/ci.yml",
@@ -21,13 +21,13 @@
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "b07f4deca6db301f894b4c206d38a9ce8d8d272bf03c5fbd4765b57ab6403b24",
-      "bytes": 78606
+      "sha256": "12bb7b83078428ceb0ad0d9c3335e00b94fdceec1536649168ec79bbdbf76969",
+      "bytes": 79659
     },
     {
       "path": "README.md",
-      "sha256": "8b7c8bfdfff7c8b015eb2e844f1fff23ba7c9acbfbccca7c10ac17c6792b0a8b",
-      "bytes": 4445
+      "sha256": "b4e2ff178997b930471ebeb9001092a76ef1bc26e6548e8ba5155e6a4254f08a",
+      "bytes": 3047
     },
     {
       "path": "RECOVERY_STATUS.md",
@@ -36,8 +36,8 @@
     },
     {
       "path": "SESSION_HANDOFF.md",
-      "sha256": "ff4f74599d324b7ce9e419248c791a96de130958b360485277fdd1675d47f01b",
-      "bytes": 124523
+      "sha256": "eda79f4919d5b9b284d1d9857423dfee8ea120f1954cb8da7cffd7ae224118f3",
+      "bytes": 4545
     },
     {
       "path": "platform/.dockerignore",
@@ -66,8 +66,8 @@
     },
     {
       "path": "platform/README.md",
-      "sha256": "90a355863b0b028fdcda2d6bb8e0b99d3b6bd940432025b0bbcac3a72d80f011",
-      "bytes": 4911
+      "sha256": "4b631f5ce5714508a74921bec2f4e7a3cf929772b1ac2bcc713d60b0f8599064",
+      "bytes": 1142
     },
     {
       "path": "platform/THIRD_PARTY_NOTICES.md",
@@ -811,8 +811,8 @@
     },
     {
       "path": "platform/docs/BUILD_STATUS.md",
-      "sha256": "0ac1ca76b1357f96a8941cacb229b8cf43d4f599de5283d873a4a9201648d907",
-      "bytes": 242691
+      "sha256": "92e65fe2a7df27e5f05606017fb86b0c2ce0cdbed35c042b96a379ae892ea322",
+      "bytes": 3280
     },
     {
       "path": "platform/docs/COVERS.md",
@@ -921,8 +921,8 @@
     },
     {
       "path": "platform/docs/ROADMAP.md",
-      "sha256": "7ecd84c7af539ad0118cf1f2cf8cba52d10a16ef1ff2d4dec1fb2d641d93213d",
-      "bytes": 19280
+      "sha256": "3d382725d528be541ef597b80a44e144e0c2c9f99f05486010faddc77907c946",
+      "bytes": 18625
     },
     {
       "path": "platform/docs/SECURITY.md",
@@ -1250,6 +1250,11 @@
       "bytes": 6414
     },
     {
+      "path": "platform/docs/history/BUILD_STATUS_ALPHA_07_TO_65.md",
+      "sha256": "41c8b6e1345a652fa10ef83af0f25465006c66c3e1d50dc47c208185b4a5a5c4",
+      "bytes": 242949
+    },
+    {
       "path": "platform/docs/history/GITHUB_HANDOVER_ALPHA_03.md",
       "sha256": "bc02af0b7167862573411e755ec307be21fb9e159f4a6b5a9403006b629c75c8",
       "bytes": 2378
@@ -1258,6 +1263,11 @@
       "path": "platform/docs/history/PILOT_OPERATIONS_ALPHA_03.md",
       "sha256": "7ec65a57ef960f951e0d2871b1d332f15c13f03678d7b9e649936f5c609fda0e",
       "bytes": 4707
+    },
+    {
+      "path": "platform/docs/history/PLATFORM_README_ALPHA_05.md",
+      "sha256": "d82c78bdd8ebc110a8b292a8fd77a8372a4c252e9fa1f5d8f0bd709f2edca8b2",
+      "bytes": 4470
     },
     {
       "path": "platform/docs/history/PRD_ALPHA_01.md",
@@ -1303,6 +1313,11 @@
       "path": "platform/docs/history/SESSION_HANDOFF_ALPHA06.md",
       "sha256": "6db918d90f0b1d9053075bb80d4a04336de7e71e2c7e617b1cb148a9a23c3e78",
       "bytes": 9535
+    },
+    {
+      "path": "platform/docs/history/SESSION_HANDOFF_ALPHA_07_TO_65.md",
+      "sha256": "b4edc52257df40b19a4e2b79595fcf55569ede5f7d4e7938f3adb7ca9e16e01c",
+      "bytes": 124802
     },
     {
       "path": "platform/docs/history/SETUP_ALPHA_02.md",

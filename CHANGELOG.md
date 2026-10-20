@@ -1,10 +1,22 @@
 # Changelog
 
-Every release of REUNIR so far, newest first. Each release opens with a short plain-language summary of what changed for people using the app, followed by the technical details recorded at the time.
+Every release of Ferven (working name REUNIR) so far, newest first. Each release opens with a short plain-language summary of what changed for people using the app, followed by the technical details recorded at the time.
 
 Alpha 01 to Alpha 07 were built and tested outside GitHub and reached main together in PR #1. From Alpha 08 onwards each release arrived on main through its own pull request, listed under its heading. Exact test runs, failed attempts and what remains unverified are in [platform/docs/BUILD_STATUS.md](platform/docs/BUILD_STATUS.md) and the files in [platform/docs/history](platform/docs/history).
 
 The fictional browser demo has been live at https://ferven.vercel.app since 11 October 2026 and follows main. The connected application (sign-ups, email, database) has not been deployed.
+
+## Alpha 66: records and code tidied (no version change), 20 October 2026
+
+No decision record; no migration. The version stays 0.39.0-alpha.1.
+
+**In plain language:** nothing changes for people using Ferven. The project's own notes were tidied so the current state is easy to find: the handover and build status are short again, the READMEs use the Ferven name and correct counts, and the roadmap's next steps are a clear list.
+
+Details:
+
+- SESSION_HANDOFF.md and platform/docs/BUILD_STATUS.md now describe the current state only. Their earlier sections moved, word for word, to platform/docs/history/SESSION_HANDOFF_ALPHA_07_TO_65.md and BUILD_STATUS_ALPHA_07_TO_65.md, and the platform README's Alpha 05 notes to PLATFORM_README_ALPHA_05.md.
+- BUILD_STATUS.md lists recent releases with their pull requests and merge commits, and gathers everything never yet verified against a real service in one place.
+- ROADMAP.md records Alpha 61 to 66, the current migration count (38 files, to 0051) and a prioritised list of next steps.
 
 ## Alpha 65: link previews and add to home screen (no version change), 12 October 2026
 
